@@ -211,3 +211,51 @@ def test_normalize_imdb_id_variants():
     assert etl_seed.normalize_imdb_id("123456789") == "tt123456789"
     assert etl_seed.normalize_imdb_id("abc123") is None
     assert etl_seed.normalize_imdb_id("tt1234") is None
+
+
+def test_resolve_imdb_via_network_tmdb_handles_parenthetical_titles(monkeypatch):
+    record = {"title": "Alien (1979)", "year": 1979}
+    calls = []
+
+    class DummyResponse:
+        def __init__(self, payload):
+            self._payload = payload
+
+        def raise_for_status(self):
+            return None
+
+        def json(self):
+            return self._payload
+
+    def fake_get(url, params=None, timeout=None):
+        calls.append({"url": url, "params": params})
+        if "search/movie" in url:
+            assert params["query"] == "alien"
+            return DummyResponse(
+                {
+                    "results": [
+                        {
+                            "title": "Alien",
+                            "id": 42,
+                            "release_date": "1979-05-25",
+                        }
+                    ]
+                }
+            )
+        if url.endswith("/movie/42/external_ids"):
+            return DummyResponse({"imdb_id": "tt1234567"})
+        pytest.fail(f"Unexpected URL {url}")
+
+    monkeypatch.setattr(etl_seed.httpx, "get", fake_get)
+
+    imdb_id, tag, tmdb_id = etl_seed.resolve_imdb_via_network(
+        record,
+        allow_network=True,
+        tmdb_key="tmdb-key",
+        omdb_key=None,
+    )
+
+    assert imdb_id == "tt1234567"
+    assert tag == "tmdb"
+    assert tmdb_id == 42
+    assert calls[0]["params"]["query"] == "alien"

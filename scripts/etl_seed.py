@@ -153,6 +153,21 @@ def normalize_title(title: str) -> str:
     return normalized.strip()
 
 
+def sanitize_title_for_search(title: str) -> str:
+    import re
+
+    # Remove parenthetical year markers like "(2020)" before normalizing to keep
+    # the search string focused on the core title.
+    without_year = re.sub(r"\s*\(\s*\d{4}\s*\)\s*", " ", title)
+    sanitized = normalize_title(without_year)
+    if sanitized:
+        return sanitized
+    # Fall back to a normalized version of the original title to avoid empty
+    # queries when the input is entirely punctuation or whitespace.
+    fallback = normalize_title(title)
+    return fallback if fallback else title.strip().lower()
+
+
 def load_overrides(path: pathlib.Path) -> Dict[Tuple[str, Optional[int]], str]:
     overrides: Dict[Tuple[str, Optional[int]], str] = {}
     if not path.exists():
@@ -459,6 +474,7 @@ def resolve_imdb_via_network(
 
     title = record["title"]
     year = record.get("year")
+    sanitized_title = sanitize_title_for_search(title)
 
     if not tmdb_key and not omdb_key:
         return None, "api_keys_missing", None
@@ -467,7 +483,7 @@ def resolve_imdb_via_network(
 
     if tmdb_key:
         try:
-            params = {"query": title, "api_key": tmdb_key}
+            params = {"query": sanitized_title, "api_key": tmdb_key}
             if year:
                 params["year"] = year
             response = httpx.get(
@@ -477,8 +493,8 @@ def resolve_imdb_via_network(
             data = response.json()
             results = data.get("results", [])
             for result in results:
-                result_title = str(result.get("title", "")).strip().lower()
-                if result_title != title.strip().lower():
+                result_title = str(result.get("title", ""))
+                if sanitize_title_for_search(result_title) != sanitized_title:
                     continue
                 release_date = result.get("release_date") or ""
                 release_year = int(release_date[:4]) if release_date[:4].isdigit() else None
