@@ -30,8 +30,10 @@
 
   .detail-wrapper {
     position: relative;
-    margin-top: -180px;
-    padding: 0 clamp(1rem, 6vw, 4rem) 4rem;
+    margin: -180px auto 0;
+    padding: 0 clamp(1rem, 6vw, 4rem) clamp(2.5rem, 6vw, 4rem);
+    max-width: clamp(320px, 92vw, 1080px);
+    width: 100%;
     color: var(--flic-text);
   }
 
@@ -49,7 +51,7 @@
 
   .poster-frame {
     position: relative;
-    width: min(60%, 260px);
+    width: clamp(180px, 60vw, 260px);
     padding: 0.65rem;
     border-radius: 1.3rem;
     background: linear-gradient(140deg, rgba(30, 144, 255, 0.55), rgba(15, 45, 74, 0.85));
@@ -250,6 +252,71 @@
     font-size: 0.65rem;
     letter-spacing: 0.08em;
     color: rgba(255, 255, 255, 0.7);
+  }
+
+  @media (max-width: 1024px) {
+    .detail-wrapper {
+      padding: 0 clamp(1rem, 5vw, 3rem) clamp(2.25rem, 6vw, 3.5rem);
+    }
+  }
+
+  @media (max-width: 768px) {
+    .backdrop {
+      height: 260px;
+    }
+
+    .detail-wrapper {
+      margin-top: -150px;
+    }
+
+    .hero {
+      grid-template-columns: minmax(0, 1fr);
+      align-items: flex-start;
+    }
+
+    .poster-shell {
+      justify-content: flex-start;
+    }
+
+    .hero-tags {
+      gap: 0.45rem;
+    }
+
+    .badge-links {
+      gap: 0.5rem;
+    }
+
+    .glance-grid {
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    }
+  }
+
+  @media (max-width: 600px) {
+    .backdrop {
+      height: 220px;
+    }
+
+    .detail-wrapper {
+      margin-top: -120px;
+      padding: 0 1.1rem 2.5rem;
+    }
+
+    .sections {
+      margin-top: 2rem;
+      gap: clamp(1.5rem, 6vw, 2.5rem);
+    }
+
+    .hero-meta h1 {
+      font-size: clamp(1.9rem, 8vw, 2.4rem);
+    }
+
+    .glance-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .similar-rail {
+      grid-auto-columns: minmax(120px, 160px);
+    }
   }
 </style>
 {% endblock %}
