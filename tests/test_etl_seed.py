@@ -75,6 +75,17 @@ def test_load_rows_csv(tmp_path):
     assert rows[0]["title"] == "The Shawshank Redemption"
 
 
+def test_load_rows_csv_skips_preface_line():
+    sample_csv = pathlib.Path("scripts/samples/vault966_titles_years.csv")
+    rows = etl_seed.load_rows(sample_csv, "csv", "utf-8")
+
+    assert len(rows) > 900
+    assert rows[0]["title"] == "Abduction"
+    assert rows[0]["year"] == "2011"
+    assert None not in rows[0]
+    assert "Table 1" not in rows[0]
+
+
 def test_process_record_insert_and_update(in_memory_session):
     record = {
         "title": "Inception",
