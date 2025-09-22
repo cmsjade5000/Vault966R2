@@ -4,6 +4,8 @@
 <style>
   .page-hero {
     padding: 1.5rem clamp(1rem, 4vw, 3rem);
+    margin: 0 auto;
+    max-width: clamp(320px, 92vw, 1080px);
     display: grid;
     gap: 1.25rem;
   }
@@ -123,6 +125,8 @@
     flex-wrap: wrap;
     align-items: center;
     gap: 0.5rem;
+    padding: 0.25rem 0;
+    width: 100%;
   }
 
   .chip-preset {
@@ -179,8 +183,11 @@
     font-size: 0.85rem;
   }
 
-  main {
+  main[aria-live="polite"] {
     padding: 1.5rem clamp(1rem, 4vw, 3rem) 3rem;
+    max-width: clamp(320px, 92vw, 1080px);
+    margin: 0 auto;
+    width: 100%;
   }
 
   .grid {
@@ -282,6 +289,71 @@
     }
     100% {
       opacity: 0.6;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .page-hero {
+      gap: 1rem;
+    }
+
+    .hero-title {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.4rem;
+    }
+
+    .actions-row {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .actions-row .button-primary,
+    .actions-row .button-secondary {
+      width: 100%;
+    }
+
+    .facts {
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    }
+  }
+
+  @media (max-width: 640px) {
+    #filters-form {
+      grid-template-columns: 1fr;
+    }
+
+    .fliclists {
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      margin: 0 -0.25rem;
+      padding: 0.25rem 0.25rem 0.5rem;
+      scroll-snap-type: x proximity;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+
+    .fliclists::-webkit-scrollbar {
+      display: none;
+    }
+
+    .chip-preset {
+      scroll-snap-align: start;
+      white-space: nowrap;
+    }
+  }
+
+  @media (max-width: 520px) {
+    main[aria-live="polite"] {
+      padding: 1.25rem 1rem 2.5rem;
+    }
+
+    .grid {
+      gap: 1rem;
+    }
+
+    .card h2 {
+      padding: 0.8rem 0.9rem 1rem;
     }
   }
 </style>
