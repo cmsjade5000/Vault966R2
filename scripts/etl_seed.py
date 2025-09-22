@@ -672,7 +672,8 @@ def main() -> int:
         logger.error(str(exc))
         return 2
 
-    Base.metadata.create_all(bind=engine)
+    if engine.url.get_backend_name().startswith("sqlite"):
+        Base.metadata.create_all(bind=engine)
 
     try:
         raw_rows = load_rows(path, file_format, args.encoding)
