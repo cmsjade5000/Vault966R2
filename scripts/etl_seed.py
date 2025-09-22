@@ -89,15 +89,51 @@ def infer_format(path: pathlib.Path, explicit: Optional[str]) -> str:
     raise ValueError("Could not infer format; please provide --format explicitly")
 
 
+def _normalize_column_name(value: str) -> str:
+    cleaned = value.replace("\ufeff", "").strip()
+    cleaned = cleaned.strip("\"'`")
+    cleaned = cleaned.replace(" ", "_").replace("-", "_")
+    return cleaned.lower()
+
+
+def _find_csv_header_index(lines: List[str]) -> int:
+    for index, raw_line in enumerate(lines):
+        if not raw_line.strip():
+            continue
+        parsed = next(csv.reader([raw_line]))
+        normalized = [_normalize_column_name(part) for part in parsed if part is not None]
+        if not normalized:
+            continue
+        if any("title" in name and "subtitle" not in name for name in normalized):
+            return index
+    raise MalformedRowError("CSV file is missing a header row containing a title column")
+
+
 def load_rows(path: pathlib.Path, file_format: str, encoding: str) -> List[Dict[str, Any]]:
-    with path.open("r", encoding=encoding) as handle:
+    with path.open("r", encoding=encoding, newline="") as handle:
         if file_format == "json":
             raw = json.load(handle)
             if not isinstance(raw, list):
                 raise MalformedRowError("JSON payload must be a list of objects")
             return [dict(row) for row in raw]
-        reader = csv.DictReader(handle)
-        return [dict(row) for row in reader]
+
+        lines = list(handle)
+        if not lines:
+            return []
+
+        header_index = _find_csv_header_index(lines)
+        csv_lines = lines[header_index:]
+        if not csv_lines:
+            return []
+
+        csv_lines[0] = csv_lines[0].lstrip("\ufeff")
+        reader = csv.DictReader(csv_lines)
+
+        rows: List[Dict[str, Any]] = []
+        for row in reader:
+            cleaned = {key: value for key, value in row.items() if key is not None}
+            rows.append(cleaned)
+        return rows
 
 
 _NULL_STRINGS = {"", " ", "n/a", "N/A", "unknown", "NULL", "NaN", "nan", None}
@@ -672,7 +708,8 @@ def main() -> int:
         logger.error(str(exc))
         return 2
 
-    Base.metadata.create_all(bind=engine)
+    if engine.url.get_backend_name().startswith("sqlite"):
+        Base.metadata.create_all(bind=engine)
 
     try:
         raw_rows = load_rows(path, file_format, args.encoding)
