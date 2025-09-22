@@ -15,6 +15,7 @@ from api.models.flic_preset import FlicPreset
 from api.models.movie import Genre, Mood, Movie, movie_genres, movie_moods
 from api.services.movies_detail import get_movie_detail
 from core.picker import calculate_flic_score
+from api.utils.query_params import parse_optional_non_negative_int
 
 TEMPLATES = Jinja2Templates(
     directory=str(pathlib.Path(__file__).resolve().parents[2] / "templates")
@@ -60,13 +61,17 @@ def movies_grid(
     q: Optional[str] = Query(default=None),
     genres: Optional[str] = Query(default=None),
     moods: Optional[str] = Query(default=None),
-    year_min: Optional[int] = Query(default=None, ge=0),
-    year_max: Optional[int] = Query(default=None, ge=0),
-    runtime_max: Optional[int] = Query(default=None, ge=0),
+    year_min: Optional[str] = Query(default=None),
+    year_max: Optional[str] = Query(default=None),
+    runtime_max: Optional[str] = Query(default=None),
     page: int = Query(default=1, ge=1),
     order_by: str = Query(default="title_asc"),
     db: Session = Depends(get_db),
 ):
+    year_min = parse_optional_non_negative_int(year_min, "year_min")
+    year_max = parse_optional_non_negative_int(year_max, "year_max")
+    runtime_max = parse_optional_non_negative_int(runtime_max, "runtime_max")
+
     filtered_query = _apply_filters(
         db.query(Movie),
         q=q,
