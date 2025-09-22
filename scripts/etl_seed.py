@@ -19,8 +19,11 @@ import json
 import logging
 import os
 import pathlib
+import re
 import sys
 from collections import Counter, defaultdict
+from datetime import datetime
+from types import SimpleNamespace
 from typing import Any, Dict, List, Optional, Tuple
 
 import httpx
@@ -138,6 +141,8 @@ def load_rows(path: pathlib.Path, file_format: str, encoding: str) -> List[Dict[
 
 _NULL_STRINGS = {"", " ", "n/a", "N/A", "unknown", "NULL", "NaN", "nan", None}
 
+resolver_state = SimpleNamespace(last_tmdb_imdb_id=None, last_omdb_payload=None)
+
 
 def normalize_title(title: str) -> str:
     import re
@@ -156,16 +161,37 @@ def normalize_title(title: str) -> str:
 def sanitize_title_for_search(title: str) -> str:
     import re
 
-    # Remove parenthetical year markers like "(2020)" before normalizing to keep
-    # the search string focused on the core title.
-    without_year = re.sub(r"\s*\(\s*\d{4}\s*\)\s*", " ", title)
-    sanitized = normalize_title(without_year)
+    # Strip parenthetical descriptors such as "(2020)", "(Unrated)", etc., so search
+    # queries focus on the canonical title text.
+    without_parentheticals = re.sub(r"\s*\([^)]*\)\s*", " ", title)
+    sanitized = normalize_title(without_parentheticals)
     if sanitized:
         return sanitized
     # Fall back to a normalized version of the original title to avoid empty
     # queries when the input is entirely punctuation or whitespace.
     fallback = normalize_title(title)
     return fallback if fallback else title.strip().lower()
+
+
+def extract_imdb_from_tmdb_external_ids(data: Optional[Dict[str, Any]]) -> Optional[str]:
+    if not data:
+        return None
+    return normalize_imdb_id(data.get("imdb_id"))
+
+
+def extract_imdb_from_omdb(data: Optional[Dict[str, Any]]) -> Optional[str]:
+    if not data:
+        return None
+    response_flag = str(data.get("Response", "")).lower()
+    if response_flag != "true":
+        return None
+    return normalize_imdb_id(data.get("imdbID"))
+
+
+def pick_imdb_id(
+    tmdb_json: Optional[Dict[str, Any]], omdb_json: Optional[Dict[str, Any]]
+) -> Optional[str]:
+    return extract_imdb_from_tmdb_external_ids(tmdb_json) or extract_imdb_from_omdb(omdb_json)
 
 
 def load_overrides(path: pathlib.Path) -> Dict[Tuple[str, Optional[int]], str]:
@@ -241,23 +267,30 @@ def _first_value(mapping: Dict[str, Any], keys: List[str]) -> Any:
 def normalize_imdb_id(value: Any) -> Optional[str]:
     if value in _NULL_STRINGS:
         return None
-    text = str(value).strip().lower()
+    text = str(value).strip()
     if not text:
         return None
-    if text.startswith("tt"):
-        digits = text[2:]
-    elif text.isdigit():
-        digits = text
+
+    lowered = text.lower()
+    if lowered.startswith("tt"):
+        digits = lowered[2:]
+    elif lowered.isdigit():
+        digits = lowered
     else:
-        digits = text.replace("tt", "") if text.replace("tt", "").isdigit() else None
-    if digits is None:
+        stripped = lowered.replace("tt", "")
+        if stripped.isdigit():
+            digits = stripped
+        else:
+            return None
+
+    if not digits or not digits.isdigit():
         return None
-    digits = digits.lstrip("0") or "0"
-    if not digits.isdigit():
+
+    length = len(digits)
+    if length < 7 or length > 9:
         return None
-    if len(digits) < 7 or len(digits) > 9:
-        return None
-    return f"tt{digits}"
+
+    return f"tt{digits.zfill(7)}"
 
 
 def coerce_float(value: Any) -> Optional[float]:
@@ -469,12 +502,19 @@ def resolve_imdb_via_network(
     tmdb_key: Optional[str],
     omdb_key: Optional[str],
 ) -> Tuple[Optional[str], Optional[str], Optional[int]]:
+    resolver_state.last_tmdb_imdb_id = None
+    resolver_state.last_omdb_payload = None
+
     if not allow_network:
         return None, "network_disabled", None
 
     title = record["title"]
     year = record.get("year")
     sanitized_title = sanitize_title_for_search(title)
+    omdb_title = re.sub(r"\s*\([^)]*\)\s*", " ", title).strip()
+    omdb_title = re.sub(r"\s{2,}", " ", omdb_title)
+    if not omdb_title:
+        omdb_title = title.strip()
 
     if not tmdb_key and not omdb_key:
         return None, "api_keys_missing", None
@@ -509,59 +549,69 @@ def resolve_imdb_via_network(
                         timeout=10.0,
                     )
                     external.raise_for_status()
-                    imdb_id = normalize_imdb_id(external.json().get("imdb_id"))
+                    external_payload = external.json()
+                    imdb_id = extract_imdb_from_tmdb_external_ids(external_payload)
                     if imdb_id:
+                        resolver_state.last_tmdb_imdb_id = imdb_id
                         return imdb_id, "tmdb", tmdb_id
+                    resolver_state.last_tmdb_imdb_id = extract_imdb_from_tmdb_external_ids(
+                        external_payload
+                    )
         except httpx.HTTPError as exc:
             logger.warning("TMDb lookup failed: %s", exc)
 
-    if omdb_key:
+    def _omdb_lookup(params: Dict[str, Any], tag: str) -> Optional[Tuple[str, str, Optional[int]]]:
+        # Use a copy so we can mutate for logging/testing without affecting callers.
+        query_params = dict(params)
         try:
-            params = {"apikey": omdb_key, "t": title}
-            if year:
-                params["y"] = year
-            response = httpx.get("https://www.omdbapi.com/", params=params, timeout=10.0)
+            response = httpx.get("https://www.omdbapi.com/", params=query_params, timeout=10.0)
             response.raise_for_status()
             data = response.json()
-            if data.get("Response") == "True":
-                imdb_id = normalize_imdb_id(data.get("imdbID"))
-                if imdb_id:
-                    return imdb_id, "omdb_title_year", tmdb_candidate
+            resolver_state.last_omdb_payload = data
+            imdb_id = extract_imdb_from_omdb(data)
+            if not imdb_id:
+                return None
+            if year:
+                omdb_year = data.get("Year")
+                try:
+                    omdb_year_int = int(str(omdb_year).split("–")[0]) if omdb_year else None
+                except ValueError:
+                    omdb_year_int = None
+                if omdb_year_int is not None and abs(omdb_year_int - year) > 1:
+                    return None
+            return imdb_id, tag, tmdb_candidate
         except httpx.HTTPError as exc:
             logger.warning("OMDb lookup failed: %s", exc)
+            return None
 
     if omdb_key:
-        try:
-            response = httpx.get(
-                "https://www.omdbapi.com/",
-                params={"apikey": omdb_key, "t": title},
-                timeout=10.0,
+        query_title = omdb_title or title
+        if year:
+            result = _omdb_lookup(
+                {"apikey": omdb_key, "t": query_title, "y": year}, "omdb_title_year"
             )
-            response.raise_for_status()
-            data = response.json()
-            if data.get("Response") == "True":
-                imdb_id = normalize_imdb_id(data.get("imdbID"))
-                if imdb_id:
-                    return imdb_id, "omdb_title_only", tmdb_candidate
-        except httpx.HTTPError as exc:
-            logger.warning("OMDb title-only lookup failed: %s", exc)
+            if result:
+                return result
+            result = _omdb_lookup(
+                {"apikey": omdb_key, "t": query_title, "y": year - 1}, "omdb_title_year_minus1"
+            )
+            if result:
+                return result
+            result = _omdb_lookup(
+                {"apikey": omdb_key, "t": query_title, "y": year + 1}, "omdb_title_year_plus1"
+            )
+            if result:
+                return result
+
+        result = _omdb_lookup({"apikey": omdb_key, "t": query_title}, "omdb_title_only")
+        if result:
+            return result
 
     if omdb_key:
-        try:
-            normalized_title = normalize_title(title)
-            response = httpx.get(
-                "https://www.omdbapi.com/",
-                params={"apikey": omdb_key, "t": normalized_title},
-                timeout=10.0,
-            )
-            response.raise_for_status()
-            data = response.json()
-            if data.get("Response") == "True":
-                imdb_id = normalize_imdb_id(data.get("imdbID"))
-                if imdb_id:
-                    return imdb_id, "normalized", tmdb_candidate
-        except httpx.HTTPError as exc:
-            logger.warning("OMDb normalized lookup failed: %s", exc)
+        normalized_title = sanitized_title or normalize_title(title)
+        result = _omdb_lookup({"apikey": omdb_key, "t": normalized_title}, "normalized")
+        if result:
+            return result
 
     if tmdb_candidate is not None:
         return None, "tmdb_only", tmdb_candidate
@@ -727,11 +777,20 @@ def main() -> int:
     if engine.url.get_backend_name().startswith("sqlite"):
         Base.metadata.create_all(bind=engine)
 
+    start_time = datetime.now()
+
     try:
         raw_rows = load_rows(path, file_format, args.encoding)
     except (MalformedRowError, json.JSONDecodeError) as exc:
         logger.error("Failed to load data: %s", exc)
         return 1
+
+    dead_letter_dir = ROOT_DIR / "data"
+    dead_letter_dir.mkdir(parents=True, exist_ok=True)
+    dead_letter_path = dead_letter_dir / f"skips_{start_time:%Y%m%d_%H%M%S}.csv"
+    with dead_letter_path.open("w", encoding="utf-8", newline="") as fh:
+        writer = csv.writer(fh)
+        writer.writerow(["row", "title", "year", "tmdb_imdb_id", "omdb_response", "omdb_error"])
 
     summary = Summary()
     seen_keys = set()
@@ -789,6 +848,9 @@ def main() -> int:
 
         tmdb_candidate: Optional[int] = None
 
+        resolver_state.last_tmdb_imdb_id = None
+        resolver_state.last_omdb_payload = None
+
         if not imdb_id:
             resolved, tag, tmdb_candidate = resolve_imdb_via_network(
                 record,
@@ -836,6 +898,22 @@ def main() -> int:
             with log_path.open("a", encoding="utf-8", newline="") as fh:
                 writer = csv.writer(fh)
                 writer.writerow([index, record.get("title"), original_imdb_id])
+            try:
+                with dead_letter_path.open("a", encoding="utf-8", newline="") as fh:
+                    writer = csv.writer(fh)
+                    omdb_payload = resolver_state.last_omdb_payload or {}
+                    writer.writerow(
+                        [
+                            index,
+                            record.get("title"),
+                            record.get("year"),
+                            resolver_state.last_tmdb_imdb_id or "",
+                            omdb_payload.get("Response"),
+                            omdb_payload.get("Error"),
+                        ]
+                    )
+            except OSError as exc:
+                logger.warning("Failed to write dead-letter entry: %s", exc)
             continue
 
         if using_tmdb_only:

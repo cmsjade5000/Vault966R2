@@ -207,10 +207,16 @@ def test_normalize_imdb_id_variants():
     assert etl_seed.normalize_imdb_id("tt1234567") == "tt1234567"
     assert etl_seed.normalize_imdb_id("  TT7654321  ") == "tt7654321"
     assert etl_seed.normalize_imdb_id("12345678") == "tt12345678"
-    assert etl_seed.normalize_imdb_id("0000123456") is None
+    assert etl_seed.normalize_imdb_id("tt0066999") == "tt0066999"
     assert etl_seed.normalize_imdb_id("123456789") == "tt123456789"
+    assert etl_seed.normalize_imdb_id("tt0066999") == "tt0066999"
     assert etl_seed.normalize_imdb_id("abc123") is None
     assert etl_seed.normalize_imdb_id("tt1234") is None
+
+
+def test_sanitize_title_for_search_strips_parentheticals():
+    assert etl_seed.sanitize_title_for_search("Dirty Harry (Unrated)") == "dirty harry"
+    assert etl_seed.sanitize_title_for_search("Alien (1979) (Director's Cut)") == "alien"
 
 
 def test_resolve_imdb_via_network_tmdb_handles_parenthetical_titles(monkeypatch):
@@ -259,3 +265,137 @@ def test_resolve_imdb_via_network_tmdb_handles_parenthetical_titles(monkeypatch)
     assert tag == "tmdb"
     assert tmdb_id == 42
     assert calls[0]["params"]["query"] == "alien"
+
+
+def test_resolve_imdb_via_network_omdb_strips_parenthetical_titles(monkeypatch):
+    record = {"title": "Dirty Harry (Unrated)", "year": 1971}
+    calls = []
+
+    class DummyResponse:
+        def __init__(self, payload):
+            self._payload = payload
+
+        def raise_for_status(self):
+            return None
+
+        def json(self):
+            return self._payload
+
+    def fake_get(url, params=None, timeout=None):
+        calls.append({"url": url, "params": params})
+        if "search/movie" in url:
+            return DummyResponse({"results": []})
+        if "omdbapi.com" in url:
+            assert params["t"].lower() == "dirty harry"
+            if "y" in params:
+                assert params["y"] == 1971
+            return DummyResponse({"Response": "True", "imdbID": "tt0066999"})
+        pytest.fail(f"Unexpected URL {url}")
+
+    monkeypatch.setattr(etl_seed.httpx, "get", fake_get)
+
+    imdb_id, tag, tmdb_id = etl_seed.resolve_imdb_via_network(
+        record,
+        allow_network=True,
+        tmdb_key="tmdb-key",
+        omdb_key="omdb-key",
+    )
+
+    assert imdb_id == "tt0066999"
+    assert tag == "omdb_title_year"
+    assert tmdb_id is None
+    assert calls[1]["params"]["t"].lower() == "dirty harry"
+
+
+def test_resolve_imdb_via_network_allows_year_plus_minus_one(monkeypatch):
+    record = {"title": "Dirty Harry", "year": 1971}
+
+    class DummyResponse:
+        def __init__(self, payload):
+            self._payload = payload
+
+        def raise_for_status(self):
+            return None
+
+        def json(self):
+            return self._payload
+
+    calls = []
+
+    def fake_get(url, params=None, timeout=None):
+        calls.append({"url": url, "params": params})
+        if "search/movie" in url:
+            return DummyResponse({"results": []})
+        if "omdbapi.com" in url:
+            if params.get("y") == 1972:
+                return DummyResponse({"Response": "True", "imdbID": "tt0066999", "Year": "1972"})
+            return DummyResponse({"Response": "False", "Error": "Movie not found!"})
+        pytest.fail(f"Unexpected URL {url}")
+
+    monkeypatch.setattr(etl_seed.httpx, "get", fake_get)
+
+    imdb_id, tag, tmdb_id = etl_seed.resolve_imdb_via_network(
+        record,
+        allow_network=True,
+        tmdb_key="tmdb-key",
+        omdb_key="omdb-key",
+    )
+
+    assert imdb_id == "tt0066999"
+    assert tag == "omdb_title_year_plus1"
+    assert tmdb_id is None
+
+
+def test_resolve_imdb_via_network_records_last_omdb_payload(monkeypatch):
+    record = {"title": "Dirty Harry", "year": 1971}
+
+    class DummyResponse:
+        def __init__(self, payload):
+            self._payload = payload
+
+        def raise_for_status(self):
+            return None
+
+        def json(self):
+            return self._payload
+
+    def fake_get(url, params=None, timeout=None):
+        if "search/movie" in url:
+            return DummyResponse({"results": []})
+        if "omdbapi.com" in url:
+            return DummyResponse({"Response": "False", "Error": "Movie not found!"})
+        pytest.fail(f"Unexpected URL {url}")
+
+    monkeypatch.setattr(etl_seed.httpx, "get", fake_get)
+
+    imdb_id, tag, tmdb_id = etl_seed.resolve_imdb_via_network(
+        record,
+        allow_network=True,
+        tmdb_key="tmdb-key",
+        omdb_key="omdb-key",
+    )
+
+    assert imdb_id is None
+    assert tag == "lookup_failed"
+    assert tmdb_id is None
+    assert etl_seed.resolver_state.last_omdb_payload == {
+        "Response": "False",
+        "Error": "Movie not found!",
+    }
+
+
+def test_pick_imdb_id_prefers_tmdb():
+    tmdb_payload = {"imdb_id": "tt0066999"}
+    omdb_payload = {"Response": "True", "imdbID": "tt1234567"}
+    assert etl_seed.pick_imdb_id(tmdb_payload, omdb_payload) == "tt0066999"
+
+
+def test_pick_imdb_id_falls_back_to_omdb():
+    tmdb_payload = {"imdb_id": None}
+    omdb_payload = {"Response": "True", "imdbID": "tt1234567"}
+    assert etl_seed.pick_imdb_id(tmdb_payload, omdb_payload) == "tt1234567"
+
+
+def test_pick_imdb_id_handles_missing_values():
+    assert etl_seed.pick_imdb_id(None, None) is None
+    assert etl_seed.pick_imdb_id({}, {"Response": "False"}) is None
