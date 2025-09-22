@@ -1,3 +1,5 @@
+import re
+
 from fastapi.testclient import TestClient
 
 
@@ -65,3 +67,20 @@ def test_search_facets_respect_filters(client: TestClient) -> None:
     assert facets["moods"]["Exciting"] == 1
     assert facets["genres"]["Sci-Fi"] == 1
     assert facets["genres"]["Action"] == 1
+
+
+def test_movies_grid_stats_summary(client: TestClient) -> None:
+    response = client.get("/ui/movies")
+    assert response.status_code == 200
+
+    facts = dict(
+        re.findall(
+            r'<div class="fact-label">(.*?)</div>\s*<div class="fact-value">(.*?)</div>',
+            response.text,
+        )
+    )
+
+    assert facts["Total entries"] == "33"
+    assert facts["Average year"] == "2001"
+    assert facts["Top genre"] == "Library"
+    assert facts["Top mood"] == "General"

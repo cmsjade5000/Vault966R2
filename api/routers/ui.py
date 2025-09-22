@@ -76,7 +76,7 @@ def movies_grid(
         year_max=year_max,
         runtime_max=runtime_max,
     )
-    total = filtered_query.with_entities(func.count()).scalar() or 0
+    total = filtered_query.with_entities(func.count(Movie.id)).scalar() or 0
     avg_year_value = filtered_query.with_entities(func.avg(Movie.year)).scalar()
     avg_year = int(round(avg_year_value)) if avg_year_value else None
 
