@@ -1,0 +1,416 @@
+{% extends "base.html" %}
+{% block title %}{{ movie.title if movie else "Movie not found" }} · Vault 966{% endblock %}
+{% block head %}
+<style>
+  .backdrop {
+    position: relative;
+    width: 100%;
+    height: 320px;
+    background: linear-gradient(135deg, rgba(15, 45, 74, 0.95), rgba(11, 22, 38, 0.95));
+    overflow: hidden;
+  }
+
+  .backdrop img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0.4;
+    filter: blur(12px);
+    transform: scale(1.1);
+  }
+
+  .backdrop::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(11, 22, 38, 0) 0%, rgba(11, 22, 38, 0.95) 90%);
+  }
+
+  .detail-wrapper {
+    position: relative;
+    margin-top: -180px;
+    padding: 0 clamp(1rem, 6vw, 4rem) 4rem;
+    color: var(--flic-text);
+  }
+
+  .hero {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: clamp(1.5rem, 4vw, 3rem);
+    align-items: flex-end;
+  }
+
+  .poster-shell {
+    display: flex;
+    justify-content: center;
+  }
+
+  .poster-frame {
+    position: relative;
+    width: min(60%, 260px);
+    padding: 0.65rem;
+    border-radius: 1.3rem;
+    background: linear-gradient(140deg, rgba(30, 144, 255, 0.55), rgba(15, 45, 74, 0.85));
+    box-shadow: 0 26px 50px rgba(15, 23, 42, 0.55);
+  }
+
+  .poster-frame::after {
+    content: "";
+    position: absolute;
+    inset: 0.2rem;
+    border-radius: 1.1rem;
+    border: 1px solid rgba(226, 232, 240, 0.2);
+    pointer-events: none;
+  }
+
+  .poster {
+    width: 100%;
+    border-radius: 0.9rem;
+    overflow: hidden;
+    background: rgba(15, 23, 42, 0.6);
+    box-shadow: inset 0 1px 3px rgba(15, 23, 42, 0.45);
+    aspect-ratio: 2 / 3;
+    object-fit: cover;
+  }
+
+  .poster-fallback {
+    display: block;
+  }
+
+  .hero-meta h1 {
+    margin: 0;
+    font-size: clamp(2rem, 5vw, 3rem);
+    letter-spacing: -0.02em;
+  }
+
+  .hero-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 1rem;
+  }
+
+  .chip-runtime {
+    background: rgba(30, 144, 255, 0.2);
+    border: 1px solid rgba(30, 144, 255, 0.6);
+    color: var(--flic-accent);
+  }
+
+  .chip-year {
+    background: rgba(250, 204, 21, 0.18);
+    border: 1px solid rgba(250, 204, 21, 0.45);
+    color: #facc15;
+  }
+
+  .chip-genre, .chip-mood {
+    background: rgba(148, 163, 184, 0.1);
+    border: 1px solid rgba(148, 163, 184, 0.25);
+    color: var(--flic-text);
+  }
+
+  .sections {
+    margin-top: 3rem;
+    display: grid;
+    gap: clamp(2rem, 4vw, 3rem);
+  }
+
+  .section-card {
+    background: rgba(15, 23, 42, 0.6);
+    border: 1px solid rgba(148, 163, 184, 0.15);
+    border-radius: 1rem;
+    padding: clamp(1rem, 3vw, 2rem);
+    box-shadow: 0 20px 45px rgba(15, 23, 42, 0.4);
+  }
+
+  .section-card h2 {
+    margin: 0 0 1rem;
+    font-size: 1.25rem;
+    color: #f8fafc;
+  }
+
+  .glance-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1rem;
+    color: var(--flic-text);
+  }
+
+  .glance-item span {
+    display: block;
+  }
+
+  .glance-label {
+    font-size: 0.75rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--flic-muted);
+    margin-bottom: 0.35rem;
+  }
+
+  .chips-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .chip-provider {
+    background: rgba(30, 144, 255, 0.12);
+    border: 1px solid rgba(30, 144, 255, 0.35);
+    color: #bae6fd;
+  }
+
+  .roles-group {
+    margin-top: 1.5rem;
+  }
+
+  .role-type {
+    font-size: 0.85rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--flic-muted);
+    margin-bottom: 0.5rem;
+  }
+
+  .roles-grid {
+    display: grid;
+    gap: 0.75rem;
+  }
+
+  .role-card {
+    background: rgba(15, 23, 42, 0.7);
+    border-radius: 0.75rem;
+    padding: 0.9rem 1rem;
+    border: 1px solid rgba(148, 163, 184, 0.15);
+  }
+
+  .role-card strong {
+    color: #f8fafc;
+    display: block;
+  }
+
+  .similar-rail {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(140px, 180px);
+    gap: 1rem;
+    overflow-x: auto;
+    padding-bottom: 0.5rem;
+  }
+
+  .similar-card {
+    background: rgba(15, 23, 42, 0.6);
+    border-radius: 0.75rem;
+    overflow: hidden;
+    border: 1px solid rgba(148, 163, 184, 0.2);
+    text-decoration: none;
+    color: var(--flic-text);
+    transition: transform 140ms ease, box-shadow 140ms ease;
+  }
+
+  .similar-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 18px 40px rgba(15, 23, 42, 0.45);
+  }
+
+  .similar-card img {
+    width: 100%;
+    aspect-ratio: 2 / 3;
+    object-fit: cover;
+  }
+
+  .similar-card h3 {
+    margin: 0;
+    padding: 0.65rem 0.8rem 0.8rem;
+    font-size: 0.95rem;
+  }
+
+  .badge-links {
+    display: flex;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+    margin-top: 0.75rem;
+  }
+
+  .badge-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.3rem 0.6rem;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    background: rgba(30, 144, 255, 0.15);
+    border: 1px solid rgba(30, 144, 255, 0.3);
+    color: #f8fafc;
+    text-decoration: none;
+  }
+
+  .badge-link span {
+    font-size: 0.65rem;
+    letter-spacing: 0.08em;
+    color: rgba(255, 255, 255, 0.7);
+  }
+</style>
+{% endblock %}
+{% block content %}
+  {% if movie %}
+  <div class="backdrop">
+    {% if movie.backdrop_url %}
+    <img src="{{ movie.backdrop_url }}" alt="" />
+    {% elif movie.poster_url %}
+    <img src="{{ movie.poster_url }}" alt="" />
+    {% endif %}
+  </div>
+  <div class="detail-wrapper">
+    <div class="hero">
+      <div class="poster-shell">
+        <div class="poster-frame">
+          {% if movie.poster_url %}
+          <img class="poster" src="{{ movie.poster_url }}" alt="{{ movie.title }} poster" />
+          {% else %}
+          <div class="poster poster-fallback"></div>
+          {% endif %}
+        </div>
+      </div>
+      <div class="hero-meta">
+        <div class="header-meta">
+          <h1>{{ movie.title }}</h1>
+        </div>
+        <div class="hero-tags">
+          {% if movie.runtime %}<span class="chip chip-runtime" data-runtime="{{ movie.runtime }}">{{ movie.runtime }} min</span>{% endif %}
+          {% if movie.year %}<span class="chip chip-year" data-year="{{ movie.year }}">{{ movie.year }}</span>{% endif %}
+          {% for genre in movie.genres %}
+          <span class="chip chip-genre" data-genre="{{ genre }}">{{ genre }}</span>
+          {% endfor %}
+          {% for mood in movie.moods %}
+          <span class="chip chip-mood" data-mood="{{ mood }}">{{ mood }}</span>
+          {% endfor %}
+        </div>
+        <div class="badge-links">
+          {% if movie.imdb_id %}
+          <a class="badge-link" href="https://www.imdb.com/title/{{ movie.imdb_id }}/" target="_blank" rel="noreferrer">
+            <span>IMDb</span>
+          </a>
+          {% endif %}
+          {% if movie.tmdb_id %}
+          <a class="badge-link" href="https://www.themoviedb.org/movie/{{ movie.tmdb_id }}" target="_blank" rel="noreferrer">
+            <span>TMDb</span>
+          </a>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <div class="sections">
+      {% if movie.plot %}
+      <section class="section-card">
+        <h2>Synopsis</h2>
+        <p>{{ movie.plot }}</p>
+      </section>
+      {% endif %}
+
+      {% if movie.imdb_rating or movie.rt_score or movie.languages or movie.countries or movie.collection %}
+      <section class="section-card">
+        <h2>At a glance</h2>
+        <div class="glance-grid">
+          {% if movie.imdb_rating %}
+          <div class="glance-item">
+            <span class="glance-label">IMDb</span>
+            <span>{{ '%.1f'|format(movie.imdb_rating) }}/10 {% if movie.imdb_votes %}(votes: {{ movie.imdb_votes }}){% endif %}</span>
+          </div>
+          {% endif %}
+          {% if movie.rt_score %}
+          <div class="glance-item">
+            <span class="glance-label">Rotten Tomatoes</span>
+            <span>{{ movie.rt_score }}%</span>
+          </div>
+          {% endif %}
+          {% if movie.languages %}
+          <div class="glance-item">
+            <span class="glance-label">Languages</span>
+            <span>{{ movie.languages }}</span>
+          </div>
+          {% endif %}
+          {% if movie.countries %}
+          <div class="glance-item">
+            <span class="glance-label">Countries</span>
+            <span>{{ movie.countries }}</span>
+          </div>
+          {% endif %}
+          {% if movie.collection %}
+          <div class="glance-item">
+            <span class="glance-label">Collection</span>
+            <span>{{ movie.collection }}</span>
+          </div>
+          {% endif %}
+        </div>
+      </section>
+      {% endif %}
+
+      {% if movie.where_to_watch %}
+      <section class="section-card">
+        <h2>Where to watch</h2>
+        <div class="chips-row">
+          {% for provider in movie.where_to_watch %}
+          <span class="chip chip-provider">{{ provider }}</span>
+          {% endfor %}
+        </div>
+      </section>
+      {% endif %}
+
+      {% if roles %}
+      <section class="section-card">
+        <h2>Cast &amp; Crew</h2>
+        {% set grouped = roles|groupby('role_type') %}
+        {% for group in grouped %}
+        <div class="roles-group">
+          <div class="role-type">{{ group.grouper.title() }}</div>
+          <div class="roles-grid">
+            {% for role in group.list[: (8 if group.grouper == 'ACTOR' else 4)] %}
+            <div class="role-card">
+              {% if role.person.imdb_id %}
+              <strong><a href="https://www.imdb.com/name/{{ role.person.imdb_id }}/" target="_blank" rel="noreferrer">{{ role.person.name }}</a></strong>
+              {% else %}
+              <strong>{{ role.person.name }}</strong>
+              {% endif %}
+              <div>{{ role.role_type.title() }}</div>
+              {% if role.character_name %}
+              <div>as {{ role.character_name }}</div>
+              {% endif %}
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+        {% endfor %}
+      </section>
+      {% endif %}
+
+      {% if similar %}
+      <section class="section-card">
+        <h2>Similar by vibe</h2>
+        <div class="similar-rail">
+          {% for item in similar %}
+          <a class="similar-card" href="/ui/movies/{{ item.id }}">
+            {% if item.poster_url %}
+            <img src="{{ item.poster_url }}" alt="{{ item.title }} poster" />
+            {% else %}
+            <div style="height: 240px; background: rgba(15, 23, 42, 0.5);"></div>
+            {% endif %}
+            <h3>{{ item.title }}{% if item.year %} ({{ item.year }}){% endif %}</h3>
+          </a>
+          {% endfor %}
+        </div>
+      </section>
+      {% endif %}
+    </div>
+  </div>
+  {% else %}
+  <div class="container">
+    <div class="not-found">
+      <h2>Movie not found</h2>
+      <p>The requested movie could not be located.</p>
+    </div>
+  </div>
+  {% endif %}
+{% endblock %}

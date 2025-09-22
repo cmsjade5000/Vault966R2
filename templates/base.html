@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{% block title %}Vault 966{% endblock %}</title>
+    <link rel="icon" type="image/x-icon" href="/static/favicon.ico" />
+    <style>
+      :root {
+        --flic-primary: #0f2d4a;
+        --flic-accent: #1e90ff;
+        --flic-bg: #0b1626;
+        --flic-chip-bg: rgba(15, 45, 74, 0.8);
+        --flic-text: #e2e8f0;
+        --flic-muted: #94a3b8;
+      }
+
+      body {
+        margin: 0;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        background-color: var(--flic-bg);
+        color: var(--flic-text);
+      }
+
+      a {
+        color: var(--flic-accent);
+      }
+
+      a:focus-visible,
+      button:focus-visible,
+      select:focus-visible,
+      input:focus-visible {
+        outline: 2px solid var(--flic-accent);
+        outline-offset: 2px;
+      }
+
+      .chip {
+        display: inline-flex;
+        align-items: center;
+        border-radius: 999px;
+        padding: 0.25rem 0.6rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+      }
+
+      .chip-flic {
+        background: var(--flic-primary);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        color: #fff;
+      }
+
+      .skip-link {
+        position: absolute;
+        left: -999px;
+        top: 0;
+        background: var(--flic-accent);
+        color: var(--flic-primary);
+        padding: 0.5rem 1rem;
+        border-radius: 0 0 0.5rem 0.5rem;
+        z-index: 1001;
+      }
+
+      .skip-link:focus {
+        left: 1rem;
+      }
+
+      .site-nav {
+        background: rgba(15, 45, 74, 0.95);
+        border-bottom: 1px solid rgba(30, 144, 255, 0.15);
+        position: sticky;
+        top: 0;
+        z-index: 900;
+        backdrop-filter: blur(12px);
+      }
+
+      .nav-inner {
+        max-width: clamp(320px, 90vw, 1080px);
+        margin: 0 auto;
+        padding: 0.75rem clamp(1rem, 4vw, 2rem);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1.5rem;
+      }
+
+      .brand {
+        font-weight: 700;
+        font-size: 1.05rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: #fff;
+        text-decoration: none;
+      }
+
+      .site-nav nav {
+        display: flex;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+        align-items: center;
+      }
+
+      .site-nav nav a,
+      .site-nav nav button {
+        background: rgba(30, 144, 255, 0.12);
+        border: 1px solid rgba(30, 144, 255, 0.25);
+        border-radius: 999px;
+        padding: 0.35rem 0.8rem;
+        color: #f8fafc;
+        font-size: 0.8rem;
+        text-decoration: none;
+        cursor: pointer;
+      }
+
+      .site-nav nav a:hover,
+      .site-nav nav button:hover {
+        background: rgba(30, 144, 255, 0.25);
+      }
+
+      main {
+        display: block;
+      }
+
+      #toast-container {
+        position: fixed;
+        right: 1.5rem;
+        bottom: 1.5rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        z-index: 1000;
+      }
+
+      .toast {
+        min-width: 220px;
+        max-width: 320px;
+        background: rgba(15, 45, 74, 0.95);
+        border: 1px solid rgba(30, 144, 255, 0.35);
+        color: #f8fafc;
+        padding: 0.75rem 1rem;
+        border-radius: 0.75rem;
+        box-shadow: 0 16px 40px rgba(15, 23, 42, 0.45);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 1rem;
+        font-size: 0.9rem;
+        opacity: 0;
+        transform: translateY(8px);
+        transition: opacity 150ms ease, transform 150ms ease;
+      }
+
+      .toast.show {
+        opacity: 1;
+        transform: translateY(0);
+      }
+
+      .toast button {
+        background: transparent;
+        border: none;
+        color: inherit;
+        cursor: pointer;
+        font-size: 1rem;
+      }
+    </style>
+    {% block head %}{% endblock %}
+  </head>
+  <body>
+    <a href="#main" class="skip-link">Skip to main content</a>
+    <header class="site-nav" role="banner">
+      <div class="nav-inner">
+        <a class="brand" href="/ui/movies">Flic</a>
+        <nav aria-label="Primary">
+          <a href="/ui/movies#filters">Search</a>
+          <a href="/ui/movies#fliclists">Fliclists</a>
+          <a href="/ui/movies#flic-memory">Recent</a>
+          <button type="button" data-nav-pick>Pick for me</button>
+          <a href="/docs">API Docs</a>
+        </nav>
+      </div>
+    </header>
+    <main id="main">
+      {% block content %}{% endblock %}
+    </main>
+    <div id="toast-container" aria-live="polite" aria-atomic="true"></div>
+    <script>
+      window.showToast = function (message) {
+        const container = document.getElementById('toast-container');
+        if (!container) return;
+        const toast = document.createElement('div');
+        toast.className = 'toast';
+        toast.innerHTML = `
+          <span>${message}</span>
+          <button aria-label="Dismiss toast">&times;</button>
+        `;
+        const dismiss = () => {
+          toast.classList.remove('show');
+          setTimeout(() => toast.remove(), 200);
+        };
+        toast.querySelector('button').addEventListener('click', dismiss);
+        container.appendChild(toast);
+        requestAnimationFrame(() => {
+          toast.classList.add('show');
+        });
+        setTimeout(dismiss, 6000);
+      };
+
+      window.persistToastMessage = function (message) {
+        try {
+          sessionStorage.setItem('flicToast', message);
+        } catch (err) {
+          console.warn('Failed to persist toast message', err);
+        }
+      };
+
+      const collectFallbackPickParams = () => {
+        const params = new URLSearchParams();
+        const firstGenre = document.querySelector('.hero-tags [data-genre]')?.getAttribute('data-genre');
+        if (firstGenre) params.set('genre', firstGenre);
+        const firstMood = document.querySelector('.hero-tags [data-mood]')?.getAttribute('data-mood');
+        if (firstMood) params.set('mood', firstMood);
+        const runtimeMax = document.querySelector('.hero-tags [data-runtime]')?.getAttribute('data-runtime');
+        if (runtimeMax) params.set('runtime_max', runtimeMax);
+        return params;
+      };
+
+      window.runFlicPick = async function runFlicPick(options = {}) {
+        const { indicator, params: initialParams } = options;
+        const params = new URLSearchParams();
+        if (initialParams && typeof initialParams === 'object') {
+          Object.entries(initialParams).forEach(([key, value]) => {
+            if (value !== undefined && value !== null && String(value).trim() !== '') {
+              params.set(key, value);
+            }
+          });
+        }
+        if (!params.has('genre') || !params.has('mood') || !params.has('runtime_max')) {
+          const fallbackParams = collectFallbackPickParams();
+          for (const [key, value] of fallbackParams.entries()) {
+            if (!params.has(key)) params.set(key, value);
+          }
+        }
+
+        if (window.runFlicPick.pending) {
+          return;
+        }
+        window.runFlicPick.pending = true;
+        if (indicator) {
+          indicator.setAttribute('aria-busy', 'true');
+          if ('disabled' in indicator) {
+            indicator.disabled = true;
+          }
+        }
+        try {
+          const query = params.toString();
+          const url = query ? `/movies/picks?${query}` : '/movies/picks';
+          const response = await fetch(url);
+          if (response.status === 404) {
+            if (typeof window.showToast === 'function') {
+              window.showToast('Nothing matched—want me to widen the net?');
+            }
+            return;
+          }
+          if (!response.ok) {
+            if (typeof window.showToast === 'function') {
+              window.showToast('I hit a snag—try again?');
+            }
+            return;
+          }
+          const data = await response.json();
+          const successMessage = `I queued "${data.title}" for you.`;
+          if (typeof window.persistToastMessage === 'function') {
+            window.persistToastMessage(successMessage);
+          }
+          if (typeof window.showToast === 'function') {
+            window.showToast(successMessage);
+          }
+          setTimeout(() => {
+            window.location.href = `/ui/movies/${data.id}`;
+          }, 600);
+        } catch (error) {
+          console.error('Global pick failed', error);
+          if (typeof window.showToast === 'function') {
+            window.showToast('Network hiccup—try again soon?');
+          }
+        } finally {
+          window.runFlicPick.pending = false;
+          if (indicator) {
+            indicator.removeAttribute('aria-busy');
+            if ('disabled' in indicator) {
+              indicator.disabled = false;
+            }
+          }
+        }
+      };
+
+      const navPick = document.querySelector('[data-nav-pick]');
+      if (navPick) {
+        navPick.addEventListener('click', async () => {
+          if (navPick.dataset.pending === 'true') {
+            return;
+          }
+          const event = new CustomEvent('flic:trigger-pick', {
+            cancelable: true,
+            detail: { source: 'nav' },
+          });
+          const handled = window.dispatchEvent(event) === false;
+          if (handled) {
+            return;
+          }
+          navPick.dataset.pending = 'true';
+          try {
+            await window.runFlicPick({ indicator: navPick });
+          } finally {
+            delete navPick.dataset.pending;
+          }
+        });
+      }
+
+      try {
+        const pendingToast = sessionStorage.getItem('flicToast');
+        if (pendingToast && typeof window.showToast === 'function') {
+          sessionStorage.removeItem('flicToast');
+          window.showToast(pendingToast);
+        }
+      } catch (err) {
+        console.warn('Failed to restore toast message', err);
+      }
+    </script>
+  </body>
+</html>

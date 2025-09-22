@@ -1,0 +1,35 @@
+[
+  {
+    "title": "Arrival",
+    "year": 2016,
+    "runtime": 116,
+    "plot": "A linguist works with the military to communicate with alien lifeforms.",
+    "genres": ["Sci-Fi", "Drama"],
+    "moods": ["Thoughtful", "Atmospheric"],
+    "imdb_id": "tt2543164",
+    "tmdb_id": 329865,
+    "poster_url": "https://image.tmdb.org/t/p/w500/sample-arrival.jpg"
+  },
+  {
+    "title": "Mad Max: Fury Road",
+    "year": 2015,
+    "runtime": 120,
+    "plot": "Max teams up with Furiosa to flee a warlord across the desert.",
+    "genres": "Action, Adventure",
+    "moods": "High-octane; Gritty",
+    "imdb_id": "tt1392190",
+    "tmdb_id": 76341,
+    "poster_url": "https://image.tmdb.org/t/p/w500/sample-madmax.jpg"
+  },
+  {
+    "title": "The Farewell",
+    "year": 2019,
+    "runtime": 100,
+    "plot": "A Chinese-American family says goodbye to their matriarch under false pretenses.",
+    "genres": ["Drama", "Comedy"],
+    "moods": ["Heartfelt"],
+    "imdb_id": "tt8637428",
+    "tmdb_id": 515593,
+    "poster_url": "https://image.tmdb.org/t/p/w500/sample-farewell.jpg"
+  }
+]

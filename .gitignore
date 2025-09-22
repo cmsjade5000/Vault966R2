@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+.env
+.DS_Store
+.venv/
+venv/
+vault.db
+vault.db-journal
+alembic/
+dist/
+node_modules/
