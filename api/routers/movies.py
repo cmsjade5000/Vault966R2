@@ -20,6 +20,7 @@ from api.schemas.movie_detail import MovieDetail
 from api.services.movies_detail import get_movie_detail
 from api.utils.pagination import paginate
 from core.picker import calculate_flic_score, pick_movie
+from api.utils.query_params import parse_optional_non_negative_int
 
 # Ensure tables exist on import (simple dev behavior; move to Alembic later)
 Base.metadata.create_all(bind=engine)
@@ -37,11 +38,15 @@ def _parse_csv(value: Optional[str]) -> List[str]:
 def get_pick(
     mood: Optional[str] = Query(default=None, description="Desired mood name"),
     genre: Optional[str] = Query(default=None, description="Restrict to this genre"),
-    year_min: Optional[int] = Query(default=None, ge=0),
-    year_max: Optional[int] = Query(default=None, ge=0),
-    runtime_max: Optional[int] = Query(default=None, ge=0),
+    year_min: Optional[str] = Query(default=None),
+    year_max: Optional[str] = Query(default=None),
+    runtime_max: Optional[str] = Query(default=None),
     db: Session = Depends(get_db),
 ):
+    year_min = parse_optional_non_negative_int(year_min, "year_min")
+    year_max = parse_optional_non_negative_int(year_max, "year_max")
+    runtime_max = parse_optional_non_negative_int(runtime_max, "runtime_max")
+
     query = (
         db.query(Movie)
         .options(selectinload(Movie.genres), selectinload(Movie.moods))
@@ -126,10 +131,10 @@ def movie_detail(movie_id: int, db: Session = Depends(get_db)):
 @router.get("/search", response_model=MovieSearchResponse)
 def search_movies(
     q: Optional[str] = Query(default=None, description="Case-insensitive search on movie title"),
-    year_min: Optional[int] = Query(default=None, ge=0),
-    year_max: Optional[int] = Query(default=None, ge=0),
-    runtime_min: Optional[int] = Query(default=None, ge=0),
-    runtime_max: Optional[int] = Query(default=None, ge=0),
+    year_min: Optional[str] = Query(default=None, description="Earliest release year to include"),
+    year_max: Optional[str] = Query(default=None, description="Latest release year to include"),
+    runtime_min: Optional[str] = Query(default=None, description="Minimum runtime in minutes"),
+    runtime_max: Optional[str] = Query(default=None, description="Maximum runtime in minutes"),
     genres: Optional[str] = Query(default=None, description="Comma separated list of genre names"),
     moods: Optional[str] = Query(default=None, description="Comma separated list of mood names"),
     order_by: str = Query(default="title_asc"),
@@ -138,6 +143,11 @@ def search_movies(
     db: Session = Depends(get_db),
 ):
     query = db.query(Movie).options(selectinload(Movie.genres), selectinload(Movie.moods))
+
+    year_min = parse_optional_non_negative_int(year_min, "year_min")
+    year_max = parse_optional_non_negative_int(year_max, "year_max")
+    runtime_min = parse_optional_non_negative_int(runtime_min, "runtime_min")
+    runtime_max = parse_optional_non_negative_int(runtime_max, "runtime_max")
 
     if q:
         query = query.filter(Movie.title.ilike(f"%{q.strip()}%"))
