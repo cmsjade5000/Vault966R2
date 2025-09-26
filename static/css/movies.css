@@ -72,7 +72,7 @@
 .poster-banner__item {
   display: grid;
   justify-items: center;
-  min-width: clamp(100px, 10vw, 150px);
+  min-width: clamp(80px, 8vw, 120px);
 }
 
 .poster-banner__link {
@@ -86,6 +86,7 @@
   position: relative;
   border-radius: 18px;
   overflow: hidden;
+  width: clamp(80px, 8vw, 120px);
   aspect-ratio: 2 / 3;
   box-shadow: 0 24px 35px rgba(15, 23, 42, 0.45);
   border: 1px solid rgba(148, 163, 184, 0.18);
