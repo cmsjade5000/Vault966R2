@@ -2,6 +2,7 @@ from fastapi.testclient import TestClient
 
 from api.db import get_db
 from api.models.movie import Movie
+from api.routers.ui.manual_add import ManualMovieCreate, ManualMovieMetadata
 
 
 def _fetch_movie(client: TestClient, title: str) -> dict | None:
@@ -24,23 +25,23 @@ def _fetch_movie(client: TestClient, title: str) -> dict | None:
 
 
 def test_manual_add_creates_movie_with_vudu_tag(client: TestClient):
-    payload = {
-        "title": "Inception",
-        "year": 2010,
-        "metadata": {
-            "overview": "Dream heist.",
-            "runtime": 148,
-            "imdb_id": "tt1375666",
-            "tmdb_id": 27205,
-            "poster_url": "https://example.com/poster.jpg",
-            "backdrop_url": "https://example.com/backdrop.jpg",
-            "genres": ["Science Fiction"],
-            "where_to_watch": ["Amazon Prime"],
-        },
-        "vudu": True,
-    }
+    payload = ManualMovieCreate(
+        title="Inception",
+        year=2010,
+        metadata=ManualMovieMetadata(
+            overview="Dream heist.",
+            runtime=148,
+            imdb_id="tt1375666",
+            tmdb_id=27205,
+            poster_url="https://example.com/poster.jpg",
+            backdrop_url="https://example.com/backdrop.jpg",
+            genres=["Science Fiction"],
+            where_to_watch=["Amazon Prime"],
+        ),
+        vudu=True,
+    )
 
-    resp = client.post("/ui/movies/manual-add", json=payload)
+    resp = client.post("/ui/movies/manual-add", json=payload.model_dump())
     assert resp.status_code == 201
     body = resp.json()
     assert body["title"] == "Inception"
@@ -55,21 +56,22 @@ def test_manual_add_creates_movie_with_vudu_tag(client: TestClient):
 
 
 def test_manual_add_rejects_duplicate_imdb(client: TestClient):
-    base_payload = {
-        "title": "Edge of Tomorrow",
-        "year": 2014,
-        "metadata": {
-            "overview": "Live. Die. Repeat.",
-            "runtime": 113,
-            "imdb_id": "tt1631867",
-            "tmdb_id": 137113,
-            "genres": ["Action"],
-        },
-    }
+    base_payload = ManualMovieCreate(
+        title="Edge of Tomorrow",
+        year=2014,
+        metadata=ManualMovieMetadata(
+            overview="Live. Die. Repeat.",
+            runtime=113,
+            imdb_id="tt1631867",
+            tmdb_id=137113,
+            genres=["Action"],
+        ),
+    )
 
-    first = client.post("/ui/movies/manual-add", json=base_payload)
+    first = client.post("/ui/movies/manual-add", json=base_payload.model_dump())
     assert first.status_code == 201
 
-    second = client.post("/ui/movies/manual-add", json=base_payload)
+    duplicate_title = base_payload.model_copy(update={"title": "Edge of Tomorrow Redux"})
+    second = client.post("/ui/movies/manual-add", json=duplicate_title.model_dump())
     assert second.status_code == 409
     assert "IMDb ID" in second.json()["detail"]
