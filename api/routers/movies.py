@@ -1,13 +1,11 @@
 from datetime import datetime, timezone
-from typing import List, Optional, Sequence
+from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Response
-from sqlalchemy import func
 from sqlalchemy.orm import Session, selectinload
 
 from api.db import get_db
 from api.deps.auth import require_admin
-from api.models.flic_memory import FlicMemory
 from api.models.movie import Genre, Mood, Movie, movie_genres, movie_moods
 from api.models.movie_flag import MovieFlag
 from api.models.person import Person, Role
@@ -25,30 +23,14 @@ from api.schemas.movie_detail import MovieDetail
 from api.services.movies_detail import get_movie_detail
 from api.services.movie_filters import (
     MovieFilterParams,
-    apply_filters,
-    ordering_clause,
     parse_movie_filters,
 )
-from api.utils.pagination import paginate
+from api.services.movie_picks import MovieSelectionError, pick_movie
+from api.services.movie_search import attach_flag_status, search_movies as search_movies_service
 from api.services.movie_updates import apply_movie_update
-from core.genres import split_and_normalize
-from core.picker import calculate_flic_score, pick_movie
 from api.utils.query_params import parse_optional_non_negative_int
 
 router = APIRouter(prefix="/movies", tags=["movies"])
-
-
-def _attach_flag_status(db: Session, movies: Sequence[Movie]) -> None:
-    if not movies:
-        return
-    ids = [movie.id for movie in movies if movie.id is not None]
-    if not ids:
-        return
-    flagged_ids = {
-        row[0] for row in db.query(MovieFlag.movie_id).filter(MovieFlag.movie_id.in_(ids)).all()
-    }
-    for movie in movies:
-        setattr(movie, "flagged", movie.id in flagged_ids)
 
 
 @router.get("/picks", response_model=MovieRead)
@@ -64,78 +46,17 @@ def get_pick(
     year_max = parse_optional_non_negative_int(year_max, "year_max")
     runtime_max = parse_optional_non_negative_int(runtime_max, "runtime_max")
 
-    query = (
-        db.query(Movie)
-        .options(selectinload(Movie.genres), selectinload(Movie.moods))
-        .order_by(Movie.title.asc())
-    )
-
-    if genre:
-        query = query.filter(Movie.genres.any(Genre.name == genre))
-    if year_min is not None:
-        query = query.filter(Movie.year >= year_min)
-    if year_max is not None:
-        query = query.filter(Movie.year <= year_max)
-    if runtime_max is not None:
-        query = query.filter(Movie.runtime <= runtime_max)
-    if mood:
-        query = query.filter(Movie.moods.any(Mood.name == mood))
-
-    movies = query.all()
-    if not movies:
-        raise HTTPException(status_code=404, detail="No movies found for the given filters")
-
-    filters = {
-        "moods": [mood] if mood else [],
-        "genres": [genre] if genre else [],
-        "year_min": year_min,
-        "year_max": year_max,
-        "runtime_max": runtime_max,
-    }
-
-    candidates = []
-    for movie in movies:
-        candidates.append(
-            {
-                "id": movie.id,
-                "movie": movie,
-                "moods": [m.name for m in movie.moods],
-                "genres": [g.name for g in movie.genres],
-                "runtime": movie.runtime,
-                "year": movie.year,
-            }
+    try:
+        return pick_movie(
+            db,
+            mood=mood,
+            genre=genre,
+            year_min=year_min,
+            year_max=year_max,
+            runtime_max=runtime_max,
         )
-
-    selection = pick_movie(candidates, filters=filters)
-    if selection is None:
-        raise HTTPException(status_code=404, detail="No movies available")
-
-    selected_movie = selection.get("movie")
-    if selected_movie is None:
-        selected_movie = next((movie for movie in movies if movie.id == selection.get("id")), None)
-    if selected_movie is None:
-        raise HTTPException(status_code=404, detail="No movies available")
-
-    memory_entry = FlicMemory(movie_id=selected_movie.id)
-    db.add(memory_entry)
-    db.flush()
-
-    # keep last 10 entries
-    ids_to_remove = (
-        db.query(FlicMemory.id)
-        .order_by(FlicMemory.created_at.desc(), FlicMemory.id.desc())
-        .offset(10)
-        .all()
-    )
-    if ids_to_remove:
-        db.query(FlicMemory).filter(FlicMemory.id.in_([row[0] for row in ids_to_remove])).delete(
-            synchronize_session=False
-        )
-
-    db.commit()
-
-    setattr(selected_movie, "flagged", selected_movie.flag is not None)
-    return selected_movie
+    except MovieSelectionError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
 
 
 @router.get("/{movie_id}/detail", response_model=MovieDetail)
@@ -171,73 +92,21 @@ def search_movies(
         order_by=order_by,
     )
 
-    base_query = db.query(Movie).options(selectinload(Movie.genres), selectinload(Movie.moods))
-    filtered_query = apply_filters(base_query, params)
-
-    if params.order_by == "flic":
-        all_movies = filtered_query.options(
-            selectinload(Movie.genres), selectinload(Movie.moods)
-        ).all()
-        filters = {
-            "genres": split_and_normalize(params.genres),
-            "moods": list(params.moods),
-            "runtime_min": params.runtime_min,
-            "runtime_max": params.runtime_max,
-            "year_min": params.year_min,
-            "year_max": params.year_max,
-        }
-        scored = []
-        for movie in all_movies:
-            candidate = {
-                "genres": split_and_normalize([g.name for g in movie.genres]),
-                "moods": [m.name for m in movie.moods],
-                "runtime": movie.runtime,
-                "year": movie.year,
-            }
-            score, _ = calculate_flic_score(candidate, filters)
-            scored.append((score, movie))
-
-        scored.sort(key=lambda item: item[0], reverse=True)
-        total = len(scored)
-        start = (page - 1) * page_size
-        end = start + page_size
-        items = [movie for _, movie in scored[start:end]]
-        _attach_flag_status(db, items)
-    else:
-        clause = ordering_clause(params.order_by)
-        ordered_query = filtered_query.order_by(clause)
-        items, total = paginate(ordered_query, page=page, page_size=page_size)
-        _attach_flag_status(db, items)
-
-    movie_ids_subquery = filtered_query.with_entities(Movie.id.label("movie_id")).subquery()
-
-    genre_counts = dict(
-        db.query(Genre.name, func.count())
-        .join(movie_genres, Genre.id == movie_genres.c.genre_id)
-        .join(movie_ids_subquery, movie_ids_subquery.c.movie_id == movie_genres.c.movie_id)
-        .group_by(Genre.name)
-        .all()
-    )
-
-    mood_counts = dict(
-        db.query(Mood.name, func.count())
-        .join(movie_moods, Mood.id == movie_moods.c.mood_id)
-        .join(movie_ids_subquery, movie_ids_subquery.c.movie_id == movie_moods.c.movie_id)
-        .group_by(Mood.name)
-        .all()
-    )
-
-    facets = {
-        "genres": genre_counts,
-        "moods": mood_counts,
-    }
-
-    return MovieSearchResponse(
-        items=items,
-        total=total,
+    result = search_movies_service(
+        db,
+        params,
         page=page,
         page_size=page_size,
-        facets=facets,
+        clamp_page=False,
+    )
+    attach_flag_status(db, result.items)
+
+    return MovieSearchResponse(
+        items=result.items,
+        total=result.total,
+        page=page,
+        page_size=page_size,
+        facets=result.facets,
     )
 
 
@@ -265,7 +134,7 @@ def update_movie(
     db.add(movie)
     db.commit()
     db.refresh(movie)
-    _attach_flag_status(db, [movie])
+    attach_flag_status(db, [movie])
     return movie
 
 
@@ -306,7 +175,7 @@ def clear_flag(movie_id: int, db: Session = Depends(get_db)) -> Response:
 @router.get("/", response_model=List[MovieRead])
 def list_movies(db: Session = Depends(get_db)):
     movies = db.query(Movie).order_by(Movie.title).limit(200).all()
-    _attach_flag_status(db, movies)
+    attach_flag_status(db, movies)
     return movies
 
 

@@ -27,15 +27,10 @@ from api.services.movie_lookup import (
     MovieLookupUnavailable,
     lookup_movie,
 )
-from api.services.movie_filters import (
-    MovieFilterParams,
-    apply_filters,
-    ordering_clause,
-    parse_movie_filters,
-)
+from api.services.movie_filters import MovieFilterParams, parse_movie_filters
+from api.services.movie_search import search_movies
 from api.services.movies_curated import get_collection_health
 from core.poster_theme import select_poster_theme
-from core.picker import calculate_flic_score
 from core.genres import split_and_normalize
 
 TEMPLATES = Jinja2Templates(
@@ -184,9 +179,17 @@ def movies_grid(
     if current_page < 1:
         current_page = 1
 
-    base_query = db.query(Movie)
-    filtered_query = apply_filters(base_query, params)
-    total = filtered_query.with_entities(func.count(Movie.id)).scalar() or 0
+    page_size = 30
+
+    search_result = search_movies(
+        db,
+        params,
+        page=current_page,
+        page_size=page_size,
+        clamp_page=True,
+    )
+    total = search_result.total
+    current_page = search_result.page
 
     library_total = db.query(func.count(Movie.id)).scalar() or 0
     library_avg_year_value = db.query(func.avg(Movie.year)).filter(Movie.year.isnot(None)).scalar()
@@ -323,54 +326,13 @@ def movies_grid(
         {"label": "≤ 180 min", "value": 180},
     ]
 
-    page_size = 30
-    if total == 0:
-        total_pages = 0
-        current_page = 1
-        offset = 0
-        movies: List[Movie] = []
-    else:
-        total_pages = (total + page_size - 1) // page_size
-        current_page = min(max(current_page, 1), total_pages)
-        offset = (current_page - 1) * page_size
-        if params.order_by == "flic":
-            all_movies = filtered_query.options(
-                selectinload(Movie.genres), selectinload(Movie.moods)
-            ).all()
-            _attach_poster_themes(all_movies)
-            filters = {
-                "genres": split_and_normalize(params.genres),
-                "moods": list(params.moods),
-                "runtime_min": params.runtime_min,
-                "runtime_max": params.runtime_max,
-                "year_min": params.year_min,
-                "year_max": params.year_max,
-            }
-            scored = []
-            for movie in all_movies:
-                candidate = {
-                    "genres": split_and_normalize([g.name for g in movie.genres]),
-                    "moods": [m.name for m in movie.moods],
-                    "runtime": movie.runtime,
-                    "year": movie.year,
-                }
-                score, _ = calculate_flic_score(candidate, filters)
-                scored.append((score, movie))
+    movies: List[Movie] = list(search_result.items)
+    total_pages = (total + page_size - 1) // page_size if total > 0 else 0
 
-            scored.sort(key=lambda item: item[0], reverse=True)
-            paginated = scored[offset : offset + page_size]
-            movies = [movie for _, movie in paginated]
-            _attach_poster_themes(movies)
-        else:
-            clause = ordering_clause(params.order_by)
-            movies = (
-                filtered_query.options(selectinload(Movie.genres), selectinload(Movie.moods))
-                .order_by(clause)
-                .offset(offset)
-                .limit(page_size)
-                .all()
-            )
-            _attach_poster_themes(movies)
+    if total == 0:
+        current_page = 1
+
+    _attach_poster_themes(movies)
 
     featured_limit = 12
     featured_movies = movies[:featured_limit]
