@@ -7,7 +7,6 @@
     rgba(15, 23, 42, 0.85);
   border-bottom: 1px solid rgba(148, 163, 184, 0.18);
   border-top: 1px solid rgba(148, 163, 184, 0.1);
-  pointer-events: none;
   user-select: none;
 }
 
@@ -77,6 +76,13 @@
   min-width: clamp(120px, 12vw, 180px);
 }
 
+.poster-banner__link {
+  display: grid;
+  justify-items: center;
+  text-decoration: none;
+  color: inherit;
+}
+
 .poster-banner__poster {
   position: relative;
   border-radius: 18px;
@@ -85,6 +91,7 @@
   box-shadow: 0 24px 35px rgba(15, 23, 42, 0.45);
   border: 1px solid rgba(148, 163, 184, 0.18);
   background: rgba(15, 23, 42, 0.6);
+  transition: transform 180ms ease, box-shadow 180ms ease;
 }
 
 .poster-banner__image {
@@ -100,6 +107,17 @@
   background: linear-gradient(120deg, rgba(255, 255, 255, 0.1) 25%, transparent 40%, transparent 60%, rgba(255, 255, 255, 0.12) 75%);
   mix-blend-mode: screen;
   pointer-events: none;
+}
+
+.poster-banner__link:hover .poster-banner__poster,
+.poster-banner__link:focus-visible .poster-banner__poster {
+  transform: translateY(-4px);
+  box-shadow: 0 30px 45px rgba(15, 23, 42, 0.55);
+}
+
+.poster-banner__link:focus-visible .poster-banner__poster {
+  outline: 3px solid var(--flic-accent, #38bdf8);
+  outline-offset: 4px;
 }
 
 @keyframes poster-banner-scroll {
