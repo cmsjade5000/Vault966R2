@@ -11,7 +11,15 @@ from api.models.movie import Genre, Mood, Movie
 from api.utils.query_params import parse_optional_non_negative_int
 from core.genres import search_terms_for_label
 
-_ALLOWED_ORDERING = {"title_asc", "title_desc", "year_desc", "runtime_asc", "flic"}
+_ALLOWED_ORDERING = {
+    "title_asc",
+    "title_desc",
+    "year_desc",
+    "runtime_asc",
+    "imdb_desc",
+    "rt_desc",
+    "flic",
+}
 
 
 @dataclass(frozen=True)
@@ -131,6 +139,8 @@ def ordering_clause(order_by: str):
         "title_desc": Movie.title.desc(),
         "year_desc": Movie.year.desc(),
         "runtime_asc": Movie.runtime.asc(),
+        "imdb_desc": Movie.imdb_rating.desc().nullslast(),
+        "rt_desc": Movie.rt_score.desc().nullslast(),
         "flic": None,
     }
     return mapping[order_by]

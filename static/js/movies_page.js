@@ -537,6 +537,8 @@
         title_desc: 'Title Z→A',
         year_desc: 'Newest first',
         runtime_asc: 'Shortest runtime',
+        imdb_desc: 'Highest IMDb',
+        rt_desc: 'Highest Rotten Tomatoes',
         flic: 'Flic score',
       };
 

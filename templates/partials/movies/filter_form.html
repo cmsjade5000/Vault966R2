@@ -20,6 +20,8 @@
           <option value="title_desc" {% if order_by == 'title_desc' %}selected{% endif %}>Title Z→A</option>
           <option value="year_desc" {% if order_by == 'year_desc' %}selected{% endif %}>Newest first</option>
           <option value="runtime_asc" {% if order_by == 'runtime_asc' %}selected{% endif %}>Shortest runtime</option>
+          <option value="imdb_desc" {% if order_by == 'imdb_desc' %}selected{% endif %}>Highest IMDb</option>
+          <option value="rt_desc" {% if order_by == 'rt_desc' %}selected{% endif %}>Highest Rotten Tomatoes</option>
           <option value="flic" {% if order_by == 'flic' %}selected{% endif %}>Flic score</option>
         </select>
       </label>
