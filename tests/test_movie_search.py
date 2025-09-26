@@ -37,6 +37,31 @@ def test_search_query_with_literal_wildcards(
     assert payload["items"][0]["title"] == "Discount 100%"
 
 
+def test_search_query_with_literal_underscore(
+    client: TestClient, db_session: Session
+) -> None:
+    library_genre = db_session.query(Genre).filter_by(name="Library").one()
+    general_mood = db_session.query(Mood).filter_by(name="General").one()
+
+    movie = Movie(
+        title="Mission_Control",
+        year=2023,
+        runtime=102,
+        imdb_id="ttmissioncontrol",
+        tmdb_id=99998,
+        genres=[library_genre],
+        moods=[general_mood],
+    )
+    db_session.add(movie)
+    db_session.commit()
+
+    response = client.get("/movies/search", params={"q": "_"})
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["total"] == 1
+    assert payload["items"][0]["title"] == "Mission_Control"
+
+
 def test_search_by_filters(client: TestClient) -> None:
     params = {
         "year_min": 1980,
