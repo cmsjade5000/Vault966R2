@@ -352,6 +352,7 @@
 
   .similar-scroll {
     position: relative;
+    padding: 0 clamp(1.25rem, 4vw, 2rem);
   }
 
   .scroll-button {
@@ -385,11 +386,11 @@
   }
 
   .scroll-button--prev {
-    left: -18px;
+    left: clamp(0.35rem, 2vw, 0.75rem);
   }
 
   .scroll-button--next {
-    right: -18px;
+    right: clamp(0.35rem, 2vw, 0.75rem);
   }
 
   .similar-card:hover {
