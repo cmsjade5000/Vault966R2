@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% block title %}Vault 966 · Top Movies{% endblock %}
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', path='css/movies.css') }}" />
+{% endblock %}
+{% block content %}
+  <header class="app-hero">
+    <div class="app-hero__inner">
+      <div class="hero-title hero-title--center">
+        <h1>Top Rated</h1>
+        <span class="chip chip-flic">Critics &amp; crowds</span>
+      </div>
+      <p class="tagline app-hero__tagline">The highest reviewed titles in Vault 966 right now.</p>
+    </div>
+  </header>
+
+  <section class="page-hero top-hero">
+    <div class="top-hero__intro">
+      <h2>Leaderboard</h2>
+      <p>Browse the library's best-reviewed films pulled from IMDb and Rotten Tomatoes.</p>
+      <div class="actions-row">
+        <a class="button-secondary" href="/ui/movies">Back to full library</a>
+      </div>
+    </div>
+  </section>
+
+  <main class="top-leaderboard" aria-live="polite">
+    <section class="top-leaderboard__section">
+      <header class="top-leaderboard__header">
+        <h2>IMDb rating</h2>
+        <p>Minimum one rating recorded; ordered by score, votes, then title.</p>
+      </header>
+      <ol class="top-leaderboard__list">
+        {% for movie in top_imdb %}
+        {% set genre_names = movie.genres | map(attribute='name') | list if movie.genres %}
+        <li class="top-leaderboard__item">
+          <span class="top-leaderboard__rank">{{ loop.index }}</span>
+          <div class="top-leaderboard__info">
+            <a class="top-leaderboard__title" href="/ui/movies/{{ movie.id }}">{{ movie.title }}</a>
+            <div class="top-leaderboard__meta">
+              <span>{% if movie.year %}{{ movie.year }}{% else %}—{% endif %}</span>
+              {% if genre_names %}
+              <span>• {{ genre_names | join(', ') }}</span>
+              {% endif %}
+            </div>
+          </div>
+          <span class="top-leaderboard__score">{{ "%0.1f"|format(movie.imdb_rating) }}</span>
+        </li>
+        {% else %}
+        <li class="top-leaderboard__empty">No IMDb ratings available yet.</li>
+        {% endfor %}
+      </ol>
+    </section>
+
+    <section class="top-leaderboard__section">
+      <header class="top-leaderboard__header">
+        <h2>Rotten Tomatoes score</h2>
+        <p>Certified crowd pleasers ranked by Tomatometer percentage.</p>
+      </header>
+      <ol class="top-leaderboard__list">
+        {% for movie in top_rt %}
+        {% set genre_names = movie.genres | map(attribute='name') | list if movie.genres %}
+        <li class="top-leaderboard__item">
+          <span class="top-leaderboard__rank">{{ loop.index }}</span>
+          <div class="top-leaderboard__info">
+            <a class="top-leaderboard__title" href="/ui/movies/{{ movie.id }}">{{ movie.title }}</a>
+            <div class="top-leaderboard__meta">
+              <span>{% if movie.year %}{{ movie.year }}{% else %}—{% endif %}</span>
+              {% if genre_names %}
+              <span>• {{ genre_names | join(', ') }}</span>
+              {% endif %}
+            </div>
+          </div>
+          <span class="top-leaderboard__score">{{ movie.rt_score }}%</span>
+        </li>
+        {% else %}
+        <li class="top-leaderboard__empty">No Rotten Tomatoes scores available yet.</li>
+        {% endfor %}
+      </ol>
+    </section>
+  </main>
+{% endblock %}
