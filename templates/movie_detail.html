@@ -238,6 +238,16 @@
     gap: clamp(2rem, 4vw, 3rem);
   }
 
+  @media (min-width: 901px) {
+    .sections {
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    }
+
+    .section-card--wide {
+      grid-column: 1 / -1;
+    }
+  }
+
   @media (max-width: 900px) {
     .sections {
       margin-top: 2.5rem;
@@ -251,6 +261,10 @@
     border-radius: 1rem;
     padding: clamp(1rem, 3vw, 2rem);
     box-shadow: 0 20px 45px rgba(15, 23, 42, 0.4);
+  }
+
+  .section-card--wide {
+    grid-column: auto;
   }
 
   .section-card h2 {
@@ -744,7 +758,7 @@
       {% endif %}
 
       {% if roles %}
-      <section class="section-card">
+      <section class="section-card section-card--wide">
         <h2>Cast &amp; Crew</h2>
         {% set grouped = roles|groupby('role_type') %}
         {% for group in grouped %}
@@ -771,7 +785,7 @@
       {% endif %}
 
       {% if similar %}
-      <section class="section-card">
+      <section class="section-card section-card--wide">
         <div class="similar-header">
           <h2>Similar by vibe</h2>
           <div class="similar-scroll-controls">
