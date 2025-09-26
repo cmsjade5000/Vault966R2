@@ -790,13 +790,16 @@
             button.classList.toggle('is-flagged', flagged);
             button.setAttribute('aria-pressed', flagValue);
             const isTableButton = button.classList.contains('flag-toggle--table');
-            button.textContent = flagged
+            const buttonLabel = flagged
               ? isTableButton
                 ? 'Resolve'
                 : 'Resolve flag'
               : isTableButton
               ? 'Flag'
-              : 'Flag to fix';
+              : '🚩';
+            button.textContent = buttonLabel;
+            const ariaLabel = flagged ? 'Resolve flag' : 'Flag to fix';
+            button.setAttribute('aria-label', ariaLabel);
           });
         document
           .querySelectorAll(`[data-movie-card][data-movie-id="${movieId}"]`)

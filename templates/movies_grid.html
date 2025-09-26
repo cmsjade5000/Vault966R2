@@ -109,8 +109,9 @@
               data-flagged="{{ 'true' if movie.flagged else 'false' }}"
               data-flag-default="Metadata cleanup"
               aria-pressed="{{ 'true' if movie.flagged else 'false' }}"
+              aria-label="{% if movie.flagged %}Resolve flag{% else %}Flag to fix{% endif %}"
             >
-              {% if movie.flagged %}Resolve flag{% else %}Flag to fix{% endif %}
+              {% if movie.flagged %}Resolve flag{% else %}🚩{% endif %}
             </button>
           </div>
         </article>
