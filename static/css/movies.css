@@ -61,7 +61,7 @@
 
 .poster-banner__track {
   display: flex;
-  gap: clamp(0.75rem, 2.5vw, 2rem);
+  gap: clamp(0.5rem, 2vw, 1.5rem);
   width: max-content;
   animation: poster-banner-scroll 70s linear infinite;
   position: relative;
