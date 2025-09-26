@@ -133,7 +133,7 @@
           class="pager-link"
           data-goto-page="{{ page - 1 }}"
           data-disabled="{{ 'true' if page <= 1 else 'false' }}"
-          href="/ui/movies?q={{ q or '' }}&genres={{ genres or '' }}&year_min={{ year_min or '' }}&year_max={{ year_max or '' }}&runtime_max={{ runtime_max or '' }}&order_by={{ order_by or 'title_asc' }}&_filters=1&page={{ page - 1 }}"
+          href="/ui/movies?q={{ q or '' }}&genres={{ genres or '' }}&moods={{ moods or '' }}&year_min={{ year_min or '' }}&year_max={{ year_max or '' }}&runtime_max={{ runtime_max or '' }}&order_by={{ order_by or 'title_asc' }}&_filters=1&page={{ page - 1 }}"
           aria-disabled="{{ 'true' if page <= 1 else 'false' }}"
         >&laquo; Previous</a>
         <span>Page {{ page }} of {{ total_pages }}</span>
@@ -141,7 +141,7 @@
           class="pager-link"
           data-goto-page="{{ page + 1 }}"
           data-disabled="{{ 'true' if page >= total_pages else 'false' }}"
-          href="/ui/movies?q={{ q or '' }}&genres={{ genres or '' }}&year_min={{ year_min or '' }}&year_max={{ year_max or '' }}&runtime_max={{ runtime_max or '' }}&order_by={{ order_by or 'title_asc' }}&_filters=1&page={{ page + 1 }}"
+          href="/ui/movies?q={{ q or '' }}&genres={{ genres or '' }}&moods={{ moods or '' }}&year_min={{ year_min or '' }}&year_max={{ year_max or '' }}&runtime_max={{ runtime_max or '' }}&order_by={{ order_by or 'title_asc' }}&_filters=1&page={{ page + 1 }}"
           aria-disabled="{{ 'true' if page >= total_pages else 'false' }}"
         >Next &raquo;</a>
       </nav>

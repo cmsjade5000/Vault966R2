@@ -24,6 +24,7 @@ from api.services.ui.grid import (
     get_built_in_presets,
     get_decade_options,
     get_genre_options,
+    get_mood_options,
     get_runtime_presets,
     get_taglines,
     load_filter_cookie,
@@ -86,6 +87,7 @@ def movies_grid(
     built_in_presets = get_built_in_presets()
     user_presets = serialize_user_presets(db)
     genre_options = get_genre_options(db)
+    mood_options = get_mood_options(db)
     decade_options = get_decade_options(db)
     runtime_presets = get_runtime_presets()
 
@@ -155,6 +157,7 @@ def movies_grid(
 
     genres_value = ", ".join(params.genres)
     runtime_max_value = params.runtime_max if params.runtime_max is not None else ""
+    moods_value = ", ".join(params.moods)
     year_min_value = params.year_min if params.year_min is not None else ""
     year_max_value = params.year_max if params.year_max is not None else ""
 
@@ -183,6 +186,8 @@ def movies_grid(
         "table_movies": table_movies,
         "featured_limit": featured_limit,
         "poster_carousel_movies": poster_carousel_movies,
+        "mood_options": mood_options,
+        "moods": moods_value,
     }
 
     response = TEMPLATES.TemplateResponse("movies_grid.html", context)

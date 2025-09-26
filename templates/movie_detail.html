@@ -220,6 +220,12 @@
     color: var(--flic-text);
   }
 
+  .chip-mood {
+    background: rgba(167, 139, 250, 0.18);
+    border: 1px solid rgba(167, 139, 250, 0.4);
+    color: #c4b5fd;
+  }
+
   .section-card p,
   .section-card span {
     overflow-wrap: break-word;
@@ -666,6 +672,9 @@
           {% if movie.year %}<span class="chip chip-year" data-year="{{ movie.year }}">{{ movie.year }}</span>{% endif %}
           {% for genre in movie.genres %}
           <span class="chip chip-genre" data-genre="{{ genre }}">{{ genre }}</span>
+          {% endfor %}
+          {% for mood in movie.moods %}
+          <span class="chip chip-mood" data-mood="{{ mood }}">{{ mood }}</span>
           {% endfor %}
         </div>
         <div class="badge-links">
