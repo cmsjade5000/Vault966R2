@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}Vault 966 · Collection Health{% endblock %}
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', path='css/movies.css') }}" />
+{% endblock %}
+{% block content %}
+  <section class="page-hero">
+    <div class="hero-header">
+      <div class="hero-title">
+        <h1>Collection Health</h1>
+        <span class="chip chip-flic">Library insights</span>
+      </div>
+      <p class="tagline">Quick maintenance snapshot for your vault.</p>
+    </div>
+    <a class="hero-health-link" href="/ui/movies">← Back to movies</a>
+  </section>
+
+  {% include "partials/movies/collection_health.html" %}
+{% endblock %}

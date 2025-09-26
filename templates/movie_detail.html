@@ -2,6 +2,10 @@
 {% block title %}{{ movie.title if movie else "Movie not found" }} · Vault 966{% endblock %}
 {% block head %}
 <style>
+  html, body {
+    overflow-x: hidden;
+  }
+
   .backdrop {
     position: relative;
     width: 100%;
@@ -31,17 +35,62 @@
   .detail-wrapper {
     position: relative;
     margin: -180px auto 0;
-    padding: 0 clamp(1rem, 6vw, 4rem) clamp(2.5rem, 6vw, 4rem);
+    padding: clamp(0.5rem, 4vw, 1.5rem) clamp(1rem, 6vw, 4rem) clamp(2.5rem, 6vw, 4rem);
     max-width: clamp(320px, 92vw, 1080px);
     width: 100%;
     color: var(--flic-text);
   }
 
+  .back-link {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.4rem 0.8rem;
+    border-radius: 999px;
+    background: rgba(15, 45, 74, 0.75);
+    border: 1px solid rgba(30, 144, 255, 0.35);
+    color: #f8fafc;
+    text-decoration: none;
+    font-size: 0.85rem;
+    margin-bottom: 1.25rem;
+    box-shadow: 0 10px 22px rgba(15, 23, 42, 0.35);
+    transition: background 140ms ease, transform 140ms ease;
+  }
+
+  .back-link:hover,
+  .back-link:focus-visible {
+    background: rgba(30, 144, 255, 0.55);
+    color: #0f172a;
+    transform: translateY(-1px);
+  }
+
   .hero {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
     gap: clamp(1.5rem, 4vw, 3rem);
     align-items: flex-end;
+  }
+
+  @media (min-width: 901px) {
+    .hero {
+      grid-template-columns: minmax(0, 260px) minmax(0, 1fr);
+    }
+  }
+
+  @media (max-width: 900px) {
+    .hero {
+      grid-template-columns: minmax(0, 1fr);
+      align-items: stretch;
+    }
+
+    .poster-shell {
+      justify-content: flex-start;
+    }
+
+    .poster-frame {
+      width: clamp(200px, 60vw, 240px);
+      margin-bottom: 1rem;
+    }
   }
 
   .poster-shell {
@@ -77,8 +126,67 @@
     object-fit: cover;
   }
 
-  .poster-fallback {
-    display: block;
+  .poster--empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: rgba(248, 250, 252, 0.92);
+    font-size: clamp(2.6rem, 5vw, 3.4rem);
+    background: rgba(15, 23, 42, 0.85);
+  }
+
+  .poster--compact {
+    font-size: clamp(2rem, 4vw, 2.8rem);
+  }
+
+  .poster-theme-default {
+    background: radial-gradient(circle at 30% 25%, rgba(59, 130, 246, 0.5), transparent 55%),
+      radial-gradient(circle at 75% 80%, rgba(244, 114, 182, 0.4), transparent 60%),
+      rgba(15, 23, 42, 0.9);
+  }
+
+  .poster-theme-horror {
+    background: linear-gradient(135deg, rgba(88, 28, 135, 0.92), rgba(185, 28, 28, 0.88));
+  }
+
+  .poster-theme-noir {
+    background: linear-gradient(135deg, rgba(30, 41, 59, 0.95), rgba(15, 23, 42, 0.92));
+  }
+
+  .poster-theme-bright {
+    background: linear-gradient(135deg, rgba(249, 115, 22, 0.88), rgba(14, 165, 233, 0.8), rgba(34, 197, 94, 0.82));
+  }
+
+  .poster-theme-sci-fi {
+    background: linear-gradient(135deg, rgba(56, 189, 248, 0.9), rgba(129, 140, 248, 0.88));
+  }
+
+  .poster-theme-romance {
+    background: linear-gradient(135deg, rgba(244, 114, 182, 0.9), rgba(236, 72, 153, 0.85));
+  }
+
+  .poster-theme-adventure {
+    background: linear-gradient(135deg, rgba(251, 191, 36, 0.9), rgba(244, 114, 22, 0.85));
+  }
+
+  .poster-theme-drama {
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.88), rgba(148, 163, 184, 0.85));
+  }
+
+  .poster-theme-documentary {
+    background: linear-gradient(135deg, rgba(34, 197, 94, 0.85), rgba(16, 185, 129, 0.82));
+  }
+
+  .poster-theme-war {
+    background: linear-gradient(135deg, rgba(146, 64, 14, 0.88), rgba(55, 65, 81, 0.92));
+  }
+
+  .poster-theme-western {
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.9), rgba(120, 53, 15, 0.9));
+  }
+
+  .poster-theme-fantasy {
+    background: linear-gradient(135deg, rgba(167, 139, 250, 0.88), rgba(56, 189, 248, 0.85));
   }
 
   .hero-meta h1 {
@@ -106,16 +214,29 @@
     color: #facc15;
   }
 
-  .chip-genre, .chip-mood {
+  .chip-genre {
     background: rgba(148, 163, 184, 0.1);
     border: 1px solid rgba(148, 163, 184, 0.25);
     color: var(--flic-text);
+  }
+
+  .section-card p,
+  .section-card span {
+    overflow-wrap: break-word;
+    word-break: break-word;
   }
 
   .sections {
     margin-top: 3rem;
     display: grid;
     gap: clamp(2rem, 4vw, 3rem);
+  }
+
+  @media (max-width: 900px) {
+    .sections {
+      margin-top: 2.5rem;
+      gap: clamp(1.75rem, 5vw, 2.5rem);
+    }
   }
 
   .section-card {
@@ -149,18 +270,6 @@
     text-transform: uppercase;
     color: var(--flic-muted);
     margin-bottom: 0.35rem;
-  }
-
-  .chips-row {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-  }
-
-  .chip-provider {
-    background: rgba(30, 144, 255, 0.12);
-    border: 1px solid rgba(30, 144, 255, 0.35);
-    color: #bae6fd;
   }
 
   .roles-group {
@@ -199,6 +308,16 @@
     gap: 1rem;
     overflow-x: auto;
     padding-bottom: 0.5rem;
+    scroll-snap-type: x proximity;
+    overscroll-behavior-x: contain;
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+    touch-action: pan-y;
+    scrollbar-width: none;
+  }
+
+  .similar-rail::-webkit-scrollbar {
+    display: none;
   }
 
   .similar-card {
@@ -211,12 +330,55 @@
     transition: transform 140ms ease, box-shadow 140ms ease;
   }
 
+  .similar-scroll {
+    position: relative;
+  }
+
+  .scroll-button {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(15, 23, 42, 0.75);
+    color: rgba(226, 232, 240, 0.88);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 8px 18px rgba(15, 23, 42, 0.5);
+    cursor: pointer;
+    z-index: 2;
+    transition: background 120ms ease, transform 120ms ease;
+  }
+
+  .scroll-button:hover {
+    background: rgba(59, 130, 246, 0.85);
+    color: #0f172a;
+    transform: translateY(-50%) scale(1.05);
+  }
+
+  .scroll-button:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+
+  .scroll-button--prev {
+    left: -18px;
+  }
+
+  .scroll-button--next {
+    right: -18px;
+  }
+
   .similar-card:hover {
     transform: translateY(-2px);
     box-shadow: 0 18px 40px rgba(15, 23, 42, 0.45);
   }
 
-  .similar-card img {
+  .similar-card img,
+  .similar-card .poster {
     width: 100%;
     aspect-ratio: 2 / 3;
     object-fit: cover;
@@ -476,6 +638,7 @@
 {% endblock %}
 {% block content %}
   {% if movie %}
+  <a class="back-link" href="/ui/movies" data-back-link>← Back to results</a>
   <div class="backdrop">
     {% if movie.backdrop_url %}
     <img src="{{ movie.backdrop_url }}" alt="" />
@@ -490,7 +653,7 @@
           {% if movie.poster_url %}
           <img class="poster" src="{{ movie.poster_url }}" alt="{{ movie.title }} poster" />
           {% else %}
-          <div class="poster poster-fallback"></div>
+          <div class="poster poster--empty {{ movie.poster_theme or 'poster-theme-default' }}" aria-hidden="true">🍿</div>
           {% endif %}
         </div>
       </div>
@@ -504,9 +667,6 @@
           {% for genre in movie.genres %}
           <span class="chip chip-genre" data-genre="{{ genre }}">{{ genre }}</span>
           {% endfor %}
-          {% for mood in movie.moods %}
-          <span class="chip chip-mood" data-mood="{{ mood }}">{{ mood }}</span>
-          {% endfor %}
         </div>
         <div class="badge-links">
           {% if movie.imdb_id %}
@@ -515,7 +675,6 @@
             href="https://www.imdb.com/title/{{ movie.imdb_id }}/"
             target="_blank"
             rel="noreferrer noopener"
-            data-imdb-preview
           >
             <span>IMDb</span>
           </a>
@@ -556,13 +715,13 @@
           {% if movie.languages %}
           <div class="glance-item">
             <span class="glance-label">Languages</span>
-            <span>{{ movie.languages }}</span>
+            <span>{% if movie.languages is string %}{{ movie.languages }}{% else %}{{ movie.languages | join(', ') }}{% endif %}</span>
           </div>
           {% endif %}
           {% if movie.countries %}
           <div class="glance-item">
             <span class="glance-label">Countries</span>
-            <span>{{ movie.countries }}</span>
+            <span>{% if movie.countries is string %}{{ movie.countries }}{% else %}{{ movie.countries | join(', ') }}{% endif %}</span>
           </div>
           {% endif %}
           {% if movie.collection %}
@@ -571,17 +730,6 @@
             <span>{{ movie.collection }}</span>
           </div>
           {% endif %}
-        </div>
-      </section>
-      {% endif %}
-
-      {% if movie.where_to_watch %}
-      <section class="section-card">
-        <h2>Where to watch</h2>
-        <div class="chips-row">
-          {% for provider in movie.where_to_watch %}
-          <span class="chip chip-provider">{{ provider }}</span>
-          {% endfor %}
         </div>
       </section>
       {% endif %}
@@ -615,252 +763,31 @@
 
       {% if similar %}
       <section class="section-card">
-        <h2>Similar by vibe</h2>
-        <div class="similar-rail">
-          {% for item in similar %}
-          <a class="similar-card" href="/ui/movies/{{ item.id }}">
-            {% if item.poster_url %}
-            <img src="{{ item.poster_url }}" alt="{{ item.title }} poster" />
-            {% else %}
-            <div style="height: 240px; background: rgba(15, 23, 42, 0.5);"></div>
-            {% endif %}
-            <h3>{{ item.title }}{% if item.year %} ({{ item.year }}){% endif %}</h3>
-          </a>
-          {% endfor %}
+        <div class="similar-header">
+          <h2>Similar by vibe</h2>
+          <div class="similar-scroll-controls">
+            <button type="button" class="scroll-button scroll-button--prev" data-scroll="prev" aria-label="Scroll similar movies left">&#10094;</button>
+            <button type="button" class="scroll-button scroll-button--next" data-scroll="next" aria-label="Scroll similar movies right">&#10095;</button>
+          </div>
+        </div>
+        <div class="similar-scroll">
+          <div class="similar-rail" data-similar-rail>
+            {% for item in similar %}
+            <a class="similar-card" href="/ui/movies/{{ item.id }}">
+              {% if item.poster_url %}
+              <img src="{{ item.poster_url }}" alt="{{ item.title }} poster" />
+              {% else %}
+              <div class="poster poster--empty poster--compact {{ item.poster_theme or 'poster-theme-default' }}" aria-hidden="true">🍿</div>
+              {% endif %}
+              <h3>{{ item.title }}{% if item.year %} ({{ item.year }}){% endif %}</h3>
+            </a>
+            {% endfor %}
+          </div>
         </div>
       </section>
       {% endif %}
     </div>
   </div>
-  {% if movie.imdb_id %}
-  <div class="imdb-modal" data-imdb-modal hidden>
-    <div
-      class="imdb-modal__dialog"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="imdb-modal-title"
-      tabindex="-1"
-    >
-      <div class="imdb-modal__header">
-        <h2 id="imdb-modal-title">IMDb Preview</h2>
-        <button type="button" class="imdb-modal__close" data-imdb-dismiss aria-label="Close IMDb preview">Close</button>
-      </div>
-      <div class="imdb-modal__body">
-        <div class="imdb-modal__loading" data-imdb-loading aria-live="polite">Loading IMDb…</div>
-        <iframe
-          class="is-hidden"
-          data-imdb-frame
-          title="IMDb preview"
-          loading="lazy"
-          allowfullscreen
-        ></iframe>
-        <div class="imdb-modal__fallback" data-imdb-fallback hidden>
-          <p>We couldn't display IMDb within Vault 966.</p>
-          <p>
-            <a href="https://www.imdb.com/title/{{ movie.imdb_id }}/" target="_blank" rel="noreferrer noopener">
-              Open the IMDb page in a new tab
-            </a>
-          </p>
-        </div>
-      </div>
-    </div>
-  </div>
-  <script>
-    (function () {
-      const trigger = document.querySelector('[data-imdb-preview]');
-      const modal = document.querySelector('[data-imdb-modal]');
-      if (!trigger || !modal) {
-        return;
-      }
-
-      const dialog = modal.querySelector('.imdb-modal__dialog');
-      const closeButtons = modal.querySelectorAll('[data-imdb-dismiss]');
-      const iframe = modal.querySelector('[data-imdb-frame]');
-      const loading = modal.querySelector('[data-imdb-loading]');
-      const fallback = modal.querySelector('[data-imdb-fallback]');
-      const fallbackLink = fallback ? fallback.querySelector('a') : null;
-      let fallbackTimer = null;
-      let lastFocus = null;
-
-      const showLoading = () => {
-        if (loading) {
-          loading.removeAttribute('hidden');
-        }
-      };
-
-      const hideLoading = () => {
-        if (loading) {
-          loading.setAttribute('hidden', '');
-        }
-      };
-
-      const hideFallback = () => {
-        if (fallback) {
-          fallback.setAttribute('hidden', '');
-        }
-      };
-
-      const showFallback = () => {
-        if (fallback) {
-          fallback.removeAttribute('hidden');
-        }
-        if (iframe) {
-          iframe.dataset.loaded = 'error';
-          iframe.classList.add('is-hidden');
-        }
-        if (fallbackTimer) {
-          clearTimeout(fallbackTimer);
-          fallbackTimer = null;
-        }
-        hideLoading();
-      };
-
-      const getFocusableElements = () => {
-        return Array.from(
-          modal.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])')
-        ).filter((element) => {
-          if (element.hasAttribute('disabled') || element.getAttribute('aria-hidden') === 'true') {
-            return false;
-          }
-          if (element.hasAttribute('hidden')) {
-            return false;
-          }
-          const styles = window.getComputedStyle(element);
-          if (styles.visibility === 'hidden' || styles.display === 'none') {
-            return false;
-          }
-          if (element.offsetParent === null && styles.position !== 'fixed') {
-            return false;
-          }
-          return true;
-        });
-      };
-
-      const openModal = (url) => {
-        lastFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-        modal.hidden = false;
-        requestAnimationFrame(() => {
-          modal.classList.add('is-visible');
-        });
-        document.body.classList.add('modal-open');
-        if (fallbackLink) {
-          fallbackLink.setAttribute('href', url);
-        }
-        hideFallback();
-        showLoading();
-        if (iframe) {
-          iframe.dataset.loaded = 'false';
-          iframe.classList.add('is-hidden');
-          iframe.src = url;
-        }
-        if (fallbackTimer) {
-          clearTimeout(fallbackTimer);
-        }
-        fallbackTimer = window.setTimeout(() => {
-          if (iframe && iframe.dataset.loaded !== 'true') {
-            showFallback();
-          }
-        }, 4000);
-        const focusTarget = modal.querySelector('[data-imdb-dismiss][type="button"]') || dialog || modal;
-        if (focusTarget && typeof focusTarget.focus === 'function') {
-          focusTarget.focus({ preventScroll: true });
-        }
-      };
-
-      const closeModal = () => {
-        modal.classList.remove('is-visible');
-        document.body.classList.remove('modal-open');
-        if (fallbackTimer) {
-          clearTimeout(fallbackTimer);
-          fallbackTimer = null;
-        }
-        hideLoading();
-        hideFallback();
-        if (iframe) {
-          iframe.removeAttribute('data-loaded');
-          iframe.classList.add('is-hidden');
-          iframe.src = 'about:blank';
-        }
-        window.setTimeout(() => {
-          modal.hidden = true;
-        }, 180);
-        if (lastFocus && typeof lastFocus.focus === 'function') {
-          lastFocus.focus({ preventScroll: true });
-        }
-      };
-
-      trigger.addEventListener('click', (event) => {
-        event.preventDefault();
-        const url = trigger.getAttribute('href');
-        if (!url) {
-          return;
-        }
-        openModal(url);
-      });
-
-      closeButtons.forEach((button) => {
-        button.addEventListener('click', (event) => {
-          event.preventDefault();
-          closeModal();
-        });
-      });
-
-      modal.addEventListener('click', (event) => {
-        if (event.target === modal) {
-          closeModal();
-        }
-      });
-
-      document.addEventListener('keydown', (event) => {
-        if (event.key === 'Escape' && modal.classList.contains('is-visible')) {
-          event.preventDefault();
-          closeModal();
-        }
-      });
-
-      modal.addEventListener('keydown', (event) => {
-        if (event.key !== 'Tab') {
-          return;
-        }
-        const focusable = getFocusableElements();
-        if (!focusable.length) {
-          event.preventDefault();
-          return;
-        }
-        const first = focusable[0];
-        const last = focusable[focusable.length - 1];
-        if (event.shiftKey) {
-          if (document.activeElement === first || !modal.contains(document.activeElement)) {
-            event.preventDefault();
-            last.focus();
-          }
-        } else if (document.activeElement === last) {
-          event.preventDefault();
-          first.focus();
-        }
-      });
-
-      if (iframe) {
-        iframe.addEventListener('load', () => {
-          iframe.dataset.loaded = 'true';
-          hideLoading();
-          if (fallbackTimer) {
-            clearTimeout(fallbackTimer);
-            fallbackTimer = null;
-          }
-          if (iframe.src && !iframe.src.startsWith('about:blank')) {
-            hideFallback();
-            iframe.classList.remove('is-hidden');
-          }
-        });
-
-        iframe.addEventListener('error', () => {
-          showFallback();
-        });
-      }
-    })();
-  </script>
-  {% endif %}
   {% else %}
   <div class="container">
     <div class="not-found">
@@ -869,4 +796,38 @@
     </div>
   </div>
   {% endif %}
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const rail = document.querySelector('[data-similar-rail]');
+      const prevButton = document.querySelector('[data-scroll="prev"]');
+      const nextButton = document.querySelector('[data-scroll="next"]');
+      if (!rail || !prevButton || !nextButton) {
+        return;
+      }
+
+      const updateButtons = () => {
+        const maxScroll = rail.scrollWidth - rail.clientWidth;
+        const current = rail.scrollLeft;
+        prevButton.disabled = current <= 4;
+        nextButton.disabled = current >= maxScroll - 4;
+      };
+
+      const scrollAmount = () => rail.clientWidth * 0.8;
+
+      prevButton.addEventListener('click', () => {
+        rail.scrollBy({ left: -scrollAmount(), behavior: 'smooth' });
+        setTimeout(updateButtons, 300);
+      });
+
+      nextButton.addEventListener('click', () => {
+        rail.scrollBy({ left: scrollAmount(), behavior: 'smooth' });
+        setTimeout(updateButtons, 300);
+      });
+
+      rail.addEventListener('scroll', updateButtons);
+      window.addEventListener('resize', updateButtons);
+
+      updateButtons();
+    });
+  </script>
 {% endblock %}

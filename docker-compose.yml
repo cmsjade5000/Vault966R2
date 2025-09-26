@@ -28,6 +28,8 @@ services:
       - .env
     environment:
       DATABASE_URL: postgresql+psycopg://vault_user:vault_pass@postgres:5432/vault966
+      TMDB_API_KEY: 2e8f01cbaa3b167711547b75bcd80991
+      OMDB_API_KEY: 6f9fb747
     ports:
       - "8000:8000"
     depends_on:

@@ -1,4 +1,4 @@
-# Preparing CSV Data for `etl_seed.py`
+# Preparing CSV Data (archived importer)
 
 Before running the importer, sanitize your data so the first row is the header and titles/years are standardized.
 
@@ -37,6 +37,8 @@ Dirty Harry,1971
 ```
 
 You can now feed `data/cleaned_titles.csv` into the importer:
+The legacy importer now lives in `legacy/etl/`. To run it:
+
 ```bash
-python scripts/etl_seed.py --path data/cleaned_titles.csv
+python legacy/etl/etl_seed.py --path data/cleaned_titles.csv
 ```

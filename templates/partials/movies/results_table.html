@@ -1,0 +1,73 @@
+<section class="table-card" id="results-table">
+  <div class="table-card__header">
+    <h2>Results Table</h2>
+    <span class="table-card__hint">Tap a column to sort</span>
+  </div>
+  <div class="table-wrapper">
+    <table class="data-table" id="results-table-table">
+      <thead>
+        <tr>
+          <th scope="col" data-sort-key="title" data-sort-type="string" aria-sort="none">Title</th>
+          <th scope="col" data-sort-key="year" data-sort-type="number" aria-sort="none">Year</th>
+          <th scope="col" data-sort-key="runtime" data-sort-type="number" aria-sort="none">Runtime</th>
+          <th scope="col" data-sort-key="rating" data-sort-type="number" aria-sort="none">IMDb</th>
+          <th scope="col">Genres</th>
+          <th scope="col">Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for movie in table_movies %}
+        {% set genre_names = movie.genres | map(attribute='name') | list if movie.genres and movie.genres[0].__class__.__name__ == 'Genre' else movie.genres %}
+        <tr
+          data-title="{{ movie.title | lower }}"
+          data-year="{{ movie.year or '' }}"
+          data-runtime="{{ movie.runtime or '' }}"
+          data-rating="{{ movie.imdb_rating or '' }}"
+          data-movie-row
+          data-movie-id="{{ movie.id }}"
+          data-flagged="{{ 'true' if movie.flagged else 'false' }}"
+          class="{% if movie.flagged %}is-flagged{% endif %}"
+        >
+          <td data-label="Title">
+            <a href="/ui/movies/{{ movie.id }}">{{ movie.title }}</a>
+            {% if movie.where_to_watch %}
+            {% set provider_field = movie.where_to_watch.strip().lower() %}
+            {% if 'vudu' in provider_field %}
+            <span class="table-tag table-tag--vudu">In Vudu</span>
+            {% endif %}
+            {% endif %}
+          </td>
+          <td data-label="Year">{{ movie.year or '—' }}</td>
+          <td data-label="Runtime">{{ movie.runtime or '—' }}</td>
+          <td data-label="IMDb">{{ movie.imdb_rating or '—' }}</td>
+          <td data-label="Genres">{{ genre_names | join(', ') if genre_names else '—' }}</td>
+          <td data-label="Status">
+            <div class="table-actions">
+              <button
+                type="button"
+                class="edit-toggle edit-toggle--table"
+                data-edit-button
+                data-movie-id="{{ movie.id }}"
+                aria-label="Edit {{ movie.title }}"
+              >
+                Edit
+              </button>
+              <button
+                type="button"
+                class="flag-toggle flag-toggle--table{% if movie.flagged %} is-flagged{% endif %}"
+                data-flag-button
+                data-movie-id="{{ movie.id }}"
+                data-flagged="{{ 'true' if movie.flagged else 'false' }}"
+                data-flag-default="Metadata cleanup"
+                aria-pressed="{{ 'true' if movie.flagged else 'false' }}"
+              >
+                {% if movie.flagged %}Resolve{% else %}Flag{% endif %}
+              </button>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>

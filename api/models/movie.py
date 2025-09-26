@@ -1,7 +1,10 @@
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 
 from sqlalchemy import Column, Float, ForeignKey, Integer, String, Table, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+if TYPE_CHECKING:  # pragma: no cover - import for typing only
+    from api.models.movie_flag import MovieFlag
 
 from api.db import Base
 
@@ -48,6 +51,12 @@ class Movie(Base):
     genres = relationship("Genre", secondary=movie_genres, back_populates="movies")
     moods = relationship("Mood", secondary=movie_moods, back_populates="movies")
     roles = relationship("Role", back_populates="movie", cascade="all, delete-orphan")
+    flag: Mapped[Optional["MovieFlag"]] = relationship(
+        "MovieFlag",
+        back_populates="movie",
+        cascade="all, delete-orphan",
+        uselist=False,
+    )
 
 
 class Genre(Base):

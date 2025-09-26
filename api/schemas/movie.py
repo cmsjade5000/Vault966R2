@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Dict, List, Optional
 
 from pydantic import BaseModel, Field
@@ -33,6 +34,10 @@ class MovieBase(BaseModel):
     tmdb_id: Optional[int] = None
     poster_url: Optional[str] = None
     backdrop_url: Optional[str] = None
+    where_to_watch: Optional[str] = None
+    languages: Optional[str] = None
+    countries: Optional[str] = None
+    collection: Optional[str] = None
 
 
 class MovieCreate(MovieBase):
@@ -44,9 +49,22 @@ class MovieRead(MovieBase):
     id: int
     genres: List[GenreRead] = Field(default_factory=list)
     moods: List[MoodRead] = Field(default_factory=list)
+    flagged: bool = False
 
     class Config:
         from_attributes = True
+
+
+class MovieUpdate(BaseModel):
+    title: Optional[str] = None
+    year: Optional[int] = None
+    runtime: Optional[int] = None
+    plot: Optional[str] = None
+    poster_url: Optional[str] = None
+    backdrop_url: Optional[str] = None
+    where_to_watch: Optional[List[str]] = None
+    genres: Optional[List[str]] = None
+    resolve_flag: bool = False
 
 
 class MovieFacets(BaseModel):
@@ -60,6 +78,22 @@ class MovieSearchResponse(BaseModel):
     page: int
     page_size: int
     facets: MovieFacets
+
+    class Config:
+        from_attributes = True
+
+
+class MovieFlagCreate(BaseModel):
+    reason: Optional[str] = None
+    notes: Optional[str] = None
+
+
+class MovieFlagRead(BaseModel):
+    movie_id: int
+    reason: Optional[str] = None
+    notes: Optional[str] = None
+    created_at: datetime
+    updated_at: datetime
 
     class Config:
         from_attributes = True

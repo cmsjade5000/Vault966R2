@@ -65,3 +65,14 @@ def test_search_facets_respect_filters(client: TestClient) -> None:
     assert facets["moods"]["Exciting"] == 1
     assert facets["genres"]["Sci-Fi"] == 1
     assert facets["genres"]["Action"] == 1
+
+
+def test_search_genre_synonyms(client: TestClient) -> None:
+    response = client.get(
+        "/movies/search",
+        params={"genres": "Science Fiction"},
+    )
+    assert response.status_code == 200
+    payload = response.json()
+    titles = {item["title"] for item in payload["items"]}
+    assert {"Blade Runner", "The Matrix"}.issubset(titles)

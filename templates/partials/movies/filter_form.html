@@ -1,0 +1,125 @@
+<form method="get" action="/ui/movies" id="filters-form">
+  <div class="filter-controls">
+    <div class="filter-bar">
+      <label for="search-q">
+        <span>Search library</span>
+        <input
+          id="search-q"
+          name="q"
+          type="search"
+          inputmode="search"
+          autocomplete="off"
+          value="{{ q or '' }}"
+          placeholder="Search title"
+        />
+      </label>
+      <label class="filter-bar__sort" for="order-by">
+        <span>Sort by</span>
+        <select id="order-by" name="order_by">
+          <option value="title_asc" {% if order_by == 'title_asc' %}selected{% endif %}>Title A→Z</option>
+          <option value="title_desc" {% if order_by == 'title_desc' %}selected{% endif %}>Title Z→A</option>
+          <option value="year_desc" {% if order_by == 'year_desc' %}selected{% endif %}>Newest first</option>
+          <option value="runtime_asc" {% if order_by == 'runtime_asc' %}selected{% endif %}>Shortest runtime</option>
+          <option value="flic" {% if order_by == 'flic' %}selected{% endif %}>Flic score</option>
+        </select>
+      </label>
+    </div>
+
+    <section class="filter-section" aria-labelledby="fliclists-heading" id="fliclists">
+      <div class="chip-row-header">
+        <h3 id="fliclists-heading">Fliclists</h3>
+      </div>
+      <div class="chip-scroll">
+        {% for preset in built_in_presets %}
+        <button
+          type="button"
+          class="chip chip-preset"
+          data-filters='{{ preset.filters | tojson }}'
+        >
+          {{ preset.name }}
+        </button>
+        {% endfor %}
+        {% for preset in user_presets %}
+        <button type="button" class="chip chip-preset" data-filters='{{ preset.filters | tojson }}'>{{ preset.name }}</button>
+        {% endfor %}
+        <button type="button" class="chip chip-preset" id="save-preset">Save current filters</button>
+      </div>
+    </section>
+
+    <section class="filter-section" aria-labelledby="genres-heading">
+      <h3 id="genres-heading">Genres</h3>
+      <div class="chip-scroll" data-filter-group="genres">
+        {% if genre_options %}
+          {% for label in genre_options %}
+          <button type="button" class="chip-select" data-filter-value="{{ label }}">{{ label }}</button>
+          {% endfor %}
+        {% else %}
+          <p class="memory-placeholder">No genres available yet.</p>
+        {% endif %}
+      </div>
+    </section>
+
+    <section class="filter-section" aria-labelledby="year-heading">
+      <h3 id="year-heading">Year</h3>
+      <div class="pills-row" data-year-pills>
+        <button type="button" class="pill-button" data-year-range="">Any year</button>
+        {% for decade in decade_options %}
+        <button
+          type="button"
+          class="pill-button"
+          data-year-range="{{ decade.start }}-{{ decade.end }}"
+          data-year-label="{{ decade.label }}"
+        >
+          {{ decade.label }}
+        </button>
+        {% endfor %}
+        <button type="button" class="pill-button pill-button--ghost" data-year-range="custom">Custom…</button>
+      </div>
+      <div class="custom-range" id="year-custom" hidden>
+        <label>
+          <span>From</span>
+          <input id="year-custom-min" type="number" inputmode="numeric" min="0" placeholder="e.g. 1990" />
+        </label>
+        <label>
+          <span>To</span>
+          <input id="year-custom-max" type="number" inputmode="numeric" min="0" placeholder="e.g. 1999" />
+        </label>
+      </div>
+    </section>
+
+    <section class="filter-section" aria-labelledby="runtime-heading">
+      <h3 id="runtime-heading">Runtime</h3>
+      <div class="pills-row" data-runtime-pills>
+        {% for runtime in runtime_presets %}
+        <button
+          type="button"
+          class="pill-button"
+          data-runtime-max="{{ runtime.value if runtime.value is not none else '' }}"
+        >
+          {{ runtime.label }}
+        </button>
+        {% endfor %}
+        <button type="button" class="pill-button pill-button--ghost" data-runtime-max="custom">Custom…</button>
+      </div>
+      <div class="custom-range" id="runtime-custom" hidden>
+        <label>
+          <span>Max minutes</span>
+          <input id="runtime-custom-input" type="number" inputmode="numeric" min="0" step="5" placeholder="e.g. 110" />
+        </label>
+      </div>
+    </section>
+
+    <div class="form-footer">
+      <button type="button" class="button-tertiary" id="pick-button" aria-label="Let Flic pick a movie">Random Pick</button>
+      <button type="button" class="button-ghost" id="reset-filters-bottom">Clear all filters</button>
+    </div>
+  </div>
+
+  <input type="hidden" name="genres" id="genres-input" value="{{ genres or '' }}" />
+  <input type="hidden" name="year_min" id="year-min-input" value="{{ year_min or '' }}" />
+  <input type="hidden" name="year_max" id="year-max-input" value="{{ year_max or '' }}" />
+  <input type="hidden" name="runtime_max" id="runtime-max-input" value="{{ runtime_max or '' }}" />
+  <input type="hidden" name="_filters" value="1" />
+  <input type="hidden" name="page" value="{{ page }}" />
+  <button type="submit" hidden aria-hidden="true">Apply filters</button>
+</form>

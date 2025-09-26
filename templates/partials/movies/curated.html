@@ -1,0 +1,31 @@
+<section class="curated" aria-label="Curated collections">
+  <header class="curated__header">
+    <h2>Curated Shelves</h2>
+    <p>Grab a vibe-fast picklist that surfaces forgotten gems and themed marathons.</p>
+  </header>
+  <div class="curated__grid">
+    {% for section in curated_collections %}
+    <article class="curated-section">
+      <header class="curated-section__header">
+        <h3>{{ section.title }}</h3>
+        <p>{{ section.description }}</p>
+      </header>
+      <div class="curated-section__row" role="list">
+        {% for movie in section.movies %}
+        <a class="curated-card" role="listitem" href="/ui/movies/{{ movie.id }}">
+          {% if movie.poster_url %}
+          <img src="{{ movie.poster_url }}" alt="{{ movie.title }} poster" loading="lazy" />
+          {% else %}
+          <div class="curated-card__fallback">🍿</div>
+          {% endif %}
+          <div class="curated-card__meta">
+            <h4>{{ movie.title }}</h4>
+            <span class="curated-card__year">{{ movie.year or '—' }}</span>
+          </div>
+        </a>
+        {% endfor %}
+      </div>
+    </article>
+    {% endfor %}
+  </div>
+</section>

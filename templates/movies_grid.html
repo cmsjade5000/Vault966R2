@@ -1,804 +1,194 @@
 {% extends "base.html" %}
 {% block title %}Vault 966 · Movies{% endblock %}
 {% block head %}
-<style>
-  .page-hero {
-    padding: 1.5rem clamp(1rem, 4vw, 3rem);
-    margin: 0 auto;
-    max-width: clamp(320px, 92vw, 1080px);
-    display: grid;
-    gap: 1.25rem;
-  }
-
-  .hero-header {
-    display: flex;
-    flex-direction: column;
-    gap: 0.6rem;
-  }
-
-  .hero-title {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-  }
-
-  .hero-title h1 {
-    margin: 0;
-    font-weight: 600;
-    letter-spacing: -0.02em;
-  }
-
-  .tagline {
-    margin: 0;
-    min-height: 1.2rem;
-    color: var(--flic-muted);
-    font-size: 0.95rem;
-  }
-
-  .actions-row {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 0.75rem;
-  }
-
-  .button-primary,
-  .button-secondary {
-    border-radius: 0.5rem;
-    border: none;
-    padding: 0.6rem 1rem;
-    font-weight: 600;
-    cursor: pointer;
-  }
-
-  .button-primary {
-    background: var(--flic-accent);
-    color: var(--flic-primary);
-  }
-
-  .button-secondary {
-    background: rgba(30, 144, 255, 0.15);
-    border: 1px solid rgba(30, 144, 255, 0.35);
-    color: #f8fafc;
-  }
-
-  .facts {
-    display: grid;
-    gap: 1rem;
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  }
-
-  .fact {
-    background: rgba(15, 23, 42, 0.6);
-    border: 1px solid rgba(148, 163, 184, 0.2);
-    border-radius: 0.9rem;
-    padding: 1rem 1.2rem;
-    box-shadow: 0 12px 24px rgba(15, 23, 42, 0.35);
-  }
-
-  .fact-label {
-    font-size: 0.75rem;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--flic-muted);
-  }
-
-  .fact-value {
-    margin-top: 0.4rem;
-    font-size: 1.6rem;
-    font-weight: 600;
-    color: #f8fafc;
-  }
-
-  #filters-form {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 0.75rem;
-  }
-
-  label {
-    display: flex;
-    flex-direction: column;
-    font-size: 0.85rem;
-    color: var(--flic-muted);
-  }
-
-  input,
-  select {
-    margin-top: 0.35rem;
-    padding: 0.55rem 0.75rem;
-    border-radius: 0.5rem;
-    border: 1px solid rgba(148, 163, 184, 0.3);
-    background: rgba(15, 23, 42, 0.6);
-    color: inherit;
-  }
-
-  .form-footer {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.75rem;
-    margin-top: 0.5rem;
-  }
-
-  .fliclists {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.25rem 0;
-    width: 100%;
-  }
-
-  .chip-preset {
-    background: rgba(148, 163, 184, 0.1);
-    border: 1px solid rgba(148, 163, 184, 0.25);
-    color: var(--flic-text);
-    cursor: pointer;
-    transition: background 120ms ease, transform 120ms ease;
-  }
-
-  .chip-preset:hover {
-    background: rgba(148, 163, 184, 0.2);
-    transform: translateY(-1px);
-  }
-
-  .chip-active {
-    background: rgba(30, 144, 255, 0.2);
-    border-color: rgba(30, 144, 255, 0.6);
-    color: var(--flic-accent);
-  }
-
-  .memory-section {
-    margin-top: 1rem;
-  }
-
-  details.memory-panel {
-    background: rgba(15, 23, 42, 0.6);
-    border: 1px solid rgba(148, 163, 184, 0.15);
-    border-radius: 0.9rem;
-    padding: 0.85rem 1rem;
-  }
-
-  details.memory-panel summary {
-    cursor: pointer;
-    font-weight: 600;
-    color: #f8fafc;
-  }
-
-  .memory-list {
-    list-style: none;
-    padding-left: 0;
-    margin: 0.75rem 0 0;
-    display: grid;
-    gap: 0.35rem;
-  }
-
-  .memory-list a {
-    text-decoration: none;
-    color: var(--flic-accent);
-  }
-
-  .memory-placeholder {
-    color: var(--flic-muted);
-    font-size: 0.85rem;
-  }
-
-  main[aria-live="polite"] {
-    padding: 1.5rem clamp(1rem, 4vw, 3rem) 3rem;
-    max-width: clamp(320px, 92vw, 1080px);
-    margin: 0 auto;
-    width: 100%;
-  }
-
-  .grid {
-    display: grid;
-    gap: 1.5rem;
-    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-  }
-
-  .card {
-    background: rgba(15, 23, 42, 0.7);
-    border-radius: 0.75rem;
-    overflow: hidden;
-    box-shadow: 0 20px 35px rgba(15, 23, 42, 0.35);
-    transition: transform 180ms ease, box-shadow 180ms ease;
-  }
-
-  .card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 28px 45px rgba(15, 23, 42, 0.45);
-  }
-
-  .poster {
-    width: 100%;
-    aspect-ratio: 2 / 3;
-    object-fit: cover;
-    background: #1f2937;
-  }
-
-  .card h2 {
-    margin: 0;
-    padding: 0.9rem 1rem 1.1rem;
-    font-size: 1rem;
-    font-weight: 600;
-    color: #f8fafc;
-  }
-
-  .pager {
-    margin-top: 2rem;
-    display: flex;
-    justify-content: center;
-    gap: 1rem;
-    align-items: center;
-  }
-
-  .pager span {
-    color: var(--flic-muted);
-  }
-
-  .pager a {
-    background: rgba(30, 144, 255, 0.15);
-    border: 1px solid rgba(30, 144, 255, 0.35);
-    border-radius: 999px;
-    padding: 0.4rem 0.9rem;
-    color: #f8fafc;
-    text-decoration: none;
-    font-weight: 600;
-    transition: background 120ms ease, transform 120ms ease;
-  }
-
-  .pager a:hover:not([data-disabled="true"]) {
-    background: rgba(30, 144, 255, 0.28);
-    transform: translateY(-1px);
-  }
-
-  .pager a[data-disabled="true"] {
-    opacity: 0.4;
-    cursor: not-allowed;
-    pointer-events: none;
-  }
-
-  .empty {
-    margin-top: 4rem;
-    text-align: center;
-    color: var(--flic-muted);
-  }
-
-  .empty button {
-    margin-top: 1rem;
-  }
-
-  .loading-skeleton {
-    display: grid;
-    gap: 1rem;
-  }
-
-  .loading-skeleton div {
-    height: 16px;
-    background: rgba(148, 163, 184, 0.15);
-    border-radius: 999px;
-    animation: pulse 1.4s ease infinite;
-  }
-
-  @keyframes pulse {
-    0% {
-      opacity: 0.6;
-    }
-    50% {
-      opacity: 1;
-    }
-    100% {
-      opacity: 0.6;
-    }
-  }
-
-  @media (max-width: 768px) {
-    .page-hero {
-      gap: 1rem;
-    }
-
-    .hero-title {
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 0.4rem;
-    }
-
-    .actions-row {
-      flex-direction: column;
-      align-items: stretch;
-    }
-
-    .actions-row .button-primary,
-    .actions-row .button-secondary {
-      width: 100%;
-    }
-
-    .facts {
-      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-    }
-  }
-
-  @media (max-width: 640px) {
-    #filters-form {
-      grid-template-columns: 1fr;
-    }
-
-    .fliclists {
-      flex-wrap: nowrap;
-      overflow-x: auto;
-      margin: 0 -0.25rem;
-      padding: 0.25rem 0.25rem 0.5rem;
-      scroll-snap-type: x proximity;
-      -webkit-overflow-scrolling: touch;
-      scrollbar-width: none;
-    }
-
-    .fliclists::-webkit-scrollbar {
-      display: none;
-    }
-
-    .chip-preset {
-      scroll-snap-align: start;
-      white-space: nowrap;
-    }
-  }
-
-  @media (max-width: 520px) {
-    main[aria-live="polite"] {
-      padding: 1.25rem 1rem 2.5rem;
-    }
-
-    .grid {
-      gap: 1rem;
-    }
-
-    .card h2 {
-      padding: 0.8rem 0.9rem 1rem;
-    }
-  }
-</style>
+<link rel="stylesheet" href="{{ url_for('static', path='css/movies.css') }}" />
 {% endblock %}
 {% block content %}
   <section class="page-hero" id="filters">
-    <div class="hero-header">
-      <div class="hero-title">
-        <h1>Movie Library</h1>
-        <span class="chip chip-flic">by Flic</span>
+    {% include "partials/movies/hero.html" %}
+
+    <div class="filters-shell" data-filters-shell>
+      <div class="filters-shell__bar">
+        <button type="button" class="filters-toggle" data-filters-open>
+          <span class="filters-toggle__label">Filters</span>
+          <span class="filters-toggle__summary" data-filters-summary>Adjust search</span>
+        </button>
+        <button type="button" class="filters-apply" data-filters-apply hidden>Show results</button>
       </div>
-      <p class="tagline" id="tagline">{{ initial_tagline }}</p>
-      <div class="actions-row">
-        <button type="button" class="button-primary" id="primary-search">Search</button>
-        <button type="button" class="button-secondary" id="pick-button" aria-label="Let Flic pick a movie">Pick for me</button>
+
+      <div class="filters-dialog" data-filters-dialog aria-hidden="true" role="dialog" aria-modal="true">
+        <div class="filters-dialog__sheet">
+          <header class="filters-dialog__header">
+            <div>
+              <h2>Filters</h2>
+              <p>Dial in the library, then tap apply.</p>
+            </div>
+            <button type="button" class="filters-close" data-filters-close aria-label="Close filters">×</button>
+          </header>
+          <div class="filters-dialog__body">
+            {% include "partials/movies/filter_form.html" %}
+          </div>
+        </div>
       </div>
     </div>
-
-    <section class="facts" aria-label="Highlights">
-      <article class="fact">
-        <div class="fact-label">Total entries</div>
-        <div class="fact-value">{{ stats.total }}</div>
-      </article>
-      <article class="fact">
-        <div class="fact-label">Average year</div>
-        <div class="fact-value">{{ stats.average_year or "—" }}</div>
-      </article>
-      <article class="fact">
-        <div class="fact-label">Top genre</div>
-        <div class="fact-value">{{ stats.top_genre }}</div>
-      </article>
-      <article class="fact">
-        <div class="fact-label">Top mood</div>
-        <div class="fact-value">{{ stats.top_mood }}</div>
-      </article>
-    </section>
-
-    <div class="fliclists" id="fliclists">
-      <span class="chip chip-flic" aria-hidden="true">Fliclists</span>
-      {% for preset in built_in_presets %}
-      <button type="button" class="chip chip-preset" data-filters='{{ preset.filters | tojson }}'>{{ preset.name }}</button>
-      {% endfor %}
-      {% for preset in user_presets %}
-      <button type="button" class="chip chip-preset" data-filters='{{ preset.filters | tojson }}'>{{ preset.name }}</button>
-      {% endfor %}
-      <button type="button" class="chip chip-preset" id="save-preset">Save current filters</button>
-    </div>
-
-    <details class="memory-section memory-panel" id="flic-memory">
-      <summary>Recent from Flic</summary>
-      <ul class="memory-list" id="memory-list" aria-live="polite">
-        <li class="memory-placeholder">Loading recent picks…</li>
-      </ul>
-    </details>
-
-    <form method="get" action="/ui/movies" id="filters-form">
-      <label for="search-q">Title contains
-        <input id="search-q" name="q" type="text" value="{{ q or '' }}" placeholder="Blade Runner" />
-      </label>
-      <label for="search-genres">Genres (comma separated)
-        <input id="search-genres" name="genres" type="text" value="{{ genres or '' }}" placeholder="Sci-Fi, Drama" />
-      </label>
-      <label for="search-moods">Moods (comma separated)
-        <input id="search-moods" name="moods" type="text" value="{{ moods or '' }}" placeholder="Atmospheric" />
-      </label>
-      <label for="search-year-min">Year from
-        <input id="search-year-min" name="year_min" type="number" min="0" value="{{ year_min or '' }}" />
-      </label>
-      <label for="search-year-max">Year to
-        <input id="search-year-max" name="year_max" type="number" min="0" value="{{ year_max or '' }}" />
-      </label>
-      <label for="search-runtime">Runtime max (minutes)
-        <input id="search-runtime" name="runtime_max" type="number" min="0" value="{{ runtime_max or '' }}" />
-      </label>
-      <label for="order-by">Sort by
-        <select id="order-by" name="order_by">
-          <option value="title_asc" {% if order_by == 'title_asc' %}selected{% endif %}>Title A→Z</option>
-          <option value="title_desc" {% if order_by == 'title_desc' %}selected{% endif %}>Title Z→A</option>
-          <option value="year_desc" {% if order_by == 'year_desc' %}selected{% endif %}>Newest first</option>
-          <option value="runtime_asc" {% if order_by == 'runtime_asc' %}selected{% endif %}>Shortest runtime</option>
-          <option value="flic" {% if order_by == 'flic' %}selected{% endif %}>Flic score</option>
-        </select>
-      </label>
-      <div class="form-footer">
-        <button type="submit" class="button-primary" aria-label="Search movies">Search</button>
-        <button type="button" class="button-secondary" id="reset-filters">Reset</button>
-      </div>
-      <input type="hidden" name="page" value="{{ page }}" />
-    </form>
   </section>
 
   <main aria-live="polite">
     {% if movies %}
-    <div class="grid" aria-label="Movie results">
-      {% for movie in movies %}
-      <a class="card-link" href="/ui/movies/{{ movie.id }}">
-        <article class="card">
-          {% if movie.poster_url %}
-          <img class="poster" src="{{ movie.poster_url }}" alt="{{ movie.title }} poster" loading="lazy" />
-          {% else %}
-          <div class="poster" aria-hidden="true"></div>
-          {% endif %}
-          <h2>{{ movie.title }}</h2>
+      {% if featured_movies %}
+      <div class="grid" aria-label="Featured movie results">
+        {% for movie in featured_movies %}
+        <article
+          class="card{% if movie.flagged %} card--flagged{% endif %}"
+          data-movie-card
+          data-movie-id="{{ movie.id }}"
+          data-flagged="{{ 'true' if movie.flagged else 'false' }}"
+        >
+          <a class="card-link" href="/ui/movies/{{ movie.id }}">
+            {% if movie.poster_url %}
+            <img class="poster" src="{{ movie.poster_url }}" alt="{{ movie.title }} poster" loading="lazy" />
+            {% else %}
+            <div class="poster poster--empty {{ movie.poster_theme or 'poster-theme-default' }}" aria-hidden="true">🍿</div>
+            {% endif %}
+            <h2>{{ movie.title }}</h2>
+          </a>
+          <div class="card-actions">
+            <button
+              type="button"
+              class="edit-toggle"
+              data-edit-button
+              data-movie-id="{{ movie.id }}"
+              aria-label="Edit {{ movie.title }}"
+            >
+              Edit
+            </button>
+            <button
+              type="button"
+              class="flag-toggle{% if movie.flagged %} is-flagged{% endif %}"
+              data-flag-button
+              data-movie-id="{{ movie.id }}"
+              data-flagged="{{ 'true' if movie.flagged else 'false' }}"
+              data-flag-default="Metadata cleanup"
+              aria-pressed="{{ 'true' if movie.flagged else 'false' }}"
+            >
+              {% if movie.flagged %}Resolve flag{% else %}Flag to fix{% endif %}
+            </button>
+          </div>
         </article>
-      </a>
-      {% endfor %}
-    </div>
-    {% if total_pages > 1 %}
-    <nav class="pager" aria-label="Pagination">
-      <a
-        class="pager-link"
-        data-goto-page="{{ page - 1 }}"
-        data-disabled="{{ 'true' if page <= 1 else 'false' }}"
-        href="/ui/movies?q={{ q or '' }}&genres={{ genres or '' }}&moods={{ moods or '' }}&year_min={{ year_min or '' }}&year_max={{ year_max or '' }}&runtime_max={{ runtime_max or '' }}&order_by={{ order_by or 'title_asc' }}&page={{ page - 1 }}"
-        aria-disabled="{{ 'true' if page <= 1 else 'false' }}"
-      >&laquo; Previous</a>
-      <span>Page {{ page }} of {{ total_pages }}</span>
-      <a
-        class="pager-link"
-        data-goto-page="{{ page + 1 }}"
-        data-disabled="{{ 'true' if page >= total_pages else 'false' }}"
-        href="/ui/movies?q={{ q or '' }}&genres={{ genres or '' }}&moods={{ moods or '' }}&year_min={{ year_min or '' }}&year_max={{ year_max or '' }}&runtime_max={{ runtime_max or '' }}&order_by={{ order_by or 'title_asc' }}&page={{ page + 1 }}"
-        aria-disabled="{{ 'true' if page >= total_pages else 'false' }}"
-      >Next &raquo;</a>
-    </nav>
-    {% endif %}
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="empty" role="status">
+        <p>No posters available for this filter set yet.</p>
+      </div>
+      {% endif %}
+
+      {% if table_movies %}
+        {% include "partials/movies/results_table.html" %}
+      {% endif %}
+
+      {% if total_pages > 1 %}
+      <nav class="pager" aria-label="Pagination">
+        <a
+          class="pager-link"
+          data-goto-page="{{ page - 1 }}"
+          data-disabled="{{ 'true' if page <= 1 else 'false' }}"
+          href="/ui/movies?q={{ q or '' }}&genres={{ genres or '' }}&year_min={{ year_min or '' }}&year_max={{ year_max or '' }}&runtime_max={{ runtime_max or '' }}&order_by={{ order_by or 'title_asc' }}&_filters=1&page={{ page - 1 }}"
+          aria-disabled="{{ 'true' if page <= 1 else 'false' }}"
+        >&laquo; Previous</a>
+        <span>Page {{ page }} of {{ total_pages }}</span>
+        <a
+          class="pager-link"
+          data-goto-page="{{ page + 1 }}"
+          data-disabled="{{ 'true' if page >= total_pages else 'false' }}"
+          href="/ui/movies?q={{ q or '' }}&genres={{ genres or '' }}&year_min={{ year_min or '' }}&year_max={{ year_max or '' }}&runtime_max={{ runtime_max or '' }}&order_by={{ order_by or 'title_asc' }}&_filters=1&page={{ page + 1 }}"
+          aria-disabled="{{ 'true' if page >= total_pages else 'false' }}"
+        >Next &raquo;</a>
+      </nav>
+      {% endif %}
+      <div class="below-pager">
+        <details class="memory-section memory-panel" id="flic-memory">
+          <summary>Recent from Flic</summary>
+          <ul class="memory-list" id="memory-list" aria-live="polite">
+            <li class="memory-placeholder">Loading recent picks…</li>
+          </ul>
+        </details>
+
+        <details class="manual-add" id="manual-add">
+          <summary>Add a movie</summary>
+          <form class="manual-add__form" id="manual-add-form" autocomplete="off">
+            <div class="manual-add__row">
+              <label for="manual-add-title">
+                <span>Title</span>
+                <input id="manual-add-title" name="title" type="text" required placeholder="e.g. Arrival" />
+              </label>
+              <label for="manual-add-year">
+                <span>Year</span>
+                <input
+                  id="manual-add-year"
+                  name="year"
+                  type="number"
+                  inputmode="numeric"
+                  min="1888"
+                  max="2100"
+                  placeholder="e.g. 2016"
+                />
+              </label>
+            </div>
+            <div class="manual-add__flags">
+              <label class="manual-add__checkbox" for="manual-add-vudu">
+                <input id="manual-add-vudu" name="location_vudu" type="checkbox" />
+                <span>Tag as “In Vudu”</span>
+              </label>
+            </div>
+            <div class="manual-add__actions">
+              <button type="submit" class="button-secondary" id="manual-add-submit">Save</button>
+              <span class="manual-add__status" id="manual-add-status" role="status" aria-live="polite" hidden></span>
+            </div>
+          </form>
+          <div class="manual-add__preview" id="manual-add-preview" hidden>
+            <div class="manual-add-preview__card">
+              <div class="manual-add-preview__layout">
+                <div id="manual-add-preview-poster"></div>
+                <div>
+                  <div class="manual-add-preview__header">
+                    <h4 class="manual-add-preview__title" id="manual-add-preview-title"></h4>
+                    <div class="manual-add-preview__meta" id="manual-add-preview-meta"></div>
+                  </div>
+                  <div class="manual-add-preview__body" id="manual-add-preview-overview"></div>
+                  <div class="manual-add-preview__meta" id="manual-add-preview-genres"></div>
+                  <div class="manual-add-preview__location" id="manual-add-preview-location"></div>
+                </div>
+              </div>
+            </div>
+            <div class="manual-add__preview-actions">
+              <button type="button" class="button-primary" id="manual-add-confirm">Looks good</button>
+              <button type="button" class="button-ghost" id="manual-add-cancel">Cancel</button>
+              <button type="button" class="button-secondary" id="manual-add-confirm-minimal" hidden>Add without metadata</button>
+            </div>
+          </div>
+        </details>
+      </div>
     {% else %}
-    <div class="empty" role="status">
-      <p>Nothing matched these filters—want me to widen the net?</p>
-      <button type="button" class="button-secondary" id="reset-empty">Widen filters</button>
-    </div>
+      <div class="empty" role="status">
+        <p>Nothing matched these filters—want me to widen the net?</p>
+        <button type="button" class="button-secondary" id="reset-empty">Widen filters</button>
+      </div>
     {% endif %}
   </main>
+  {% include "partials/movies/edit_dialog.html" %}
+{% endblock %}
+
+{% block scripts %}
+  {{ super() }}
   <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      const taglines = {{ taglines | tojson }};
-      let current = taglines.indexOf({{ initial_tagline | tojson }});
-      if (current < 0) current = 0;
-      const taglineEl = document.getElementById('tagline');
-      if (taglineEl) {
-        setInterval(() => {
-          current = (current + 1) % taglines.length;
-          taglineEl.textContent = taglines[current];
-        }, 12000);
-      }
-
-      const total = {{ stats.total }};
-      const totalPages = {{ total_pages }};
-      let currentPage = {{ page }};
-      if (typeof window.showToast === 'function') {
-        if (total > 0) {
-          window.showToast(`I found ${total} titles.`);
-        } else {
-          window.showToast('Nothing matched—want me to widen the net?');
-        }
-      }
-
-      const form = document.getElementById('filters-form');
-      const orderSelect = document.getElementById('order-by');
-      const pageInput = form?.querySelector('input[name="page"]');
-      const numericFields = ['year_min', 'year_max', 'runtime_max'];
-
-      const disableEmptyNumericFields = () => {
-        if (!form) return [];
-        const disabled = [];
-        numericFields.forEach((field) => {
-          const input = form.querySelector(`input[name="${field}"]`);
-          if (input && input.value.trim() === '') {
-            input.disabled = true;
-            disabled.push(input);
-          }
-        });
-        return disabled;
-      };
-
-      const restoreDisabledFields = (inputs) => {
-        if (!inputs.length) return;
-        setTimeout(() => {
-          inputs.forEach((input) => {
-            input.disabled = false;
-          });
-        }, 0);
-      };
-      const submitSearch = () => {
-        if (!form) return;
-        if (pageInput) pageInput.value = '1';
-        const temporarilyDisabled = disableEmptyNumericFields();
-        form.requestSubmit();
-        restoreDisabledFields(temporarilyDisabled);
-      };
-
-      const getInputValue = (name) => (form?.querySelector(`input[name="${name}"]`)?.value ?? '').trim();
-      const parseList = (value) =>
-        value
-          .split(',')
-          .map((item) => item.trim())
-          .filter(Boolean);
-      const getNumberValue = (name) => {
-        const value = getInputValue(name);
-        if (!value) return null;
-        const parsed = Number.parseInt(value, 10);
-        return Number.isNaN(parsed) ? null : parsed;
-      };
-
-      if (document.getElementById('primary-search')) {
-        document.getElementById('primary-search').addEventListener('click', submitSearch);
-      }
-
-      if (orderSelect) {
-        orderSelect.addEventListener('change', submitSearch);
-      }
-
-      const reset = () => {
-        if (!form) return;
-        ['q', 'genres', 'moods', 'year_min', 'year_max', 'runtime_max'].forEach((field) => {
-          const input = form.querySelector(`input[name="${field}"]`);
-          if (input) input.value = '';
-        });
-        if (orderSelect) orderSelect.value = 'title_asc';
-        submitSearch();
-      };
-
-      document.getElementById('reset-filters')?.addEventListener('click', reset);
-      document.getElementById('reset-empty')?.addEventListener('click', reset);
-
-      const applyFilters = (filters) => {
-        if (!form) return;
-        form.querySelector('input[name="q"]').value = filters.q || '';
-        form.querySelector('input[name="genres"]').value = (filters.genres || []).join(', ');
-        form.querySelector('input[name="moods"]').value = (filters.moods || []).join(', ');
-        form.querySelector('input[name="year_min"]').value = filters.year_min ?? '';
-        form.querySelector('input[name="year_max"]').value = filters.year_max ?? '';
-        form.querySelector('input[name="runtime_max"]').value = filters.runtime_max ?? '';
-        if (pageInput) pageInput.value = '1';
-        if (orderSelect) {
-          orderSelect.value = filters.order_by || 'title_asc';
-        }
-        const temporarilyDisabled = disableEmptyNumericFields();
-        form.submit();
-        restoreDisabledFields(temporarilyDisabled);
-      };
-
-      const attachPresetChip = (chip) => {
-        if (!chip) return;
-        chip.addEventListener('click', () => {
-          try {
-            const raw = chip.getAttribute('data-filters');
-            if (!raw) return;
-            const data = JSON.parse(raw);
-            applyFilters(data);
-          } catch (err) {
-            console.error('Failed to apply preset', err);
-          }
-        });
-      };
-
-      document.querySelectorAll('.chip-preset[data-filters]').forEach(attachPresetChip);
-
-      const presetsContainer = document.querySelector('.fliclists');
-      const savePresetButton = document.getElementById('save-preset');
-      if (savePresetButton) {
-        savePresetButton.addEventListener('click', async () => {
-          if (!form || savePresetButton.dataset.pending === 'true') {
-            return;
-          }
-          const suggestedName = getInputValue('q') || '';
-          const rawName = window.prompt('Name this Fliclist', suggestedName);
-          if (rawName === null) {
-            return;
-          }
-          const name = rawName.trim();
-          if (!name) {
-            if (typeof window.showToast === 'function') {
-              window.showToast('Give the preset a name first.');
-            }
-            return;
-          }
-
-          const payload = {
-            name,
-            filters: {
-              q: getInputValue('q') || null,
-              genres: parseList(getInputValue('genres')),
-              moods: parseList(getInputValue('moods')),
-              year_min: getNumberValue('year_min'),
-              year_max: getNumberValue('year_max'),
-              runtime_max: getNumberValue('runtime_max'),
-            },
-          };
-
-          savePresetButton.dataset.pending = 'true';
-          savePresetButton.setAttribute('aria-busy', 'true');
-          savePresetButton.disabled = true;
-
-          try {
-            const response = await fetch('/fliclists/', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify(payload),
-            });
-
-            if (response.status === 201) {
-              const preset = await response.json();
-              if (typeof window.showToast === 'function') {
-                window.showToast(`Saved "${preset.name}" to Fliclists.`);
-              }
-              if (presetsContainer) {
-                const chip = document.createElement('button');
-                chip.type = 'button';
-                chip.className = 'chip chip-preset';
-                chip.textContent = preset.name;
-                chip.setAttribute('data-filters', JSON.stringify(preset.filters));
-                presetsContainer.insertBefore(chip, savePresetButton);
-                attachPresetChip(chip);
-              }
-              return;
-            }
-
-            let detailMessage = null;
-            try {
-              const errorPayload = await response.json();
-              detailMessage = errorPayload?.detail ?? null;
-            } catch (err) {
-              detailMessage = null;
-            }
-            if (detailMessage && typeof window.showToast === 'function') {
-              window.showToast(detailMessage);
-            } else if (typeof window.showToast === 'function') {
-              window.showToast('I could not save that preset—try again?');
-            }
-          } catch (error) {
-            console.error('Failed to save preset', error);
-            if (typeof window.showToast === 'function') {
-              window.showToast('Network hiccup—try again soon?');
-            }
-          } finally {
-            delete savePresetButton.dataset.pending;
-            savePresetButton.removeAttribute('aria-busy');
-            savePresetButton.disabled = false;
-          }
-        });
-      }
-
-      const loadMemory = () => {
-        const list = document.getElementById('memory-list');
-        if (!list) return;
-        fetch('/fliclists/history')
-          .then((resp) => (resp.ok ? resp.json() : Promise.reject()))
-          .then((items) => {
-            if (!items.length) {
-              list.innerHTML = '<li class="memory-placeholder">No recent picks yet.</li>';
-              return;
-            }
-            list.innerHTML = '';
-            items.forEach((entry) => {
-              const li = document.createElement('li');
-              const link = document.createElement('a');
-              link.href = `/ui/movies/${entry.movie_id}`;
-              link.textContent = `#${entry.movie_id} · picked ${new Date(entry.created_at).toLocaleString()}`;
-              li.appendChild(link);
-              list.appendChild(li);
-            });
-          })
-          .catch(() => {
-            list.innerHTML = '<li class="memory-placeholder">I couldn\'t load memory.</li>';
-          });
-      };
-
-      loadMemory();
-
-      const goToPage = (target) => {
-        if (!form || !pageInput) return;
-        if (!totalPages || totalPages <= 1) return;
-        const desired = Number(target);
-        if (Number.isNaN(desired)) return;
-        const clamped = Math.max(1, Math.min(totalPages, desired));
-        if (clamped === currentPage) return;
-        pageInput.value = String(clamped);
-        currentPage = clamped;
-        const temporarilyDisabled = disableEmptyNumericFields();
-        form.requestSubmit();
-        restoreDisabledFields(temporarilyDisabled);
-      };
-
-      document.querySelectorAll('[data-goto-page]').forEach((control) => {
-        control.addEventListener('click', (event) => {
-          if (control.getAttribute('data-disabled') === 'true') {
-            event.preventDefault();
-            return;
-          }
-          const targetPage = Number(control.getAttribute('data-goto-page'));
-          if (!Number.isNaN(targetPage)) {
-            event.preventDefault();
-            goToPage(targetPage);
-          }
-        });
-      });
-
-      const doPick = async () => {
-        const params = new URLSearchParams();
-        const firstGenre = (getInputValue('genres').split(',')[0] || '').trim();
-        const firstMood = (getInputValue('moods').split(',')[0] || '').trim();
-        const yearMin = getInputValue('year_min');
-        const yearMax = getInputValue('year_max');
-        const runtimeMax = getInputValue('runtime_max');
-        if (firstGenre) params.set('genre', firstGenre);
-        if (firstMood) params.set('mood', firstMood);
-        if (yearMin) params.set('year_min', yearMin);
-        if (yearMax) params.set('year_max', yearMax);
-        if (runtimeMax) params.set('runtime_max', runtimeMax);
-        try {
-          const response = await fetch(`/movies/picks?${params.toString()}`);
-          if (response.status === 404) {
-            window.showToast('Nothing matched—want me to widen the net?');
-            return;
-          }
-          if (!response.ok) {
-            window.showToast('I hit a snag—try again?');
-            return;
-          }
-          const data = await response.json();
-          const successMessage = `I queued "${data.title}" for you.`;
-          if (typeof window.persistToastMessage === 'function') {
-            window.persistToastMessage(successMessage);
-          }
-          window.showToast(successMessage);
-          loadMemory();
-          setTimeout(() => {
-            window.location.href = `/ui/movies/${data.id}`;
-          }, 600);
-        } catch (error) {
-          console.error(error);
-          window.showToast('Network hiccup—try again soon?');
-        }
-      };
-
-      document.getElementById('pick-button')?.addEventListener('click', doPick);
-      window.addEventListener('flic:trigger-pick', (event) => {
-        if (event && typeof event.preventDefault === 'function') {
-          event.preventDefault();
-        }
-        doPick();
-      });
-    });
+    window.__moviesPageData = {{ {
+      'taglines': taglines,
+      'initialTagline': initial_tagline,
+      'total': total,
+      'totalPages': total_pages,
+      'page': page
+    } | tojson }};
   </script>
+  <script src="{{ url_for('static', path='js/movies_page.js') }}" defer></script>
 {% endblock %}

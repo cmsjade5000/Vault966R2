@@ -1,0 +1,80 @@
+# Vault 966 Makefile (Safe Edition w/ Help)
+# Usage: make <target>
+# Tip: run `make help` to see this menu.
+
+# ---- INTERNAL ----
+.DEFAULT_GOAL := help
+SERVICE ?= api
+PORT ?= 8000
+
+# ---- META / HELP ----
+.PHONY: help
+help: ## Show this help menu
+	@echo "Vault 966 Commands:"; \
+	awk 'BEGIN {FS":.*##"} /^[a-zA-Z0-9_.-]+:.*##/ { printf "  \033[36m%-18s\033[0m %s\n", $$1, $$2 }' $(MAKEFILE_LIST)
+
+# ---- ENVIRONMENT ----
+.PHONY: venv
+venv: ## Activate virtual env (prints hint)
+	@echo "Run: source .venv/bin/activate"
+
+# ---- GIT ----
+.PHONY: status push pull feature pr
+status: ## Show git status
+	git status
+
+push: ## Add, commit (\"update\"), push
+	git add . && git commit -m "update" && git push
+
+pull: ## Pull latest from origin
+	git pull
+
+feature: ## Create a new feature branch (feat/quick-fix)
+	git checkout -b feat/quick-fix
+
+pr: ## Create a GitHub PR (requires gh auth)
+	gh pr create -f
+
+# ---- SERVER (LOCAL) ----
+.PHONY: dev
+dev: ## Run Uvicorn dev server (hot reload)
+	uvicorn api.main:app --reload
+
+# ---- DOCKER ----
+.PHONY: up down restart logs db-logs bash ps
+up: ## Build & start containers
+	docker compose up -d --build
+
+down: ## Stop & remove containers (confirm)
+	@read -p "This will stop & remove ALL containers. Continue? (y/N) " ans; \
+	if [ "$$ans" = "y" ]; then docker compose down; else echo "Cancelled."; fi
+
+restart: ## Restart API container only (confirm)
+	@read -p "Restart $(SERVICE) container? (y/N) " ans; \
+	if [ "$$ans" = "y" ]; then docker compose restart $(SERVICE); else echo "Cancelled."; fi
+
+logs: ## Follow API logs
+	docker logs -f vault966-$(SERVICE)
+
+db-logs: ## Follow Postgres logs
+	docker logs -f vault966-postgres
+
+bash: ## Open a shell in API container
+	docker compose exec $(SERVICE) /bin/bash
+
+ps: ## List running containers
+	docker ps
+
+# ---- DATABASE ----
+.PHONY: migrate seed
+migrate: ## Apply latest Alembic migrations
+	docker compose exec $(SERVICE) alembic upgrade head
+
+seed: ## Seed initial data (confirm)
+	@read -p "Seeding can overwrite data. Continue? (y/N) " ans; \
+	if [ "$$ans" = "y" ]; then docker compose exec $(SERVICE) python legacy/etl/etl_seed.py; else echo "Cancelled."; fi
+
+# ---- HEALTH ----
+.PHONY: health
+health: ## Curl the health endpoint
+	curl -sS http://localhost:$(PORT)/health || echo "API not responding on :$(PORT)"

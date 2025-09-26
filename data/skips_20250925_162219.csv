@@ -1,0 +1,41 @@
+row,title,year,tmdb_imdb_id,omdb_response,omdb_error
+53,Basic Instinct,1997,,True,
+123,Child's Play,1999,,True,
+184,Die Hard 2: Die Harder,1990,,False,Movie not found!
+191,The Divergent Series: Allegiant,2016,,False,Movie not found!
+192,The Divergent Series: Insurgent,2015,,False,Movie not found!
+199,Dr. Seuss' Horton Hears a Who!,2008,,False,Movie not found!
+200,Dr. Seuss' How the Grinch Stole Christmas,2000,,False,Movie not found!
+201,Dr. Seuss' the Lorax,2012,,False,Movie not found!
+205,Drugstore Cowboy,1999,,True,
+258,Final Destination 3,2021,,True,
+259,The Final Destination 4,2009,,False,Movie not found!
+309,The Godfather Part III: The Coppola Restoration,1990,,False,Movie not found!
+318,Gran Turismo: Based on a True Story,2023,,False,Movie not found!
+324,The Green Inferno,2015,,True,
+359,Harry Potter and the Sorcerer's Stone,2001,,False,Movie not found!
+391,How the Grinch Stole Christmas: The Ultimate Edition,2015,,False,Movie not found!
+415,Indiana Jones and the Raiders of the Lost Ark,1981,,False,Movie not found!
+426,Interview With the Vampire: The Vampire Chronicles,1994,,False,Movie not found!
+462,Kelly's Heroes,2014,,False,Movie not found!
+466,Kill Bill: Volume 1,2003,,False,Movie not found!
+483,The Last House on the Left [2009],2009,,False,Movie not found!
+496,Letters from Iwo Jima,2019,,True,
+508,Live Die Repeat: Edge of Tomorrow,2014,,False,Movie not found!
+538,Mamma Mia! The Movie,2008,,False,Movie not found!
+558,MIB: International,2019,,False,Movie not found!
+638,Patriot Games,1998,,True,
+683,Rambo: First Blood,1982,,True,
+713,The Rocky Horror Picture Show,1973,,True,
+728,Saw The Final Chapter,2010,,False,Movie not found!
+743,Sex and the City: The Movie,2013,,True,
+762,"Sin City: Recut, Extended, Unrated",2005,,False,Movie not found!
+808,Stephen King's Graveyard Shift,1990,,False,Movie not found!
+809,Stephen King's Silver Bullet,1985,,False,Movie not found!
+810,Stephen King's Thinner,1996,,False,Movie not found!
+821,Superman: The Movie,2001,,True,
+838,Terminator 2: Judgment Day,1997,,True,
+851,The Three Musketeers Part I: D'Artagnan,2023,,False,Movie not found!
+856,Total Recall,2019,,True,
+879,Tyler Perry's Boo 2! - A Madea Halloween,2017,,False,Movie not found!
+880,Tyler Perry's Boo! A Madea Halloween,2016,,False,Movie not found!

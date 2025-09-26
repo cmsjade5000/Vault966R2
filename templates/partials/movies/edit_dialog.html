@@ -1,0 +1,53 @@
+<div class="edit-dialog" data-edit-dialog aria-hidden="true" role="dialog" aria-modal="true">
+  <div class="edit-dialog__sheet">
+    <header class="edit-dialog__header">
+      <div>
+        <h2>Edit Movie</h2>
+        <p>Update missing details, then save to resolve the flag.</p>
+      </div>
+      <button type="button" class="edit-dialog__close" data-edit-close aria-label="Close edit dialog">×</button>
+    </header>
+    <form class="edit-form" id="edit-form" autocomplete="off">
+      <input type="hidden" id="edit-movie-id" />
+      <div class="edit-form__grid">
+        <label>
+          <span>Title</span>
+          <input id="edit-title" type="text" required />
+        </label>
+        <label>
+          <span>Year</span>
+          <input id="edit-year" type="number" inputmode="numeric" min="1888" max="2100" />
+        </label>
+        <label>
+          <span>Runtime (min)</span>
+          <input id="edit-runtime" type="number" inputmode="numeric" min="1" />
+        </label>
+        <label class="edit-form__full">
+          <span>Poster URL</span>
+          <input id="edit-poster" type="url" placeholder="https://" />
+        </label>
+        <label class="edit-form__full">
+          <span>Where to watch <small>(one per line)</small></span>
+          <textarea id="edit-providers" rows="3" placeholder="Blu-ray\nVudu"></textarea>
+        </label>
+        <label class="edit-form__full">
+          <span>Genres <small>(comma separated)</small></span>
+          <input id="edit-genres" type="text" placeholder="Science Fiction, Adventure" />
+        </label>
+        <label class="edit-form__full">
+          <span>Synopsis</span>
+          <textarea id="edit-plot" rows="5" placeholder="Add a quick summary"></textarea>
+        </label>
+      </div>
+      <label class="edit-resolve">
+        <input type="checkbox" id="edit-resolve-flag" />
+        <span>Resolve flag after saving</span>
+      </label>
+      <div class="edit-form__actions">
+        <button type="button" class="button-ghost" data-edit-cancel>Cancel</button>
+        <button type="submit" class="button-primary" id="edit-submit">Save changes</button>
+      </div>
+      <p class="edit-form__status" id="edit-status" role="status" aria-live="polite" hidden></p>
+    </form>
+  </div>
+</div>

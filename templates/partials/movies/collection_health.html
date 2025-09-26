@@ -1,0 +1,45 @@
+<section class="collection-health" aria-label="Collection health">
+  <header class="collection-health__header">
+    <h2>Collection Health</h2>
+    <p>Quick maintenance snapshot so you know what needs love next.</p>
+  </header>
+  <div class="collection-health__grid">
+    <article class="health-card">
+      <h3>Missing runtime</h3>
+      <p class="health-card__value">{{ collection_health.missing_runtime }}</p>
+      <p class="health-card__hint">Add runtimes so Flic weights picks correctly.</p>
+    </article>
+    <article class="health-card">
+      <h3>Missing synopsis</h3>
+      <p class="health-card__value">{{ collection_health.missing_plot }}</p>
+      <p class="health-card__hint">A quick blurb makes rediscovery easier.</p>
+    </article>
+    <article class="health-card">
+      <h3>Needs artwork</h3>
+      <p class="health-card__value">{{ collection_health.missing_poster }}</p>
+      <p class="health-card__hint">Refresh posters to keep the wall vibrant.</p>
+    </article>
+    <article class="health-card">
+      <h3>No provider tags</h3>
+      <p class="health-card__value">{{ collection_health.missing_provider }}</p>
+      <p class="health-card__hint">Mark discs/digital spots for planning sessions.</p>
+    </article>
+    <article class="health-card">
+      <h3>Average runtime</h3>
+      <p class="health-card__value">{{ '%.0f' % collection_health.avg_runtime if collection_health.avg_runtime else '—' }}<span>min</span></p>
+      <p class="health-card__hint">Use to balance future purchases.</p>
+    </article>
+    <article class="health-card">
+      <h3>Genre gaps</h3>
+      {% if collection_health.genre_gaps %}
+      <ul>
+        {% for genre in collection_health.genre_gaps %}
+        <li>{{ genre }}</li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <p class="health-card__value">Solid spread!</p>
+      {% endif %}
+    </article>
+  </div>
+</section>

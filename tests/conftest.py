@@ -137,3 +137,17 @@ def client() -> Generator[TestClient, None, None]:
 @pytest.fixture()
 def admin_headers() -> dict[str, str]:
     return {"Authorization": "Bearer testtoken"}
+
+
+@pytest.fixture()
+def db_session(client: TestClient):
+    override = app.dependency_overrides[get_db]
+    generator = override()
+    db = next(generator)
+    try:
+        yield db
+    finally:
+        try:
+            next(generator)
+        except StopIteration:
+            pass

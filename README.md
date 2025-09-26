@@ -31,10 +31,10 @@ Visit http://127.0.0.1:8000/health and http://127.0.0.1:8000/docs
 ## Meet Flic
 
 - **Fliclists**: save picker presets from `/ui/movies` (tap “Save current filters”) and replay them from the chip row; they’re exposed via `/fliclists`.
-- **Flic Score**: `/movies/picks` ranks candidates with runtime/genre/mood hints; search can opt into the same ordering with `order_by=flic`.
+- **Flic Score**: `/movies/picks` ranks candidates with runtime/genre hints; search can opt into the same ordering with `order_by=flic`.
 - **Flic Memory**: every pick goes into a 10-item history (`/fliclists/history`); newest first for quick revisits.
 
-Tip: build a mood-based Fliclist, flip to Flic Score ordering, and check `/fliclists/history` to see your recent queue.
+Tip: Build a themed Fliclist (runtime, decade, genre), flip to Flic Score ordering, and check `/fliclists/history` to see your recent queue.
 
 ## Postgres via Docker Compose
 
@@ -71,6 +71,14 @@ make lint    # static analysis
 make test    # runs pytest
 ```
 
+For the small JavaScript helpers under `static/js/`, install Prettier once and
+run the formatter as needed:
+
+```bash
+npm install
+npm run lint
+```
+
 Integration tests that depend on Postgres are marked with
 `pytest -m integration`. They will be skipped automatically when a
 Postgres `DATABASE_URL` is not configured.
@@ -101,8 +109,9 @@ configured automatically to talk to the Postgres container.
 
 ## Next steps
 - Put your existing picker/filter logic into `core/`.
-- Use `scripts/etl_seed.py` to load a few movies from CSV/JSON (`--no-network` skips external lookups, `--allow-tmdb-only` lets TMDb-only matches insert for later enrichment).
+- Archived import utilities live under `legacy/etl/` (see `legacy/etl/etl_seed.py` if you still need the CSV importer).
+- Pull richer metadata (posters/genres/providers) with `python legacy/etl/enrich_tmdb.py --output data/enriched_movies.csv` if you still rely on the archived ETL tooling.
 - Optional overrides live in `scripts/overrides/imdb_map.csv`; the importer reads them (title/year keyed) before network lookups and logs usages to `reports/overrides_used.csv`.
 - Save reusable picker presets (“Fliclists”) from the `/ui/movies` page; they’re stored via the new `/fliclists` API and can be reapplied with one tap.
-- `scripts/retry_missing_ids.py` can revisit `reports/missing_imdb_id.csv` / `invalid_imdb_id.csv` and emit a patch file (`--output`) you can replay through the importer once an IMDb ID becomes known.
+- `legacy/etl/retry_missing_ids.py` can revisit `reports/missing_imdb_id.csv` / `invalid_imdb_id.csv` and emit a patch file (`--output`) you can replay through the importer once an IMDb ID becomes known.
 - When ready, switch to Postgres by setting `DATABASE_URL` in `.env`.

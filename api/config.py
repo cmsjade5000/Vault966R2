@@ -11,6 +11,8 @@ class Settings(BaseSettings):
     database_url: Optional[str] = os.getenv("DATABASE_URL")  # if None -> SQLite default
     cors_origins: List[str] = Field(default_factory=list)
     admin_token: Optional[str] = os.getenv("ADMIN_TOKEN")
+    tmdb_api_key: Optional[str] = os.getenv("TMDB_API_KEY")
+    omdb_api_key: Optional[str] = os.getenv("OMDB_API_KEY")
 
     @field_validator("cors_origins", mode="before")
     @classmethod

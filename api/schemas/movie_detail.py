@@ -31,6 +31,7 @@ class SimilarMovie(BaseModel):
     poster_url: Optional[str] = None
     year: Optional[int] = None
     flic_score: Optional[float] = None
+    poster_theme: Optional[str] = None
 
 
 class MovieDetail(BaseModel):
@@ -54,6 +55,8 @@ class MovieDetail(BaseModel):
     collection: Optional[str] = None
     roles: List[RoleWithPersonRead] = Field(default_factory=list)
     similar: List[SimilarMovie] = Field(default_factory=list)
+    poster_theme: Optional[str] = None
+    flagged: bool = False
 
     class Config:
         from_attributes = True

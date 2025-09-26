@@ -45,6 +45,25 @@ def _ensure_sqlite_movie_columns() -> None:
             if column_name not in columns:
                 connection.execute(text(ddl))
 
+        # Minimal boot-strap for legacy SQLite dumps; keep in sync with models.
+        flags_exists = connection.execute(
+            text("SELECT name FROM sqlite_master WHERE type='table' AND name='movie_flags'")
+        ).first()
+        if not flags_exists:
+            connection.execute(
+                text(
+                    """
+                    CREATE TABLE movie_flags (
+                        movie_id INTEGER PRIMARY KEY REFERENCES movies(id) ON DELETE CASCADE,
+                        reason TEXT,
+                        notes TEXT,
+                        created_at TIMESTAMP NOT NULL,
+                        updated_at TIMESTAMP NOT NULL
+                    )
+                    """
+                )
+            )
+
 
 _ensure_sqlite_movie_columns()
 

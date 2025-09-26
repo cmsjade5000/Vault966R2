@@ -1,12 +1,11 @@
 from __future__ import annotations
 
 import math
-import re
 from typing import List, Optional
 
 from sqlalchemy.orm import Session, selectinload
 
-from api.models.movie import Genre, Mood, Movie
+from api.models.movie import Genre, Movie
 from api.models.person import Person, Role
 from api.schemas.movie_detail import (
     MovieDetail,
@@ -15,13 +14,9 @@ from api.schemas.movie_detail import (
     SimilarMovie,
 )
 from core.picker import calculate_flic_score
-
-
-def _split_multi_text(value: Optional[str]) -> List[str]:
-    if not value:
-        return []
-    parts = re.split(r"[;,]", value)
-    return [item.strip() for item in parts if item and item.strip()]
+from core.poster_theme import select_poster_theme
+from core.genres import split_and_normalize
+from api.utils.providers import split_providers
 
 
 def _fetch_movie(db: Session, movie_id: int) -> Optional[Movie]:
@@ -73,27 +68,22 @@ def _build_roles(movie: Movie) -> List[RoleWithPersonRead]:
 
 
 def _get_similarity_candidates(db: Session, movie: Movie) -> List[Movie]:
-    genre_names = [genre.name for genre in movie.genres]
-    mood_names = [mood.name for mood in movie.moods]
+    genre_names = split_and_normalize([genre.name for genre in movie.genres])
 
     query = db.query(Movie).options(selectinload(Movie.genres), selectinload(Movie.moods))
     query = query.filter(Movie.id != movie.id)
 
     if genre_names:
         query = query.filter(Movie.genres.any(Genre.name.in_(genre_names)))
-    if mood_names:
-        query = query.filter(Movie.moods.any(Mood.name.in_(mood_names)))
 
     return query.limit(100).all()
 
 
 def _score_similar(movie: Movie, candidates: List[Movie]) -> List[SimilarMovie]:
-    base_genres = {genre.name for genre in movie.genres}
-    base_moods = {mood.name for mood in movie.moods}
+    base_genres = set(split_and_normalize([genre.name for genre in movie.genres]))
 
     filters = {
         "genres": list(base_genres),
-        "moods": list(base_moods),
         "runtime_max": movie.runtime,
         "year_min": movie.year - 5 if movie.year else None,
         "year_max": movie.year + 5 if movie.year else None,
@@ -101,17 +91,13 @@ def _score_similar(movie: Movie, candidates: List[Movie]) -> List[SimilarMovie]:
 
     scored: List[SimilarMovie] = []
     for candidate in candidates:
-        candidate_genres = {genre.name for genre in candidate.genres}
-        candidate_moods = {mood.name for mood in candidate.moods}
+        candidate_genres = set(split_and_normalize([genre.name for genre in candidate.genres]))
         shared_genres = len(base_genres & candidate_genres)
-        shared_moods = len(base_moods & candidate_moods)
-
-        if shared_genres < 2 and shared_moods < 1:
+        if shared_genres < 1:
             continue
 
         candidate_payload = {
             "genres": list(candidate_genres),
-            "moods": list(candidate_moods),
             "runtime": candidate.runtime,
             "year": candidate.year,
         }
@@ -123,6 +109,7 @@ def _score_similar(movie: Movie, candidates: List[Movie]) -> List[SimilarMovie]:
                 poster_url=candidate.poster_url,
                 year=candidate.year,
                 flic_score=score,
+                poster_theme=select_poster_theme(list(candidate_genres)),
             )
         )
 
@@ -144,6 +131,9 @@ def _score_similar(movie: Movie, candidates: List[Movie]) -> List[SimilarMovie]:
                 poster_url=candidate.poster_url,
                 year=candidate.year,
                 flic_score=None,
+                poster_theme=select_poster_theme(
+                    split_and_normalize([genre.name for genre in candidate.genres])
+                ),
             )
             for candidate in fallback
         ]
@@ -157,7 +147,7 @@ def get_movie_detail(db: Session, movie_id: int) -> Optional[MovieDetail]:
         return None
 
     roles = _build_roles(movie)
-    where_to_watch = _split_multi_text(movie.where_to_watch)
+    where_to_watch = split_providers(movie.where_to_watch)
 
     similar_candidates = _get_similarity_candidates(db, movie)
     similar = _score_similar(movie, similar_candidates)
@@ -168,7 +158,7 @@ def get_movie_detail(db: Session, movie_id: int) -> Optional[MovieDetail]:
         year=movie.year,
         runtime=movie.runtime,
         plot=movie.plot,
-        genres=[genre.name for genre in movie.genres],
+        genres=split_and_normalize([genre.name for genre in movie.genres]),
         moods=[mood.name for mood in movie.moods],
         poster_url=movie.poster_url,
         backdrop_url=movie.backdrop_url,
@@ -183,5 +173,7 @@ def get_movie_detail(db: Session, movie_id: int) -> Optional[MovieDetail]:
         collection=movie.collection,
         roles=roles,
         similar=similar,
+        poster_theme=select_poster_theme([genre.name for genre in movie.genres]),
+        flagged=movie.flag is not None,
     )
     return detail

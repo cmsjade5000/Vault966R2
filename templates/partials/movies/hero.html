@@ -1,0 +1,25 @@
+<div class="hero-header">
+  <div class="hero-title">
+    <h1>Vault 966</h1>
+    <span class="chip chip-flic">by Flic</span>
+  </div>
+  <p class="tagline" id="tagline">{{ initial_tagline }}</p>
+</div>
+
+<details class="hero-stats" data-hero-stats open>
+  <summary class="hero-stats__summary">Library stats</summary>
+  <section class="facts" aria-label="Highlights">
+    <article class="fact">
+      <div class="fact-label">Total entries</div>
+      <div class="fact-value" data-total-entries>{{ stats.total }}</div>
+    </article>
+    <article class="fact">
+      <div class="fact-label">Average year</div>
+      <div class="fact-value">{{ stats.average_year or "—" }}</div>
+    </article>
+    <article class="fact">
+      <div class="fact-label">Top genre</div>
+      <div class="fact-value">{{ stats.top_genre }}</div>
+    </article>
+  </section>
+</details>

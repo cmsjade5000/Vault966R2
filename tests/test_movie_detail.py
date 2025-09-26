@@ -86,6 +86,7 @@ def test_movie_detail_api(client: TestClient, detail_movie_setup):
     assert payload["roles"][0]["person"]["name"] == "Case Worker"
     assert payload["where_to_watch"] == ["Netflix", "Prime Video"]
     assert payload["similar"]
+    assert payload["flagged"] is False
 
 
 def test_movie_detail_template(client: TestClient, detail_movie_setup):
@@ -95,3 +96,11 @@ def test_movie_detail_template(client: TestClient, detail_movie_setup):
     html = resp.text
     assert "Dream Runner" in html
     assert "Case Worker" in html
+
+
+def test_movie_detail_flag_status(client: TestClient, detail_movie_setup):
+    movie_id = detail_movie_setup
+    client.post(f"/movies/{movie_id}/flag", json={"reason": "Poster"})
+    resp = client.get(f"/movies/{movie_id}/detail")
+    assert resp.status_code == 200
+    assert resp.json()["flagged"] is True

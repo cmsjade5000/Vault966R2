@@ -1,37 +1,54 @@
-from typing import List, Optional
+from datetime import datetime, timezone
+from typing import List, Optional, Sequence
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from sqlalchemy import func
 from sqlalchemy.orm import Session, selectinload
 
-from api.db import Base, engine, get_db
+from api.db import get_db
 from api.deps.auth import require_admin
 from api.models.flic_memory import FlicMemory
 from api.models.movie import Genre, Mood, Movie, movie_genres, movie_moods
+from api.models.movie_flag import MovieFlag
 from api.models.person import Person, Role
 from api.schemas.movie import (
     MovieCreate,
+    MovieFlagCreate,
+    MovieFlagRead,
     MovieRead,
     MovieSearchResponse,
+    MovieUpdate,
     RoleAttach,
     RoleRead,
 )
 from api.schemas.movie_detail import MovieDetail
 from api.services.movies_detail import get_movie_detail
+from api.services.movie_filters import (
+    MovieFilterParams,
+    apply_filters,
+    ordering_clause,
+    parse_movie_filters,
+)
 from api.utils.pagination import paginate
+from api.services.movie_updates import apply_movie_update
+from core.genres import split_and_normalize
 from core.picker import calculate_flic_score, pick_movie
 from api.utils.query_params import parse_optional_non_negative_int
-
-# Ensure tables exist on import (simple dev behavior; move to Alembic later)
-Base.metadata.create_all(bind=engine)
 
 router = APIRouter(prefix="/movies", tags=["movies"])
 
 
-def _parse_csv(value: Optional[str]) -> List[str]:
-    if not value:
-        return []
-    return [item.strip() for item in value.split(",") if item.strip()]
+def _attach_flag_status(db: Session, movies: Sequence[Movie]) -> None:
+    if not movies:
+        return
+    ids = [movie.id for movie in movies if movie.id is not None]
+    if not ids:
+        return
+    flagged_ids = {
+        row[0] for row in db.query(MovieFlag.movie_id).filter(MovieFlag.movie_id.in_(ids)).all()
+    }
+    for movie in movies:
+        setattr(movie, "flagged", movie.id in flagged_ids)
 
 
 @router.get("/picks", response_model=MovieRead)
@@ -117,6 +134,7 @@ def get_pick(
 
     db.commit()
 
+    setattr(selected_movie, "flagged", selected_movie.flag is not None)
     return selected_movie
 
 
@@ -137,63 +155,41 @@ def search_movies(
     runtime_max: Optional[str] = Query(default=None, description="Maximum runtime in minutes"),
     genres: Optional[str] = Query(default=None, description="Comma separated list of genre names"),
     moods: Optional[str] = Query(default=None, description="Comma separated list of mood names"),
-    order_by: str = Query(default="title_asc"),
+    order_by: Optional[str] = Query(default="title_asc"),
     page: int = Query(default=1, ge=1),
     page_size: int = Query(default=24, ge=1, le=100),
     db: Session = Depends(get_db),
 ):
-    query = db.query(Movie).options(selectinload(Movie.genres), selectinload(Movie.moods))
+    params: MovieFilterParams = parse_movie_filters(
+        q=q,
+        year_min=year_min,
+        year_max=year_max,
+        runtime_min=runtime_min,
+        runtime_max=runtime_max,
+        genres=genres,
+        moods=moods,
+        order_by=order_by,
+    )
 
-    year_min = parse_optional_non_negative_int(year_min, "year_min")
-    year_max = parse_optional_non_negative_int(year_max, "year_max")
-    runtime_min = parse_optional_non_negative_int(runtime_min, "runtime_min")
-    runtime_max = parse_optional_non_negative_int(runtime_max, "runtime_max")
+    base_query = db.query(Movie).options(selectinload(Movie.genres), selectinload(Movie.moods))
+    filtered_query = apply_filters(base_query, params)
 
-    if q:
-        query = query.filter(Movie.title.ilike(f"%{q.strip()}%"))
-
-    if year_min is not None:
-        query = query.filter(Movie.year >= year_min)
-    if year_max is not None:
-        query = query.filter(Movie.year <= year_max)
-
-    if runtime_min is not None:
-        query = query.filter(Movie.runtime >= runtime_min)
-    if runtime_max is not None:
-        query = query.filter(Movie.runtime <= runtime_max)
-
-    genre_filters = _parse_csv(genres)
-    for genre_name in genre_filters:
-        query = query.filter(Movie.genres.any(Genre.name == genre_name))
-
-    mood_filters = _parse_csv(moods)
-    for mood_name in mood_filters:
-        query = query.filter(Movie.moods.any(Mood.name == mood_name))
-
-    ordering_map = {
-        "title_asc": Movie.title.asc(),
-        "title_desc": Movie.title.desc(),
-        "year_desc": Movie.year.desc(),
-        "runtime_asc": Movie.runtime.asc(),
-        "flic": None,
-    }
-
-    if order_by not in ordering_map:
-        raise HTTPException(status_code=400, detail="Invalid order_by value")
-
-    if order_by == "flic":
-        all_movies = query.options(selectinload(Movie.genres), selectinload(Movie.moods)).all()
+    if params.order_by == "flic":
+        all_movies = filtered_query.options(
+            selectinload(Movie.genres), selectinload(Movie.moods)
+        ).all()
         filters = {
-            "genres": _parse_csv(genres),
-            "moods": _parse_csv(moods),
-            "runtime_max": runtime_max,
-            "year_min": year_min,
-            "year_max": year_max,
+            "genres": split_and_normalize(params.genres),
+            "moods": list(params.moods),
+            "runtime_min": params.runtime_min,
+            "runtime_max": params.runtime_max,
+            "year_min": params.year_min,
+            "year_max": params.year_max,
         }
         scored = []
         for movie in all_movies:
             candidate = {
-                "genres": [g.name for g in movie.genres],
+                "genres": split_and_normalize([g.name for g in movie.genres]),
                 "moods": [m.name for m in movie.moods],
                 "runtime": movie.runtime,
                 "year": movie.year,
@@ -206,11 +202,14 @@ def search_movies(
         start = (page - 1) * page_size
         end = start + page_size
         items = [movie for _, movie in scored[start:end]]
+        _attach_flag_status(db, items)
     else:
-        ordered_query = query.order_by(ordering_map[order_by])
+        clause = ordering_clause(params.order_by)
+        ordered_query = filtered_query.order_by(clause)
         items, total = paginate(ordered_query, page=page, page_size=page_size)
+        _attach_flag_status(db, items)
 
-    movie_ids_subquery = query.with_entities(Movie.id.label("movie_id")).subquery()
+    movie_ids_subquery = filtered_query.with_entities(Movie.id.label("movie_id")).subquery()
 
     genre_counts = dict(
         db.query(Genre.name, func.count())
@@ -242,9 +241,73 @@ def search_movies(
     )
 
 
+@router.get("/flags", response_model=List[MovieFlagRead])
+def list_flags(db: Session = Depends(get_db)) -> List[MovieFlagRead]:
+    flags = db.query(MovieFlag).order_by(MovieFlag.updated_at.desc()).all()
+    return flags
+
+
+@router.patch("/{movie_id}", response_model=MovieRead)
+def update_movie(
+    movie_id: int,
+    payload: MovieUpdate,
+    db: Session = Depends(get_db),
+):
+    movie = db.get(Movie, movie_id)
+    if movie is None:
+        raise HTTPException(status_code=404, detail="Movie not found")
+
+    try:
+        apply_movie_update(db, movie, payload)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    db.add(movie)
+    db.commit()
+    db.refresh(movie)
+    _attach_flag_status(db, [movie])
+    return movie
+
+
+@router.post("/{movie_id}/flag", response_model=MovieFlagRead)
+def flag_movie(
+    movie_id: int,
+    payload: MovieFlagCreate,
+    db: Session = Depends(get_db),
+):
+    movie = db.get(Movie, movie_id)
+    if movie is None:
+        raise HTTPException(status_code=404, detail="Movie not found")
+
+    flag = db.get(MovieFlag, movie_id)
+    if flag is None:
+        flag = MovieFlag(movie_id=movie_id)
+        db.add(flag)
+
+    flag.reason = payload.reason
+    flag.notes = payload.notes
+    flag.updated_at = datetime.now(timezone.utc)
+
+    db.commit()
+    db.refresh(flag)
+    return flag
+
+
+@router.delete("/{movie_id}/flag", status_code=204)
+def clear_flag(movie_id: int, db: Session = Depends(get_db)) -> Response:
+    flag = db.get(MovieFlag, movie_id)
+    if flag is None:
+        return Response(status_code=204)
+    db.delete(flag)
+    db.commit()
+    return Response(status_code=204)
+
+
 @router.get("/", response_model=List[MovieRead])
 def list_movies(db: Session = Depends(get_db)):
-    return db.query(Movie).order_by(Movie.title).limit(200).all()
+    movies = db.query(Movie).order_by(Movie.title).limit(200).all()
+    _attach_flag_status(db, movies)
+    return movies
 
 
 @router.post("/", response_model=MovieRead)
