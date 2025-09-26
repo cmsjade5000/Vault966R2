@@ -11,6 +11,7 @@ from fastapi.staticfiles import StaticFiles
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from api.config import settings
+from api.db import Base, engine
 from api.routers import fliclists, health, movies, people, ui
 
 
@@ -118,3 +119,10 @@ app.include_router(fliclists.router)
 STATIC_DIR = pathlib.Path(__file__).resolve().parents[1] / "static"
 if STATIC_DIR.exists():
     app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
+
+
+if engine.url.get_backend_name() == "sqlite":
+
+    @app.on_event("startup")
+    def _bootstrap_sqlite_schema() -> None:
+        Base.metadata.create_all(bind=engine)
