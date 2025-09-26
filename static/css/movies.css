@@ -42,9 +42,9 @@
   box-sizing: border-box;
 }
 
+
 .poster-banner__item {
   display: grid;
-  gap: 0.65rem;
   justify-items: center;
   min-width: clamp(120px, 12vw, 180px);
 }
@@ -72,14 +72,6 @@
   background: linear-gradient(120deg, rgba(255, 255, 255, 0.1) 25%, transparent 40%, transparent 60%, rgba(255, 255, 255, 0.12) 75%);
   mix-blend-mode: screen;
   pointer-events: none;
-}
-
-.poster-banner__caption {
-  font-size: clamp(0.75rem, 1.4vw, 0.95rem);
-  color: rgba(226, 232, 240, 0.85);
-  text-align: center;
-  font-weight: 500;
-  max-width: 14ch;
 }
 
 @keyframes poster-banner-scroll {
