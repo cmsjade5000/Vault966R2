@@ -376,6 +376,14 @@ def movies_grid(
     featured_movies = movies[:featured_limit]
     table_movies = movies
 
+    carousel_limit = 20
+    poster_carousel_movies: List[Movie] = []
+    for movie in movies:
+        if getattr(movie, "poster_url", None):
+            poster_carousel_movies.append(movie)
+        if len(poster_carousel_movies) >= carousel_limit:
+            break
+
     genres_value = ", ".join(params.genres)
     runtime_max_value = params.runtime_max if params.runtime_max is not None else ""
     year_min_value = params.year_min if params.year_min is not None else ""
@@ -405,6 +413,7 @@ def movies_grid(
         "featured_movies": featured_movies,
         "table_movies": table_movies,
         "featured_limit": featured_limit,
+        "poster_carousel_movies": poster_carousel_movies,
     }
 
     response = TEMPLATES.TemplateResponse("movies_grid.html", context)
