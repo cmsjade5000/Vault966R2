@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import desc
+from sqlalchemy import desc, func
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from api.db import get_db
@@ -21,13 +22,25 @@ def list_presets(db: Session = Depends(get_db)):
 
 @router.post("/", response_model=FlicPresetRead, status_code=status.HTTP_201_CREATED)
 def create_preset(payload: FlicPresetCreate, db: Session = Depends(get_db)):
-    existing = db.query(FlicPreset).filter(FlicPreset.name == payload.name).one_or_none()
+    clean_name = payload.name.strip()
+    if not clean_name:
+        raise HTTPException(status_code=400, detail="Preset name must not be empty")
+
+    existing = (
+        db.query(FlicPreset)
+        .filter(func.lower(FlicPreset.name) == clean_name.lower())
+        .one_or_none()
+    )
     if existing:
         raise HTTPException(status_code=400, detail="Preset name already exists")
 
-    preset = FlicPreset(name=payload.name.strip(), filters=payload.filters.model_dump())
+    preset = FlicPreset(name=clean_name, filters=payload.filters.model_dump())
     db.add(preset)
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status_code=400, detail="Preset name already exists")
     db.refresh(preset)
     return preset
 

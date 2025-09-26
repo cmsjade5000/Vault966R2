@@ -28,3 +28,28 @@ def test_fliclists_crud(client: TestClient):
     preset_id = created["id"]
     delete_resp = client.delete(f"/fliclists/{preset_id}")
     assert delete_resp.status_code == 204
+
+
+def test_fliclist_name_is_trimmed(client: TestClient):
+    create_payload = {
+        "name": "  Cozy Evening  ",
+        "filters": {"q": "", "genres": [], "moods": [], "year_min": None},
+    }
+
+    create_resp = client.post("/fliclists/", json=create_payload)
+    assert create_resp.status_code == 201
+    created = create_resp.json()
+    assert created["name"] == "Cozy Evening"
+
+    # cleanup
+    client.delete(f"/fliclists/{created['id']}")
+
+
+def test_fliclist_blank_name_rejected(client: TestClient):
+    create_payload = {
+        "name": "   ",
+        "filters": {"q": "", "genres": [], "moods": []},
+    }
+
+    create_resp = client.post("/fliclists/", json=create_payload)
+    assert create_resp.status_code == 422
