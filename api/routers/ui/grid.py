@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session, selectinload
 
 from api.db import get_db
 from api.models.movie import Movie
+from api.models.movie_flag import MovieFlag
 from api.services.movie_filters import (
     MovieFilterParams,
     apply_filters,
@@ -139,6 +140,18 @@ def movies_grid(
                 .all()
             )
             attach_poster_themes(movies)
+
+    if movies:
+        movie_ids = [movie.id for movie in movies if movie.id is not None]
+        if movie_ids:
+            flagged_ids = {
+                row[0]
+                for row in db.query(MovieFlag.movie_id)
+                .filter(MovieFlag.movie_id.in_(movie_ids))
+                .all()
+            }
+            for movie in movies:
+                setattr(movie, "flagged", movie.id in flagged_ids)
 
     featured_limit = 12
     featured_movies = movies[:featured_limit]
