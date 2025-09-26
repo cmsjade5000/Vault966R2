@@ -1382,6 +1382,16 @@
   text-decoration: underline;
 }
 
+.data-table__col-genres {
+  width: 20ch;
+}
+
+.data-table__cell-genres {
+  max-width: 22ch;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
 @media (max-width: 720px) {
   .table-card__header {
     flex-direction: column;

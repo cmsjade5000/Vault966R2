@@ -11,7 +11,7 @@
           <th scope="col" data-sort-key="year" data-sort-type="number" aria-sort="none">Year</th>
           <th scope="col" data-sort-key="runtime" data-sort-type="number" aria-sort="none">Runtime</th>
           <th scope="col" data-sort-key="rating" data-sort-type="number" aria-sort="none">IMDb</th>
-          <th scope="col">Genres</th>
+          <th scope="col" class="data-table__col-genres">Genres</th>
           <th scope="col">Status</th>
         </tr>
       </thead>
@@ -40,7 +40,7 @@
           <td data-label="Year">{{ movie.year or '—' }}</td>
           <td data-label="Runtime">{{ movie.runtime or '—' }}</td>
           <td data-label="IMDb">{{ movie.imdb_rating or '—' }}</td>
-          <td data-label="Genres">{{ genre_names | join(', ') if genre_names else '—' }}</td>
+          <td data-label="Genres" class="data-table__cell-genres">{{ genre_names | join(', ') if genre_names else '—' }}</td>
           <td data-label="Status">
             <div class="table-actions">
               <button
