@@ -15,7 +15,7 @@ from api.services.movie_filters import (
     ordering_clause,
     parse_movie_filters,
 )
-from api.services.movies_curated import get_collection_health
+from api.services.movies_curated import get_collection_health, get_curated_collections
 from api.services.ui.grid import (
     FILTER_COOKIE_MAX_AGE,
     FILTER_COOKIE_NAME,
@@ -153,6 +153,8 @@ def movies_grid(
     )
     attach_poster_themes(poster_carousel_movies)
 
+    curated_collections = get_curated_collections(db)
+
     genres_value = ", ".join(params.genres)
     runtime_max_value = params.runtime_max if params.runtime_max is not None else ""
     year_min_value = params.year_min if params.year_min is not None else ""
@@ -183,6 +185,7 @@ def movies_grid(
         "table_movies": table_movies,
         "featured_limit": featured_limit,
         "poster_carousel_movies": poster_carousel_movies,
+        "curated_collections": curated_collections,
     }
 
     response = TEMPLATES.TemplateResponse("movies_grid.html", context)
@@ -205,3 +208,13 @@ def movies_health(request: Request, db: Session = Depends(get_db)):
         "collection_health": collection_health,
     }
     return TEMPLATES.TemplateResponse("movies_health.html", context)
+
+
+@router.get("/ui/movies/collections", response_class=HTMLResponse)
+def movies_collections(request: Request, db: Session = Depends(get_db)):
+    curated_collections = get_curated_collections(db)
+    context = {
+        "request": request,
+        "curated_collections": curated_collections,
+    }
+    return TEMPLATES.TemplateResponse("movies_collections.html", context)

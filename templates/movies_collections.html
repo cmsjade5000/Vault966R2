@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Vault 966 · Curated Shelves{% endblock %}
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', path='css/movies.css') }}" />
+{% endblock %}
+{% block content %}
+  <header class="app-hero">
+    <div class="app-hero__inner">
+      <div class="hero-title hero-title--center">
+        <h1>Curated Shelves</h1>
+        <span class="chip chip-flic">by Flic</span>
+      </div>
+      <p class="tagline app-hero__tagline">
+        Hand-built mini shelves for the perfect movie night.
+      </p>
+    </div>
+  </header>
+
+  {% if curated_collections %}
+    {% include "partials/movies/curated.html" %}
+  {% else %}
+    <div class="empty" role="status">
+      <p>No curated collections are available yet.</p>
+    </div>
+  {% endif %}
+{% endblock %}
