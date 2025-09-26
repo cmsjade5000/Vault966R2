@@ -9,7 +9,7 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from api.models.flic_preset import FlicPreset
-from api.models.movie import Genre, Movie, movie_genres
+from api.models.movie import Genre, Mood, Movie, movie_genres
 from core.genres import split_and_normalize
 from core.poster_theme import select_poster_theme
 
@@ -149,6 +149,14 @@ def get_genre_options(db: Session) -> list[str]:
     ]
 
 
+def get_mood_options(db: Session) -> list[str]:
+    return [
+        row[0]
+        for row in db.query(Mood.name).order_by(Mood.name.asc()).all()
+        if row[0]
+    ]
+
+
 def get_decade_options(db: Session) -> list[dict[str, int]]:
     year_values = [
         row[0]
@@ -202,6 +210,7 @@ __all__ = [
     "get_built_in_presets",
     "serialize_user_presets",
     "get_genre_options",
+    "get_mood_options",
     "get_decade_options",
     "get_runtime_presets",
     "attach_poster_themes",

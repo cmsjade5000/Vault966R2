@@ -59,6 +59,19 @@
       </div>
     </section>
 
+    <section class="filter-section" aria-labelledby="moods-heading">
+      <h3 id="moods-heading">Moods</h3>
+      <div class="chip-scroll" data-filter-group="moods">
+        {% if mood_options %}
+          {% for label in mood_options %}
+          <button type="button" class="chip-select" data-filter-value="{{ label }}">{{ label }}</button>
+          {% endfor %}
+        {% else %}
+          <p class="memory-placeholder">No moods available yet.</p>
+        {% endif %}
+      </div>
+    </section>
+
     <section class="filter-section" aria-labelledby="year-heading">
       <h3 id="year-heading">Year</h3>
       <div class="pills-row" data-year-pills>
@@ -116,6 +129,7 @@
   </div>
 
   <input type="hidden" name="genres" id="genres-input" value="{{ genres or '' }}" />
+  <input type="hidden" name="moods" id="moods-input" value="{{ moods or '' }}" />
   <input type="hidden" name="year_min" id="year-min-input" value="{{ year_min or '' }}" />
   <input type="hidden" name="year_max" id="year-max-input" value="{{ year_max or '' }}" />
   <input type="hidden" name="runtime_max" id="runtime-max-input" value="{{ runtime_max or '' }}" />

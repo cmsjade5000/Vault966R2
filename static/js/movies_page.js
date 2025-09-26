@@ -455,6 +455,7 @@
       const hiddenYearMinInput = document.getElementById('year-min-input');
       const hiddenYearMaxInput = document.getElementById('year-max-input');
       const hiddenRuntimeInput = document.getElementById('runtime-max-input');
+      const hiddenMoodsInput = document.getElementById('moods-input');
 
       const parseList = (value) =>
         (value || '')
@@ -482,8 +483,11 @@
 
       const genreChips = Array.from(document.querySelectorAll('[data-filter-group="genres"] .chip-select'));
       const genreOrder = genreChips.map((chip) => chip.dataset.filterValue).filter(Boolean);
+      const moodChips = Array.from(document.querySelectorAll('[data-filter-group="moods"] .chip-select'));
+      const moodOrder = moodChips.map((chip) => chip.dataset.filterValue).filter(Boolean);
 
       const selectedGenres = new Set(parseList(hiddenGenresInput?.value));
+      const selectedMoods = new Set(parseList(hiddenMoodsInput?.value));
 
       const yearPills = document.querySelectorAll('[data-year-pills] .pill-button');
       const yearCustomContainer = document.getElementById('year-custom');
@@ -522,9 +526,11 @@
 
       const getFiltersSnapshot = () => {
         const genresArray = orderedFromSet(selectedGenres, genreOrder);
+        const moodsArray = orderedFromSet(selectedMoods, moodOrder);
         return {
           q: searchInput?.value.trim() || null,
           genres: genresArray,
+          moods: moodsArray,
           year_min: yearState.min,
           year_max: yearState.max,
           runtime_max: runtimeValue,
@@ -544,11 +550,24 @@
         if (!filtersSummaryEl) return;
         const snapshot = getFiltersSnapshot();
         const parts = [];
-        const { genres, runtime_max: runtimeMax, year_min: yearMin, year_max: yearMax, order_by: orderBy } = snapshot;
+        const {
+          genres,
+          moods,
+          runtime_max: runtimeMax,
+          year_min: yearMin,
+          year_max: yearMax,
+          order_by: orderBy,
+        } = snapshot;
 
         if (genres.length) {
           const label = genres.slice(0, 2).join(', ');
           parts.push(genres.length > 2 ? `${label}…` : label);
+        }
+
+        if (moods.length) {
+          const preview = moods.slice(0, 2).join(', ');
+          const label = moods.length > 2 ? `${preview}…` : preview;
+          parts.push(`Moods: ${label}`);
         }
 
         if (typeof runtimeMax === 'number') {
@@ -572,6 +591,9 @@
         if (hiddenGenresInput) {
           hiddenGenresInput.value = orderedFromSet(selectedGenres, genreOrder).join(', ');
         }
+        if (hiddenMoodsInput) {
+          hiddenMoodsInput.value = orderedFromSet(selectedMoods, moodOrder).join(', ');
+        }
         if (hiddenYearMinInput) {
           hiddenYearMinInput.value = yearState.min ?? '';
         }
@@ -583,16 +605,17 @@
         }
       };
 
-      const updateChipsFromState = () => {
-        genreChips.forEach((chip) => {
+      const setChipState = (chips, selection) => {
+        chips.forEach((chip) => {
           const value = chip.dataset.filterValue;
           if (!value) return;
-          if (selectedGenres.has(value)) {
-            chip.classList.add('is-active');
-          } else {
-            chip.classList.remove('is-active');
-          }
+          chip.classList.toggle('is-active', selection.has(value));
         });
+      };
+
+      const updateChipsFromState = () => {
+        setChipState(genreChips, selectedGenres);
+        setChipState(moodChips, selectedMoods);
       };
 
       const ensureYearControlsFromState = () => {
@@ -665,19 +688,23 @@
         updateFilterSummary();
       };
 
-      genreChips.forEach((chip) => {
+      const attachChipToggle = (chip, selection) => {
+        if (!chip) return;
         const value = chip.dataset.filterValue;
         if (!value) return;
         chip.addEventListener('click', () => {
-          if (selectedGenres.has(value)) {
-            selectedGenres.delete(value);
+          if (selection.has(value)) {
+            selection.delete(value);
           } else {
-            selectedGenres.add(value);
+            selection.add(value);
           }
           refreshUI();
           scheduleSubmit();
         });
-      });
+      };
+
+      genreChips.forEach((chip) => attachChipToggle(chip, selectedGenres));
+      moodChips.forEach((chip) => attachChipToggle(chip, selectedMoods));
 
       yearPills.forEach((button) => {
         const range = button.dataset.yearRange ?? '';
@@ -764,6 +791,7 @@
         if (!form) return;
         if (searchInput) searchInput.value = '';
         selectedGenres.clear();
+        selectedMoods.clear();
         yearState = { mode: 'any', min: null, max: null };
         runtimeValue = null;
         if (orderSelect) orderSelect.value = 'title_asc';
@@ -784,6 +812,8 @@
         if (searchInput) searchInput.value = filters.q || '';
         selectedGenres.clear();
         (filters.genres || []).forEach((value) => selectedGenres.add(value));
+        selectedMoods.clear();
+        (filters.moods || []).forEach((value) => selectedMoods.add(value));
         yearState = { mode: 'any', min: null, max: null };
       if (typeof filters.year_min === 'number' || typeof filters.year_max === 'number') {
         yearState.min = typeof filters.year_min === 'number' ? filters.year_min : null;
@@ -852,6 +882,7 @@
           filters: {
             q: snapshot.q,
             genres: snapshot.genres,
+            moods: snapshot.moods,
             year_min: snapshot.year_min,
             year_max: snapshot.year_max,
             runtime_max: snapshot.runtime_max,
@@ -1687,6 +1718,7 @@
         const snapshot = getFiltersSnapshot();
         const params = new URLSearchParams();
         if (snapshot.genres?.length) params.set('genre', snapshot.genres[0]);
+        if (snapshot.moods?.length) params.set('mood', snapshot.moods[0]);
         if (typeof snapshot.year_min === 'number') params.set('year_min', snapshot.year_min);
         if (typeof snapshot.year_max === 'number') params.set('year_max', snapshot.year_max);
         if (typeof snapshot.runtime_max === 'number') params.set('runtime_max', snapshot.runtime_max);
