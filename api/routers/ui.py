@@ -6,7 +6,7 @@ import random
 from typing import List, Optional
 
 from fastapi import APIRouter, Body, Depends, HTTPException, Query, Request, status
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy import func
 from sqlalchemy.orm import Session, selectinload
@@ -419,8 +419,40 @@ def movies_grid(
         "poster_carousel_movies": poster_carousel_movies,
     }
 
-    response = TEMPLATES.TemplateResponse("movies_grid.html", context)
     cookie_payload = params.to_cookie_payload(page=current_page)
+
+    async_request_header = request.headers.get("x-requested-with", "")
+    is_async_request = async_request_header.lower() in {"fetch", "xmlhttprequest"}
+
+    page_data = {
+        "taglines": taglines,
+        "initialTagline": initial_tagline,
+        "total": total,
+        "totalPages": total_pages,
+        "page": current_page,
+    }
+
+    if is_async_request:
+        template_map = {
+            "cards": "partials/movies/results_cards.html",
+            "table": "partials/movies/results_table.html",
+            "pager": "partials/movies/results_pager.html",
+            "empty": "partials/movies/results_empty.html",
+            "extras": "partials/movies/results_extras.html",
+            "totals": "partials/movies/hero_totals.html",
+        }
+        rendered_partials = {}
+        for key, template_name in template_map.items():
+            template = TEMPLATES.get_template(template_name)
+            rendered_partials[key] = template.render(context)
+
+        response = JSONResponse({
+            "partials": rendered_partials,
+            "page_data": page_data,
+        })
+    else:
+        response = TEMPLATES.TemplateResponse("movies_grid.html", context)
+
     response.set_cookie(
         FILTER_COOKIE_NAME,
         json.dumps(cookie_payload, separators=(",", ":")),
@@ -428,6 +460,8 @@ def movies_grid(
         samesite="lax",
         path="/ui/movies",
     )
+    if is_async_request:
+        return response
     return response
 
 

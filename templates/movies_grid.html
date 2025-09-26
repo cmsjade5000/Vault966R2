@@ -72,148 +72,22 @@
     </div>
   </section>
 
-  <main aria-live="polite">
-    {% if movies %}
-      {% if featured_movies %}
-      <div class="grid" aria-label="Featured movie results">
-        {% for movie in featured_movies %}
-        <article
-          class="card{% if movie.flagged %} card--flagged{% endif %}"
-          data-movie-card
-          data-movie-id="{{ movie.id }}"
-          data-flagged="{{ 'true' if movie.flagged else 'false' }}"
-        >
-          <a class="card-link" href="/ui/movies/{{ movie.id }}">
-            {% if movie.poster_url %}
-            <img class="poster" src="{{ movie.poster_url }}" alt="{{ movie.title }} poster" loading="lazy" />
-            {% else %}
-            <div class="poster poster--empty {{ movie.poster_theme or 'poster-theme-default' }}" aria-hidden="true">🍿</div>
-            {% endif %}
-            <h2>{{ movie.title }}</h2>
-          </a>
-          <div class="card-actions">
-            <button
-              type="button"
-              class="edit-toggle"
-              data-edit-button
-              data-movie-id="{{ movie.id }}"
-              aria-label="Edit {{ movie.title }}"
-            >
-              Edit
-            </button>
-            <button
-              type="button"
-              class="flag-toggle{% if movie.flagged %} is-flagged{% endif %}"
-              data-flag-button
-              data-movie-id="{{ movie.id }}"
-              data-flagged="{{ 'true' if movie.flagged else 'false' }}"
-              data-flag-default="Metadata cleanup"
-              aria-pressed="{{ 'true' if movie.flagged else 'false' }}"
-            >
-              {% if movie.flagged %}Resolve flag{% else %}Flag to fix{% endif %}
-            </button>
-          </div>
-        </article>
-        {% endfor %}
-      </div>
-      {% else %}
-      <div class="empty" role="status">
-        <p>No posters available for this filter set yet.</p>
-      </div>
-      {% endif %}
-
-      {% if table_movies %}
-        {% include "partials/movies/results_table.html" %}
-      {% endif %}
-
-      {% if total_pages > 1 %}
-      <nav class="pager" aria-label="Pagination">
-        <a
-          class="pager-link"
-          data-goto-page="{{ page - 1 }}"
-          data-disabled="{{ 'true' if page <= 1 else 'false' }}"
-          href="/ui/movies?q={{ q or '' }}&genres={{ genres or '' }}&year_min={{ year_min or '' }}&year_max={{ year_max or '' }}&runtime_max={{ runtime_max or '' }}&order_by={{ order_by or 'title_asc' }}&_filters=1&page={{ page - 1 }}"
-          aria-disabled="{{ 'true' if page <= 1 else 'false' }}"
-        >&laquo; Previous</a>
-        <span>Page {{ page }} of {{ total_pages }}</span>
-        <a
-          class="pager-link"
-          data-goto-page="{{ page + 1 }}"
-          data-disabled="{{ 'true' if page >= total_pages else 'false' }}"
-          href="/ui/movies?q={{ q or '' }}&genres={{ genres or '' }}&year_min={{ year_min or '' }}&year_max={{ year_max or '' }}&runtime_max={{ runtime_max or '' }}&order_by={{ order_by or 'title_asc' }}&_filters=1&page={{ page + 1 }}"
-          aria-disabled="{{ 'true' if page >= total_pages else 'false' }}"
-        >Next &raquo;</a>
-      </nav>
-      {% endif %}
-      <div class="below-pager">
-        <details class="memory-section memory-panel" id="flic-memory">
-          <summary>Recent from Flic</summary>
-          <ul class="memory-list" id="memory-list" aria-live="polite">
-            <li class="memory-placeholder">Loading recent picks…</li>
-          </ul>
-        </details>
-
-        <details class="manual-add" id="manual-add">
-          <summary>Add a movie</summary>
-          <form class="manual-add__form" id="manual-add-form" autocomplete="off">
-            <div class="manual-add__row">
-              <label for="manual-add-title">
-                <span>Title</span>
-                <input id="manual-add-title" name="title" type="text" required placeholder="e.g. Arrival" />
-              </label>
-              <label for="manual-add-year">
-                <span>Year</span>
-                <input
-                  id="manual-add-year"
-                  name="year"
-                  type="number"
-                  inputmode="numeric"
-                  min="1888"
-                  max="2100"
-                  placeholder="e.g. 2016"
-                />
-              </label>
-            </div>
-            <div class="manual-add__flags">
-              <label class="manual-add__checkbox" for="manual-add-vudu">
-                <input id="manual-add-vudu" name="location_vudu" type="checkbox" />
-                <span>Tag as “In Vudu”</span>
-              </label>
-            </div>
-            <div class="manual-add__actions">
-              <button type="submit" class="button-secondary" id="manual-add-submit">Save</button>
-              <span class="manual-add__status" id="manual-add-status" role="status" aria-live="polite" hidden></span>
-            </div>
-          </form>
-          <div class="manual-add__preview" id="manual-add-preview" hidden>
-            <div class="manual-add-preview__card">
-              <div class="manual-add-preview__layout">
-                <div id="manual-add-preview-poster"></div>
-                <div>
-                  <div class="manual-add-preview__header">
-                    <h4 class="manual-add-preview__title" id="manual-add-preview-title"></h4>
-                    <div class="manual-add-preview__meta" id="manual-add-preview-meta"></div>
-                  </div>
-                  <div class="manual-add-preview__body" id="manual-add-preview-overview"></div>
-                  <div class="manual-add-preview__meta" id="manual-add-preview-genres"></div>
-                  <div class="manual-add-preview__location" id="manual-add-preview-location"></div>
-                </div>
-              </div>
-            </div>
-            <div class="manual-add__preview-actions">
-              <button type="button" class="button-primary" id="manual-add-confirm">Looks good</button>
-              <button type="button" class="button-ghost" id="manual-add-cancel">Cancel</button>
-              <button type="button" class="button-secondary" id="manual-add-confirm-minimal" hidden>Add without metadata</button>
-            </div>
-          </div>
-        </details>
-      </div>
-    {% else %}
-      <div class="empty" role="status">
-        <p>Nothing matched these filters—want me to widen the net?</p>
-        <button type="button" class="button-secondary" id="reset-empty">Widen filters</button>
-      </div>
-    {% endif %}
+  <main aria-live="polite" data-results-root>
+    <div data-results-cards>
+      {% include "partials/movies/results_cards.html" %}
+    </div>
+    <div data-results-table>
+      {% include "partials/movies/results_table.html" %}
+    </div>
+    <div data-results-pager>
+      {% include "partials/movies/results_pager.html" %}
+    </div>
+    <div data-results-empty>
+      {% include "partials/movies/results_empty.html" %}
+    </div>
+    <div data-results-extras>
+      {% include "partials/movies/results_extras.html" %}
+    </div>
   </main>
   {% include "partials/movies/edit_dialog.html" %}
 {% endblock %}

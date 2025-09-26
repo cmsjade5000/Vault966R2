@@ -24,9 +24,18 @@
       const editCancelButton = document.querySelector('[data-edit-cancel]');
       const editCloseButton = document.querySelector('[data-edit-close]');
 
+      const resultsRoot = document.querySelector('main[aria-live="polite"][data-results-root]');
+      const resultsCardsContainer = document.querySelector('[data-results-cards]');
+      const resultsTableContainer = document.querySelector('[data-results-table]');
+      const resultsPagerContainer = document.querySelector('[data-results-pager]');
+      const resultsEmptyContainer = document.querySelector('[data-results-empty]');
+      const resultsExtrasContainer = document.querySelector('[data-results-extras]');
+
       let currentEditMovieId = null;
       let currentEditDetail = null;
       let lastEditTrigger = null;
+      let currentSearchController = null;
+      let searchRequestToken = 0;
 
       const isDesktop = () => window.matchMedia('(min-width: 900px)').matches;
       let previousOverflow = document.body.style.overflow || '';
@@ -119,7 +128,7 @@
       }
 
       const total = Number(pageData.total ?? 0);
-      const totalPages = Number(pageData.totalPages ?? 0);
+      let totalPages = Number(pageData.totalPages ?? 0);
       let currentPage = Number(pageData.page ?? 1);
       if (!Number.isFinite(currentPage) || currentPage < 1) currentPage = 1;
       const showToastMessage = (message) => {
@@ -550,12 +559,140 @@
         scheduleSubmit(240);
       });
 
-      const submitSearch = ({ resetPage = true } = {}) => {
+      const buildSearchParams = () => {
+        if (!form) return new URLSearchParams();
+        const formData = new FormData(form);
+        const params = new URLSearchParams();
+        for (const [key, value] of formData.entries()) {
+          if (typeof value === 'string') {
+            params.append(key, value);
+          }
+        }
+        return params;
+      };
+
+      const setResultsBusy = (busy) => {
+        if (!resultsRoot) return;
+        if (busy) {
+          resultsRoot.setAttribute('aria-busy', 'true');
+        } else {
+          resultsRoot.removeAttribute('aria-busy');
+        }
+      };
+
+      const renderPartial = (container, markup) => {
+        if (!container) return;
+        container.innerHTML = markup || '';
+      };
+
+      const replaceTotalsMarkup = (markup) => {
+        if (typeof markup !== 'string') return;
+        const wrapper = document.createElement('div');
+        wrapper.innerHTML = markup;
+        const replacement = wrapper.querySelector('[data-total-entries]');
+        if (!replacement) return;
+        const target = document.querySelector('[data-total-entries]');
+        if (!target) return;
+        target.replaceWith(replacement);
+      };
+
+      const updatePageData = (data) => {
+        if (!data || typeof data !== 'object') return;
+        window.__moviesPageData = {
+          ...(window.__moviesPageData || {}),
+          ...data,
+        };
+        totalPages = Number(data.totalPages ?? totalPages ?? 0) || 0;
+        currentPage = Number(data.page ?? currentPage ?? 1) || 1;
+        if (pageInput) {
+          pageInput.value = String(currentPage);
+        }
+      };
+
+      const applySearchResponse = (payload, url) => {
+        if (!payload || typeof payload !== 'object') return;
+        const partials = payload.partials || {};
+        if ('cards' in partials) {
+          renderPartial(resultsCardsContainer, partials.cards);
+        }
+        if ('table' in partials) {
+          renderPartial(resultsTableContainer, partials.table);
+        }
+        if ('pager' in partials) {
+          renderPartial(resultsPagerContainer, partials.pager);
+        }
+        if ('empty' in partials) {
+          renderPartial(resultsEmptyContainer, partials.empty);
+        }
+        if ('extras' in partials) {
+          renderPartial(resultsExtrasContainer, partials.extras);
+        }
+        if ('totals' in partials) {
+          replaceTotalsMarkup(partials.totals);
+        }
+
+        attachEmptyStateHandlers();
+
+        updatePageData(payload.page_data);
+
+        refreshUI();
+        attachFlagButtons();
+        attachEditButtons();
+        attachPagerControls();
+        setupResultsTableSorting();
+        setupManualAdd();
+        loadMemory();
+
+        if (typeof url === 'string' && url.length) {
+          window.history.replaceState({}, '', url);
+        }
+      };
+
+      const submitSearch = async ({ resetPage = true } = {}) => {
         if (!form) return;
         if (resetPage && pageInput) pageInput.value = '1';
         syncHiddenInputs();
         closeFilters();
-        form.requestSubmit();
+
+        const params = buildSearchParams();
+        const url = `/ui/movies?${params.toString()}`;
+
+        if (currentSearchController) {
+          currentSearchController.abort();
+        }
+
+        const controller = new AbortController();
+        currentSearchController = controller;
+        const requestToken = ++searchRequestToken;
+
+        try {
+          setResultsBusy(true);
+          const response = await fetch(url, {
+            headers: {
+              'X-Requested-With': 'fetch',
+              Accept: 'application/json',
+            },
+            signal: controller.signal,
+          });
+          if (!response.ok) {
+            throw new Error(`Search failed (${response.status})`);
+          }
+          const payload = await response.json();
+          if (requestToken === searchRequestToken) {
+            applySearchResponse(payload, url);
+          }
+        } catch (error) {
+          if (error.name === 'AbortError') {
+            return;
+          }
+          console.error('Failed to update search results', error);
+          window.location.href = url;
+        } finally {
+          setResultsBusy(false);
+          if (currentSearchController === controller) {
+            currentSearchController = null;
+          }
+        }
       };
 
       filtersApplyButton?.addEventListener('click', () => {
@@ -584,7 +721,17 @@
       };
 
       document.getElementById('reset-filters-bottom')?.addEventListener('click', reset);
-      document.getElementById('reset-empty')?.addEventListener('click', reset);
+
+      const attachEmptyStateHandlers = () => {
+        const emptyButton = document.getElementById('reset-empty');
+        if (!emptyButton || emptyButton.dataset.resetHandlerAttached === 'true') {
+          return;
+        }
+        emptyButton.dataset.resetHandlerAttached = 'true';
+        emptyButton.addEventListener('click', reset);
+      };
+
+      attachEmptyStateHandlers();
 
       const applyFilters = (filters) => {
         if (!form) return;
@@ -721,11 +868,13 @@
         });
       }
 
-      form?.addEventListener('submit', syncHiddenInputs);
+      form?.addEventListener('submit', (event) => {
+        event.preventDefault();
+        submitSearch();
+      });
 
       refreshUI();
 
-      const resultsTable = document.getElementById('results-table-table');
       const updateMovieDisplays = (movie) => {
         if (!movie || !movie.id) return;
         const title = movie.title || '';
@@ -880,11 +1029,19 @@
 
       attachFlagButtons();
       attachEditButtons();
+      setupResultsTableSorting();
 
-      if (resultsTable) {
-        const tableBody = resultsTable.querySelector('tbody');
-        const headers = resultsTable.querySelectorAll('[data-sort-key]');
+      const setupResultsTableSorting = () => {
+        const table = document.getElementById('results-table-table');
+        if (!table) return;
+        const tableBody = table.querySelector('tbody');
+        if (!tableBody) return;
+        const headers = table.querySelectorAll('[data-sort-key]');
         headers.forEach((header) => {
+          if (header.dataset.sortHandlerAttached === 'true') {
+            return;
+          }
+          header.dataset.sortHandlerAttached = 'true';
           header.addEventListener('click', () => {
             const key = header.dataset.sortKey;
             const type = header.dataset.sortType || 'string';
@@ -922,16 +1079,19 @@
             rows.forEach((row) => tableBody.appendChild(row));
           });
         });
-      }
+      };
 
-      attachFlagButtons();
+      const setupManualAdd = () => {
+        const manualAddForm = document.getElementById('manual-add-form');
+        if (!manualAddForm || manualAddForm.dataset.manualAddAttached === 'true') {
+          return;
+        }
+        manualAddForm.dataset.manualAddAttached = 'true';
 
-      const manualAddForm = document.getElementById('manual-add-form');
-      if (manualAddForm) {
-        const titleInput = document.getElementById('manual-add-title');
-        const yearInput = document.getElementById('manual-add-year');
-        const statusEl = document.getElementById('manual-add-status');
-        const submitButton = document.getElementById('manual-add-submit');
+        const titleInput = manualAddForm.querySelector('#manual-add-title');
+        const yearInput = manualAddForm.querySelector('#manual-add-year');
+        const statusEl = manualAddForm.querySelector('#manual-add-status');
+        const submitButton = manualAddForm.querySelector('#manual-add-submit');
         const previewContainer = document.getElementById('manual-add-preview');
         const previewTitle = document.getElementById('manual-add-preview-title');
         const previewMeta = document.getElementById('manual-add-preview-meta');
@@ -939,12 +1099,10 @@
         const previewGenres = document.getElementById('manual-add-preview-genres');
         const previewPoster = document.getElementById('manual-add-preview-poster');
         const previewLocation = document.getElementById('manual-add-preview-location');
-        const vuduInput = document.getElementById('manual-add-vudu');
+        const vuduInput = manualAddForm.querySelector('#manual-add-vudu');
         const confirmButton = document.getElementById('manual-add-confirm');
         const cancelButton = document.getElementById('manual-add-cancel');
         const confirmMinimalButton = document.getElementById('manual-add-confirm-minimal');
-        const totalFact = document.querySelector('[data-total-entries]');
-        const tableBody = document.querySelector('#results-table-table tbody');
         const detailsRoot = document.getElementById('manual-add');
 
         let currentPreview = null;
@@ -1129,6 +1287,8 @@
         });
 
         const addRowToTable = (moviePayload) => {
+          const table = document.getElementById('results-table-table');
+          const tableBody = table?.querySelector('tbody');
           if (!tableBody || !moviePayload) return;
           const row = document.createElement('tr');
           const lowerTitle = (moviePayload.title || '').toString().toLowerCase();
@@ -1273,6 +1433,7 @@
               window.showToast(`Added "${body.title}".`);
             }
 
+            const totalFact = document.querySelector('[data-total-entries]');
             if (totalFact) {
               const current = Number.parseInt(totalFact.textContent.replace(/[^0-9]/g, ''), 10);
               if (!Number.isNaN(current)) {
@@ -1315,7 +1476,9 @@
           resetPreview();
           setStatus('Cancelled. Adjust the title or year to try again.');
         });
-      }
+      };
+
+      setupManualAdd();
 
       const arraysEqualCI = (a, b) => {
         if (!Array.isArray(a) || !Array.isArray(b)) return false;
@@ -1470,22 +1633,30 @@
         pageInput.value = String(clamped);
         currentPage = clamped;
         syncHiddenInputs();
-        form.requestSubmit();
+        submitSearch({ resetPage: false });
       };
 
-      document.querySelectorAll('[data-goto-page]').forEach((control) => {
-        control.addEventListener('click', (event) => {
-          if (control.getAttribute('data-disabled') === 'true') {
-            event.preventDefault();
+      const attachPagerControls = () => {
+        document.querySelectorAll('[data-goto-page]').forEach((control) => {
+          if (control.dataset.pagerHandlerAttached === 'true') {
             return;
           }
-          const targetPage = Number(control.getAttribute('data-goto-page'));
-          if (!Number.isNaN(targetPage)) {
-            event.preventDefault();
-            goToPage(targetPage);
-          }
+          control.dataset.pagerHandlerAttached = 'true';
+          control.addEventListener('click', (event) => {
+            if (control.getAttribute('data-disabled') === 'true') {
+              event.preventDefault();
+              return;
+            }
+            const targetPage = Number(control.getAttribute('data-goto-page'));
+            if (!Number.isNaN(targetPage)) {
+              event.preventDefault();
+              goToPage(targetPage);
+            }
+          });
         });
-      });
+      };
+
+      attachPagerControls();
 
       const doPick = async () => {
         const snapshot = getFiltersSnapshot();

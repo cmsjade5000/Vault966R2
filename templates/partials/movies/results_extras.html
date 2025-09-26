@@ -1,0 +1,65 @@
+{% if movies %}
+<div class="below-pager">
+  <details class="memory-section memory-panel" id="flic-memory">
+    <summary>Recent from Flic</summary>
+    <ul class="memory-list" id="memory-list" aria-live="polite">
+      <li class="memory-placeholder">Loading recent picks…</li>
+    </ul>
+  </details>
+
+  <details class="manual-add" id="manual-add">
+    <summary>Add a movie</summary>
+    <form class="manual-add__form" id="manual-add-form" autocomplete="off">
+      <div class="manual-add__row">
+        <label for="manual-add-title">
+          <span>Title</span>
+          <input id="manual-add-title" name="title" type="text" required placeholder="e.g. Arrival" />
+        </label>
+        <label for="manual-add-year">
+          <span>Year</span>
+          <input
+            id="manual-add-year"
+            name="year"
+            type="number"
+            inputmode="numeric"
+            min="1888"
+            max="2100"
+            placeholder="e.g. 2016"
+          />
+        </label>
+      </div>
+      <div class="manual-add__flags">
+        <label class="manual-add__checkbox" for="manual-add-vudu">
+          <input id="manual-add-vudu" name="location_vudu" type="checkbox" />
+          <span>Tag as “In Vudu”</span>
+        </label>
+      </div>
+      <div class="manual-add__actions">
+        <button type="submit" class="button-secondary" id="manual-add-submit">Save</button>
+        <span class="manual-add__status" id="manual-add-status" role="status" aria-live="polite" hidden></span>
+      </div>
+    </form>
+    <div class="manual-add__preview" id="manual-add-preview" hidden>
+      <div class="manual-add-preview__card">
+        <div class="manual-add-preview__layout">
+          <div id="manual-add-preview-poster"></div>
+          <div>
+            <div class="manual-add-preview__header">
+              <h4 class="manual-add-preview__title" id="manual-add-preview-title"></h4>
+              <div class="manual-add-preview__meta" id="manual-add-preview-meta"></div>
+            </div>
+            <div class="manual-add-preview__body" id="manual-add-preview-overview"></div>
+            <div class="manual-add-preview__meta" id="manual-add-preview-genres"></div>
+            <div class="manual-add-preview__location" id="manual-add-preview-location"></div>
+          </div>
+        </div>
+      </div>
+      <div class="manual-add__preview-actions">
+        <button type="button" class="button-primary" id="manual-add-confirm">Looks good</button>
+        <button type="button" class="button-ghost" id="manual-add-cancel">Cancel</button>
+        <button type="button" class="button-secondary" id="manual-add-confirm-minimal" hidden>Add without metadata</button>
+      </div>
+    </div>
+  </details>
+</div>
+{% endif %}
