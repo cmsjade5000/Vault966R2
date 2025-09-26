@@ -6,6 +6,5 @@ __pycache__/
 venv/
 vault.db
 vault.db-journal
-alembic/
 dist/
 node_modules/
