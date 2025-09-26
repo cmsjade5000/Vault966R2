@@ -38,6 +38,8 @@
   animation: poster-banner-scroll 70s linear infinite;
   position: relative;
   z-index: 0;
+  padding-inline: clamp(2rem, 8vw, 6rem);
+  box-sizing: border-box;
 }
 
 .poster-banner__item {
