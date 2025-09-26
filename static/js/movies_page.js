@@ -633,7 +633,7 @@
 
       document.querySelectorAll('.chip-preset[data-filters]').forEach(attachPresetChip);
 
-      const presetsContainer = document.querySelector('.fliclists');
+      const presetsContainer = document.querySelector('#fliclists .chip-scroll');
       const savePresetButton = document.getElementById('save-preset');
       if (savePresetButton) {
         savePresetButton.addEventListener('click', async () => {
