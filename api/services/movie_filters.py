@@ -101,7 +101,9 @@ def _to_like_pattern(term: str) -> str:
 
 def apply_filters(query: Query, params: MovieFilterParams) -> Query:
     if params.q:
-        query = query.filter(Movie.title.ilike(f"%{params.q}%"))
+        query = query.filter(
+            Movie.title.ilike(_to_like_pattern(params.q), escape="\\")
+        )
     for genre_name in params.genres:
         search_terms = search_terms_for_label(genre_name)
         if search_terms:

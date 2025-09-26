@@ -1,4 +1,7 @@
 from fastapi.testclient import TestClient
+from sqlalchemy.orm import Session
+
+from api.models.movie import Genre, Mood, Movie
 
 
 def test_search_by_query(client: TestClient) -> None:
@@ -7,6 +10,31 @@ def test_search_by_query(client: TestClient) -> None:
     payload = response.json()
     assert payload["total"] == 1
     assert payload["items"][0]["title"] == "The Matrix"
+
+
+def test_search_query_with_literal_wildcards(
+    client: TestClient, db_session: Session
+) -> None:
+    library_genre = db_session.query(Genre).filter_by(name="Library").one()
+    general_mood = db_session.query(Mood).filter_by(name="General").one()
+
+    movie = Movie(
+        title="Discount 100%",
+        year=2024,
+        runtime=95,
+        imdb_id="ttdiscount100",
+        tmdb_id=99999,
+        genres=[library_genre],
+        moods=[general_mood],
+    )
+    db_session.add(movie)
+    db_session.commit()
+
+    response = client.get("/movies/search", params={"q": "%"})
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["total"] == 1
+    assert payload["items"][0]["title"] == "Discount 100%"
 
 
 def test_search_by_filters(client: TestClient) -> None:
