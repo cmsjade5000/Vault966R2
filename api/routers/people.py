@@ -1,13 +1,11 @@
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
-from api.db import Base, engine, get_db
+from api.db import get_db
 from api.deps.auth import require_admin
 from api.models.person import Person
 from api.schemas.person import PersonCreate, PersonListResponse, PersonRead
 from api.utils.pagination import paginate
-
-Base.metadata.create_all(bind=engine)
 
 router = APIRouter(prefix="/people", tags=["people"])
 
