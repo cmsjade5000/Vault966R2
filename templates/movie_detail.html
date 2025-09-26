@@ -95,7 +95,7 @@
 
   .poster-shell {
     display: flex;
-    justify-content: center;
+    justify-content: flex-start;
   }
 
   .poster-frame {
@@ -658,7 +658,6 @@
 {% endblock %}
 {% block content %}
   {% if movie %}
-  <a class="back-link" href="/ui/movies" data-back-link>← Back to results</a>
   <div class="backdrop">
     {% if movie.backdrop_url %}
     <img src="{{ movie.backdrop_url }}" alt="" />
@@ -667,6 +666,7 @@
     {% endif %}
   </div>
   <div class="detail-wrapper">
+    <a class="back-link" href="/ui/movies" data-back-link>← Back to results</a>
     <div class="hero">
       <div class="poster-shell">
         <div class="poster-frame">
