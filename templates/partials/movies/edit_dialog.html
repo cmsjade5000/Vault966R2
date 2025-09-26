@@ -43,11 +43,32 @@
         <input type="checkbox" id="edit-resolve-flag" />
         <span>Resolve flag after saving</span>
       </label>
+      <div class="edit-form__lookup" id="edit-lookup">
+        <div class="edit-form__lookup-buttons">
+          <button type="button" class="button-ghost" id="edit-lookup-button">Find matches</button>
+          <button type="button" class="button-ghost" id="edit-lookup-retry" hidden>Search again</button>
+        </div>
+        <p class="edit-form__status" id="edit-status" role="status" aria-live="polite" hidden></p>
+      </div>
+      <div class="edit-form__lookup-results" id="edit-lookup-results" hidden>
+        <table class="edit-lookup-table">
+          <thead>
+            <tr>
+              <th scope="col">Title</th>
+              <th scope="col">Year</th>
+              <th scope="col">Runtime</th>
+              <th scope="col">IDs</th>
+              <th scope="col">Synopsis</th>
+              <th scope="col" class="edit-lookup-table__actions">Apply</th>
+            </tr>
+          </thead>
+          <tbody id="edit-lookup-results-body"></tbody>
+        </table>
+      </div>
       <div class="edit-form__actions">
         <button type="button" class="button-ghost" data-edit-cancel>Cancel</button>
         <button type="submit" class="button-primary" id="edit-submit">Save changes</button>
       </div>
-      <p class="edit-form__status" id="edit-status" role="status" aria-live="polite" hidden></p>
     </form>
   </div>
 </div>

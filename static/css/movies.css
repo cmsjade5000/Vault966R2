@@ -387,6 +387,63 @@
   gap: 0.75rem;
 }
 
+.edit-form__lookup {
+  margin: 1rem 0 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.edit-form__lookup-buttons {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.edit-form__lookup-results {
+  margin-bottom: 1rem;
+  border: 1px solid rgba(71, 85, 105, 0.35);
+  border-radius: 0.75rem;
+  overflow: hidden;
+  overflow-y: auto;
+  max-height: 16rem;
+  background: rgba(15, 23, 42, 0.4);
+}
+
+.edit-lookup-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.edit-lookup-table th,
+.edit-lookup-table td {
+  padding: 0.65rem 0.75rem;
+  border-bottom: 1px solid rgba(71, 85, 105, 0.35);
+  text-align: left;
+  vertical-align: top;
+}
+
+.edit-lookup-table thead {
+  background: rgba(15, 23, 42, 0.6);
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.edit-lookup-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.edit-lookup-table__actions {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.edit-lookup-table button {
+  font-size: 0.8rem;
+}
+
 .edit-form__status {
   margin: 0;
   font-size: 0.85rem;

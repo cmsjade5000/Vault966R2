@@ -15,6 +15,7 @@ from api.schemas.movie import (
     MovieCreate,
     MovieFlagCreate,
     MovieFlagRead,
+    MovieLookupResponse,
     MovieRead,
     MovieSearchResponse,
     MovieUpdate,
@@ -30,6 +31,12 @@ from api.services.movie_filters import (
     parse_movie_filters,
 )
 from api.utils.pagination import paginate
+from api.services.movie_lookup import (
+    MovieLookupError,
+    MovieLookupNotFound,
+    MovieLookupUnavailable,
+    lookup_movie_candidates,
+)
 from api.services.movie_updates import apply_movie_update
 from core.genres import split_and_normalize
 from core.picker import calculate_flic_score, pick_movie
@@ -144,6 +151,36 @@ def movie_detail(movie_id: int, db: Session = Depends(get_db)):
     if detail is None:
         raise HTTPException(status_code=404, detail="Movie not found")
     return detail
+
+
+@router.get("/{movie_id}/lookup", response_model=MovieLookupResponse)
+def movie_lookup(
+    movie_id: int,
+    title: Optional[str] = Query(default=None, description="Override title to search"),
+    year: Optional[int] = Query(default=None, ge=1870, le=2100),
+    limit: int = Query(default=5, ge=1, le=20),
+    db: Session = Depends(get_db),
+):
+    movie: Optional[Movie] = db.query(Movie).filter(Movie.id == movie_id).one_or_none()
+    if movie is None:
+        raise HTTPException(status_code=404, detail="Movie not found")
+
+    search_title = (title or movie.title or "").strip()
+    if not search_title:
+        raise HTTPException(status_code=400, detail="Movie title is required for lookup")
+
+    search_year = year if year is not None else movie.year
+
+    try:
+        candidates = lookup_movie_candidates(search_title, search_year, limit=limit)
+    except MovieLookupUnavailable as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    except MovieLookupNotFound as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except MovieLookupError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+    return MovieLookupResponse(items=candidates)
 
 
 @router.get("/search", response_model=MovieSearchResponse)
