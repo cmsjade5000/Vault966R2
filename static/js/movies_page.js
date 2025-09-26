@@ -23,10 +23,16 @@
       const editSubmitButton = document.getElementById('edit-submit');
       const editCancelButton = document.querySelector('[data-edit-cancel]');
       const editCloseButton = document.querySelector('[data-edit-close]');
+      const editLookupButton = document.getElementById('edit-lookup-button');
+      const editLookupRetryButton = document.getElementById('edit-lookup-retry');
+      const editLookupResults = document.getElementById('edit-lookup-results');
+      const editLookupResultsBody = document.getElementById('edit-lookup-results-body');
 
       let currentEditMovieId = null;
       let currentEditDetail = null;
       let lastEditTrigger = null;
+      let currentLookupCandidates = [];
+      let lookupRequestToken = 0;
 
       const isDesktop = () => window.matchMedia('(min-width: 900px)').matches;
       let previousOverflow = document.body.style.overflow || '';
@@ -149,6 +155,181 @@
         editStatusEl.classList.toggle('is-error', Boolean(isError));
       };
 
+      const clearLookupResults = ({ hideRetry = false } = {}) => {
+        currentLookupCandidates = [];
+        if (editLookupResultsBody) {
+          editLookupResultsBody.innerHTML = '';
+        }
+        if (editLookupResults) {
+          editLookupResults.hidden = true;
+        }
+        if (hideRetry && editLookupRetryButton) {
+          editLookupRetryButton.hidden = true;
+        }
+      };
+
+      const setLookupButtonsPending = (pending) => {
+        const buttons = [editLookupButton, editLookupRetryButton];
+        buttons.forEach((button) => {
+          if (!button) return;
+          button.disabled = pending;
+          if (pending) {
+            button.setAttribute('aria-busy', 'true');
+          } else {
+            button.removeAttribute('aria-busy');
+          }
+        });
+      };
+
+      const applyLookupCandidate = (candidate) => {
+        if (!candidate) return;
+        if (editTitleInput) editTitleInput.value = candidate.title ?? '';
+        if (editYearInput) editYearInput.value =
+          candidate.year !== null && candidate.year !== undefined ? String(candidate.year) : '';
+        if (editRuntimeInput) editRuntimeInput.value =
+          candidate.runtime !== null && candidate.runtime !== undefined
+            ? String(candidate.runtime)
+            : '';
+        if (editPosterInput) editPosterInput.value = candidate.poster_url || '';
+        if (editPlotInput) editPlotInput.value = candidate.synopsis || candidate.overview || '';
+        if (editGenresInput && Array.isArray(candidate.genres)) {
+          editGenresInput.value = candidate.genres.join(', ');
+        }
+        setEditStatus(`Applied details from "${candidate.title || 'match'}".`);
+      };
+
+      const renderLookupCandidates = (candidates) => {
+        if (!editLookupResultsBody || !editLookupResults) return;
+        editLookupResultsBody.innerHTML = '';
+
+        if (!Array.isArray(candidates) || !candidates.length) {
+          editLookupResults.hidden = true;
+          return;
+        }
+
+        candidates.forEach((candidate, index) => {
+          const row = document.createElement('tr');
+
+          const titleCell = document.createElement('td');
+          const titleStrong = document.createElement('strong');
+          titleStrong.textContent = candidate.title || 'Untitled';
+          titleCell.appendChild(titleStrong);
+          row.appendChild(titleCell);
+
+          const yearCell = document.createElement('td');
+          yearCell.textContent =
+            candidate.year !== null && candidate.year !== undefined ? String(candidate.year) : '—';
+          row.appendChild(yearCell);
+
+          const runtimeCell = document.createElement('td');
+          runtimeCell.textContent = candidate.runtime ? `${candidate.runtime} min` : '—';
+          row.appendChild(runtimeCell);
+
+          const idsCell = document.createElement('td');
+          const ids = [];
+          if (candidate.tmdb_id) ids.push(`TMDb ${candidate.tmdb_id}`);
+          if (candidate.imdb_id) ids.push(`IMDb ${candidate.imdb_id}`);
+          idsCell.textContent = ids.length ? ids.join(' • ') : '—';
+          row.appendChild(idsCell);
+
+          const synopsisCell = document.createElement('td');
+          synopsisCell.textContent = candidate.synopsis || '—';
+          row.appendChild(synopsisCell);
+
+          const actionsCell = document.createElement('td');
+          actionsCell.className = 'edit-lookup-table__actions';
+          const applyButton = document.createElement('button');
+          applyButton.type = 'button';
+          applyButton.className = 'button-ghost';
+          applyButton.textContent = 'Use';
+          applyButton.addEventListener('click', () => {
+            applyLookupCandidate(currentLookupCandidates[index]);
+          });
+          actionsCell.appendChild(applyButton);
+          row.appendChild(actionsCell);
+
+          editLookupResultsBody.appendChild(row);
+        });
+
+        editLookupResults.hidden = false;
+      };
+
+      const fetchLookupCandidates = async () => {
+        if (!currentEditMovieId) return;
+
+        const params = new URLSearchParams();
+        const titleValue = editTitleInput?.value?.trim();
+        if (titleValue) {
+          params.set('title', titleValue);
+        }
+        const yearValueRaw = editYearInput?.value?.trim();
+        if (yearValueRaw) {
+          const parsedYear = Number.parseInt(yearValueRaw, 10);
+          if (!Number.isNaN(parsedYear)) {
+            params.set('year', String(parsedYear));
+          }
+        }
+        params.set('limit', '5');
+
+        const query = params.toString();
+        const requestId = ++lookupRequestToken;
+
+        setLookupButtonsPending(true);
+        setEditStatus('Finding matches…');
+
+        try {
+          const response = await fetch(
+            query ? `/movies/${currentEditMovieId}/lookup?${query}` : `/movies/${currentEditMovieId}/lookup`,
+            {
+              headers: { Accept: 'application/json' },
+            }
+          );
+
+          if (requestId !== lookupRequestToken) {
+            return;
+          }
+
+          if (response.status === 404) {
+            clearLookupResults();
+            setEditStatus('No matches found—try adjusting the title or year.', true);
+            return;
+          }
+
+          if (response.status === 503) {
+            setEditStatus('Lookup service is temporarily unavailable.', true);
+            return;
+          }
+
+          if (!response.ok) {
+            setEditStatus(`Lookup failed (${response.status}).`, true);
+            return;
+          }
+
+          const payload = await response.json();
+          const items = Array.isArray(payload?.items) ? payload.items : [];
+          currentLookupCandidates = items;
+          renderLookupCandidates(items);
+          if (items.length) {
+            setEditStatus(items.length === 1 ? 'Found 1 match.' : `Found ${items.length} matches.`);
+          } else {
+            clearLookupResults();
+            setEditStatus('No matches found—try adjusting the title or year.', true);
+          }
+        } catch (error) {
+          console.error('Lookup failed', error);
+          if (requestId === lookupRequestToken) {
+            setEditStatus('Lookup failed—check your connection and try again.', true);
+          }
+        } finally {
+          if (requestId === lookupRequestToken) {
+            setLookupButtonsPending(false);
+            if (editLookupRetryButton) {
+              editLookupRetryButton.hidden = false;
+            }
+          }
+        }
+      };
+
       const resetEditForm = () => {
         if (editTitleInput) editTitleInput.value = '';
         if (editYearInput) editYearInput.value = '';
@@ -160,6 +341,9 @@
         if (editResolveInput) editResolveInput.checked = false;
         if (editMovieIdInput) editMovieIdInput.value = '';
         resetEditStatus();
+        clearLookupResults({ hideRetry: true });
+        setLookupButtonsPending(false);
+        lookupRequestToken += 1;
       };
 
       const closeEditDialog = ({ restoreFocus = false } = {}) => {
@@ -227,6 +411,7 @@
           setEditStatus('');
           if (editStatusEl) editStatusEl.hidden = true;
           if (editTitleInput) editTitleInput.focus();
+          fetchLookupCandidates();
         } catch (error) {
           console.error('Failed to load movie detail', error);
           closeEditDialog();
@@ -252,6 +437,14 @@
         if (event.target === editDialog) {
           closeEditDialog({ restoreFocus: true });
         }
+      });
+
+      editLookupButton?.addEventListener('click', () => {
+        fetchLookupCandidates();
+      });
+
+      editLookupRetryButton?.addEventListener('click', () => {
+        fetchLookupCandidates();
       });
 
       const searchInput = document.getElementById('search-q');
