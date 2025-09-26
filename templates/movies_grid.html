@@ -16,21 +16,27 @@
 
   {% if poster_carousel_movies %}
   {% set carousel_sequence = poster_carousel_movies + poster_carousel_movies %}
-  <section class="poster-banner" aria-hidden="true">
+  <section class="poster-banner">
     <div class="poster-banner__viewport">
       <div class="poster-banner__track">
         {% for movie in carousel_sequence %}
           <figure class="poster-banner__item">
-            <div class="poster-banner__poster">
-              <img
-                class="poster-banner__image"
-                src="{{ movie.poster_url }}"
-                alt=""
-                loading="lazy"
-                title="{{ movie.title }}"
-              />
-              <span class="poster-banner__shine" aria-hidden="true"></span>
-            </div>
+            <a
+              class="poster-banner__link"
+              href="/ui/movies/{{ movie.id }}"
+              aria-label="View details for {{ movie.title }}"
+            >
+              <div class="poster-banner__poster">
+                <img
+                  class="poster-banner__image"
+                  src="{{ movie.poster_url }}"
+                  alt="{{ movie.title }} poster"
+                  loading="lazy"
+                  title="{{ movie.title }}"
+                />
+                <span class="poster-banner__shine" aria-hidden="true"></span>
+              </div>
+            </a>
           </figure>
         {% endfor %}
       </div>
