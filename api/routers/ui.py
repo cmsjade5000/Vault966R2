@@ -377,12 +377,15 @@ def movies_grid(
     table_movies = movies
 
     carousel_limit = 20
-    poster_carousel_movies: List[Movie] = []
-    for movie in movies:
-        if getattr(movie, "poster_url", None):
-            poster_carousel_movies.append(movie)
-        if len(poster_carousel_movies) >= carousel_limit:
-            break
+    poster_carousel_movies = (
+        db.query(Movie)
+        .options(selectinload(Movie.genres), selectinload(Movie.moods))
+        .filter(Movie.poster_url.isnot(None))
+        .order_by(func.random())
+        .limit(carousel_limit)
+        .all()
+    )
+    _attach_poster_themes(poster_carousel_movies)
 
     genres_value = ", ".join(params.genres)
     runtime_max_value = params.runtime_max if params.runtime_max is not None else ""
