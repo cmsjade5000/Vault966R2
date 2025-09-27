@@ -146,6 +146,26 @@
   }
 }
 
+@media (max-width: 640px) {
+  .poster-banner {
+    --poster-tile-size: clamp(120px, 44vw, 150px);
+    padding: clamp(0.75rem, 4vw, 1.25rem) 0;
+  }
+
+  .poster-banner::before {
+    inset: clamp(0.5rem, 6vw, 1.75rem);
+    border-radius: clamp(1.25rem, 10vw, 2.5rem);
+  }
+
+  .poster-banner__viewport {
+    padding-inline: clamp(0.75rem, 5vw, 1.25rem);
+  }
+
+  .poster-banner__track {
+    gap: clamp(0.35rem, 3vw, 0.75rem);
+  }
+}
+
 .page-hero {
   padding: 1.5rem clamp(1rem, 4vw, 3rem);
   margin: 0 auto;
