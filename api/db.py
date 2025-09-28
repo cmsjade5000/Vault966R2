@@ -143,6 +143,39 @@ def _ensure_sqlite_movie_columns() -> None:
                 )
             )
 
+        provenance_exists = connection.execute(
+            text(
+                "SELECT name FROM sqlite_master WHERE type='table' AND name='movie_ingest_provenance'"
+            )
+        ).first()
+        if not provenance_exists:
+            connection.execute(
+                text(
+                    """
+                    CREATE TABLE movie_ingest_provenance (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        movie_id INTEGER NOT NULL REFERENCES movies(id) ON DELETE CASCADE,
+                        provider TEXT NOT NULL,
+                        provider_id TEXT,
+                        ingested_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                        payload_sha TEXT,
+                        etag TEXT,
+                        source_url TEXT,
+                        notes TEXT,
+                        UNIQUE(movie_id, provider)
+                    )
+                    """
+                )
+            )
+            connection.execute(
+                text(
+                    """
+                    CREATE INDEX IF NOT EXISTS ix_movie_ingest_provenance_movie_id
+                    ON movie_ingest_provenance (movie_id)
+                    """
+                )
+            )
+
 
 _ensure_sqlite_movie_columns()
 
