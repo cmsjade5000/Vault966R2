@@ -15,29 +15,35 @@
   </header>
 
   {% if poster_carousel_movies %}
-  {% set carousel_sequence = poster_carousel_movies + poster_carousel_movies %}
   <section class="poster-banner">
     <div class="poster-banner__viewport">
-      <div class="poster-banner__track">
-        {% for movie in carousel_sequence %}
-          <figure class="poster-banner__item">
-            <a
-              class="poster-banner__link"
-              href="/ui/movies/{{ movie.id }}"
-              aria-label="View details for {{ movie.title }}"
-            >
-              <div class="poster-banner__poster">
-                <img
-                  class="poster-banner__image"
-                  src="{{ movie.poster_url }}"
-                  alt="{{ movie.title }} poster"
-                  loading="lazy"
-                  title="{{ movie.title }}"
-                />
-                <span class="poster-banner__shine" aria-hidden="true"></span>
+      <div class="poster-banner__track" data-poster-rotator>
+        {% for movie in poster_carousel_movies %}
+          <div class="poster-banner__slot" data-poster-slot>
+            <div class="poster-banner__card" data-poster-card>
+              <div class="poster-banner__face poster-banner__face--front" data-poster-face="front">
+                <figure class="poster-banner__item">
+                  <a
+                    class="poster-banner__link"
+                    href="/ui/movies/{{ movie.id }}"
+                    aria-label="View details for {{ movie.title }}"
+                  >
+                    <div class="poster-banner__poster">
+                      <img
+                        class="poster-banner__image"
+                        src="{{ movie.poster_url }}"
+                        alt="{{ movie.title }} poster"
+                        loading="lazy"
+                        title="{{ movie.title }}"
+                      />
+                      <span class="poster-banner__shine" aria-hidden="true"></span>
+                    </div>
+                  </a>
+                </figure>
               </div>
-            </a>
-          </figure>
+              <div class="poster-banner__face poster-banner__face--back" data-poster-face="back" aria-hidden="true"></div>
+            </div>
+          </div>
         {% endfor %}
       </div>
     </div>
@@ -227,7 +233,8 @@
       'initialTagline': initial_tagline,
       'total': total,
       'totalPages': total_pages,
-      'page': page
+      'page': page,
+      'posterCarouselMovies': poster_carousel_movies
     } | tojson }};
   </script>
   <script src="{{ url_for('static', path='js/movies_page.js') }}" defer></script>
