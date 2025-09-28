@@ -8,3 +8,8 @@ vault.db
 vault.db-journal
 dist/
 node_modules/
+# data/report artifacts
+data/*.csv
+reports/*.csv
+legacy/data/
+legacy/reports/
