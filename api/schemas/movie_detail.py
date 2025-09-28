@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import datetime
 from typing import List, Optional
 
 from pydantic import BaseModel, Field
@@ -39,6 +40,7 @@ class MovieDetail(BaseModel):
     title: str
     year: Optional[int] = None
     runtime: Optional[int] = None
+    tagline: Optional[str] = None
     plot: Optional[str] = None
     genres: List[str] = Field(default_factory=list)
     moods: List[str] = Field(default_factory=list)
@@ -48,11 +50,22 @@ class MovieDetail(BaseModel):
     tmdb_id: Optional[int] = None
     imdb_rating: Optional[float] = None
     imdb_votes: Optional[int] = None
+    metascore: Optional[int] = None
+    tomato_meter: Optional[int] = None
+    tomato_audience: Optional[int] = None
     rt_score: Optional[int] = None
+    awards: Optional[str] = None
+    revenue: Optional[int] = None
+    budget: Optional[int] = None
     where_to_watch: List[str] = Field(default_factory=list)
     languages: Optional[str] = None
     countries: Optional[str] = None
     collection: Optional[str] = None
+    last_tmdb_fetch_at: Optional[datetime] = None
+    last_omdb_fetch_at: Optional[datetime] = None
+    tmdb_etag: Optional[str] = None
+    tmdb_payload_sha: Optional[str] = None
+    omdb_payload_sha: Optional[str] = None
     roles: List[RoleWithPersonRead] = Field(default_factory=list)
     similar: List[SimilarMovie] = Field(default_factory=list)
     poster_theme: Optional[str] = None

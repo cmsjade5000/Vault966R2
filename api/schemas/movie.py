@@ -29,9 +29,18 @@ class MovieBase(BaseModel):
     title: str
     year: Optional[int] = None
     runtime: Optional[int] = None
+    tagline: Optional[str] = None
     plot: Optional[str] = None
+    awards: Optional[str] = None
+    revenue: Optional[int] = None
+    budget: Optional[int] = None
     imdb_id: Optional[str] = None
     tmdb_id: Optional[int] = None
+    imdb_rating: Optional[float] = None
+    imdb_votes: Optional[int] = None
+    metascore: Optional[int] = None
+    tomato_meter: Optional[int] = None
+    tomato_audience: Optional[int] = None
     poster_url: Optional[str] = None
     backdrop_url: Optional[str] = None
     where_to_watch: Optional[str] = None
@@ -50,6 +59,11 @@ class MovieRead(MovieBase):
     genres: List[GenreRead] = Field(default_factory=list)
     moods: List[MoodRead] = Field(default_factory=list)
     flagged: bool = False
+    last_tmdb_fetch_at: Optional[datetime] = None
+    last_omdb_fetch_at: Optional[datetime] = None
+    tmdb_etag: Optional[str] = None
+    tmdb_payload_sha: Optional[str] = None
+    omdb_payload_sha: Optional[str] = None
 
     class Config:
         from_attributes = True
@@ -59,7 +73,16 @@ class MovieUpdate(BaseModel):
     title: Optional[str] = None
     year: Optional[int] = None
     runtime: Optional[int] = None
+    tagline: Optional[str] = None
     plot: Optional[str] = None
+    awards: Optional[str] = None
+    revenue: Optional[int] = None
+    budget: Optional[int] = None
+    imdb_rating: Optional[float] = None
+    imdb_votes: Optional[int] = None
+    metascore: Optional[int] = None
+    tomato_meter: Optional[int] = None
+    tomato_audience: Optional[int] = None
     poster_url: Optional[str] = None
     backdrop_url: Optional[str] = None
     where_to_watch: Optional[List[str]] = None
