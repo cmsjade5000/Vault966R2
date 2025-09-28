@@ -1,6 +1,7 @@
+from datetime import datetime
 from typing import Optional, TYPE_CHECKING
 
-from sqlalchemy import Column, Float, ForeignKey, Integer, String, Table, Text
+from sqlalchemy import Column, DateTime, Float, ForeignKey, Integer, String, Table, Text, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 if TYPE_CHECKING:  # pragma: no cover - import for typing only
@@ -57,6 +58,12 @@ class Movie(Base):
         cascade="all, delete-orphan",
         uselist=False,
     )
+    ingest_provenance: Mapped[Optional["MovieIngestProvenance"]] = relationship(
+        "MovieIngestProvenance",
+        back_populates="movie",
+        cascade="all, delete-orphan",
+        uselist=False,
+    )
 
 
 class Genre(Base):
@@ -75,3 +82,19 @@ class Mood(Base):
     description: Mapped[Optional[str]] = mapped_column(String(300), nullable=True)
     emoji: Mapped[Optional[str]] = mapped_column(String(10), nullable=True)
     movies = relationship("Movie", secondary=movie_moods, back_populates="moods")
+
+
+class MovieIngestProvenance(Base):
+    __tablename__ = "movie_ingest_provenance"
+
+    movie_id: Mapped[int] = mapped_column(
+        ForeignKey("movies.id", ondelete="CASCADE"), primary_key=True
+    )
+    source: Mapped[str] = mapped_column(String(100), nullable=False)
+    payload_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    payload_snapshot: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False
+    )
+
+    movie = relationship("Movie", back_populates="ingest_provenance")

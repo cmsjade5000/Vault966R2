@@ -15,6 +15,7 @@ Usage examples:
 
 import argparse
 import csv
+import hashlib
 import json
 import logging
 import os
@@ -22,7 +23,7 @@ import pathlib
 import re
 import sys
 from collections import Counter, defaultdict
-from datetime import datetime
+from datetime import datetime, timezone
 from types import SimpleNamespace
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -36,7 +37,7 @@ from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError
 
 from api.db import Base, SessionLocal, engine
-from api.models.movie import Genre, Mood, Movie
+from api.models.movie import Genre, Mood, Movie, MovieIngestProvenance
 from api.models.person import Role  # noqa: F401 - ensure mapper registration
 from api.utils.providers import merge_providers
 
@@ -218,20 +219,32 @@ def load_overrides(path: pathlib.Path) -> Dict[Tuple[str, Optional[int]], str]:
     return overrides
 
 
-def coerce_int(value: Any) -> Optional[int]:
+def coerce_int(
+    value: Any, *, min_value: Optional[int] = None, max_value: Optional[int] = None
+) -> Optional[int]:
     if value in _NULL_STRINGS:
         return None
+    if isinstance(value, bool):
+        return None
     if isinstance(value, int):
-        return value
-    text = str(value).strip()
-    if not text or text in _NULL_STRINGS:
+        result = value
+    else:
+        text = str(value).strip()
+        if not text or text in _NULL_STRINGS:
+            return None
+        try:
+            if "." in text:
+                result = int(float(text))
+            else:
+                result = int(text)
+        except ValueError:
+            return None
+
+    if min_value is not None and result < min_value:
         return None
-    try:
-        if "." in text:
-            return int(float(text))
-        return int(text)
-    except ValueError:
+    if max_value is not None and result > max_value:
         return None
+    return result
 
 
 def split_multi(value: Any) -> List[str]:
@@ -294,19 +307,30 @@ def normalize_imdb_id(value: Any) -> Optional[str]:
     return f"tt{digits.zfill(7)}"
 
 
-def coerce_float(value: Any) -> Optional[float]:
+def coerce_float(
+    value: Any, *, min_value: Optional[float] = None, max_value: Optional[float] = None
+) -> Optional[float]:
     if value in _NULL_STRINGS:
         return None
+    if isinstance(value, bool):
+        return None
     if isinstance(value, (int, float)):
-        return float(value)
-    text = str(value).strip().lower()
-    if not text or text in _NULL_STRINGS:
+        result = float(value)
+    else:
+        text = str(value).strip().lower()
+        if not text or text in _NULL_STRINGS:
+            return None
+        text = text.replace(",", ".")
+        try:
+            result = float(text)
+        except ValueError:
+            return None
+
+    if min_value is not None and result < min_value:
         return None
-    text = text.replace(",", ".")
-    try:
-        return float(text)
-    except ValueError:
+    if max_value is not None and result > max_value:
         return None
+    return result
 
 
 def clean_text(value: Any) -> Optional[str]:
@@ -374,20 +398,20 @@ def normalize_row(raw: Dict[str, Any], row_number: int) -> Dict[str, Any]:
 
     record = {
         "title": title,
-        "year": coerce_int(year_value),
-        "runtime": coerce_int(runtime_value),
-        "plot": plot_value,
+        "year": coerce_int(year_value, min_value=1870, max_value=2100),
+        "runtime": coerce_int(runtime_value, min_value=1, max_value=1000),
+        "plot": clean_text(plot_value),
         "imdb_id": imdb_id,
         "imdb_id_original": imdb_id_raw,
         "imdb_invalid": imdb_invalid,
-        "tmdb_id": coerce_int(tmdb_value),
-        "poster_url": poster_value,
-        "backdrop_url": backdrop_value,
+        "tmdb_id": coerce_int(tmdb_value, min_value=1),
+        "poster_url": clean_text(poster_value),
+        "backdrop_url": clean_text(backdrop_value),
         "genres": split_multi(genres_value),
         "moods": split_multi(moods_value),
-        "imdb_rating": coerce_float(imdb_rating_value),
-        "imdb_votes": coerce_int(imdb_votes_value),
-        "rt_score": coerce_int(rt_score_value),
+        "imdb_rating": coerce_float(imdb_rating_value, min_value=0.0, max_value=10.0),
+        "imdb_votes": coerce_int(imdb_votes_value, min_value=0),
+        "rt_score": coerce_int(rt_score_value, min_value=0, max_value=100),
         "where_to_watch": normalize_providers(where_value),
         "languages": clean_text(languages_value),
         "countries": clean_text(countries_value),
@@ -501,6 +525,66 @@ def _write_db_duplicate(row: Dict[str, Any], path: pathlib.Path) -> None:
                 row.get("tmdb_id"),
             ]
         )
+
+
+def _normalize_snapshot_payload(payload: Dict[str, Any]) -> Dict[str, Any]:
+    normalized = {
+        "title": payload.get("title"),
+        "year": payload.get("year"),
+        "runtime": payload.get("runtime"),
+        "plot": payload.get("plot"),
+        "imdb_id": payload.get("imdb_id"),
+        "tmdb_id": payload.get("tmdb_id"),
+        "imdb_rating": payload.get("imdb_rating"),
+        "imdb_votes": payload.get("imdb_votes"),
+        "rt_score": payload.get("rt_score"),
+        "where_to_watch": payload.get("where_to_watch"),
+        "languages": payload.get("languages"),
+        "countries": payload.get("countries"),
+        "collection": payload.get("collection"),
+        "poster_url": payload.get("poster_url"),
+        "backdrop_url": payload.get("backdrop_url"),
+        "genres": sorted(payload.get("genres", [])),
+        "moods": sorted(payload.get("moods", [])),
+    }
+    return normalized
+
+
+def build_record_signature(record: Dict[str, Any]) -> tuple[str, str]:
+    normalized = _normalize_snapshot_payload(record)
+    payload_json = json.dumps(
+        normalized, sort_keys=True, separators=(",", ":"), ensure_ascii=False
+    )
+    payload_hash = hashlib.sha256(payload_json.encode("utf-8")).hexdigest()
+    return payload_json, payload_hash
+
+
+def build_movie_signature(movie: Movie) -> tuple[str, str]:
+    payload = {
+        "title": movie.title,
+        "year": movie.year,
+        "runtime": movie.runtime,
+        "plot": movie.plot,
+        "imdb_id": movie.imdb_id,
+        "tmdb_id": movie.tmdb_id,
+        "imdb_rating": movie.imdb_rating,
+        "imdb_votes": movie.imdb_votes,
+        "rt_score": movie.rt_score,
+        "where_to_watch": movie.where_to_watch,
+        "languages": movie.languages,
+        "countries": movie.countries,
+        "collection": movie.collection,
+        "poster_url": movie.poster_url,
+        "backdrop_url": movie.backdrop_url,
+        "genres": [genre.name for genre in movie.genres],
+        "moods": [mood.name for mood in movie.moods],
+    }
+    normalized = _normalize_snapshot_payload(payload)
+    payload_json = json.dumps(
+        normalized, sort_keys=True, separators=(",", ":"), ensure_ascii=False
+    )
+    payload_hash = hashlib.sha256(payload_json.encode("utf-8")).hexdigest()
+    return payload_json, payload_hash
 
 
 def apply_overrides(
@@ -646,8 +730,12 @@ def resolve_imdb_via_network(
 
 
 def process_record(
-    record: Dict[str, Any], dry_run: bool, duplicates_path: pathlib.Path
+    record: Dict[str, Any],
+    dry_run: bool,
+    duplicates_path: pathlib.Path,
+    provenance_source: str,
 ) -> Tuple[str, Optional[str]]:
+    incoming_snapshot, incoming_hash = build_record_signature(record)
     try:
         with SessionLocal() as session:
             imdb_id = record.get("imdb_id")
@@ -684,6 +772,14 @@ def process_record(
                     moods=mood_objs,
                 )
                 session.add(movie)
+                provenance = MovieIngestProvenance(
+                    movie=movie,
+                    source=provenance_source,
+                    payload_hash=incoming_hash,
+                    payload_snapshot=incoming_snapshot,
+                    updated_at=datetime.now(timezone.utc),
+                )
+                session.add(provenance)
                 session.flush()
                 if dry_run:
                     session.rollback()
@@ -691,6 +787,12 @@ def process_record(
                     session.commit()
                 return "inserted", None
             else:
+                provenance = session.get(MovieIngestProvenance, existing.id)
+                if provenance and provenance.payload_hash == incoming_hash:
+                    session.rollback()
+                    _write_db_duplicate(record, duplicates_path)
+                    return "skipped", "duplicate_payload"
+
                 updated = False
 
                 if record["title"] and record["title"] != existing.title:
@@ -776,6 +878,22 @@ def process_record(
                     session.rollback()
                     _write_db_duplicate(record, duplicates_path)
                     return "skipped", "duplicate_db"
+
+                snapshot_json, snapshot_hash = build_movie_signature(existing)
+                if provenance is None:
+                    provenance = MovieIngestProvenance(
+                        movie=existing,
+                        source=provenance_source,
+                        payload_hash=snapshot_hash,
+                        payload_snapshot=snapshot_json,
+                        updated_at=datetime.now(timezone.utc),
+                    )
+                    session.add(provenance)
+                else:
+                    provenance.source = provenance_source
+                    provenance.payload_hash = snapshot_hash
+                    provenance.payload_snapshot = snapshot_json
+                    provenance.updated_at = datetime.now(timezone.utc)
 
                 session.flush()
                 if dry_run:
@@ -988,7 +1106,12 @@ def main() -> int:
         seen_keys.add(dedup_key)
 
         try:
-            action, reason = process_record(record, args.dry_run, db_duplicates_path)
+            action, reason = process_record(
+                record,
+                args.dry_run,
+                db_duplicates_path,
+                log_source,
+            )
             if action == "inserted":
                 summary.inserted += 1
             elif action == "updated":

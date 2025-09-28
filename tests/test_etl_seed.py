@@ -5,7 +5,8 @@ from sqlalchemy import create_engine, select
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
-from api.models.movie import Movie
+from api.models.movie import Movie, MovieIngestProvenance
+from legacy.etl import etl_seed as legacy_etl_seed
 from scripts import etl_seed
 
 
@@ -26,12 +27,15 @@ def in_memory_session(monkeypatch):
     etl_seed.Base.metadata.create_all(bind=engine)
 
     original_session_local = etl_seed.SessionLocal
+    original_legacy_session_local = legacy_etl_seed.SessionLocal
     monkeypatch.setattr(etl_seed, "SessionLocal", TestingSessionLocal)
+    monkeypatch.setattr(legacy_etl_seed, "SessionLocal", TestingSessionLocal)
 
     yield TestingSessionLocal
 
     etl_seed.Base.metadata.drop_all(bind=engine)
     monkeypatch.setattr(etl_seed, "SessionLocal", original_session_local)
+    monkeypatch.setattr(legacy_etl_seed, "SessionLocal", original_legacy_session_local)
 
 
 def test_parse_list_deduplicates_and_handles_delimiters():
@@ -69,14 +73,14 @@ def test_normalize_row_with_extended_columns():
 
 
 def test_load_rows_csv(tmp_path):
-    sample_csv = pathlib.Path("scripts/samples/more_movies.csv")
+    sample_csv = pathlib.Path("legacy/etl/samples/more_movies.csv")
     rows = etl_seed.load_rows(sample_csv, "csv", "utf-8")
     assert len(rows) == 3
     assert rows[0]["title"] == "The Shawshank Redemption"
 
 
 def test_load_rows_csv_skips_preface_line():
-    sample_csv = pathlib.Path("scripts/samples/vault966_titles_years.csv")
+    sample_csv = pathlib.Path("legacy/etl/samples/vault966_titles_years.csv")
     rows = etl_seed.load_rows(sample_csv, "csv", "utf-8")
 
     assert len(rows) > 900
@@ -104,6 +108,7 @@ def test_process_record_insert_and_update(in_memory_session):
         record,
         dry_run=False,
         duplicates_path=pathlib.Path("reports/duplicates.csv"),
+        provenance_source="csv",
     )
     assert action == "inserted"
     assert reason is None
@@ -123,6 +128,7 @@ def test_process_record_insert_and_update(in_memory_session):
         record_update,
         dry_run=False,
         duplicates_path=pathlib.Path("reports/duplicates.csv"),
+        provenance_source="csv",
     )
     assert action == "updated"
     assert reason is None
@@ -152,6 +158,7 @@ def test_process_record_dry_run_does_not_commit(in_memory_session):
         record,
         dry_run=True,
         duplicates_path=pathlib.Path("reports/duplicates.csv"),
+        provenance_source="csv",
     )
     assert action == "inserted"
     assert reason is None
@@ -161,6 +168,50 @@ def test_process_record_dry_run_does_not_commit(in_memory_session):
             select(Movie).where(Movie.imdb_id == "tt1856101")
         ).scalar_one_or_none()
         assert result is None
+
+
+def test_process_record_tracks_provenance_and_hash(in_memory_session, tmp_path):
+    record = {
+        "title": "Arrival",
+        "year": 2016,
+        "runtime": 116,
+        "plot": "A linguist works with the military to communicate with alien life.",
+        "imdb_id": "tt2543164",
+        "tmdb_id": 329865,
+        "poster_url": "https://example.com/arrival.jpg",
+        "backdrop_url": None,
+        "genres": ["Sci-Fi"],
+        "moods": ["Thoughtful"],
+    }
+
+    duplicates_path = tmp_path / "duplicates.csv"
+    action, reason = etl_seed.process_record(
+        record,
+        dry_run=False,
+        duplicates_path=duplicates_path,
+        provenance_source="csv",
+    )
+    assert action == "inserted"
+    assert reason is None
+
+    with in_memory_session() as session:
+        movie = session.execute(
+            select(Movie).where(Movie.imdb_id == "tt2543164")
+        ).scalar_one()
+        provenance = session.get(MovieIngestProvenance, movie.id)
+        assert provenance is not None
+        assert provenance.source == "csv"
+        assert provenance.payload_hash
+        assert provenance.payload_snapshot
+
+    action, reason = etl_seed.process_record(
+        record,
+        dry_run=False,
+        duplicates_path=duplicates_path,
+        provenance_source="csv",
+    )
+    assert action == "skipped"
+    assert reason == "duplicate_payload"
 
 
 def test_process_record_skips_no_changes(in_memory_session):
@@ -181,6 +232,7 @@ def test_process_record_skips_no_changes(in_memory_session):
         record,
         dry_run=False,
         duplicates_path=pathlib.Path("reports/duplicates.csv"),
+        provenance_source="csv",
     )
     assert action == "inserted"
 
@@ -188,9 +240,10 @@ def test_process_record_skips_no_changes(in_memory_session):
         record,
         dry_run=False,
         duplicates_path=pathlib.Path("reports/duplicates.csv"),
+        provenance_source="csv",
     )
     assert action == "skipped"
-    assert reason == "duplicate_db"
+    assert reason == "duplicate_payload"
 
 
 def test_coerce_int_handles_messy_values():
