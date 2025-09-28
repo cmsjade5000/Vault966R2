@@ -29,9 +29,9 @@ import httpx
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
-ROOT_DIR = pathlib.Path(__file__).resolve().parents[1]
-if str(ROOT_DIR) not in sys.path:
-    sys.path.insert(0, str(ROOT_DIR))
+REPO_ROOT = pathlib.Path(__file__).resolve().parents[2]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
 
 from api.db import SessionLocal  # noqa: E402
 from api.models.movie import Movie  # noqa: E402
@@ -47,7 +47,7 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Enrich movie metadata from TMDb")
     parser.add_argument(
         "--output",
-        default=str(ROOT_DIR / "data" / "enriched_movies.csv"),
+        default=str(REPO_ROOT / "data" / "enriched_movies.csv"),
         help="CSV path to write (default: data/enriched_movies.csv)",
     )
     parser.add_argument(
