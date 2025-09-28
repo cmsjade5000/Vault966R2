@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional, TYPE_CHECKING
+from typing import List, Optional, TYPE_CHECKING
 
 from sqlalchemy import (
     BigInteger,
@@ -13,7 +13,9 @@ from sqlalchemy import (
     String,
     Table,
     Text,
+    UniqueConstraint,
 )
+from sqlalchemy import func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 if TYPE_CHECKING:  # pragma: no cover - import for typing only
@@ -112,6 +114,42 @@ class Movie(Base):
         back_populates="movie",
         cascade="all, delete-orphan",
         uselist=False,
+    )
+    ingest_provenance: Mapped[List["MovieIngestProvenance"]] = relationship(
+        "MovieIngestProvenance",
+        back_populates="movie",
+        cascade="all, delete-orphan",
+    )
+
+
+class MovieIngestProvenance(Base):
+    __tablename__ = "movie_ingest_provenance"
+    __table_args__ = (
+        Index("ix_movie_ingest_provenance_movie_id", "movie_id"),
+        UniqueConstraint(
+            "movie_id",
+            "provider",
+            name="uq_movie_ingest_provenance_movie_provider",
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    movie_id: Mapped[int] = mapped_column(
+        ForeignKey("movies.id", ondelete="CASCADE"), nullable=False
+    )
+    provider: Mapped[str] = mapped_column(String(50), nullable=False)
+    provider_id: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    ingested_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    payload_sha: Mapped[Optional[str]] = mapped_column(String(128), nullable=True)
+    etag: Mapped[Optional[str]] = mapped_column(String(128), nullable=True)
+    source_url: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
+    notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+
+    movie: Mapped["Movie"] = relationship(
+        "Movie",
+        back_populates="ingest_provenance",
     )
 
 
