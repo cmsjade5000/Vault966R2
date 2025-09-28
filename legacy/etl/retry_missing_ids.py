@@ -14,11 +14,18 @@ ROOT_DIR = pathlib.Path(__file__).resolve().parents[1]
 if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
 
-from scripts.etl_seed import (  # type: ignore
-    load_overrides,
-    normalize_title,
-    resolve_imdb_via_network,
-)
+try:
+    from scripts.etl_seed import (  # type: ignore
+        load_overrides,
+        normalize_title,
+        resolve_imdb_via_network,
+    )
+except RuntimeError:
+    from legacy.etl.etl_seed import (  # type: ignore
+        load_overrides,
+        normalize_title,
+        resolve_imdb_via_network,
+    )
 
 REPORTS_DIR = ROOT_DIR / "reports"
 DEFAULT_PATCH_PATH = REPORTS_DIR / "imdb_patch.json"
@@ -142,6 +149,8 @@ def main() -> int:
                 allow_network=not args.no_network,
                 tmdb_key=tmdb_key,
                 omdb_key=omdb_key,
+                max_retries=2,
+                retry_delay=0.2,
             )
             if source_tag == "tmdb_only" and tmdb_candidate:
                 resolved.append(
