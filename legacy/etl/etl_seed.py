@@ -15,6 +15,7 @@ Usage examples:
 
 import argparse
 import csv
+import hashlib
 import json
 import logging
 import os
@@ -22,6 +23,7 @@ import pathlib
 import re
 import sys
 from collections import Counter, defaultdict
+from dataclasses import dataclass
 from datetime import datetime
 from types import SimpleNamespace
 from typing import Any, Dict, List, Optional, Tuple
@@ -36,7 +38,16 @@ from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError
 
 from api.db import Base, SessionLocal, engine
-from api.models.movie import Genre, Mood, Movie
+from api.models.movie import Genre, Mood, Movie, MovieIngestProvenance
+
+
+@dataclass
+class ProvenanceContext:
+    provider: str
+    provider_id: Optional[str]
+    payload_sha: Optional[str]
+    source_url: Optional[str]
+    notes: Optional[str] = None
 from api.models.person import Role  # noqa: F401 - ensure mapper registration
 from api.utils.providers import merge_providers
 
@@ -396,6 +407,39 @@ def normalize_row(raw: Dict[str, Any], row_number: int) -> Dict[str, Any]:
     return record
 
 
+def _canonicalize_for_hash(value: Any) -> Any:
+    if isinstance(value, dict):
+        return {key: _canonicalize_for_hash(value[key]) for key in sorted(value)}
+    if isinstance(value, list):
+        normalized = [_canonicalize_for_hash(item) for item in value]
+        if all(isinstance(item, str) for item in normalized):
+            return sorted(normalized, key=str.casefold)
+        return normalized
+    return value
+
+
+def compute_payload_sha(record: Dict[str, Any]) -> str:
+    canonical = {key: _canonicalize_for_hash(value) for key, value in record.items()}
+    serialized = json.dumps(canonical, sort_keys=True, ensure_ascii=False, separators=(",", ":"))
+    return hashlib.sha256(serialized.encode("utf-8")).hexdigest()
+
+
+def determine_provenance_provider_id(record: Dict[str, Any]) -> Optional[str]:
+    imdb_id = record.get("imdb_id")
+    if imdb_id:
+        return str(imdb_id)
+    tmdb_id = record.get("tmdb_id")
+    if tmdb_id:
+        return f"tmdb:{tmdb_id}"
+    title = record.get("title")
+    if not title:
+        return None
+    year = record.get("year")
+    if year:
+        return f"{title} ({year})"
+    return str(title)
+
+
 def get_or_create_genre(session, name: str) -> Genre:
     stmt = select(Genre).where(Genre.name == name)
     genre = session.execute(stmt).scalar_one_or_none()
@@ -501,6 +545,51 @@ def _write_db_duplicate(row: Dict[str, Any], path: pathlib.Path) -> None:
                 row.get("tmdb_id"),
             ]
         )
+
+
+def _upsert_movie_provenance(
+    session,
+    movie: Movie,
+    provenance: ProvenanceContext,
+) -> None:
+    if provenance is None:
+        return
+
+    stmt = select(MovieIngestProvenance).where(
+        MovieIngestProvenance.movie_id == movie.id,
+        MovieIngestProvenance.provider == provenance.provider,
+    )
+    existing = session.execute(stmt).scalar_one_or_none()
+
+    if existing is None:
+        session.add(
+            MovieIngestProvenance(
+                movie_id=movie.id,
+                provider=provenance.provider,
+                provider_id=provenance.provider_id,
+                payload_sha=provenance.payload_sha,
+                source_url=provenance.source_url,
+                notes=provenance.notes,
+            )
+        )
+        return
+
+    updated = False
+    if provenance.provider_id is not None and existing.provider_id != provenance.provider_id:
+        existing.provider_id = provenance.provider_id
+        updated = True
+    if provenance.payload_sha is not None and existing.payload_sha != provenance.payload_sha:
+        existing.payload_sha = provenance.payload_sha
+        updated = True
+    if provenance.source_url is not None and existing.source_url != provenance.source_url:
+        existing.source_url = provenance.source_url
+        updated = True
+    if provenance.notes is not None and existing.notes != provenance.notes:
+        existing.notes = provenance.notes
+        updated = True
+
+    if updated:
+        session.add(existing)
 
 
 def apply_overrides(
@@ -646,7 +735,10 @@ def resolve_imdb_via_network(
 
 
 def process_record(
-    record: Dict[str, Any], dry_run: bool, duplicates_path: pathlib.Path
+    record: Dict[str, Any],
+    dry_run: bool,
+    duplicates_path: pathlib.Path,
+    provenance: Optional[ProvenanceContext] = None,
 ) -> Tuple[str, Optional[str]]:
     try:
         with SessionLocal() as session:
@@ -684,6 +776,8 @@ def process_record(
                     moods=mood_objs,
                 )
                 session.add(movie)
+                session.flush()
+                _upsert_movie_provenance(session, movie, provenance)
                 session.flush()
                 if dry_run:
                     session.rollback()
@@ -777,6 +871,7 @@ def process_record(
                     _write_db_duplicate(record, duplicates_path)
                     return "skipped", "duplicate_db"
 
+                _upsert_movie_provenance(session, existing, provenance)
                 session.flush()
                 if dry_run:
                     session.rollback()
@@ -987,8 +1082,19 @@ def main() -> int:
             continue
         seen_keys.add(dedup_key)
 
+        payload_sha = compute_payload_sha(record)
+        provenance = ProvenanceContext(
+            provider="etl_seed",
+            provider_id=determine_provenance_provider_id(record),
+            payload_sha=payload_sha,
+            source_url=str(path),
+            notes=f"Row {index} from {path.name}",
+        )
+
         try:
-            action, reason = process_record(record, args.dry_run, db_duplicates_path)
+            action, reason = process_record(
+                record, args.dry_run, db_duplicates_path, provenance
+            )
             if action == "inserted":
                 summary.inserted += 1
             elif action == "updated":
