@@ -78,6 +78,8 @@ class MovieUpdate(BaseModel):
     awards: Optional[str] = None
     revenue: Optional[int] = None
     budget: Optional[int] = None
+    imdb_id: Optional[str] = None
+    tmdb_id: Optional[int] = None
     imdb_rating: Optional[float] = None
     imdb_votes: Optional[int] = None
     metascore: Optional[int] = None
@@ -86,6 +88,15 @@ class MovieUpdate(BaseModel):
     poster_url: Optional[str] = None
     backdrop_url: Optional[str] = None
     where_to_watch: Optional[List[str]] = None
+    languages: Optional[str] = None
+    countries: Optional[str] = None
+    collection: Optional[str] = None
+    rt_score: Optional[int] = None
+    last_tmdb_fetch_at: Optional[datetime] = None
+    last_omdb_fetch_at: Optional[datetime] = None
+    tmdb_etag: Optional[str] = None
+    tmdb_payload_sha: Optional[str] = None
+    omdb_payload_sha: Optional[str] = None
     genres: Optional[List[str]] = None
     resolve_flag: bool = False
 
