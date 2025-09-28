@@ -6,7 +6,11 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from api.models.movie import Movie
-from scripts import etl_seed
+
+try:
+    from scripts import etl_seed  # type: ignore
+except RuntimeError:
+    from legacy.etl import etl_seed as etl_seed  # type: ignore
 
 
 @pytest.fixture()
@@ -69,14 +73,14 @@ def test_normalize_row_with_extended_columns():
 
 
 def test_load_rows_csv(tmp_path):
-    sample_csv = pathlib.Path("scripts/samples/more_movies.csv")
+    sample_csv = pathlib.Path("legacy/etl/samples/more_movies.csv")
     rows = etl_seed.load_rows(sample_csv, "csv", "utf-8")
     assert len(rows) == 3
     assert rows[0]["title"] == "The Shawshank Redemption"
 
 
 def test_load_rows_csv_skips_preface_line():
-    sample_csv = pathlib.Path("scripts/samples/vault966_titles_years.csv")
+    sample_csv = pathlib.Path("legacy/etl/samples/vault966_titles_years.csv")
     rows = etl_seed.load_rows(sample_csv, "csv", "utf-8")
 
     assert len(rows) > 900
@@ -259,6 +263,8 @@ def test_resolve_imdb_via_network_tmdb_handles_parenthetical_titles(monkeypatch)
         allow_network=True,
         tmdb_key="tmdb-key",
         omdb_key=None,
+        max_retries=2,
+        retry_delay=0.2,
     )
 
     assert imdb_id == "tt1234567"
@@ -299,6 +305,8 @@ def test_resolve_imdb_via_network_omdb_strips_parenthetical_titles(monkeypatch):
         allow_network=True,
         tmdb_key="tmdb-key",
         omdb_key="omdb-key",
+        max_retries=2,
+        retry_delay=0.2,
     )
 
     assert imdb_id == "tt0066999"
@@ -339,6 +347,8 @@ def test_resolve_imdb_via_network_allows_year_plus_minus_one(monkeypatch):
         allow_network=True,
         tmdb_key="tmdb-key",
         omdb_key="omdb-key",
+        max_retries=2,
+        retry_delay=0.2,
     )
 
     assert imdb_id == "tt0066999"
@@ -373,6 +383,8 @@ def test_resolve_imdb_via_network_records_last_omdb_payload(monkeypatch):
         allow_network=True,
         tmdb_key="tmdb-key",
         omdb_key="omdb-key",
+        max_retries=2,
+        retry_delay=0.2,
     )
 
     assert imdb_id is None
