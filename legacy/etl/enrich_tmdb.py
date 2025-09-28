@@ -23,7 +23,8 @@ import re
 import sys
 import time
 from datetime import datetime, timezone
-from typing import Dict, Iterable, List, Optional, Sequence
+from collections.abc import Mapping, Sequence as SequenceCollection
+from typing import Any, Dict, Iterable, List, Optional, Sequence
 
 import httpx
 from sqlalchemy import select
@@ -36,7 +37,7 @@ if str(REPO_ROOT) not in sys.path:
 from api.db import SessionLocal  # noqa: E402
 from api.models.movie import Movie  # noqa: E402
 from api.models.person import Role  # noqa: E402,F401  # ensure mapper registration
-from api.utils.providers import merge_providers  # noqa: E402
+from api.utils.providers import merge_providers, split_providers  # noqa: E402
 
 
 TMDB_API_BASE = "https://api.themoviedb.org/3"
@@ -118,11 +119,42 @@ def join_unique(values: Iterable[Optional[str]]) -> str:
     return "; ".join(ordered)
 
 
-def split_existing(value: Optional[str]) -> List[str]:
-    if not value:
-        return []
+def _tokenize_string(value: str) -> List[str]:
     parts = re.split(r"[;,]", value)
     return [part.strip() for part in parts if part and part.strip()]
+
+
+def _iter_existing_tokens(value: Any) -> Iterable[str]:
+    if value is None:
+        return
+    if isinstance(value, str):
+        for token in _tokenize_string(value):
+            yield token
+        return
+    if isinstance(value, Mapping):
+        provider_name = value.get("provider_name")
+        if provider_name is not None:
+            yield from _iter_existing_tokens(provider_name)
+            return
+        for item in value.values():
+            yield from _iter_existing_tokens(item)
+        return
+    if isinstance(value, SequenceCollection) and not isinstance(value, (str, bytes, bytearray)):
+        for item in value:
+            yield from _iter_existing_tokens(item)
+        return
+    text = str(value).strip()
+    if not text:
+        return
+    for token in _tokenize_string(text):
+        yield token
+
+
+def split_existing(value: Any) -> List[str]:
+    tokens = list(_iter_existing_tokens(value))
+    if not tokens:
+        return []
+    return split_providers(tokens)
 
 
 def extract_keywords(payload: Dict[str, object]) -> str:
