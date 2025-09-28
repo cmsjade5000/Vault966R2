@@ -43,7 +43,10 @@ def _append_row(path: pathlib.Path, fieldnames: Iterable[str], row: dict) -> Non
     file_exists = path.exists()
     with path.open("a", encoding="utf-8", newline="") as handle:
         writer = csv.DictWriter(handle, fieldnames=fieldnames)
-        if not file_exists:
+        write_header = not file_exists
+        if not write_header and handle.tell() == 0:
+            write_header = True
+        if write_header:
             writer.writeheader()
         writer.writerow(row)
 

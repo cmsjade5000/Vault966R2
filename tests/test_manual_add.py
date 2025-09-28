@@ -1,8 +1,34 @@
+import csv
+
 from fastapi.testclient import TestClient
 
 from api.db import get_db
 from api.models.movie import Movie
 from api.routers.ui.manual_add import ManualMovieCreate, ManualMovieMetadata
+from api.services import manual_add
+
+
+EXPECTED_ENRICHED_FIELDNAMES = [
+    "title",
+    "year",
+    "imdb_id",
+    "tmdb_id",
+    "runtime_min",
+    "plot",
+    "poster_url",
+    "backdrop_url",
+    "genres",
+    "moods",
+    "keywords",
+    "imdb_rating",
+    "imdb_votes",
+    "rt_score",
+    "where_to_watch",
+    "languages",
+    "countries",
+    "collection",
+    "tmdb_last_scraped",
+]
 
 
 def _fetch_movie(client: TestClient, title: str) -> dict | None:
@@ -75,3 +101,81 @@ def test_manual_add_rejects_duplicate_imdb(client: TestClient):
     second = client.post("/ui/movies/manual-add", json=duplicate_title.model_dump())
     assert second.status_code == 409
     assert "IMDb ID" in second.json()["detail"]
+
+
+def test_append_movie_to_cleaned_csv_writes_header_for_new_file(tmp_path, monkeypatch):
+    monkeypatch.setattr(manual_add, "DATA_DIR", tmp_path)
+
+    wrote_row = manual_add.append_movie_to_cleaned_csv("Solaris", 1972)
+    assert wrote_row is True
+
+    path = tmp_path / "cleaned_titles.csv"
+    with path.open("r", encoding="utf-8", newline="") as handle:
+        reader = csv.DictReader(handle)
+        assert reader.fieldnames == ["title", "year"]
+        rows = list(reader)
+    assert rows == [{"title": "Solaris", "year": "1972"}]
+
+
+def test_append_movie_to_cleaned_csv_adds_header_for_empty_file(tmp_path, monkeypatch):
+    monkeypatch.setattr(manual_add, "DATA_DIR", tmp_path)
+
+    path = tmp_path / "cleaned_titles.csv"
+    path.touch()
+    assert path.exists()
+    assert path.stat().st_size == 0
+
+    wrote_row = manual_add.append_movie_to_cleaned_csv("Dune", 1984)
+    assert wrote_row is True
+
+    with path.open("r", encoding="utf-8", newline="") as handle:
+        reader = csv.DictReader(handle)
+        assert reader.fieldnames == ["title", "year"]
+        rows = list(reader)
+    assert rows == [{"title": "Dune", "year": "1984"}]
+
+
+def test_append_movie_to_enriched_csv_writes_header_for_new_file(tmp_path, monkeypatch):
+    monkeypatch.setattr(manual_add, "DATA_DIR", tmp_path)
+
+    wrote_row = manual_add.append_movie_to_enriched_csv(
+        "Arrival",
+        2016,
+        metadata={"imdb_id": "tt2543164", "tmdb_id": 329865},
+        providers=["Hulu"],
+    )
+    assert wrote_row is True
+
+    path = tmp_path / "enriched_movies.csv"
+    with path.open("r", encoding="utf-8", newline="") as handle:
+        reader = csv.DictReader(handle)
+        assert reader.fieldnames == EXPECTED_ENRICHED_FIELDNAMES
+        rows = list(reader)
+    assert len(rows) == 1
+    assert rows[0]["title"] == "Arrival"
+    assert rows[0]["imdb_id"] == "tt2543164"
+    assert rows[0]["where_to_watch"] == "Hulu"
+
+
+def test_append_movie_to_enriched_csv_adds_header_for_empty_file(tmp_path, monkeypatch):
+    monkeypatch.setattr(manual_add, "DATA_DIR", tmp_path)
+
+    path = tmp_path / "enriched_movies.csv"
+    path.touch()
+    assert path.exists()
+    assert path.stat().st_size == 0
+
+    wrote_row = manual_add.append_movie_to_enriched_csv("Ex Machina", 2014)
+    assert wrote_row is True
+
+    with path.open("r", encoding="utf-8", newline="") as handle:
+        reader = csv.DictReader(handle)
+        assert reader.fieldnames == EXPECTED_ENRICHED_FIELDNAMES
+        rows = list(reader)
+    assert len(rows) == 1
+    assert rows[0]["title"] == "Ex Machina"
+    assert rows[0]["year"] == "2014"
+    for field in EXPECTED_ENRICHED_FIELDNAMES:
+        if field in {"title", "year"}:
+            continue
+        assert rows[0][field] == ""
