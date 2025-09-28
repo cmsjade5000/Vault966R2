@@ -1,4 +1,4 @@
-from core.picker import calculate_flic_score
+from core.picker import PickerCandidate, PickerFilters, calculate_flic_score
 
 
 def test_flic_score_genre_and_mood_bonus():
@@ -21,6 +21,26 @@ def test_flic_score_genre_and_mood_bonus():
     assert breakdown["mood_match"] == 15
     assert breakdown["runtime_match"] == 10
     assert breakdown["year_bonus"] == 10
+
+
+def test_picker_helpers_build_payloads():
+    params = PickerFilters.from_values(
+        genres=["sci fi", "Drama"],
+        moods=["Moody", "Moody"],
+        runtime_max=120,
+        year_min=2010,
+        year_max=2020,
+    )
+    filters = params.to_payload()
+    candidate = PickerCandidate.from_iterables(
+        genres=["Sci-Fi", "Drama"],
+        moods=["Moody"],
+        runtime=105,
+        year=2012,
+    ).to_payload()
+    score, breakdown = calculate_flic_score(candidate, filters)
+    assert score > 100
+    assert breakdown["genre_match"] == 20
 
 
 def test_flic_score_penalties():

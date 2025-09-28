@@ -1,9 +1,115 @@
-"""Flic scoring and selection logic."""
+"""Flic scoring, selection, and normalization helpers."""
 
 from __future__ import annotations
 
 import random
-from typing import Any, Dict, List, Optional, Tuple
+from dataclasses import dataclass
+from typing import Any, Dict, Iterable, List, Optional, Tuple
+
+from core.genres import split_and_normalize
+from core.movie_filters import MovieFilterParams
+
+
+def _normalize_sequence(raw: Optional[Iterable[str]]) -> Tuple[str, ...]:
+    """Return a tuple of unique, stripped strings in their original order."""
+
+    if not raw:
+        return ()
+    seen: list[str] = []
+    for value in raw:
+        if value is None:
+            continue
+        candidate = str(value).strip()
+        if candidate and candidate not in seen:
+            seen.append(candidate)
+    return tuple(seen)
+
+
+@dataclass(frozen=True)
+class PickerFilters:
+    """Normalized filters used for Flic scoring."""
+
+    genres: Tuple[str, ...] = ()
+    moods: Tuple[str, ...] = ()
+    runtime_min: Optional[int] = None
+    runtime_max: Optional[int] = None
+    year_min: Optional[int] = None
+    year_max: Optional[int] = None
+
+    @classmethod
+    def from_params(cls, params: MovieFilterParams) -> "PickerFilters":
+        return cls(
+            genres=tuple(split_and_normalize(params.genres)),
+            moods=params.moods,
+            runtime_min=params.runtime_min,
+            runtime_max=params.runtime_max,
+            year_min=params.year_min,
+            year_max=params.year_max,
+        )
+
+    @classmethod
+    def from_values(
+        cls,
+        *,
+        genres: Optional[Iterable[str]] = None,
+        moods: Optional[Iterable[str]] = None,
+        runtime_min: Optional[int] = None,
+        runtime_max: Optional[int] = None,
+        year_min: Optional[int] = None,
+        year_max: Optional[int] = None,
+    ) -> "PickerFilters":
+        return cls(
+            genres=tuple(split_and_normalize(genres or ())),
+            moods=_normalize_sequence(moods),
+            runtime_min=runtime_min,
+            runtime_max=runtime_max,
+            year_min=year_min,
+            year_max=year_max,
+        )
+
+    def to_payload(self) -> Dict[str, Any]:
+        return {
+            "genres": list(self.genres),
+            "moods": list(self.moods),
+            "runtime_min": self.runtime_min,
+            "runtime_max": self.runtime_max,
+            "year_min": self.year_min,
+            "year_max": self.year_max,
+        }
+
+
+@dataclass(frozen=True)
+class PickerCandidate:
+    """Normalized movie attributes used for Flic scoring."""
+
+    genres: Tuple[str, ...] = ()
+    moods: Tuple[str, ...] = ()
+    runtime: Optional[int] = None
+    year: Optional[int] = None
+
+    @classmethod
+    def from_iterables(
+        cls,
+        *,
+        genres: Optional[Iterable[str]] = None,
+        moods: Optional[Iterable[str]] = None,
+        runtime: Optional[int],
+        year: Optional[int],
+    ) -> "PickerCandidate":
+        return cls(
+            genres=tuple(split_and_normalize(genres or ())),
+            moods=_normalize_sequence(moods),
+            runtime=runtime,
+            year=year,
+        )
+
+    def to_payload(self) -> Dict[str, Any]:
+        return {
+            "genres": list(self.genres),
+            "moods": list(self.moods),
+            "runtime": self.runtime,
+            "year": self.year,
+        }
 
 
 def _genre_bonus(candidate: Dict[str, Any], filters: Dict[str, Any]) -> Tuple[float, float]:
@@ -118,3 +224,11 @@ def pick_movie(
             best = candidate
 
     return best
+
+
+__all__ = [
+    "PickerCandidate",
+    "PickerFilters",
+    "calculate_flic_score",
+    "pick_movie",
+]

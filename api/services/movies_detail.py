@@ -13,7 +13,7 @@ from api.schemas.movie_detail import (
     RoleWithPersonRead,
     SimilarMovie,
 )
-from core.picker import calculate_flic_score
+from core.picker import PickerCandidate, PickerFilters, calculate_flic_score
 from core.poster_theme import select_poster_theme
 from core.genres import split_and_normalize
 from api.utils.providers import split_providers
@@ -82,12 +82,12 @@ def _get_similarity_candidates(db: Session, movie: Movie) -> List[Movie]:
 def _score_similar(movie: Movie, candidates: List[Movie]) -> List[SimilarMovie]:
     base_genres = set(split_and_normalize([genre.name for genre in movie.genres]))
 
-    filters = {
-        "genres": list(base_genres),
-        "runtime_max": movie.runtime,
-        "year_min": movie.year - 5 if movie.year else None,
-        "year_max": movie.year + 5 if movie.year else None,
-    }
+    filters = PickerFilters.from_values(
+        genres=base_genres,
+        runtime_max=movie.runtime,
+        year_min=movie.year - 5 if movie.year else None,
+        year_max=movie.year + 5 if movie.year else None,
+    ).to_payload()
 
     scored: List[SimilarMovie] = []
     for candidate in candidates:
@@ -96,11 +96,12 @@ def _score_similar(movie: Movie, candidates: List[Movie]) -> List[SimilarMovie]:
         if shared_genres < 1:
             continue
 
-        candidate_payload = {
-            "genres": list(candidate_genres),
-            "runtime": candidate.runtime,
-            "year": candidate.year,
-        }
+        candidate_payload = PickerCandidate.from_iterables(
+            genres=candidate_genres,
+            moods=None,
+            runtime=candidate.runtime,
+            year=candidate.year,
+        ).to_payload()
         score, _ = calculate_flic_score(candidate_payload, filters)
         scored.append(
             SimilarMovie(
