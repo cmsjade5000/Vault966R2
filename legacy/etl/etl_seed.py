@@ -21,6 +21,7 @@ import os
 import pathlib
 import re
 import sys
+import time
 from collections import Counter, defaultdict
 from datetime import datetime
 from types import SimpleNamespace
@@ -31,6 +32,8 @@ import httpx
 ROOT_DIR = pathlib.Path(__file__).resolve().parents[1]
 if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
+
+import api.models  # noqa: F401  # ensure all ORM mappers are registered (e.g., MovieFlag)
 
 from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError
@@ -78,6 +81,18 @@ def parse_args() -> argparse.Namespace:
         "--encoding",
         default="utf-8",
         help="File encoding (default: utf-8).",
+    )
+    parser.add_argument(
+        "--max-retries",
+        type=int,
+        default=2,
+        help="Max HTTP retries for TMDb/OMDb lookups (default: 2).",
+    )
+    parser.add_argument(
+        "--retry-delay",
+        type=float,
+        default=0.2,
+        help="Delay in seconds between HTTP retries (default: 0.2).",
     )
     return parser.parse_args()
 
@@ -130,6 +145,7 @@ def load_rows(path: pathlib.Path, file_format: str, encoding: str) -> List[Dict[
         if not csv_lines:
             return []
 
+        # Remove BOM if present on header line
         csv_lines[0] = csv_lines[0].lstrip("\ufeff")
         reader = csv.DictReader(csv_lines)
 
@@ -138,6 +154,30 @@ def load_rows(path: pathlib.Path, file_format: str, encoding: str) -> List[Dict[
             cleaned = {key: value for key, value in row.items() if key is not None}
             rows.append(cleaned)
         return rows
+
+
+def _http_get_with_retries(
+    url: str,
+    *,
+    params: Dict[str, Any],
+    timeout: float,
+    max_retries: int,
+    retry_delay: float,
+    tag: str,
+) -> Optional[httpx.Response]:
+    """HTTP GET with simple retry/backoff. Returns None after exhausting retries."""
+    attempt = 0
+    while True:
+        try:
+            resp = httpx.get(url, params=params, timeout=timeout)
+            resp.raise_for_status()
+            return resp
+        except httpx.HTTPError as exc:
+            attempt += 1
+            if attempt > max_retries:
+                logger.warning("%s lookup failed after %s attempts: %s", tag, attempt - 1, exc)
+                return None
+            time.sleep(retry_delay)
 
 
 _NULL_STRINGS = {"", " ", "n/a", "N/A", "unknown", "NULL", "NaN", "nan", None}
@@ -527,6 +567,8 @@ def resolve_imdb_via_network(
     allow_network: bool,
     tmdb_key: Optional[str],
     omdb_key: Optional[str],
+    max_retries: int,
+    retry_delay: float,
 ) -> Tuple[Optional[str], Optional[str], Optional[int]]:
     resolver_state.last_tmdb_imdb_id = None
     resolver_state.last_omdb_payload = None
@@ -552,11 +594,15 @@ def resolve_imdb_via_network(
             params = {"query": sanitized_title, "api_key": tmdb_key}
             if year:
                 params["year"] = year
-            response = httpx.get(
-                "https://api.themoviedb.org/3/search/movie", params=params, timeout=10.0
+            response = _http_get_with_retries(
+                "https://api.themoviedb.org/3/search/movie",
+                params=params,
+                timeout=10.0,
+                max_retries=max_retries,
+                retry_delay=retry_delay,
+                tag="TMDb search",
             )
-            response.raise_for_status()
-            data = response.json()
+            data = response.json() if response is not None else {"results": []}
             results = data.get("results", [])
             for result in results:
                 result_title = str(result.get("title", ""))
@@ -569,13 +615,15 @@ def resolve_imdb_via_network(
                 tmdb_id = result.get("id")
                 if tmdb_id:
                     tmdb_candidate = tmdb_id
-                    external = httpx.get(
+                    external = _http_get_with_retries(
                         f"https://api.themoviedb.org/3/movie/{tmdb_id}/external_ids",
                         params={"api_key": tmdb_key},
                         timeout=10.0,
+                        max_retries=max_retries,
+                        retry_delay=retry_delay,
+                        tag="TMDb external_ids",
                     )
-                    external.raise_for_status()
-                    external_payload = external.json()
+                    external_payload = external.json() if external is not None else {}
                     imdb_id = extract_imdb_from_tmdb_external_ids(external_payload)
                     if imdb_id:
                         resolver_state.last_tmdb_imdb_id = imdb_id
@@ -589,26 +637,30 @@ def resolve_imdb_via_network(
     def _omdb_lookup(params: Dict[str, Any], tag: str) -> Optional[Tuple[str, str, Optional[int]]]:
         # Use a copy so we can mutate for logging/testing without affecting callers.
         query_params = dict(params)
-        try:
-            response = httpx.get("https://www.omdbapi.com/", params=query_params, timeout=10.0)
-            response.raise_for_status()
-            data = response.json()
-            resolver_state.last_omdb_payload = data
-            imdb_id = extract_imdb_from_omdb(data)
-            if not imdb_id:
-                return None
-            if year:
-                omdb_year = data.get("Year")
-                try:
-                    omdb_year_int = int(str(omdb_year).split("–")[0]) if omdb_year else None
-                except ValueError:
-                    omdb_year_int = None
-                if omdb_year_int is not None and abs(omdb_year_int - year) > 1:
-                    return None
-            return imdb_id, tag, tmdb_candidate
-        except httpx.HTTPError as exc:
-            logger.warning("OMDb lookup failed: %s", exc)
+        response = _http_get_with_retries(
+            "https://www.omdbapi.com/",
+            params=query_params,
+            timeout=10.0,
+            max_retries=max_retries,
+            retry_delay=retry_delay,
+            tag=f"OMDb {tag}",
+        )
+        if response is None:
             return None
+        data = response.json()
+        resolver_state.last_omdb_payload = data
+        imdb_id = extract_imdb_from_omdb(data)
+        if not imdb_id:
+            return None
+        if year:
+            omdb_year = data.get("Year")
+            try:
+                omdb_year_int = int(str(omdb_year).split("–")[0]) if omdb_year else None
+            except ValueError:
+                omdb_year_int = None
+            if omdb_year_int is not None and abs(omdb_year_int - year) > 1:
+                return None
+        return imdb_id, tag, tmdb_candidate
 
     if omdb_key:
         query_title = omdb_title or title
@@ -885,6 +937,8 @@ def main() -> int:
                 allow_network=allow_network,
                 tmdb_key=tmdb_key,
                 omdb_key=omdb_key,
+                max_retries=args.max_retries,
+                retry_delay=args.retry_delay,
             )
             if resolved:
                 record["imdb_id"] = resolved
