@@ -18,6 +18,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 if TYPE_CHECKING:  # pragma: no cover - import for typing only
     from api.models.movie_flag import MovieFlag
+    from api.models.movie_ingest_provenance import MovieIngestProvenance
 
 from api.db import Base
 
@@ -112,6 +113,11 @@ class Movie(Base):
         back_populates="movie",
         cascade="all, delete-orphan",
         uselist=False,
+    )
+    ingest_provenance = relationship(
+        "MovieIngestProvenance",
+        back_populates="movie",
+        cascade="all, delete-orphan",
     )
 
 

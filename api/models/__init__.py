@@ -6,5 +6,6 @@ Import key models here so SQLAlchemy registers all mappers at import time.
 # like relationship("MovieFlag") inside Movie.
 from .movie import Movie  # noqa: F401
 from .movie_flag import MovieFlag  # noqa: F401
+from .movie_ingest_provenance import MovieIngestProvenance  # noqa: F401
 
-__all__ = ["Movie", "MovieFlag"]
+__all__ = ["Movie", "MovieFlag", "MovieIngestProvenance"]

@@ -6,7 +6,8 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from api.models.movie import Movie
-from scripts import etl_seed
+from api.models.movie_ingest_provenance import MovieIngestProvenance
+from legacy.etl import etl_seed
 
 
 @pytest.fixture()
@@ -69,14 +70,14 @@ def test_normalize_row_with_extended_columns():
 
 
 def test_load_rows_csv(tmp_path):
-    sample_csv = pathlib.Path("scripts/samples/more_movies.csv")
+    sample_csv = pathlib.Path("legacy/etl/samples/more_movies.csv")
     rows = etl_seed.load_rows(sample_csv, "csv", "utf-8")
     assert len(rows) == 3
     assert rows[0]["title"] == "The Shawshank Redemption"
 
 
 def test_load_rows_csv_skips_preface_line():
-    sample_csv = pathlib.Path("scripts/samples/vault966_titles_years.csv")
+    sample_csv = pathlib.Path("legacy/etl/samples/vault966_titles_years.csv")
     rows = etl_seed.load_rows(sample_csv, "csv", "utf-8")
 
     assert len(rows) > 900
@@ -191,6 +192,117 @@ def test_process_record_skips_no_changes(in_memory_session):
     )
     assert action == "skipped"
     assert reason == "duplicate_db"
+
+
+def test_process_record_payload_hashes_and_provenance(in_memory_session, tmp_path):
+    tmdb_payload_initial = {"id": 27205, "title": "Inception"}
+    omdb_payload_initial = {"Title": "Inception", "Response": "True"}
+
+    record = {
+        "title": "Inception",
+        "year": 2010,
+        "runtime": 148,
+        "plot": "A thief steals corporate secrets through dream-sharing technology.",
+        "imdb_id": "tt1375666",
+        "tmdb_id": 27205,
+        "poster_url": "https://example.com/inception.jpg",
+        "backdrop_url": None,
+        "genres": ["Sci-Fi"],
+        "moods": ["Mind-bending"],
+        "tmdb_payload_sha": etl_seed.compute_payload_sha(tmdb_payload_initial),
+        "omdb_payload_sha": etl_seed.compute_payload_sha(omdb_payload_initial),
+        "tmdb_etag": "W/\"etag1\"",
+        "omdb_etag": "etag-omdb-1",
+        "tmdb_source_url": "https://api.themoviedb.org/3/movie/27205",
+        "omdb_source_url": "https://www.omdbapi.com/?i=tt1375666",
+    }
+
+    duplicates_path = tmp_path / "duplicates.csv"
+
+    action, reason = etl_seed.process_record(
+        record,
+        dry_run=False,
+        duplicates_path=duplicates_path,
+    )
+    assert action == "inserted"
+    assert reason is None
+
+    with in_memory_session() as session:
+        movie = session.execute(select(Movie).where(Movie.imdb_id == "tt1375666")).scalar_one()
+        assert movie.tmdb_payload_sha == record["tmdb_payload_sha"]
+        assert movie.omdb_payload_sha == record["omdb_payload_sha"]
+
+        provenances = (
+            session.execute(
+                select(MovieIngestProvenance).where(
+                    MovieIngestProvenance.movie_id == movie.id
+                )
+            )
+            .scalars()
+            .all()
+        )
+        assert {(p.provider, p.payload_sha) for p in provenances} == {
+            ("tmdb", record["tmdb_payload_sha"]),
+            ("omdb", record["omdb_payload_sha"]),
+        }
+        tmdb_prov = next(p for p in provenances if p.provider == "tmdb")
+        assert tmdb_prov.provider_id == str(record["tmdb_id"])
+        assert tmdb_prov.etag == record["tmdb_etag"]
+        assert tmdb_prov.source_url == record["tmdb_source_url"]
+
+    action, reason = etl_seed.process_record(
+        record,
+        dry_run=False,
+        duplicates_path=duplicates_path,
+    )
+    assert action == "skipped"
+    assert reason == "identical_tmdb_omdb"
+
+    tmdb_payload_updated = {"id": 27205, "title": "Inception", "tagline": "Dream bigger"}
+    omdb_payload_updated = {
+        "Title": "Inception",
+        "Response": "True",
+        "BoxOffice": "$100",
+    }
+
+    updated_record = {
+        **record,
+        "tmdb_payload_sha": etl_seed.compute_payload_sha(tmdb_payload_updated),
+        "omdb_payload_sha": etl_seed.compute_payload_sha(omdb_payload_updated),
+        "tmdb_etag": "W/\"etag2\"",
+        "omdb_etag": "etag-omdb-2",
+    }
+
+    action, reason = etl_seed.process_record(
+        updated_record,
+        dry_run=False,
+        duplicates_path=duplicates_path,
+    )
+    assert action == "updated"
+    assert reason is None
+
+    with in_memory_session() as session:
+        movie = session.execute(select(Movie).where(Movie.imdb_id == "tt1375666")).scalar_one()
+        assert movie.tmdb_payload_sha == updated_record["tmdb_payload_sha"]
+        assert movie.omdb_payload_sha == updated_record["omdb_payload_sha"]
+
+        provenances = (
+            session.execute(
+                select(MovieIngestProvenance).where(
+                    MovieIngestProvenance.movie_id == movie.id
+                )
+            )
+            .scalars()
+            .all()
+        )
+        tmdb_prov = next(p for p in provenances if p.provider == "tmdb")
+        omdb_prov = next(p for p in provenances if p.provider == "omdb")
+        assert tmdb_prov.payload_sha == updated_record["tmdb_payload_sha"]
+        assert tmdb_prov.etag == updated_record["tmdb_etag"]
+        assert tmdb_prov.source_url == updated_record["tmdb_source_url"]
+        assert omdb_prov.payload_sha == updated_record["omdb_payload_sha"]
+        assert omdb_prov.etag == updated_record["omdb_etag"]
+        assert omdb_prov.source_url == updated_record["omdb_source_url"]
 
 
 def test_coerce_int_handles_messy_values():

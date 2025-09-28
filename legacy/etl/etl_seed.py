@@ -15,6 +15,7 @@ Usage examples:
 
 import argparse
 import csv
+import hashlib
 import json
 import logging
 import os
@@ -37,6 +38,7 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from api.db import Base, SessionLocal, engine
 from api.models.movie import Genre, Mood, Movie
+from api.models.movie_ingest_provenance import MovieIngestProvenance
 from api.models.person import Role  # noqa: F401 - ensure mapper registration
 from api.utils.providers import merge_providers
 
@@ -143,6 +145,45 @@ def load_rows(path: pathlib.Path, file_format: str, encoding: str) -> List[Dict[
 _NULL_STRINGS = {"", " ", "n/a", "N/A", "unknown", "NULL", "NaN", "nan", None}
 
 resolver_state = SimpleNamespace(last_tmdb_imdb_id=None, last_omdb_payload=None)
+
+
+def _normalize_payload_for_hash(payload: Any) -> Optional[str]:
+    if payload is None:
+        return None
+    if isinstance(payload, (bytes, bytearray)):
+        try:
+            text = bytes(payload).decode("utf-8")
+        except UnicodeDecodeError:
+            text = bytes(payload).decode("utf-8", errors="ignore")
+        stripped = text.strip()
+        return stripped or None
+    if isinstance(payload, str):
+        text = payload.strip()
+        if text in _NULL_STRINGS or not text:
+            return None
+        try:
+            parsed = json.loads(text)
+        except json.JSONDecodeError:
+            return text
+        else:
+            return json.dumps(
+                parsed, sort_keys=True, separators=(",", ":"), ensure_ascii=False
+            )
+    try:
+        return json.dumps(
+            payload, sort_keys=True, separators=(",", ":"), ensure_ascii=False
+        )
+    except (TypeError, ValueError):
+        return json.dumps(
+            str(payload), sort_keys=True, separators=(",", ":"), ensure_ascii=False
+        )
+
+
+def compute_payload_sha(payload: Any) -> Optional[str]:
+    normalized = _normalize_payload_for_hash(payload)
+    if normalized is None:
+        return None
+    return hashlib.sha256(normalized.encode("utf-8")).hexdigest()
 
 
 def normalize_title(title: str) -> str:
@@ -371,6 +412,12 @@ def normalize_row(raw: Dict[str, Any], row_number: int) -> Dict[str, Any]:
     languages_value = _first_value(raw, ["languages"])
     countries_value = _first_value(raw, ["countries"])
     collection_value = _first_value(raw, ["collection", "franchise"])
+    tmdb_payload_value = _first_value(raw, ["tmdb_payload"])
+    omdb_payload_value = _first_value(raw, ["omdb_payload"])
+    tmdb_etag_value = _first_value(raw, ["tmdb_etag"])
+    omdb_etag_value = _first_value(raw, ["omdb_etag"])
+    tmdb_source_url_value = _first_value(raw, ["tmdb_source_url"])
+    omdb_source_url_value = _first_value(raw, ["omdb_source_url"])
 
     record = {
         "title": title,
@@ -392,6 +439,12 @@ def normalize_row(raw: Dict[str, Any], row_number: int) -> Dict[str, Any]:
         "languages": clean_text(languages_value),
         "countries": clean_text(countries_value),
         "collection": clean_text(collection_value),
+        "tmdb_payload_sha": compute_payload_sha(tmdb_payload_value),
+        "omdb_payload_sha": compute_payload_sha(omdb_payload_value),
+        "tmdb_etag": clean_text(tmdb_etag_value),
+        "omdb_etag": clean_text(omdb_etag_value),
+        "tmdb_source_url": clean_text(tmdb_source_url_value),
+        "omdb_source_url": clean_text(omdb_source_url_value),
     }
     return record
 
@@ -501,6 +554,63 @@ def _write_db_duplicate(row: Dict[str, Any], path: pathlib.Path) -> None:
                 row.get("tmdb_id"),
             ]
         )
+
+
+def _upsert_provenance(
+    session,
+    movie: Movie,
+    provider: str,
+    provider_id: Optional[str],
+    payload_sha: Optional[str],
+    etag: Optional[str],
+    source_url: Optional[str],
+) -> None:
+    if not any([provider_id, payload_sha, etag, source_url]):
+        return
+    stmt = select(MovieIngestProvenance).where(
+        MovieIngestProvenance.movie_id == movie.id,
+        MovieIngestProvenance.provider == provider,
+    )
+    provenance = session.execute(stmt).scalar_one_or_none()
+    provider_id_text = str(provider_id) if provider_id is not None else None
+
+    if provenance is None:
+        provenance = MovieIngestProvenance(
+            movie_id=movie.id,
+            provider=provider,
+            provider_id=provider_id_text,
+            payload_sha=payload_sha,
+            etag=etag,
+            source_url=source_url,
+        )
+        session.add(provenance)
+    else:
+        provenance.provider_id = provider_id_text
+        provenance.payload_sha = payload_sha
+        provenance.etag = etag
+        provenance.source_url = source_url
+        provenance.touch()
+
+
+def record_provenance_entries(session, movie: Movie, record: Dict[str, Any]) -> None:
+    _upsert_provenance(
+        session,
+        movie,
+        "tmdb",
+        record.get("tmdb_id") or movie.tmdb_id,
+        record.get("tmdb_payload_sha"),
+        record.get("tmdb_etag"),
+        record.get("tmdb_source_url"),
+    )
+    _upsert_provenance(
+        session,
+        movie,
+        "omdb",
+        record.get("imdb_id") or movie.imdb_id,
+        record.get("omdb_payload_sha"),
+        record.get("omdb_etag"),
+        record.get("omdb_source_url"),
+    )
 
 
 def apply_overrides(
@@ -663,6 +773,13 @@ def process_record(
             genre_objs = [get_or_create_genre(session, name) for name in record["genres"]]
             mood_objs = [get_or_create_mood(session, name) for name in record["moods"]]
 
+            tmdb_payload_sha = record.get("tmdb_payload_sha")
+            omdb_payload_sha = record.get("omdb_payload_sha")
+            tmdb_etag = record.get("tmdb_etag")
+            omdb_etag = record.get("omdb_etag")
+            tmdb_source_url = record.get("tmdb_source_url")
+            omdb_source_url = record.get("omdb_source_url")
+
             if existing is None:
                 movie = Movie(
                     title=record["title"],
@@ -680,11 +797,27 @@ def process_record(
                     collection=record.get("collection"),
                     poster_url=record["poster_url"],
                     backdrop_url=record["backdrop_url"],
+                    tmdb_payload_sha=tmdb_payload_sha,
+                    omdb_payload_sha=omdb_payload_sha,
+                    tmdb_etag=tmdb_etag,
                     genres=genre_objs,
                     moods=mood_objs,
                 )
                 session.add(movie)
                 session.flush()
+                record_provenance_entries(
+                    session,
+                    movie,
+                    {
+                        **record,
+                        "tmdb_payload_sha": tmdb_payload_sha,
+                        "omdb_payload_sha": omdb_payload_sha,
+                        "tmdb_etag": tmdb_etag,
+                        "omdb_etag": omdb_etag,
+                        "tmdb_source_url": tmdb_source_url,
+                        "omdb_source_url": omdb_source_url,
+                    },
+                )
                 if dry_run:
                     session.rollback()
                 else:
@@ -692,6 +825,14 @@ def process_record(
                 return "inserted", None
             else:
                 updated = False
+                tmdb_hash_same = (
+                    tmdb_payload_sha is not None
+                    and tmdb_payload_sha == existing.tmdb_payload_sha
+                )
+                omdb_hash_same = (
+                    omdb_payload_sha is not None
+                    and omdb_payload_sha == existing.omdb_payload_sha
+                )
 
                 if record["title"] and record["title"] != existing.title:
                     existing.title = record["title"]
@@ -772,12 +913,46 @@ def process_record(
                     existing.moods = mood_objs
                     updated = True
 
+                if tmdb_payload_sha is not None and tmdb_payload_sha != existing.tmdb_payload_sha:
+                    existing.tmdb_payload_sha = tmdb_payload_sha
+                    updated = True
+
+                if omdb_payload_sha is not None and omdb_payload_sha != existing.omdb_payload_sha:
+                    existing.omdb_payload_sha = omdb_payload_sha
+                    updated = True
+
+                if tmdb_etag and tmdb_etag != existing.tmdb_etag:
+                    existing.tmdb_etag = tmdb_etag
+                    updated = True
+
                 if not updated:
+                    if tmdb_hash_same and omdb_hash_same:
+                        session.rollback()
+                        return "skipped", "identical_tmdb_omdb"
+                    if tmdb_hash_same:
+                        session.rollback()
+                        return "skipped", "identical_tmdb"
+                    if omdb_hash_same:
+                        session.rollback()
+                        return "skipped", "identical_omdb"
                     session.rollback()
                     _write_db_duplicate(record, duplicates_path)
                     return "skipped", "duplicate_db"
 
                 session.flush()
+                record_provenance_entries(
+                    session,
+                    existing,
+                    {
+                        **record,
+                        "tmdb_payload_sha": tmdb_payload_sha,
+                        "omdb_payload_sha": omdb_payload_sha,
+                        "tmdb_etag": tmdb_etag,
+                        "omdb_etag": omdb_etag,
+                        "tmdb_source_url": tmdb_source_url,
+                        "omdb_source_url": omdb_source_url,
+                    },
+                )
                 if dry_run:
                     session.rollback()
                 else:
