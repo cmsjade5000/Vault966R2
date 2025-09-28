@@ -24,7 +24,7 @@ from api.schemas.movie import (
 )
 from api.schemas.movie_detail import MovieDetail
 from api.services.movies_detail import get_movie_detail
-from api.services.movie_filters import (
+from core.movie_filters import (
     MovieFilterParams,
     apply_filters,
     ordering_clause,

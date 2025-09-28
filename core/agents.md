@@ -28,7 +28,7 @@ This file is a quick orientation for maintaining context when the CLI session re
 
 - Editing metadata flows touch `api/routers/movies.py`, `api/schemas/movie.py`, `templates/movies_grid.html`, and `static/js/movies_page.js`.
 - Flagging lives in `api/models/movie_flag.py`, the `PATCH /movies/{id}` + flag endpoints, and the card/table controls in the templates/JS.
-- Filter logic sits in `api/services/movie_filters.py` (both REST + UI).
+- Filter parsing and DB filtering live in `core/movie_filters.py`; both REST and UI routes reuse it.
 - `MovieFlag` cascades on delete; `MovieUpdate.where_to_watch` expects a provider list but is stored `;`-joined after `merge_providers`.
 - Run `test_movie_flags` and `test_movie_search` after changing metadata/flag behavior.
 
