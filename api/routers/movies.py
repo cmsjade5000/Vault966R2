@@ -38,8 +38,12 @@ from api.services.movie_lookup import (
     lookup_movie_candidates,
 )
 from api.services.movie_updates import apply_movie_update
-from core.genres import split_and_normalize
-from core.picker import calculate_flic_score, pick_movie
+from core.picker import (
+    PickerCandidate,
+    PickerFilters,
+    calculate_flic_score,
+    pick_movie,
+)
 from api.utils.query_params import parse_optional_non_negative_int
 
 router = APIRouter(prefix="/movies", tags=["movies"])
@@ -92,26 +96,25 @@ def get_pick(
     if not movies:
         raise HTTPException(status_code=404, detail="No movies found for the given filters")
 
-    filters = {
-        "moods": [mood] if mood else [],
-        "genres": [genre] if genre else [],
-        "year_min": year_min,
-        "year_max": year_max,
-        "runtime_max": runtime_max,
-    }
+    filters = PickerFilters.from_values(
+        moods=[mood] if mood else (),
+        genres=[genre] if genre else (),
+        year_min=year_min,
+        year_max=year_max,
+        runtime_max=runtime_max,
+    ).to_payload()
 
     candidates = []
     for movie in movies:
-        candidates.append(
-            {
-                "id": movie.id,
-                "movie": movie,
-                "moods": [m.name for m in movie.moods],
-                "genres": [g.name for g in movie.genres],
-                "runtime": movie.runtime,
-                "year": movie.year,
-            }
-        )
+        candidate_payload = PickerCandidate.from_iterables(
+            genres=[g.name for g in movie.genres],
+            moods=[m.name for m in movie.moods],
+            runtime=movie.runtime,
+            year=movie.year,
+        ).to_payload()
+        candidate_payload["id"] = movie.id
+        candidate_payload["movie"] = movie
+        candidates.append(candidate_payload)
 
     selection = pick_movie(candidates, filters=filters)
     if selection is None:
@@ -215,22 +218,15 @@ def search_movies(
         all_movies = filtered_query.options(
             selectinload(Movie.genres), selectinload(Movie.moods)
         ).all()
-        filters = {
-            "genres": split_and_normalize(params.genres),
-            "moods": list(params.moods),
-            "runtime_min": params.runtime_min,
-            "runtime_max": params.runtime_max,
-            "year_min": params.year_min,
-            "year_max": params.year_max,
-        }
+        filters = PickerFilters.from_params(params).to_payload()
         scored = []
         for movie in all_movies:
-            candidate = {
-                "genres": split_and_normalize([g.name for g in movie.genres]),
-                "moods": [m.name for m in movie.moods],
-                "runtime": movie.runtime,
-                "year": movie.year,
-            }
+            candidate = PickerCandidate.from_iterables(
+                genres=[g.name for g in movie.genres],
+                moods=[m.name for m in movie.moods],
+                runtime=movie.runtime,
+                year=movie.year,
+            ).to_payload()
             score, _ = calculate_flic_score(candidate, filters)
             scored.append((score, movie))
 

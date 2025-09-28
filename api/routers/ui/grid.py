@@ -27,14 +27,13 @@ from api.services.ui.grid import (
     serialize_user_presets,
 )
 from api.services.ui.templates import TEMPLATES
-from core.genres import split_and_normalize
 from core.movie_filters import (
     MovieFilterParams,
     apply_filters,
     ordering_clause,
     parse_movie_filters,
 )
-from core.picker import calculate_flic_score
+from core.picker import PickerCandidate, PickerFilters, calculate_flic_score
 
 router = APIRouter()
 
@@ -107,22 +106,15 @@ def movies_grid(
                 selectinload(Movie.genres), selectinload(Movie.moods)
             ).all()
             attach_poster_themes(all_movies)
-            filters = {
-                "genres": split_and_normalize(params.genres),
-                "moods": list(params.moods),
-                "runtime_min": params.runtime_min,
-                "runtime_max": params.runtime_max,
-                "year_min": params.year_min,
-                "year_max": params.year_max,
-            }
+            filters = PickerFilters.from_params(params).to_payload()
             scored = []
             for movie in all_movies:
-                candidate = {
-                    "genres": split_and_normalize([g.name for g in movie.genres]),
-                    "moods": [m.name for m in movie.moods],
-                    "runtime": movie.runtime,
-                    "year": movie.year,
-                }
+                candidate = PickerCandidate.from_iterables(
+                    genres=[g.name for g in movie.genres],
+                    moods=[m.name for m in movie.moods],
+                    runtime=movie.runtime,
+                    year=movie.year,
+                ).to_payload()
                 score, _ = calculate_flic_score(candidate, filters)
                 scored.append((score, movie))
 
