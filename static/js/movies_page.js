@@ -124,6 +124,134 @@
         }, 12000);
       }
 
+      const posterRotatorEl = document.querySelector('[data-poster-rotator]');
+      const posterSlots = posterRotatorEl
+        ? Array.from(posterRotatorEl.querySelectorAll('[data-poster-slot]'))
+        : [];
+      const carouselMovies = Array.isArray(pageData.posterCarouselMovies)
+        ? pageData.posterCarouselMovies.filter(
+            (movie) =>
+              movie &&
+              typeof movie === 'object' &&
+              'id' in movie &&
+              'title' in movie &&
+              'poster_url' in movie &&
+              movie.poster_url
+          )
+        : [];
+
+      const createPosterFigure = (movie) => {
+        const figure = document.createElement('figure');
+        figure.className = 'poster-banner__item';
+
+        const link = document.createElement('a');
+        link.className = 'poster-banner__link';
+        link.href = `/ui/movies/${movie.id}`;
+        link.setAttribute('aria-label', `View details for ${movie.title}`);
+
+        const poster = document.createElement('div');
+        poster.className = 'poster-banner__poster';
+
+        const image = document.createElement('img');
+        image.className = 'poster-banner__image';
+        image.src = movie.poster_url || '';
+        image.alt = `${movie.title} poster`;
+        image.loading = 'lazy';
+        if (movie.title) {
+          image.title = movie.title;
+        }
+
+        const shine = document.createElement('span');
+        shine.className = 'poster-banner__shine';
+        shine.setAttribute('aria-hidden', 'true');
+
+        poster.appendChild(image);
+        poster.appendChild(shine);
+        link.appendChild(poster);
+        figure.appendChild(link);
+
+        return { figure, link };
+      };
+
+      const renderPosterFace = (faceEl, movie, { hidden } = {}) => {
+        if (!faceEl) return;
+        faceEl.innerHTML = '';
+
+        if (!movie) {
+          faceEl.setAttribute('aria-hidden', 'true');
+          return;
+        }
+
+        const { figure, link } = createPosterFigure(movie);
+        faceEl.appendChild(figure);
+
+        if (hidden || faceEl.dataset.posterFace === 'back') {
+          faceEl.setAttribute('aria-hidden', 'true');
+          link.setAttribute('tabindex', '-1');
+          link.setAttribute('aria-hidden', 'true');
+        } else {
+          faceEl.removeAttribute('aria-hidden');
+          link.removeAttribute('tabindex');
+          link.removeAttribute('aria-hidden');
+        }
+      };
+
+      if (posterSlots.length && carouselMovies.length) {
+        const visibleCount = Math.min(posterSlots.length, carouselMovies.length);
+        const movieQueue = carouselMovies.slice(visibleCount);
+        const slotStates = posterSlots.slice(0, visibleCount).map((slot, index) => {
+          const card = slot.querySelector('[data-poster-card]');
+          const frontFace = card?.querySelector('[data-poster-face="front"]');
+          const backFace = card?.querySelector('[data-poster-face="back"]');
+          const movie = carouselMovies[index];
+          renderPosterFace(frontFace, movie, { hidden: false });
+          renderPosterFace(backFace, null, { hidden: true });
+          return {
+            slot,
+            card,
+            frontFace,
+            backFace,
+            currentMovie: movie,
+            isAnimating: false,
+          };
+        });
+
+        const FLIP_DURATION = 720;
+        const FLIP_INTERVAL = 6000;
+
+        if (slotStates.length > 0) {
+          setInterval(() => {
+            if (!movieQueue.length) return;
+            const candidates = slotStates.filter((state) => !state.isAnimating);
+            if (!candidates.length) return;
+            const target = candidates[Math.floor(Math.random() * candidates.length)];
+            const nextMovie = movieQueue.shift();
+            if (!nextMovie || !target) return;
+
+            target.isAnimating = true;
+            renderPosterFace(target.backFace, nextMovie, { hidden: true });
+            target.slot.classList.add('is-flipping');
+            target.slot.classList.add('is-flipped');
+
+            setTimeout(() => {
+              const outgoing = target.currentMovie;
+              renderPosterFace(target.frontFace, nextMovie, { hidden: false });
+              target.currentMovie = nextMovie;
+              if (outgoing) {
+                movieQueue.push(outgoing);
+              }
+              renderPosterFace(target.backFace, null, { hidden: true });
+              target.slot.classList.remove('is-flipped');
+            }, FLIP_DURATION / 2);
+
+            setTimeout(() => {
+              target.slot.classList.remove('is-flipping');
+              target.isAnimating = false;
+            }, FLIP_DURATION);
+          }, FLIP_INTERVAL);
+        }
+      }
+
       const total = Number(pageData.total ?? 0);
       const totalPages = Number(pageData.totalPages ?? 0);
       let currentPage = Number(pageData.page ?? 1);
