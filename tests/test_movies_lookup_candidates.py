@@ -66,11 +66,31 @@ def test_movies_lookup_candidates_success(client, movie_id, monkeypatch):
                     "title": "The Matrix",
                     "overview": "Base overview",
                     "runtime": 130,
-                    "release_date": "1999-03-31",
+                    "release_date": "",
+                    "release_dates": {
+                        "results": [
+                            {
+                                "iso_3166_1": "US",
+                                "release_dates": [
+                                    {"release_date": "1999-04-01T00:00:00.000Z"}
+                                ],
+                            }
+                        ]
+                    },
                     "poster_path": "/poster.jpg",
                     "backdrop_path": "/backdrop.jpg",
                     "genres": [{"name": "Action"}, {"name": "Sci-Fi"}],
                     "external_ids": {"imdb_id": "tt0133093"},
+                    "keywords": {"keywords": [{"name": "simulation"}, {"name": "hacker"}]},
+                    "watch/providers": {
+                        "results": {
+                            "US": {
+                                "flatrate": [{"provider_name": "HBO Max"}],
+                                "rent": [{"provider_name": "Apple TV"}],
+                                "buy": [{"provider_name": "Amazon Video"}],
+                            }
+                        }
+                    },
                 }
             )
         if url.endswith("/200"):
@@ -83,8 +103,12 @@ def test_movies_lookup_candidates_success(client, movie_id, monkeypatch):
                     "release_date": "2018-11-11",
                     "poster_path": None,
                     "backdrop_path": None,
+                    "images": {
+                        "posters": [{"file_path": "/fallback-poster.jpg"}],
+                        "backdrops": [{"file_path": "/fallback-backdrop.jpg"}],
+                    },
                     "genres": [{"name": "Drama"}],
-                    "external_ids": {"imdb_id": "tt7654321"},
+                    "external_ids": {},
                 }
             )
         if "omdbapi.com" in url:
@@ -112,6 +136,16 @@ def test_movies_lookup_candidates_success(client, movie_id, monkeypatch):
     assert first["poster_url"].endswith("tt0133093.jpg")
     assert first["synopsis"] == "OMDb plot tt0133093"
     assert first["genres"] == ["Action", "Sci-Fi"]
+    assert first["release_date"] == "1999-04-01"
+    assert first["keywords"] == ["simulation", "hacker"]
+    assert first["where_to_watch"] == [
+        "HBO Max",
+        "Apple TV (rent)",
+        "Amazon Video (buy)",
+    ]
+
+    second = payload["items"][1]
+    assert second["poster_url"] == "https://image.tmdb.org/t/p/w342/fallback-poster.jpg"
 
 
 def test_movies_lookup_candidates_empty_results(client, movie_id, monkeypatch):

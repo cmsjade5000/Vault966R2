@@ -35,6 +35,7 @@ class ManualMovieMetadata(BaseModel):
     genres: List[str] = Field(default_factory=list)
     where_to_watch: List[str] = Field(default_factory=list)
     source: Optional[str] = None
+    keywords: List[str] = Field(default_factory=list)
 
 
 class ManualMovieCreate(BaseModel):
@@ -72,6 +73,7 @@ class ManualMoviePreviewResponse(BaseModel):
     genres: List[str] = Field(default_factory=list)
     source: Optional[str] = None
     where_to_watch: List[str] = Field(default_factory=list)
+    keywords: List[str] = Field(default_factory=list)
 
 
 def _ensure_genres(session: Session, names: List[str]) -> List[Genre]:
