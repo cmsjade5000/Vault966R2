@@ -119,6 +119,9 @@ def append_movie_to_enriched_csv(
         row["poster_url"] = metadata.get("poster_url") or ""
         row["backdrop_url"] = metadata.get("backdrop_url") or ""
         row["genres"] = "; ".join(metadata.get("genres", []) or [])
+        keywords = metadata.get("keywords") or []
+        if keywords:
+            row["keywords"] = "; ".join(keywords)
         row["tmdb_last_scraped"] = metadata.get("release_date") or ""
 
     if provider_list:

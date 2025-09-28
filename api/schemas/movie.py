@@ -109,6 +109,7 @@ class MovieLookupCandidate(BaseModel):
     genres: List[str] = Field(default_factory=list)
     source: str = "tmdb"
     where_to_watch: List[str] = Field(default_factory=list)
+    keywords: List[str] = Field(default_factory=list)
 
 
 class MovieLookupResponse(BaseModel):
