@@ -10,12 +10,6 @@ from sqlalchemy.orm import Session, selectinload
 from api.db import get_db
 from api.models.movie import Movie
 from api.models.movie_flag import MovieFlag
-from api.services.movie_filters import (
-    MovieFilterParams,
-    apply_filters,
-    ordering_clause,
-    parse_movie_filters,
-)
 from api.services.movies_curated import get_collection_health
 from api.services.ui.grid import (
     FILTER_COOKIE_MAX_AGE,
@@ -34,6 +28,12 @@ from api.services.ui.grid import (
 )
 from api.services.ui.templates import TEMPLATES
 from core.genres import split_and_normalize
+from core.movie_filters import (
+    MovieFilterParams,
+    apply_filters,
+    ordering_clause,
+    parse_movie_filters,
+)
 from core.picker import calculate_flic_score
 
 router = APIRouter()

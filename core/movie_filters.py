@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+# Shared picker/filter helpers for FastAPI and UI clients.
+
 from dataclasses import dataclass
 from typing import Iterable, Optional, Sequence, Tuple
 
