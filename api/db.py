@@ -1,6 +1,9 @@
 from collections.abc import Generator
 
+import logging
+
 from sqlalchemy import create_engine, text
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
 
 from api.config import settings
@@ -13,6 +16,9 @@ connect_args = {"check_same_thread": False} if DB_URL.startswith("sqlite") else 
 
 engine = create_engine(DB_URL, echo=False, future=True, connect_args=connect_args)
 SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False, future=True)
+
+
+logger = logging.getLogger(__name__)
 
 
 class Base(DeclarativeBase):
@@ -57,20 +63,63 @@ def _ensure_sqlite_movie_columns() -> None:
             if column_name not in columns:
                 connection.execute(text(ddl))
 
-        connection.execute(
-            text(
-                """
-                CREATE UNIQUE INDEX IF NOT EXISTS ix_movies_imdb_id ON movies (imdb_id)
-                """
+        try:
+            connection.execute(
+                text(
+                    """
+                    CREATE UNIQUE INDEX IF NOT EXISTS ix_movies_imdb_id ON movies (imdb_id)
+                    """
+                )
             )
-        )
-        connection.execute(
-            text(
-                """
-                CREATE UNIQUE INDEX IF NOT EXISTS ix_movies_tmdb_id ON movies (tmdb_id)
-                """
+            connection.execute(
+                text(
+                    """
+                    CREATE UNIQUE INDEX IF NOT EXISTS ix_movies_tmdb_id ON movies (tmdb_id)
+                    """
+                )
             )
-        )
+        except IntegrityError as exc:
+            if connection.in_transaction():
+                connection.rollback()
+
+            with engine.connect() as diagnostic_conn:
+                tmdb_duplicates = [
+                    row[0]
+                    for row in diagnostic_conn.execute(
+                        text(
+                            """
+                            SELECT tmdb_id FROM movies
+                            WHERE tmdb_id IS NOT NULL
+                            GROUP BY tmdb_id
+                            HAVING COUNT(*) > 1
+                            """
+                        )
+                    )
+                ]
+                imdb_duplicates = [
+                    row[0]
+                    for row in diagnostic_conn.execute(
+                        text(
+                            """
+                            SELECT imdb_id FROM movies
+                            WHERE imdb_id IS NOT NULL
+                            GROUP BY imdb_id
+                            HAVING COUNT(*) > 1
+                            """
+                        )
+                    )
+                ]
+
+            guidance_message = (
+                "Creating unique indexes on movies.imdb_id/movies.tmdb_id failed due to duplicate "
+                "values. tmdb_id duplicates: {tmdb}; imdb_id duplicates: {imdb}."
+            ).format(
+                tmdb=", ".join(map(str, tmdb_duplicates)) or "none",
+                imdb=", ".join(map(str, imdb_duplicates)) or "none",
+            )
+
+            logger.error(guidance_message)
+            raise IntegrityError(guidance_message, exc.params, exc.orig) from exc
 
         # Minimal boot-strap for legacy SQLite dumps; keep in sync with models.
         flags_exists = connection.execute(
