@@ -545,6 +545,7 @@ def _has_changes(existing: Movie, record: Dict[str, Any]) -> bool:
         or existing.year != record["year"]
         or existing.runtime != record["runtime"]
         or existing.plot != record["plot"]
+        or existing.imdb_id != record["imdb_id"]
         or existing.tmdb_id != record["tmdb_id"]
         or existing.imdb_rating != record.get("imdb_rating")
         or existing.imdb_votes != record.get("imdb_votes")
@@ -863,6 +864,11 @@ def process_record(
                 merged_plot = _merge_values(existing.plot, record["plot"])
                 if merged_plot != existing.plot:
                     existing.plot = merged_plot
+                    updated = True
+
+                merged_imdb = _merge_values(existing.imdb_id, record["imdb_id"])
+                if merged_imdb != existing.imdb_id:
+                    existing.imdb_id = merged_imdb
                     updated = True
 
                 merged_tmdb = _merge_values(existing.tmdb_id, record["tmdb_id"])

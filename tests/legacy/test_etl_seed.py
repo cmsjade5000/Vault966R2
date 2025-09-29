@@ -75,6 +75,7 @@ def test_tmdb_fallback_deduplicates_movies(in_memory_session, tmp_path):
             select(Movie).where(Movie.tmdb_id == 1125)
         ).scalars().all()
         assert len(movies) == 1
+        assert movies[0].imdb_id == "tt0390384"
 
         # Ensure no additional rows were created under a different identifier.
         all_movies = session.execute(select(Movie)).scalars().all()
