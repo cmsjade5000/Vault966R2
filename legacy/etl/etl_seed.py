@@ -798,13 +798,18 @@ def process_record(
         with SessionLocal() as session:
             imdb_id = record.get("imdb_id")
             tmdb_id = record.get("tmdb_id")
+            existing = None
             if imdb_id:
                 stmt = select(Movie).where(Movie.imdb_id == imdb_id)
-            elif tmdb_id:
+                existing = session.execute(stmt).scalar_one_or_none()
+
+            if existing is None and tmdb_id:
                 stmt = select(Movie).where(Movie.tmdb_id == tmdb_id)
-            else:
+                existing = session.execute(stmt).scalar_one_or_none()
+
+            if existing is None and not imdb_id and not tmdb_id:
                 stmt = select(Movie).where(Movie.title == record["title"])
-            existing = session.execute(stmt).scalar_one_or_none()
+                existing = session.execute(stmt).scalar_one_or_none()
 
             genre_objs = [get_or_create_genre(session, name) for name in record["genres"]]
             mood_objs = [get_or_create_mood(session, name) for name in record["moods"]]
