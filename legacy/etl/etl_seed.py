@@ -372,8 +372,15 @@ def clean_text(value: Any) -> Optional[str]:
 
 
 def _split_providers(value: Any) -> List[str]:
-    if value in _NULL_STRINGS or value is None:
+    if value is None:
         return []
+    if isinstance(value, str) and value in _NULL_STRINGS:
+        return []
+    if isinstance(value, dict):
+        tokens: List[str] = []
+        for item in value.values():
+            tokens.extend(_split_providers(item))
+        return tokens
     if isinstance(value, (list, tuple, set)):
         tokens: List[str] = []
         for item in value:
