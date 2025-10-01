@@ -207,6 +207,36 @@ def test_coerce_int_handles_messy_values():
     assert etl_seed.coerce_int(2001.0) == 2001
 
 
+def test_normalize_providers_handles_mapping_payload():
+    payload = {
+        "US": {
+            "flatrate": [
+                {"provider_name": "Netflix", "logo_path": "/path/netflix.png"},
+                {"provider_name": "Hulu", "provider_id": 15},
+            ],
+            "link": "https://example.com",
+        }
+    }
+
+    normalized = etl_seed.normalize_providers(payload)
+    assert normalized == "Netflix; Hulu"
+
+
+def test_merge_where_to_watch_merges_string_and_mapping():
+    existing = "Netflix"
+    incoming = {
+        "US": {
+            "flatrate": [
+                {"provider_name": "Hulu"},
+                {"provider_name": "Netflix"},
+            ]
+        }
+    }
+
+    merged = etl_seed.merge_where_to_watch(existing, incoming)
+    assert merged == "Netflix; Hulu"
+
+
 def test_normalize_imdb_id_variants():
     assert etl_seed.normalize_imdb_id("tt1234567") == "tt1234567"
     assert etl_seed.normalize_imdb_id("  TT7654321  ") == "tt7654321"

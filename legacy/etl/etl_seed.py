@@ -24,7 +24,6 @@ import re
 import sys
 import time
 from collections import Counter, defaultdict
-from collections.abc import Mapping
 from dataclasses import dataclass
 from datetime import datetime
 from types import SimpleNamespace
@@ -55,7 +54,7 @@ class ProvenanceContext:
 
 
 from api.models.person import Role  # noqa: F401 - ensure mapper registration
-from api.utils.providers import merge_providers
+from api.utils.providers import collect_provider_tokens, merge_providers
 
 logger = logging.getLogger(__name__)
 
@@ -375,27 +374,9 @@ def clean_text(value: Any) -> Optional[str]:
 def _split_providers(value: Any) -> List[str]:
     if value is None:
         return []
-    if isinstance(value, Mapping):
-        tokens: List[str] = []
-        for candidate in value.values():
-            tokens.extend(_split_providers(candidate))
-        if tokens:
-            return tokens
-        for key in value.keys():
-            tokens.extend(_split_providers(key))
-        return tokens
-    if isinstance(value, (list, tuple, set)):
-        tokens: List[str] = []
-        for item in value:
-            tokens.extend(_split_providers(item))
-        return tokens
-    if value in _NULL_STRINGS:
+    if isinstance(value, str) and value in _NULL_STRINGS:
         return []
-    text = str(value).strip()
-    if not text:
-        return []
-    parts = re.split(r"[;,]", text)
-    return [part.strip() for part in parts if part.strip()]
+    return collect_provider_tokens(value)
 
 
 def normalize_providers(value: Any) -> Optional[str]:
