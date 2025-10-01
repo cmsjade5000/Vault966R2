@@ -24,6 +24,7 @@ import re
 import sys
 import time
 from collections import Counter, defaultdict
+from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
 from datetime import datetime
 from types import SimpleNamespace
@@ -372,14 +373,29 @@ def clean_text(value: Any) -> Optional[str]:
 
 
 def _split_providers(value: Any) -> List[str]:
-    if value in _NULL_STRINGS or value is None:
+    if value is None:
         return []
-    if isinstance(value, (list, tuple, set)):
+    if isinstance(value, Mapping):
         tokens: List[str] = []
+        for item in value.values():
+            tokens.extend(_split_providers(item))
+        return tokens
+    if isinstance(value, Iterable) and not isinstance(value, (str, bytes)):
+        tokens = []
         for item in value:
             tokens.extend(_split_providers(item))
         return tokens
-    text = str(value).strip()
+    if isinstance(value, str):
+        if value in _NULL_STRINGS:
+            return []
+        text = value.strip()
+    else:
+        try:
+            if value in _NULL_STRINGS:
+                return []
+        except TypeError:
+            pass
+        text = str(value).strip()
     if not text:
         return []
     parts = re.split(r"[;,]", text)

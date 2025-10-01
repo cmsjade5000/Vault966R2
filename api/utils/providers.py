@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import Iterable, List, Sequence
+from collections.abc import Iterable, Mapping
+from typing import Any, Iterator, List
 
 
 def normalize_provider(label: str | None) -> str:
@@ -15,31 +16,40 @@ def normalize_provider(label: str | None) -> str:
     return cleaned
 
 
-def merge_providers(*lists: Iterable[str | None]) -> List[str]:
+def _iter_provider_candidates(value: Any) -> Iterator[str]:
+    if value is None:
+        return
+    if isinstance(value, Mapping):
+        for item in value.values():
+            yield from _iter_provider_candidates(item)
+        return
+    if isinstance(value, str):
+        for token in value.replace(";", ",").split(","):
+            stripped = token.strip()
+            if stripped:
+                yield stripped
+        return
+    if isinstance(value, Iterable):
+        for item in value:
+            yield from _iter_provider_candidates(item)
+        return
+    text = str(value).strip()
+    if text:
+        yield text
+
+
+def merge_providers(*lists: Any) -> List[str]:
     seen: list[str] = []
     for provider_list in lists:
-        if not provider_list:
-            continue
-        for item in provider_list:
+        for item in _iter_provider_candidates(provider_list):
             normalized = normalize_provider(item)
             if normalized and normalized not in seen:
                 seen.append(normalized)
     return seen
 
 
-def split_providers(value: Sequence[str] | str | None) -> List[str]:
-    if value is None:
-        return []
-    if isinstance(value, str):
-        candidates = value.replace(";", ",").split(",")
-    else:
-        candidates = value
-    normalized: list[str] = []
-    for item in candidates:
-        normalized_item = normalize_provider(item)
-        if normalized_item and normalized_item not in normalized:
-            normalized.append(normalized_item)
-    return normalized
+def split_providers(value: Any) -> List[str]:
+    return merge_providers(value)
 
 
 def serialize_providers(values: Iterable[str] | None) -> str | None:
