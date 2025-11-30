@@ -255,6 +255,17 @@
   </head>
   <body>
     <a href="#main" class="skip-link">Skip to main content</a>
+    <header class="site-nav" role="banner">
+      <div class="nav-inner">
+        <a class="brand" href="/ui/movies">Vault 966</a>
+        <nav aria-label="Primary">
+          <a href="/ui/movies">Library</a>
+          <a href="/ui/movies/top">Top rated</a>
+          <a href="/ui/movies/health">Health</a>
+          <button type="button" data-quick-pick aria-label="Let Flic pick a movie">Flic pick</button>
+        </nav>
+      </div>
+    </header>
     <main id="main">
       {% block content %}{% endblock %}
     </main>
@@ -373,11 +384,17 @@
         if (pendingToast && typeof window.showToast === 'function') {
           sessionStorage.removeItem('flicToast');
           window.showToast(pendingToast);
-    }
-  } catch (err) {
-    console.warn('Failed to restore toast message', err);
-  }
-</script>
+        }
+      } catch (err) {
+        console.warn('Failed to restore toast message', err);
+      }
+
+      document.querySelector('[data-quick-pick]')?.addEventListener('click', (event) => {
+        if (typeof window.runFlicPick === 'function') {
+          window.runFlicPick({ indicator: event.currentTarget });
+        }
+      });
+    </script>
     <script src="{{ url_for('static', path='js/back_link.js') }}" defer></script>
     {% block scripts %}{% endblock %}
   </body>

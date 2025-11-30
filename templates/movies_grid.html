@@ -78,7 +78,23 @@
     </div>
   </section>
 
-  <main aria-live="polite">
+  <div class="page-shell" aria-live="polite">
+    {% if total > 0 %}
+    {% set start_index = ((page - 1) * page_size) + 1 %}
+    {% set end_index = page * page_size if page * page_size < total else total %}
+    <section class="results-meta" aria-label="Result summary">
+      <div class="results-meta__primary">
+        <p class="results-meta__range">Showing {{ start_index }}–{{ end_index }} of {{ total }} movies</p>
+        <p class="results-meta__hint">Sorted by {{ order_by.replace('_', ' ') }}</p>
+      </div>
+      <div class="results-meta__actions">
+        <a class="results-meta__link" href="#filters">Adjust filters</a>
+        <a class="results-meta__link" href="#results-table">Jump to table</a>
+      </div>
+    </section>
+    {% endif %}
+
+    <main>
     {% if movies %}
       {% if featured_movies %}
       <div class="grid" aria-label="Featured movie results">
@@ -134,22 +150,53 @@
       {% endif %}
 
       {% if total_pages > 1 %}
+      {% set window_start = 1 if page - 2 < 1 else page - 2 %}
+      {% set window_end = total_pages if page + 2 > total_pages else page + 2 %}
       <nav class="pager" aria-label="Pagination">
-        <a
-          class="pager-link"
-          data-goto-page="{{ page - 1 }}"
-          data-disabled="{{ 'true' if page <= 1 else 'false' }}"
-          href="/ui/movies?q={{ q or '' }}&genres={{ genres or '' }}&moods={{ moods or '' }}&year_min={{ year_min or '' }}&year_max={{ year_max or '' }}&runtime_max={{ runtime_max or '' }}&order_by={{ order_by or 'title_asc' }}&_filters=1&page={{ page - 1 }}"
-          aria-disabled="{{ 'true' if page <= 1 else 'false' }}"
-        >&laquo; Previous</a>
-        <span>Page {{ page }} of {{ total_pages }}</span>
-        <a
-          class="pager-link"
-          data-goto-page="{{ page + 1 }}"
-          data-disabled="{{ 'true' if page >= total_pages else 'false' }}"
-          href="/ui/movies?q={{ q or '' }}&genres={{ genres or '' }}&moods={{ moods or '' }}&year_min={{ year_min or '' }}&year_max={{ year_max or '' }}&runtime_max={{ runtime_max or '' }}&order_by={{ order_by or 'title_asc' }}&_filters=1&page={{ page + 1 }}"
-          aria-disabled="{{ 'true' if page >= total_pages else 'false' }}"
-        >Next &raquo;</a>
+        <div class="pager__controls">
+          <a
+            class="pager-link pager-link--ghost"
+            data-goto-page="1"
+            data-disabled="{{ 'true' if page == 1 else 'false' }}"
+            href="/ui/movies?q={{ q or '' }}&genres={{ genres or '' }}&moods={{ moods or '' }}&year_min={{ year_min or '' }}&year_max={{ year_max or '' }}&runtime_max={{ runtime_max or '' }}&order_by={{ order_by or 'title_asc' }}&_filters=1&page=1"
+            aria-disabled="{{ 'true' if page == 1 else 'false' }}"
+          >First</a>
+          <a
+            class="pager-link"
+            data-goto-page="{{ page - 1 }}"
+            data-disabled="{{ 'true' if page <= 1 else 'false' }}"
+            href="/ui/movies?q={{ q or '' }}&genres={{ genres or '' }}&moods={{ moods or '' }}&year_min={{ year_min or '' }}&year_max={{ year_max or '' }}&runtime_max={{ runtime_max or '' }}&order_by={{ order_by or 'title_asc' }}&_filters=1&page={{ page - 1 }}"
+            aria-disabled="{{ 'true' if page <= 1 else 'false' }}"
+          >Previous</a>
+        </div>
+        <ol class="pager__list">
+          {% for num in range(window_start, window_end + 1) %}
+          <li>
+            <a
+              class="pager-link{% if num == page %} is-active{% endif %}"
+              data-goto-page="{{ num }}"
+              aria-current="{{ 'page' if num == page else 'false' }}"
+              href="/ui/movies?q={{ q or '' }}&genres={{ genres or '' }}&moods={{ moods or '' }}&year_min={{ year_min or '' }}&year_max={{ year_max or '' }}&runtime_max={{ runtime_max or '' }}&order_by={{ order_by or 'title_asc' }}&_filters=1&page={{ num }}"
+            >{{ num }}</a>
+          </li>
+          {% endfor %}
+        </ol>
+        <div class="pager__controls">
+          <a
+            class="pager-link"
+            data-goto-page="{{ page + 1 }}"
+            data-disabled="{{ 'true' if page >= total_pages else 'false' }}"
+            href="/ui/movies?q={{ q or '' }}&genres={{ genres or '' }}&moods={{ moods or '' }}&year_min={{ year_min or '' }}&year_max={{ year_max or '' }}&runtime_max={{ runtime_max or '' }}&order_by={{ order_by or 'title_asc' }}&_filters=1&page={{ page + 1 }}"
+            aria-disabled="{{ 'true' if page >= total_pages else 'false' }}"
+          >Next</a>
+          <a
+            class="pager-link pager-link--ghost"
+            data-goto-page="{{ total_pages }}"
+            data-disabled="{{ 'true' if page >= total_pages else 'false' }}"
+            href="/ui/movies?q={{ q or '' }}&genres={{ genres or '' }}&moods={{ moods or '' }}&year_min={{ year_min or '' }}&year_max={{ year_max or '' }}&runtime_max={{ runtime_max or '' }}&order_by={{ order_by or 'title_asc' }}&_filters=1&page={{ total_pages }}"
+            aria-disabled="{{ 'true' if page >= total_pages else 'false' }}"
+          >Last</a>
+        </div>
       </nav>
       {% endif %}
       <div class="below-pager">
@@ -221,7 +268,8 @@
         <button type="button" class="button-secondary" id="reset-empty">Widen filters</button>
       </div>
     {% endif %}
-  </main>
+    </main>
+  </div>
   {% include "partials/movies/edit_dialog.html" %}
 {% endblock %}
 

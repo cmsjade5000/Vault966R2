@@ -1,3 +1,15 @@
+import pathlib
+import sys
+
+PROJECT_ROOT = pathlib.Path(__file__).resolve().parents[2]
+TESTS_DIR = PROJECT_ROOT / "tests"
+if str(TESTS_DIR) in sys.path:
+    sys.path.remove(str(TESTS_DIR))
+if str(PROJECT_ROOT) in sys.path:
+    sys.path.remove(str(PROJECT_ROOT))
+sys.path.insert(0, str(PROJECT_ROOT))
+sys.modules.pop("legacy", None)
+
 from api.models.movie import Movie
 from legacy.etl.enrich_tmdb import build_row
 

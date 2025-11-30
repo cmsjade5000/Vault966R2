@@ -14,6 +14,10 @@ ROOT_DIR = pathlib.Path(__file__).resolve().parents[1]
 if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
 
+TESTS_DIR = ROOT_DIR / "tests"
+if str(TESTS_DIR) in sys.path:
+    sys.path.remove(str(TESTS_DIR))
+
 os.environ.setdefault("ADMIN_TOKEN", "testtoken")
 
 from api.db import Base, get_db
