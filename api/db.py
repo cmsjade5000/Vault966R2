@@ -1,6 +1,7 @@
 from collections.abc import Generator
 
 import logging
+import os
 
 from sqlalchemy import create_engine, text
 from sqlalchemy.exc import IntegrityError
@@ -23,6 +24,14 @@ logger = logging.getLogger(__name__)
 
 class Base(DeclarativeBase):
     pass
+
+
+def should_bootstrap_sqlite_schema() -> bool:
+    if not DB_URL.startswith("sqlite"):
+        return False
+    if os.getenv("PYTEST_CURRENT_TEST"):
+        return False
+    return True
 
 
 def _ensure_sqlite_movie_columns() -> None:
@@ -48,10 +57,7 @@ def _ensure_sqlite_movie_columns() -> None:
             "languages": "ALTER TABLE movies ADD COLUMN languages TEXT",
             "countries": "ALTER TABLE movies ADD COLUMN countries TEXT",
             "collection": "ALTER TABLE movies ADD COLUMN collection TEXT",
-            "tagline": "ALTER TABLE movies ADD COLUMN tagline TEXT",
             "awards": "ALTER TABLE movies ADD COLUMN awards TEXT",
-            "revenue": "ALTER TABLE movies ADD COLUMN revenue BIGINT",
-            "budget": "ALTER TABLE movies ADD COLUMN budget BIGINT",
             "last_tmdb_fetch_at": "ALTER TABLE movies ADD COLUMN last_tmdb_fetch_at TIMESTAMP",
             "last_omdb_fetch_at": "ALTER TABLE movies ADD COLUMN last_omdb_fetch_at TIMESTAMP",
             "tmdb_etag": "ALTER TABLE movies ADD COLUMN tmdb_etag TEXT",
@@ -226,7 +232,14 @@ def _ensure_sqlite_movie_columns() -> None:
             )
 
 
-_ensure_sqlite_movie_columns()
+def bootstrap_sqlite_schema() -> None:
+    """Best-effort bootstrap for SQLite local dev and legacy `vault.db` dumps."""
+
+    if not should_bootstrap_sqlite_schema():
+        return
+
+    Base.metadata.create_all(bind=engine)
+    _ensure_sqlite_movie_columns()
 
 
 def get_db() -> Generator:

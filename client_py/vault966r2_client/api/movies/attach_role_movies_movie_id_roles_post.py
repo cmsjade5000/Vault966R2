@@ -64,7 +64,7 @@ def _build_response(
 def sync_detailed(
     movie_id: int,
     *,
-    client: Union[AuthenticatedClient, Client],
+    client: AuthenticatedClient,
     body: RoleAttach,
 ) -> Response[Union[HTTPValidationError, RoleRead]]:
     """Attach Role
@@ -96,7 +96,7 @@ def sync_detailed(
 def sync(
     movie_id: int,
     *,
-    client: Union[AuthenticatedClient, Client],
+    client: AuthenticatedClient,
     body: RoleAttach,
 ) -> Optional[Union[HTTPValidationError, RoleRead]]:
     """Attach Role
@@ -123,7 +123,7 @@ def sync(
 async def asyncio_detailed(
     movie_id: int,
     *,
-    client: Union[AuthenticatedClient, Client],
+    client: AuthenticatedClient,
     body: RoleAttach,
 ) -> Response[Union[HTTPValidationError, RoleRead]]:
     """Attach Role
@@ -153,7 +153,7 @@ async def asyncio_detailed(
 async def asyncio(
     movie_id: int,
     *,
-    client: Union[AuthenticatedClient, Client],
+    client: AuthenticatedClient,
     body: RoleAttach,
 ) -> Optional[Union[HTTPValidationError, RoleRead]]:
     """Attach Role

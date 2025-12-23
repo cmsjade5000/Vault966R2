@@ -5,16 +5,21 @@ Revises: 75cf58420676
 Create Date: 2025-09-28 19:24:00
 """
 
+from typing import Optional
+
 from alembic import op
 
 # revision identifiers, used by Alembic.
 revision: str = "9ab64fd9beb0"
-down_revision: str | None = "75cf58420676"
+down_revision: Optional[str] = "75cf58420676"
 branch_labels = None
 depends_on = None
 
 
 def upgrade() -> None:
+    bind = op.get_bind()
+    if bind.dialect.name != "postgresql":
+        return
     # Convert TEXT -> JSONB (idempotent casts; NULL stays NULL)
     op.execute(
         """
@@ -40,6 +45,9 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
+    bind = op.get_bind()
+    if bind.dialect.name != "postgresql":
+        return
     # Convert JSONB -> TEXT (stringify)
     op.execute(
         """

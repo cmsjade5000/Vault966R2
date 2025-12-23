@@ -62,7 +62,7 @@ def _build_response(
 
 def sync_detailed(
     *,
-    client: Union[AuthenticatedClient, Client],
+    client: AuthenticatedClient,
     body: MovieCreate,
 ) -> Response[Union[HTTPValidationError, MovieRead]]:
     """Create Movie
@@ -91,7 +91,7 @@ def sync_detailed(
 
 def sync(
     *,
-    client: Union[AuthenticatedClient, Client],
+    client: AuthenticatedClient,
     body: MovieCreate,
 ) -> Optional[Union[HTTPValidationError, MovieRead]]:
     """Create Movie
@@ -115,7 +115,7 @@ def sync(
 
 async def asyncio_detailed(
     *,
-    client: Union[AuthenticatedClient, Client],
+    client: AuthenticatedClient,
     body: MovieCreate,
 ) -> Response[Union[HTTPValidationError, MovieRead]]:
     """Create Movie
@@ -142,7 +142,7 @@ async def asyncio_detailed(
 
 async def asyncio(
     *,
-    client: Union[AuthenticatedClient, Client],
+    client: AuthenticatedClient,
     body: MovieCreate,
 ) -> Optional[Union[HTTPValidationError, MovieRead]]:
     """Create Movie

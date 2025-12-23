@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import List, Optional
+from typing import List, Optional, Union
 
 from pydantic import BaseModel, Field
 
@@ -35,12 +35,18 @@ class SimilarMovie(BaseModel):
     poster_theme: Optional[str] = None
 
 
+class TopBilledEntry(BaseModel):
+    name: str
+    character: Optional[str] = None
+    imdb_id: Optional[str] = None
+    person_id: Optional[int] = None
+
+
 class MovieDetail(BaseModel):
     id: int
     title: str
     year: Optional[int] = None
     runtime: Optional[int] = None
-    tagline: Optional[str] = None
     plot: Optional[str] = None
     genres: List[str] = Field(default_factory=list)
     moods: List[str] = Field(default_factory=list)
@@ -55,11 +61,13 @@ class MovieDetail(BaseModel):
     tomato_audience: Optional[int] = None
     rt_score: Optional[int] = None
     awards: Optional[str] = None
-    revenue: Optional[int] = None
-    budget: Optional[int] = None
     where_to_watch: List[str] = Field(default_factory=list)
-    languages: Optional[str] = None
-    countries: Optional[str] = None
+    languages: Optional[Union[str, List[str]]] = None
+    countries: Optional[Union[str, List[str]]] = None
+    languages_iso: List[str] = Field(default_factory=list)
+    countries_iso: List[str] = Field(default_factory=list)
+    languages_display: List[str] = Field(default_factory=list)
+    countries_display: List[str] = Field(default_factory=list)
     collection: Optional[str] = None
     last_tmdb_fetch_at: Optional[datetime] = None
     last_omdb_fetch_at: Optional[datetime] = None
@@ -70,6 +78,7 @@ class MovieDetail(BaseModel):
     similar: List[SimilarMovie] = Field(default_factory=list)
     poster_theme: Optional[str] = None
     flagged: bool = False
+    top_billed: List[TopBilledEntry] = Field(default_factory=list)
 
     class Config:
         from_attributes = True

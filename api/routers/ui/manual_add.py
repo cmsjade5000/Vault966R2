@@ -33,16 +33,16 @@ class ManualMovieMetadata(BaseModel):
     backdrop_url: Optional[str] = None
     release_date: Optional[str] = None
     genres: List[str] = Field(default_factory=list)
-    where_to_watch: List[str] = Field(default_factory=list)
     source: Optional[str] = None
     keywords: List[str] = Field(default_factory=list)
+    where_to_watch: List[str] = Field(default_factory=list)
 
 
 class ManualMovieCreate(BaseModel):
     title: str
     year: Optional[int] = None
     metadata: Optional[ManualMovieMetadata] = None
-    vudu: Optional[bool] = False
+    vudu: bool = False
 
     @validator("title")
     def _validate_title(cls, value: str) -> str:
@@ -72,8 +72,8 @@ class ManualMoviePreviewResponse(BaseModel):
     release_date: Optional[str] = None
     genres: List[str] = Field(default_factory=list)
     source: Optional[str] = None
-    where_to_watch: List[str] = Field(default_factory=list)
     keywords: List[str] = Field(default_factory=list)
+    where_to_watch: List[str] = Field(default_factory=list)
 
 
 def _ensure_genres(session: Session, names: List[str]) -> List[Genre]:
@@ -162,6 +162,10 @@ def manual_add_movie(
     tmdb_id = metadata.get("tmdb_id")
     poster_url = metadata.get("poster_url")
     backdrop_url = metadata.get("backdrop_url")
+    providers = merge_providers(
+        metadata.get("where_to_watch"),
+        ["Vudu"] if payload.vudu else None,
+    )
 
     if imdb_id:
         existing_imdb = db.query(Movie).filter(Movie.imdb_id == imdb_id).first()
@@ -179,12 +183,6 @@ def manual_add_movie(
                 detail="A movie with that TMDb ID already exists.",
             )
 
-    where_to_watch_list = merge_providers(
-        metadata.get("where_to_watch"),
-        ["Vudu"] if payload.vudu else [],
-    )
-    where_to_watch_value = "; ".join(where_to_watch_list) if where_to_watch_list else None
-
     movie = Movie(
         title=title,
         year=year,
@@ -194,7 +192,7 @@ def manual_add_movie(
         tmdb_id=tmdb_id,
         poster_url=poster_url,
         backdrop_url=backdrop_url,
-        where_to_watch=where_to_watch_value,
+        where_to_watch="; ".join(providers) if providers else None,
     )
 
     genre_objs: List[Genre] = []
@@ -208,7 +206,7 @@ def manual_add_movie(
     db.refresh(movie)
 
     cleaned_written = append_movie_to_cleaned_csv(title, year)
-    enriched_written = append_movie_to_enriched_csv(title, year, metadata, where_to_watch_list)
+    enriched_written = append_movie_to_enriched_csv(title, year, metadata, providers)
 
     return {
         "id": movie.id,
@@ -221,7 +219,7 @@ def manual_add_movie(
         "poster_url": movie.poster_url,
         "backdrop_url": movie.backdrop_url,
         "genres": [genre.name for genre in genre_objs] if genre_objs else [],
-        "where_to_watch": where_to_watch_list,
+        "where_to_watch": providers,
         "csv_updates": {
             "cleaned": cleaned_written,
             "enriched": enriched_written,

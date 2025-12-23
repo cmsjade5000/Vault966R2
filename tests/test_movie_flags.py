@@ -53,10 +53,7 @@ def test_update_movie_metadata_resolves_flag(client: TestClient) -> None:
 
 def test_update_movie_metadata_handles_optional_fields(client: TestClient) -> None:
     payload = {
-        "tagline": "A futurist noir",
         "awards": "Won 2 Oscars",
-        "revenue": 325000000,
-        "budget": 28000000,
         "imdb_id": "tt0083658",
         "tmdb_id": 78,
         "imdb_rating": 8.1,
@@ -81,10 +78,7 @@ def test_update_movie_metadata_handles_optional_fields(client: TestClient) -> No
     response = client.patch("/movies/1", json=payload)
     assert response.status_code == 200
     body = response.json()
-    assert body["tagline"] == "A futurist noir"
     assert body["awards"] == "Won 2 Oscars"
-    assert body["revenue"] == 325000000
-    assert body["budget"] == 28000000
     assert body["imdb_id"] == "tt0083658"
     assert body["tmdb_id"] == 78
     assert body["imdb_rating"] == 8.1
@@ -113,8 +107,6 @@ def test_update_movie_metadata_handles_optional_fields(client: TestClient) -> No
     [
         ({"year": 1700}, "Year must be between 1888 and 2100"),
         ({"runtime": -5}, "Runtime cannot be negative"),
-        ({"revenue": -1}, "Revenue cannot be negative"),
-        ({"budget": -1}, "Budget cannot be negative"),
         ({"imdb_rating": 11}, "IMDb rating must be between 0 and 10"),
         ({"imdb_votes": -10}, "IMDb votes cannot be negative"),
         ({"metascore": 101}, "Metascore must be between 0 and 100"),

@@ -1,4 +1,5 @@
 import pytest
+from sqlalchemy import text
 from fastapi.testclient import TestClient
 
 from api.db import get_db
@@ -87,6 +88,8 @@ def test_movie_detail_api(client: TestClient, detail_movie_setup):
     assert payload["where_to_watch"] == ["Netflix", "Prime Video"]
     assert payload["similar"]
     assert payload["flagged"] is False
+    assert payload["top_billed"][0]["name"] == "Case Worker"
+    assert payload["top_billed"][0]["character"] == "Dreamer"
 
 
 def test_movie_detail_template(client: TestClient, detail_movie_setup):
@@ -94,8 +97,28 @@ def test_movie_detail_template(client: TestClient, detail_movie_setup):
     resp = client.get(f"/ui/movies/{movie_id}")
     assert resp.status_code == 200
     html = resp.text
-    assert "Dream Runner" in html
     assert "Case Worker" in html
+    assert "Top billed" in html
+
+
+def test_movie_detail_accepts_json_languages_and_countries(client: TestClient, detail_movie_setup):
+    movie_id = detail_movie_setup
+    for db in _db_session(client):
+        movie = db.query(Movie).filter(Movie.id == movie_id).one()
+        movie.languages = ["English", "en"]
+        movie.countries = ["United States of America", "US"]
+        db.add(movie)
+        db.commit()
+
+    resp = client.get(f"/movies/{movie_id}/detail")
+    assert resp.status_code == 200
+    payload = resp.json()
+    assert payload["languages"] == ["English", "en"]
+    assert payload["countries"] == ["United States of America", "US"]
+    assert payload["languages_iso"] == ["en"]
+    assert payload["countries_iso"] == ["US"]
+    assert "English" in payload["languages_display"]
+    assert "United States" in payload["countries_display"]
 
 
 def test_movie_detail_flag_status(client: TestClient, detail_movie_setup):
@@ -104,3 +127,65 @@ def test_movie_detail_flag_status(client: TestClient, detail_movie_setup):
     resp = client.get(f"/movies/{movie_id}/detail")
     assert resp.status_code == 200
     assert resp.json()["flagged"] is True
+
+
+def test_movie_detail_handles_dict_languages_and_countries(client: TestClient, detail_movie_setup):
+    movie_id = detail_movie_setup
+    for db in _db_session(client):
+        movie = db.query(Movie).filter(Movie.id == movie_id).one()
+        movie.languages = {"en": "English", "fr": "French"}
+        movie.countries = {"US": "United States"}
+        db.add(movie)
+        db.commit()
+
+    resp = client.get(f"/movies/{movie_id}/detail")
+    assert resp.status_code == 200
+    payload = resp.json()
+    assert "en" in payload["languages"]
+    assert "US" in payload["countries"]
+
+
+def test_movie_detail_skips_roles_missing_people(client: TestClient, detail_movie_setup):
+    movie_id = detail_movie_setup
+    for db in _db_session(client):
+        orphan_role = Role(
+            movie_id=movie_id,
+            person_id=999999,
+            role_type=RoleType.ACTOR,
+            character_name="Ghost",
+            billing_order=2,
+        )
+        db.add(orphan_role)
+        db.commit()
+
+    resp = client.get(f"/movies/{movie_id}/detail")
+    assert resp.status_code == 200
+    payload = resp.json()
+    assert all(role["person_id"] != 999999 for role in payload["roles"])
+
+
+def test_movie_detail_handles_invalid_role_type(client: TestClient, detail_movie_setup):
+    movie_id = detail_movie_setup
+    for db in _db_session(client):
+        person = Person(name="Edge Case", imdb_id="nm2222222", tmdb_id=2222)
+        db.add(person)
+        db.flush()
+        db.execute(
+            text(
+                """
+                INSERT INTO roles (movie_id, person_id, role_type, character_name, billing_order)
+                VALUES (:movie_id, :person_id, :role_type, :character_name, :billing_order)
+                """
+            ),
+            {
+                "movie_id": movie_id,
+                "person_id": person.id,
+                "role_type": "PRODUCER",
+                "character_name": "Unknown",
+                "billing_order": 2,
+            },
+        )
+        db.commit()
+
+    resp = client.get(f"/movies/{movie_id}/detail")
+    assert resp.status_code == 200

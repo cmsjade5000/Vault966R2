@@ -11,21 +11,20 @@ from sqlalchemy.orm import Session
 from api.models.movie import Genre, Movie
 from api.schemas.movie import MovieUpdate
 from api.utils.providers import merge_providers
+from core.enriched_csv import normalize_countries, normalize_languages
+from core.genres import split_and_normalize
 
 
 def _normalize_genres(db: Session, names: Optional[Sequence[str]]) -> Optional[list[Genre]]:
     if names is None:
         return None
     result: list[Genre] = []
-    seen = set()
-    for name in names:
-        cleaned = (name or "").strip()
+    normalized_names = split_and_normalize(names)
+    for name in normalized_names:
+        cleaned = name.strip()
         if not cleaned:
             continue
         lower = cleaned.lower()
-        if lower in seen:
-            continue
-        seen.add(lower)
         genre = db.query(Genre).filter(func.lower(Genre.name) == lower).one_or_none()
         if genre is None:
             genre = Genre(name=cleaned)
@@ -74,24 +73,11 @@ def apply_movie_update(db: Session, movie: Movie, payload: MovieUpdate) -> Movie
             raise ValueError("Runtime cannot be negative")
         _set_attr("runtime", payload.runtime)
 
-    if payload.tagline is not None:
-        _set_attr("tagline", _normalize_optional_text(payload.tagline))
-
     if payload.plot is not None:
         _set_attr("plot", _normalize_optional_text(payload.plot))
 
     if payload.awards is not None:
         _set_attr("awards", _normalize_optional_text(payload.awards))
-
-    if payload.revenue is not None:
-        if payload.revenue < 0:
-            raise ValueError("Revenue cannot be negative")
-        _set_attr("revenue", payload.revenue)
-
-    if payload.budget is not None:
-        if payload.budget < 0:
-            raise ValueError("Budget cannot be negative")
-        _set_attr("budget", payload.budget)
 
     if payload.imdb_id is not None:
         _set_attr("imdb_id", _normalize_optional_text(payload.imdb_id))
@@ -143,10 +129,22 @@ def apply_movie_update(db: Session, movie: Movie, payload: MovieUpdate) -> Movie
         _set_attr("where_to_watch", normalized)
 
     if payload.languages is not None:
-        _set_attr("languages", _normalize_optional_text(payload.languages))
+        raw = payload.languages
+        if isinstance(raw, list):
+            raw_text = "; ".join(str(item) for item in raw if item is not None)
+        else:
+            raw_text = str(raw) if raw is not None else ""
+        codes = normalize_languages(raw_text).iso
+        _set_attr("languages", codes or None)
 
     if payload.countries is not None:
-        _set_attr("countries", _normalize_optional_text(payload.countries))
+        raw = payload.countries
+        if isinstance(raw, list):
+            raw_text = "; ".join(str(item) for item in raw if item is not None)
+        else:
+            raw_text = str(raw) if raw is not None else ""
+        codes = normalize_countries(raw_text).iso
+        _set_attr("countries", codes or None)
 
     if payload.collection is not None:
         _set_attr("collection", _normalize_optional_text(payload.collection))

@@ -1,11 +1,15 @@
 from collections.abc import Mapping
-from typing import Any, TypeVar, Union, cast
+from typing import TYPE_CHECKING, Any, TypeVar, Union, cast
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 
 from ..models.role_type import RoleType
 from ..types import UNSET, Unset
+
+if TYPE_CHECKING:
+    from ..models.person_read import PersonRead
+
 
 T = TypeVar("T", bound="RoleRead")
 
@@ -16,6 +20,7 @@ class RoleRead:
     Attributes:
         id (int):
         movie_id (int):
+        person (PersonRead):
         person_id (int):
         role_type (RoleType):
         billing_order (Union[None, Unset, int]):
@@ -24,6 +29,7 @@ class RoleRead:
 
     id: int
     movie_id: int
+    person: "PersonRead"
     person_id: int
     role_type: RoleType
     billing_order: Union[None, Unset, int] = UNSET
@@ -34,6 +40,8 @@ class RoleRead:
         id = self.id
 
         movie_id = self.movie_id
+
+        person = self.person.to_dict()
 
         person_id = self.person_id
 
@@ -57,6 +65,7 @@ class RoleRead:
             {
                 "id": id,
                 "movie_id": movie_id,
+                "person": person,
                 "person_id": person_id,
                 "role_type": role_type,
             }
@@ -70,10 +79,14 @@ class RoleRead:
 
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
+        from ..models.person_read import PersonRead
+
         d = dict(src_dict)
         id = d.pop("id")
 
         movie_id = d.pop("movie_id")
+
+        person = PersonRead.from_dict(d.pop("person"))
 
         person_id = d.pop("person_id")
 
@@ -100,6 +113,7 @@ class RoleRead:
         role_read = cls(
             id=id,
             movie_id=movie_id,
+            person=person,
             person_id=person_id,
             role_type=role_type,
             billing_order=billing_order,

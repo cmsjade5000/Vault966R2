@@ -1,6 +1,211 @@
 {
   "components": {
     "schemas": {
+      "AiSearchRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "page": {
+            "default": 1,
+            "minimum": 1.0,
+            "title": "Page",
+            "type": "integer"
+          },
+          "page_size": {
+            "default": 24,
+            "maximum": 100.0,
+            "minimum": 1.0,
+            "title": "Page Size",
+            "type": "integer"
+          },
+          "query": {
+            "title": "Query",
+            "type": "string"
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "title": "AiSearchRequest",
+        "type": "object"
+      },
+      "AiSearchResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "explanation": {
+            "title": "Explanation",
+            "type": "string"
+          },
+          "facets": {
+            "$ref": "#/components/schemas/MovieFacets"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/MovieRead"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "page": {
+            "title": "Page",
+            "type": "integer"
+          },
+          "page_size": {
+            "title": "Page Size",
+            "type": "integer"
+          },
+          "plan": {
+            "$ref": "#/components/schemas/SearchPlan"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "plan",
+          "explanation",
+          "items",
+          "total",
+          "page",
+          "page_size",
+          "facets"
+        ],
+        "title": "AiSearchResponse",
+        "type": "object"
+      },
+      "FlicFilters": {
+        "properties": {
+          "genres": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Genres",
+            "type": "array"
+          },
+          "moods": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Moods",
+            "type": "array"
+          },
+          "q": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Q"
+          },
+          "runtime_max": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Runtime Max"
+          },
+          "year_max": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Year Max"
+          },
+          "year_min": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Year Min"
+          }
+        },
+        "title": "FlicFilters",
+        "type": "object"
+      },
+      "FlicMemoryRead": {
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "movie_id": {
+            "title": "Movie Id",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "movie_id",
+          "created_at"
+        ],
+        "title": "FlicMemoryRead",
+        "type": "object"
+      },
+      "FlicPresetCreate": {
+        "properties": {
+          "filters": {
+            "$ref": "#/components/schemas/FlicFilters"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "filters"
+        ],
+        "title": "FlicPresetCreate",
+        "type": "object"
+      },
+      "FlicPresetRead": {
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "filters": {
+            "$ref": "#/components/schemas/FlicFilters"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "filters",
+          "created_at"
+        ],
+        "title": "FlicPresetRead",
+        "type": "object"
+      },
       "GenreRead": {
         "properties": {
           "id": {
@@ -30,6 +235,441 @@
           }
         },
         "title": "HTTPValidationError",
+        "type": "object"
+      },
+      "LlmMovieFilters": {
+        "additionalProperties": false,
+        "properties": {
+          "genres": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Genres",
+            "type": "array"
+          },
+          "moods": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Moods",
+            "type": "array"
+          },
+          "order_by": {
+            "default": "title_asc",
+            "title": "Order By",
+            "type": "string"
+          },
+          "q": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Q"
+          },
+          "runtime_max": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Runtime Max"
+          },
+          "runtime_min": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Runtime Min"
+          },
+          "year_max": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Year Max"
+          },
+          "year_min": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Year Min"
+          }
+        },
+        "title": "LlmMovieFilters",
+        "type": "object"
+      },
+      "LlmMovieSearchRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "page": {
+            "default": 1,
+            "minimum": 1.0,
+            "title": "Page",
+            "type": "integer"
+          },
+          "page_size": {
+            "default": 24,
+            "maximum": 100.0,
+            "minimum": 1.0,
+            "title": "Page Size",
+            "type": "integer"
+          },
+          "query": {
+            "title": "Query",
+            "type": "string"
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "title": "LlmMovieSearchRequest",
+        "type": "object"
+      },
+      "LlmMovieSearchResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "facets": {
+            "$ref": "#/components/schemas/MovieFacets"
+          },
+          "filters": {
+            "$ref": "#/components/schemas/LlmMovieFilters"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/MovieRead"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "page": {
+            "title": "Page",
+            "type": "integer"
+          },
+          "page_size": {
+            "title": "Page Size",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "filters",
+          "items",
+          "total",
+          "page",
+          "page_size",
+          "facets"
+        ],
+        "title": "LlmMovieSearchResponse",
+        "type": "object"
+      },
+      "ManualMovieCreate": {
+        "properties": {
+          "metadata": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ManualMovieMetadata"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "vudu": {
+            "default": false,
+            "title": "Vudu",
+            "type": "boolean"
+          },
+          "year": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Year"
+          }
+        },
+        "required": [
+          "title"
+        ],
+        "title": "ManualMovieCreate",
+        "type": "object"
+      },
+      "ManualMovieMetadata": {
+        "properties": {
+          "backdrop_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Backdrop Url"
+          },
+          "genres": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Genres",
+            "type": "array"
+          },
+          "imdb_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Imdb Id"
+          },
+          "keywords": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Keywords",
+            "type": "array"
+          },
+          "overview": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Overview"
+          },
+          "poster_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Poster Url"
+          },
+          "release_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Release Date"
+          },
+          "runtime": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Runtime"
+          },
+          "source": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source"
+          },
+          "tmdb_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tmdb Id"
+          },
+          "where_to_watch": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Where To Watch",
+            "type": "array"
+          }
+        },
+        "title": "ManualMovieMetadata",
+        "type": "object"
+      },
+      "ManualMoviePreviewResponse": {
+        "properties": {
+          "backdrop_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Backdrop Url"
+          },
+          "genres": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Genres",
+            "type": "array"
+          },
+          "imdb_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Imdb Id"
+          },
+          "keywords": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Keywords",
+            "type": "array"
+          },
+          "overview": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Overview"
+          },
+          "poster_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Poster Url"
+          },
+          "release_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Release Date"
+          },
+          "runtime": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Runtime"
+          },
+          "source": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "tmdb_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tmdb Id"
+          },
+          "where_to_watch": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Where To Watch",
+            "type": "array"
+          },
+          "year": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Year"
+          }
+        },
+        "required": [
+          "title"
+        ],
+        "title": "ManualMoviePreviewResponse",
         "type": "object"
       },
       "MoodRead": {
@@ -74,6 +714,17 @@
       },
       "MovieCreate": {
         "properties": {
+          "awards": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Awards"
+          },
           "backdrop_url": {
             "anyOf": [
               {
@@ -84,6 +735,34 @@
               }
             ],
             "title": "Backdrop Url"
+          },
+          "collection": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Collection"
+          },
+          "countries": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Countries"
           },
           "genres": {
             "items": {
@@ -102,6 +781,56 @@
               }
             ],
             "title": "Imdb Id"
+          },
+          "imdb_rating": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Imdb Rating"
+          },
+          "imdb_votes": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Imdb Votes"
+          },
+          "languages": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Languages"
+          },
+          "metascore": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Metascore"
           },
           "moods": {
             "items": {
@@ -158,6 +887,45 @@
             ],
             "title": "Tmdb Id"
           },
+          "tomato_audience": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tomato Audience"
+          },
+          "tomato_meter": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tomato Meter"
+          },
+          "where_to_watch": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Where To Watch"
+          },
           "year": {
             "anyOf": [
               {
@@ -176,7 +944,462 @@
         "title": "MovieCreate",
         "type": "object"
       },
-      "MovieRead": {
+      "MovieDetail": {
+        "properties": {
+          "awards": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Awards"
+          },
+          "backdrop_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Backdrop Url"
+          },
+          "collection": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Collection"
+          },
+          "countries": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Countries"
+          },
+          "countries_display": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Countries Display",
+            "type": "array"
+          },
+          "countries_iso": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Countries Iso",
+            "type": "array"
+          },
+          "flagged": {
+            "default": false,
+            "title": "Flagged",
+            "type": "boolean"
+          },
+          "genres": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Genres",
+            "type": "array"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "imdb_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Imdb Id"
+          },
+          "imdb_rating": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Imdb Rating"
+          },
+          "imdb_votes": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Imdb Votes"
+          },
+          "languages": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Languages"
+          },
+          "languages_display": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Languages Display",
+            "type": "array"
+          },
+          "languages_iso": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Languages Iso",
+            "type": "array"
+          },
+          "last_omdb_fetch_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Omdb Fetch At"
+          },
+          "last_tmdb_fetch_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Tmdb Fetch At"
+          },
+          "metascore": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Metascore"
+          },
+          "moods": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Moods",
+            "type": "array"
+          },
+          "omdb_payload_sha": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Omdb Payload Sha"
+          },
+          "plot": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Plot"
+          },
+          "poster_theme": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Poster Theme"
+          },
+          "poster_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Poster Url"
+          },
+          "roles": {
+            "items": {
+              "$ref": "#/components/schemas/RoleWithPersonRead"
+            },
+            "title": "Roles",
+            "type": "array"
+          },
+          "rt_score": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rt Score"
+          },
+          "runtime": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Runtime"
+          },
+          "similar": {
+            "items": {
+              "$ref": "#/components/schemas/SimilarMovie"
+            },
+            "title": "Similar",
+            "type": "array"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "tmdb_etag": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tmdb Etag"
+          },
+          "tmdb_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tmdb Id"
+          },
+          "tmdb_payload_sha": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tmdb Payload Sha"
+          },
+          "tomato_audience": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tomato Audience"
+          },
+          "tomato_meter": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tomato Meter"
+          },
+          "top_billed": {
+            "items": {
+              "$ref": "#/components/schemas/TopBilledEntry"
+            },
+            "title": "Top Billed",
+            "type": "array"
+          },
+          "where_to_watch": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Where To Watch",
+            "type": "array"
+          },
+          "year": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Year"
+          }
+        },
+        "required": [
+          "id",
+          "title"
+        ],
+        "title": "MovieDetail",
+        "type": "object"
+      },
+      "MovieFacets": {
+        "properties": {
+          "genres": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "Genres",
+            "type": "object"
+          },
+          "moods": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "Moods",
+            "type": "object"
+          }
+        },
+        "title": "MovieFacets",
+        "type": "object"
+      },
+      "MovieFlagCreate": {
+        "properties": {
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          }
+        },
+        "title": "MovieFlagCreate",
+        "type": "object"
+      },
+      "MovieFlagRead": {
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "movie_id": {
+            "title": "Movie Id",
+            "type": "integer"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "movie_id",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "MovieFlagRead",
+        "type": "object"
+      },
+      "MovieLookupCandidate": {
         "properties": {
           "backdrop_url": {
             "anyOf": [
@@ -188,6 +1411,191 @@
               }
             ],
             "title": "Backdrop Url"
+          },
+          "genres": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Genres",
+            "type": "array"
+          },
+          "imdb_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Imdb Id"
+          },
+          "keywords": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Keywords",
+            "type": "array"
+          },
+          "overview": {
+            "default": "",
+            "title": "Overview",
+            "type": "string"
+          },
+          "poster_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Poster Url"
+          },
+          "release_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Release Date"
+          },
+          "runtime": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Runtime"
+          },
+          "source": {
+            "default": "tmdb",
+            "title": "Source",
+            "type": "string"
+          },
+          "synopsis": {
+            "default": "",
+            "title": "Synopsis",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "tmdb_id": {
+            "title": "Tmdb Id",
+            "type": "integer"
+          },
+          "where_to_watch": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Where To Watch",
+            "type": "array"
+          },
+          "year": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Year"
+          }
+        },
+        "required": [
+          "title",
+          "tmdb_id"
+        ],
+        "title": "MovieLookupCandidate",
+        "type": "object"
+      },
+      "MovieLookupResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/MovieLookupCandidate"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "title": "MovieLookupResponse",
+        "type": "object"
+      },
+      "MovieRead": {
+        "properties": {
+          "awards": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Awards"
+          },
+          "backdrop_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Backdrop Url"
+          },
+          "collection": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Collection"
+          },
+          "countries": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Countries"
+          },
+          "countries_iso": {
+            "items": {
+              "type": "string"
+            },
+            "readOnly": true,
+            "title": "Countries Iso",
+            "type": "array"
+          },
+          "flagged": {
+            "default": false,
+            "title": "Flagged",
+            "type": "boolean"
           },
           "genres": {
             "items": {
@@ -211,12 +1619,105 @@
             ],
             "title": "Imdb Id"
           },
+          "imdb_rating": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Imdb Rating"
+          },
+          "imdb_votes": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Imdb Votes"
+          },
+          "languages": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Languages"
+          },
+          "languages_iso": {
+            "items": {
+              "type": "string"
+            },
+            "readOnly": true,
+            "title": "Languages Iso",
+            "type": "array"
+          },
+          "last_omdb_fetch_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Omdb Fetch At"
+          },
+          "last_tmdb_fetch_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Tmdb Fetch At"
+          },
+          "metascore": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Metascore"
+          },
           "moods": {
             "items": {
               "$ref": "#/components/schemas/MoodRead"
             },
             "title": "Moods",
             "type": "array"
+          },
+          "omdb_payload_sha": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Omdb Payload Sha"
           },
           "plot": {
             "anyOf": [
@@ -255,6 +1756,17 @@
             "title": "Title",
             "type": "string"
           },
+          "tmdb_etag": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tmdb Etag"
+          },
           "tmdb_id": {
             "anyOf": [
               {
@@ -265,6 +1777,64 @@
               }
             ],
             "title": "Tmdb Id"
+          },
+          "tmdb_payload_sha": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tmdb Payload Sha"
+          },
+          "tomato_audience": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tomato Audience"
+          },
+          "tomato_meter": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tomato Meter"
+          },
+          "where_to_watch": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Where To Watch"
+          },
+          "where_to_watch_list": {
+            "items": {
+              "type": "string"
+            },
+            "readOnly": true,
+            "title": "Where To Watch List",
+            "type": "array"
           },
           "year": {
             "anyOf": [
@@ -280,13 +1850,19 @@
         },
         "required": [
           "title",
-          "id"
+          "id",
+          "languages_iso",
+          "countries_iso",
+          "where_to_watch_list"
         ],
         "title": "MovieRead",
         "type": "object"
       },
       "MovieSearchResponse": {
         "properties": {
+          "facets": {
+            "$ref": "#/components/schemas/MovieFacets"
+          },
           "items": {
             "items": {
               "$ref": "#/components/schemas/MovieRead"
@@ -311,9 +1887,316 @@
           "items",
           "total",
           "page",
-          "page_size"
+          "page_size",
+          "facets"
         ],
         "title": "MovieSearchResponse",
+        "type": "object"
+      },
+      "MovieUpdate": {
+        "properties": {
+          "awards": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Awards"
+          },
+          "backdrop_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Backdrop Url"
+          },
+          "collection": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Collection"
+          },
+          "countries": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Countries"
+          },
+          "genres": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Genres"
+          },
+          "imdb_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Imdb Id"
+          },
+          "imdb_rating": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Imdb Rating"
+          },
+          "imdb_votes": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Imdb Votes"
+          },
+          "languages": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Languages"
+          },
+          "last_omdb_fetch_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Omdb Fetch At"
+          },
+          "last_tmdb_fetch_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Tmdb Fetch At"
+          },
+          "metascore": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Metascore"
+          },
+          "omdb_payload_sha": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Omdb Payload Sha"
+          },
+          "plot": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Plot"
+          },
+          "poster_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Poster Url"
+          },
+          "resolve_flag": {
+            "default": false,
+            "title": "Resolve Flag",
+            "type": "boolean"
+          },
+          "rt_score": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rt Score"
+          },
+          "runtime": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Runtime"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "tmdb_etag": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tmdb Etag"
+          },
+          "tmdb_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tmdb Id"
+          },
+          "tmdb_payload_sha": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tmdb Payload Sha"
+          },
+          "tomato_audience": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tomato Audience"
+          },
+          "tomato_meter": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tomato Meter"
+          },
+          "where_to_watch": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Where To Watch"
+          },
+          "year": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Year"
+          }
+        },
+        "title": "MovieUpdate",
         "type": "object"
       },
       "PersonCreate": {
@@ -380,6 +2263,46 @@
           "page_size"
         ],
         "title": "PersonListResponse",
+        "type": "object"
+      },
+      "PersonNested": {
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "imdb_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Imdb Id"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "tmdb_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tmdb Id"
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ],
+        "title": "PersonNested",
         "type": "object"
       },
       "PersonRead": {
@@ -493,6 +2416,9 @@
             "title": "Movie Id",
             "type": "integer"
           },
+          "person": {
+            "$ref": "#/components/schemas/PersonRead"
+          },
           "person_id": {
             "title": "Person Id",
             "type": "integer"
@@ -505,7 +2431,8 @@
           "id",
           "movie_id",
           "person_id",
-          "role_type"
+          "role_type",
+          "person"
         ],
         "title": "RoleRead",
         "type": "object"
@@ -518,6 +2445,249 @@
         ],
         "title": "RoleType",
         "type": "string"
+      },
+      "RoleWithPersonRead": {
+        "properties": {
+          "billing_order": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Billing Order"
+          },
+          "character_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Character Name"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "movie_id": {
+            "title": "Movie Id",
+            "type": "integer"
+          },
+          "person": {
+            "$ref": "#/components/schemas/PersonNested"
+          },
+          "person_id": {
+            "title": "Person Id",
+            "type": "integer"
+          },
+          "role_type": {
+            "title": "Role Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "movie_id",
+          "person_id",
+          "role_type",
+          "person"
+        ],
+        "title": "RoleWithPersonRead",
+        "type": "object"
+      },
+      "SearchPlan": {
+        "additionalProperties": false,
+        "properties": {
+          "genres": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Genres",
+            "type": "array"
+          },
+          "moods": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Moods",
+            "type": "array"
+          },
+          "order_by": {
+            "default": "title_asc",
+            "title": "Order By",
+            "type": "string"
+          },
+          "q": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Q"
+          },
+          "runtime_max": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Runtime Max"
+          },
+          "runtime_min": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Runtime Min"
+          },
+          "year_max": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Year Max"
+          },
+          "year_min": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Year Min"
+          }
+        },
+        "title": "SearchPlan",
+        "type": "object"
+      },
+      "SimilarMovie": {
+        "properties": {
+          "flic_score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Flic Score"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "poster_theme": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Poster Theme"
+          },
+          "poster_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Poster Url"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "year": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Year"
+          }
+        },
+        "required": [
+          "id",
+          "title"
+        ],
+        "title": "SimilarMovie",
+        "type": "object"
+      },
+      "TopBilledEntry": {
+        "properties": {
+          "character": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Character"
+          },
+          "imdb_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Imdb Id"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "person_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Person Id"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "TopBilledEntry",
+        "type": "object"
       },
       "ValidationError": {
         "properties": {
@@ -552,6 +2722,12 @@
         "title": "ValidationError",
         "type": "object"
       }
+    },
+    "securitySchemes": {
+      "HTTPBearer": {
+        "scheme": "bearer",
+        "type": "http"
+      }
     }
   },
   "info": {
@@ -560,6 +2736,171 @@
   },
   "openapi": "3.1.0",
   "paths": {
+    "/api/ai/search": {
+      "post": {
+        "operationId": "ai_search_api_ai_search_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AiSearchRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiSearchResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Ai Search",
+        "tags": [
+          "ai"
+        ]
+      }
+    },
+    "/fliclists/": {
+      "get": {
+        "operationId": "list_presets_fliclists__get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/FlicPresetRead"
+                  },
+                  "title": "Response List Presets Fliclists  Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Presets",
+        "tags": [
+          "fliclists"
+        ]
+      },
+      "post": {
+        "operationId": "create_preset_fliclists__post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FlicPresetCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FlicPresetRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Preset",
+        "tags": [
+          "fliclists"
+        ]
+      }
+    },
+    "/fliclists/history": {
+      "get": {
+        "operationId": "list_memory_fliclists_history_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/FlicMemoryRead"
+                  },
+                  "title": "Response List Memory Fliclists History Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Memory",
+        "tags": [
+          "fliclists"
+        ]
+      }
+    },
+    "/fliclists/{preset_id}": {
+      "delete": {
+        "operationId": "delete_preset_fliclists__preset_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "preset_id",
+            "required": true,
+            "schema": {
+              "title": "Preset Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Delete Preset",
+        "tags": [
+          "fliclists"
+        ]
+      }
+    },
     "/health": {
       "get": {
         "operationId": "health_health_get",
@@ -637,7 +2978,154 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "Create Movie",
+        "tags": [
+          "movies"
+        ]
+      }
+    },
+    "/movies/flags": {
+      "get": {
+        "operationId": "list_flags_movies_flags_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/MovieFlagRead"
+                  },
+                  "title": "Response List Flags Movies Flags Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Flags",
+        "tags": [
+          "movies"
+        ]
+      }
+    },
+    "/movies/picks": {
+      "get": {
+        "operationId": "get_pick_movies_picks_get",
+        "parameters": [
+          {
+            "description": "Desired mood name",
+            "in": "query",
+            "name": "mood",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Desired mood name",
+              "title": "Mood"
+            }
+          },
+          {
+            "description": "Restrict to this genre",
+            "in": "query",
+            "name": "genre",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Restrict to this genre",
+              "title": "Genre"
+            }
+          },
+          {
+            "in": "query",
+            "name": "year_min",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Year Min"
+            }
+          },
+          {
+            "in": "query",
+            "name": "year_max",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Year Max"
+            }
+          },
+          {
+            "in": "query",
+            "name": "runtime_max",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Runtime Max"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MovieRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Pick",
         "tags": [
           "movies"
         ]
@@ -666,70 +3154,74 @@
             }
           },
           {
+            "description": "Earliest release year to include",
             "in": "query",
             "name": "year_min",
             "required": false,
             "schema": {
               "anyOf": [
                 {
-                  "minimum": 0,
-                  "type": "integer"
+                  "type": "string"
                 },
                 {
                   "type": "null"
                 }
               ],
+              "description": "Earliest release year to include",
               "title": "Year Min"
             }
           },
           {
+            "description": "Latest release year to include",
             "in": "query",
             "name": "year_max",
             "required": false,
             "schema": {
               "anyOf": [
                 {
-                  "minimum": 0,
-                  "type": "integer"
+                  "type": "string"
                 },
                 {
                   "type": "null"
                 }
               ],
+              "description": "Latest release year to include",
               "title": "Year Max"
             }
           },
           {
+            "description": "Minimum runtime in minutes",
             "in": "query",
             "name": "runtime_min",
             "required": false,
             "schema": {
               "anyOf": [
                 {
-                  "minimum": 0,
-                  "type": "integer"
+                  "type": "string"
                 },
                 {
                   "type": "null"
                 }
               ],
+              "description": "Minimum runtime in minutes",
               "title": "Runtime Min"
             }
           },
           {
+            "description": "Maximum runtime in minutes",
             "in": "query",
             "name": "runtime_max",
             "required": false,
             "schema": {
               "anyOf": [
                 {
-                  "minimum": 0,
-                  "type": "integer"
+                  "type": "string"
                 },
                 {
                   "type": "null"
                 }
               ],
+              "description": "Maximum runtime in minutes",
               "title": "Runtime Max"
             }
           },
@@ -767,6 +3259,23 @@
               ],
               "description": "Comma separated list of mood names",
               "title": "Moods"
+            }
+          },
+          {
+            "in": "query",
+            "name": "order_by",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": "title_asc",
+              "title": "Order By"
             }
           },
           {
@@ -821,7 +3330,361 @@
         ]
       }
     },
+    "/movies/search/llm": {
+      "post": {
+        "operationId": "llm_search_movies_movies_search_llm_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LlmMovieSearchRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LlmMovieSearchResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Llm Search Movies",
+        "tags": [
+          "movies"
+        ]
+      }
+    },
+    "/movies/{movie_id}": {
+      "patch": {
+        "operationId": "update_movie_movies__movie_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "movie_id",
+            "required": true,
+            "schema": {
+              "title": "Movie Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MovieUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MovieRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Update Movie",
+        "tags": [
+          "movies"
+        ]
+      }
+    },
+    "/movies/{movie_id}/detail": {
+      "get": {
+        "operationId": "movie_detail_movies__movie_id__detail_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "movie_id",
+            "required": true,
+            "schema": {
+              "title": "Movie Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MovieDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Movie Detail",
+        "tags": [
+          "movies"
+        ]
+      }
+    },
+    "/movies/{movie_id}/flag": {
+      "delete": {
+        "operationId": "clear_flag_movies__movie_id__flag_delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "movie_id",
+            "required": true,
+            "schema": {
+              "title": "Movie Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Clear Flag",
+        "tags": [
+          "movies"
+        ]
+      },
+      "post": {
+        "operationId": "flag_movie_movies__movie_id__flag_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "movie_id",
+            "required": true,
+            "schema": {
+              "title": "Movie Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MovieFlagCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MovieFlagRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Flag Movie",
+        "tags": [
+          "movies"
+        ]
+      }
+    },
+    "/movies/{movie_id}/lookup": {
+      "get": {
+        "operationId": "movie_lookup_movies__movie_id__lookup_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "movie_id",
+            "required": true,
+            "schema": {
+              "title": "Movie Id",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Override title to search",
+            "in": "query",
+            "name": "title",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Override title to search",
+              "title": "Title"
+            }
+          },
+          {
+            "in": "query",
+            "name": "year",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maximum": 2100,
+                  "minimum": 1870,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Year"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 5,
+              "maximum": 20,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MovieLookupResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Movie Lookup",
+        "tags": [
+          "movies"
+        ]
+      }
+    },
     "/movies/{movie_id}/roles": {
+      "get": {
+        "operationId": "list_roles_movies__movie_id__roles_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "movie_id",
+            "required": true,
+            "schema": {
+              "title": "Movie Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/RoleRead"
+                  },
+                  "title": "Response List Roles Movies  Movie Id  Roles Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Roles",
+        "tags": [
+          "movies"
+        ]
+      },
       "post": {
         "operationId": "attach_role_movies__movie_id__roles_post",
         "parameters": [
@@ -867,6 +3730,11 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "Attach Role",
         "tags": [
           "movies"
@@ -962,9 +3830,334 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "Create Person",
         "tags": [
           "people"
+        ]
+      }
+    },
+    "/ui/movies": {
+      "get": {
+        "operationId": "movies_grid_ui_movies_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Q"
+            }
+          },
+          {
+            "in": "query",
+            "name": "genres",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Genres"
+            }
+          },
+          {
+            "in": "query",
+            "name": "moods",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Moods"
+            }
+          },
+          {
+            "in": "query",
+            "name": "year_min",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Year Min"
+            }
+          },
+          {
+            "in": "query",
+            "name": "year_max",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Year Max"
+            }
+          },
+          {
+            "in": "query",
+            "name": "runtime_max",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Runtime Max"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "minimum": 1,
+              "title": "Page",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "order_by",
+            "required": false,
+            "schema": {
+              "default": "title_asc",
+              "title": "Order By",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Movies Grid",
+        "tags": [
+          "ui",
+          "ui"
+        ]
+      }
+    },
+    "/ui/movies/health": {
+      "get": {
+        "operationId": "movies_health_ui_movies_health_get",
+        "responses": {
+          "200": {
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Movies Health",
+        "tags": [
+          "ui",
+          "ui"
+        ]
+      }
+    },
+    "/ui/movies/manual-add": {
+      "post": {
+        "operationId": "manual_add_movie_ui_movies_manual_add_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ManualMovieCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Manual Add Movie",
+        "tags": [
+          "ui",
+          "ui"
+        ]
+      }
+    },
+    "/ui/movies/manual-add/preview": {
+      "post": {
+        "operationId": "manual_add_preview_ui_movies_manual_add_preview_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ManualMovieCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ManualMoviePreviewResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Manual Add Preview",
+        "tags": [
+          "ui",
+          "ui"
+        ]
+      }
+    },
+    "/ui/movies/top": {
+      "get": {
+        "operationId": "movies_top_ui_movies_top_get",
+        "responses": {
+          "200": {
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Movies Top",
+        "tags": [
+          "ui",
+          "ui"
+        ]
+      }
+    },
+    "/ui/movies/{movie_id}": {
+      "get": {
+        "operationId": "movie_detail_ui_movies__movie_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "movie_id",
+            "required": true,
+            "schema": {
+              "title": "Movie Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Movie Detail",
+        "tags": [
+          "ui",
+          "ui"
         ]
       }
     }

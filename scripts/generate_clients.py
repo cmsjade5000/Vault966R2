@@ -24,7 +24,7 @@ def generate_python_client(output_dir: pathlib.Path) -> None:
         [
             sys.executable,
             "-m",
-            "openapi_python_client.cli",
+            "openapi_python_client",
             "generate",
             "--path",
             str(OPENAPI_PATH),

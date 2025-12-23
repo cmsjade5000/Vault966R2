@@ -5,6 +5,7 @@ from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 
 if TYPE_CHECKING:
+    from ..models.movie_facets import MovieFacets
     from ..models.movie_read import MovieRead
 
 
@@ -15,12 +16,14 @@ T = TypeVar("T", bound="MovieSearchResponse")
 class MovieSearchResponse:
     """
     Attributes:
+        facets (MovieFacets):
         items (list['MovieRead']):
         page (int):
         page_size (int):
         total (int):
     """
 
+    facets: "MovieFacets"
     items: list["MovieRead"]
     page: int
     page_size: int
@@ -28,6 +31,8 @@ class MovieSearchResponse:
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
+        facets = self.facets.to_dict()
+
         items = []
         for items_item_data in self.items:
             items_item = items_item_data.to_dict()
@@ -43,6 +48,7 @@ class MovieSearchResponse:
         field_dict.update(self.additional_properties)
         field_dict.update(
             {
+                "facets": facets,
                 "items": items,
                 "page": page,
                 "page_size": page_size,
@@ -54,9 +60,12 @@ class MovieSearchResponse:
 
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
+        from ..models.movie_facets import MovieFacets
         from ..models.movie_read import MovieRead
 
         d = dict(src_dict)
+        facets = MovieFacets.from_dict(d.pop("facets"))
+
         items = []
         _items = d.pop("items")
         for items_item_data in _items:
@@ -71,6 +80,7 @@ class MovieSearchResponse:
         total = d.pop("total")
 
         movie_search_response = cls(
+            facets=facets,
             items=items,
             page=page,
             page_size=page_size,

@@ -62,7 +62,7 @@ def _build_response(
 
 def sync_detailed(
     *,
-    client: Union[AuthenticatedClient, Client],
+    client: AuthenticatedClient,
     body: PersonCreate,
 ) -> Response[Union[HTTPValidationError, PersonRead]]:
     """Create Person
@@ -91,7 +91,7 @@ def sync_detailed(
 
 def sync(
     *,
-    client: Union[AuthenticatedClient, Client],
+    client: AuthenticatedClient,
     body: PersonCreate,
 ) -> Optional[Union[HTTPValidationError, PersonRead]]:
     """Create Person
@@ -115,7 +115,7 @@ def sync(
 
 async def asyncio_detailed(
     *,
-    client: Union[AuthenticatedClient, Client],
+    client: AuthenticatedClient,
     body: PersonCreate,
 ) -> Response[Union[HTTPValidationError, PersonRead]]:
     """Create Person
@@ -142,7 +142,7 @@ async def asyncio_detailed(
 
 async def asyncio(
     *,
-    client: Union[AuthenticatedClient, Client],
+    client: AuthenticatedClient,
     body: PersonCreate,
 ) -> Optional[Union[HTTPValidationError, PersonRead]]:
     """Create Person

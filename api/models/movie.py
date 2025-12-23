@@ -2,7 +2,6 @@ from datetime import datetime
 from typing import List, Optional, TYPE_CHECKING
 
 from sqlalchemy import (
-    BigInteger,
     CheckConstraint,
     Column,
     DateTime,
@@ -10,6 +9,7 @@ from sqlalchemy import (
     ForeignKey,
     Index,
     Integer,
+    JSON,
     String,
     Table,
     Text,
@@ -22,6 +22,7 @@ if TYPE_CHECKING:  # pragma: no cover - import for typing only
     from api.models.movie_flag import MovieFlag
 
 from api.db import Base
+from api.db_types import LenientJSONText
 
 # Association tables
 movie_genres = Table(
@@ -72,7 +73,6 @@ class Movie(Base):
     title: Mapped[str] = mapped_column(String(300), index=True)
     year: Mapped[Optional[int]] = mapped_column(Integer, nullable=True, index=True)
     runtime: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)  # minutes
-    tagline: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
     plot: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     awards: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
@@ -85,8 +85,6 @@ class Movie(Base):
     tomato_meter: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     tomato_audience: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     rt_score: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
-    revenue: Mapped[Optional[int]] = mapped_column(BigInteger, nullable=True)
-    budget: Mapped[Optional[int]] = mapped_column(BigInteger, nullable=True)
 
     last_tmdb_fetch_at: Mapped[Optional[datetime]] = mapped_column(
         DateTime(timezone=True), nullable=True
@@ -98,9 +96,12 @@ class Movie(Base):
     tmdb_payload_sha: Mapped[Optional[str]] = mapped_column(String(128), nullable=True)
     omdb_payload_sha: Mapped[Optional[str]] = mapped_column(String(128), nullable=True)
 
-    where_to_watch: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    languages: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    countries: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    # Postgres stores these as JSONB (see Alembic migration). SQLite dumps in the repo
+    # store raw TEXT, so keep SQLite lenient to avoid JSON decode issues.
+    _lenient_json = JSON().with_variant(LenientJSONText(), "sqlite")
+    where_to_watch: Mapped[Optional[object]] = mapped_column(_lenient_json, nullable=True)
+    languages: Mapped[Optional[object]] = mapped_column(_lenient_json, nullable=True)
+    countries: Mapped[Optional[object]] = mapped_column(_lenient_json, nullable=True)
     collection: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     poster_url: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)

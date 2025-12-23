@@ -1,10 +1,17 @@
 from datetime import datetime
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Union
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, computed_field, field_serializer
 
 from api.models.person import RoleType
 from api.schemas.person import PersonRead
+from api.utils.providers import split_providers
+from core.enriched_csv import (
+    countries_display_from_iso,
+    languages_display_from_iso,
+    normalize_countries,
+    normalize_languages,
+)
 
 
 class GenreRead(BaseModel):
@@ -29,11 +36,8 @@ class MovieBase(BaseModel):
     title: str
     year: Optional[int] = None
     runtime: Optional[int] = None
-    tagline: Optional[str] = None
     plot: Optional[str] = None
     awards: Optional[str] = None
-    revenue: Optional[int] = None
-    budget: Optional[int] = None
     imdb_id: Optional[str] = None
     tmdb_id: Optional[int] = None
     imdb_rating: Optional[float] = None
@@ -43,9 +47,9 @@ class MovieBase(BaseModel):
     tomato_audience: Optional[int] = None
     poster_url: Optional[str] = None
     backdrop_url: Optional[str] = None
-    where_to_watch: Optional[str] = None
-    languages: Optional[str] = None
-    countries: Optional[str] = None
+    where_to_watch: Optional[Union[str, List[str]]] = None
+    languages: Optional[Union[str, List[str]]] = None
+    countries: Optional[Union[str, List[str]]] = None
     collection: Optional[str] = None
 
 
@@ -68,16 +72,69 @@ class MovieRead(MovieBase):
     class Config:
         from_attributes = True
 
+    @computed_field(return_type=List[str])
+    def languages_iso(self) -> List[str]:
+        value = self.languages
+        if value is None:
+            return []
+        if isinstance(value, list):
+            text = "; ".join(str(item) for item in value if item is not None)
+        else:
+            text = str(value)
+        return normalize_languages(text).iso
+
+    @computed_field(return_type=List[str])
+    def countries_iso(self) -> List[str]:
+        value = self.countries
+        if value is None:
+            return []
+        if isinstance(value, list):
+            text = "; ".join(str(item) for item in value if item is not None)
+        else:
+            text = str(value)
+        return normalize_countries(text).iso
+
+    @field_serializer("languages")
+    def _serialize_languages(self, value):
+        if value is None:
+            return None
+        if isinstance(value, list):
+            codes = normalize_languages("; ".join(str(item) for item in value if item is not None)).iso
+            names = languages_display_from_iso(codes) if codes else [str(item) for item in value]
+            return ", ".join(names)
+        if isinstance(value, str):
+            codes = normalize_languages(value).iso
+            if not codes:
+                return value
+            return ", ".join(languages_display_from_iso(codes))
+        return str(value)
+
+    @field_serializer("countries")
+    def _serialize_countries(self, value):
+        if value is None:
+            return None
+        if isinstance(value, list):
+            codes = normalize_countries("; ".join(str(item) for item in value if item is not None)).iso
+            names = countries_display_from_iso(codes) if codes else [str(item) for item in value]
+            return ", ".join(names)
+        if isinstance(value, str):
+            codes = normalize_countries(value).iso
+            if not codes:
+                return value
+            return ", ".join(countries_display_from_iso(codes))
+        return str(value)
+
+    @computed_field(return_type=List[str])
+    def where_to_watch_list(self) -> List[str]:
+        return split_providers(self.where_to_watch)
+
 
 class MovieUpdate(BaseModel):
     title: Optional[str] = None
     year: Optional[int] = None
     runtime: Optional[int] = None
-    tagline: Optional[str] = None
     plot: Optional[str] = None
     awards: Optional[str] = None
-    revenue: Optional[int] = None
-    budget: Optional[int] = None
     imdb_id: Optional[str] = None
     tmdb_id: Optional[int] = None
     imdb_rating: Optional[float] = None
@@ -88,8 +145,8 @@ class MovieUpdate(BaseModel):
     poster_url: Optional[str] = None
     backdrop_url: Optional[str] = None
     where_to_watch: Optional[List[str]] = None
-    languages: Optional[str] = None
-    countries: Optional[str] = None
+    languages: Optional[Union[str, List[str]]] = None
+    countries: Optional[Union[str, List[str]]] = None
     collection: Optional[str] = None
     rt_score: Optional[int] = None
     last_tmdb_fetch_at: Optional[datetime] = None

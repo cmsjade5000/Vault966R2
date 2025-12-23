@@ -64,66 +64,77 @@ def get_taglines() -> tuple[list[str], str]:
 def get_built_in_presets() -> list[dict[str, object]]:
     return [
         {
-            "name": "Fresh Favorites",
+            "name": "Fresh & Breezy",
             "filters": {
-                "year_min": 2018,
+                "year_min": 2015,
+                "runtime_max": 115,
                 "order_by": "year_desc",
-                "runtime_max": 150,
             },
-            "description": "Recently released crowd-pleasers",
+            "description": "Recent releases that wrap in under two hours.",
         },
         {
-            "name": "Family Night",
+            "name": "Horror Sprints",
             "filters": {
-                "genres": ["Animation", "Family"],
-                "runtime_max": 110,
-                "order_by": "title_asc",
+                "genres": ["Horror"],
+                "year_min": 2000,
+                "runtime_max": 105,
+                "order_by": "year_desc",
             },
-            "description": "Bright picks under two hours for all ages",
+            "description": "Modern scares that don’t overstay their welcome.",
         },
         {
-            "name": "Quick Thrills",
+            "name": "90s Rewind",
             "filters": {
-                "genres": ["Action", "Thriller"],
-                "runtime_max": 110,
-                "order_by": "flic",
-            },
-            "description": "High-energy action under two hours",
-        },
-        {
-            "name": "Comfort 90s",
-            "filters": {
-                "genres": ["Comedy", "Romance"],
                 "year_min": 1990,
                 "year_max": 1999,
+                "runtime_max": 130,
                 "order_by": "title_asc",
             },
-            "description": "Feel-good comedies and rom-coms from the 90s",
+            "description": "Comfort rewatches straight from the 1990s shelf.",
         },
         {
-            "name": "Sci-Fi Epics",
+            "name": "Animated Crowd Pleasers",
             "filters": {
-                "genres": ["Science Fiction", "Adventure"],
-                "runtime_max": 185,
-                "order_by": "flic",
+                "genres": ["Animation"],
+                "runtime_max": 110,
+                "order_by": "title_asc",
             },
-            "description": "Big-scale sci-fi adventures with high stakes",
+            "description": "Family-friendly animation capped at 110 minutes.",
         },
         {
-            "name": "Docs & Truth",
+            "name": "Adventure Stack",
+            "filters": {
+                "genres": ["Adventure"],
+                "year_min": 1975,
+                "year_max": 2010,
+                "order_by": "title_asc",
+            },
+            "description": "Classic quests and blockbuster expeditions.",
+        },
+        {
+            "name": "Documentary Spotlight",
             "filters": {
                 "genres": ["Documentary"],
                 "order_by": "year_desc",
             },
-            "description": "Recent documentaries with reflective tones",
+            "description": "Non-fiction picks, newest stories first.",
         },
         {
-            "name": "Indie Darlings",
+            "name": "Short & Clever",
             "filters": {
-                "runtime_max": 115,
-                "order_by": "flic",
+                "runtime_max": 95,
+                "order_by": "imdb_desc",
             },
-            "description": "Festival favorites with introspective vibes",
+            "description": "Critic-loved features under 95 minutes.",
+        },
+        {
+            "name": "Sci-Fi Escape",
+            "filters": {
+                "genres": ["Science Fiction"],
+                "year_min": 2005,
+                "order_by": "year_desc",
+            },
+            "description": "High-concept sci-fi from the modern era.",
         },
     ]
 
@@ -142,11 +153,14 @@ def serialize_user_presets(db: Session) -> list[dict[str, object]]:
 
 def get_genre_options(db: Session) -> list[str]:
     raw_genres = [row[0] for row in db.query(Genre.name).order_by(Genre.name.asc()).all() if row[0]]
-    return [
+    normalized = [
         label
         for label in sorted(split_and_normalize(raw_genres), key=str.casefold)
-        if label.lower() not in {"tv movie", "nan"}
+        if label.lower() != "nan"
     ]
+    if len(normalized) <= 1:
+        return normalized
+    return [label for label in normalized if label.lower() != "tv movie"]
 
 
 def get_mood_options(db: Session) -> list[str]:
@@ -200,6 +214,22 @@ def attach_poster_themes(movies: Iterable[Movie]) -> None:
         setattr(movie, "poster_theme", poster_theme)
 
 
+def attach_genre_display(movies: Iterable[Movie]) -> None:
+    for movie in movies:
+        raw = []
+        try:
+            raw = [
+                getattr(genre, "name", None) or ""
+                if hasattr(genre, "__class__") and getattr(genre.__class__, "__name__", "") == "Genre"
+                else (genre or "")
+                for genre in getattr(movie, "genres", [])
+            ]
+        except TypeError:
+            raw = []
+        normalized = split_and_normalize(raw)
+        setattr(movie, "genre_display", normalized)
+
+
 __all__ = [
     "FILTER_COOKIE_NAME",
     "FILTER_COOKIE_MAX_AGE",
@@ -214,4 +244,5 @@ __all__ = [
     "get_decade_options",
     "get_runtime_presets",
     "attach_poster_themes",
+    "attach_genre_display",
 ]

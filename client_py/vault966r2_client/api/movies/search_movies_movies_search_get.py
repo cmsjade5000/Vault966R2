@@ -13,12 +13,13 @@ from ...types import UNSET, Response, Unset
 def _get_kwargs(
     *,
     q: Union[None, Unset, str] = UNSET,
-    year_min: Union[None, Unset, int] = UNSET,
-    year_max: Union[None, Unset, int] = UNSET,
-    runtime_min: Union[None, Unset, int] = UNSET,
-    runtime_max: Union[None, Unset, int] = UNSET,
+    year_min: Union[None, Unset, str] = UNSET,
+    year_max: Union[None, Unset, str] = UNSET,
+    runtime_min: Union[None, Unset, str] = UNSET,
+    runtime_max: Union[None, Unset, str] = UNSET,
     genres: Union[None, Unset, str] = UNSET,
     moods: Union[None, Unset, str] = UNSET,
+    order_by: Union[None, Unset, str] = "title_asc",
     page: Union[Unset, int] = 1,
     page_size: Union[Unset, int] = 24,
 ) -> dict[str, Any]:
@@ -31,28 +32,28 @@ def _get_kwargs(
         json_q = q
     params["q"] = json_q
 
-    json_year_min: Union[None, Unset, int]
+    json_year_min: Union[None, Unset, str]
     if isinstance(year_min, Unset):
         json_year_min = UNSET
     else:
         json_year_min = year_min
     params["year_min"] = json_year_min
 
-    json_year_max: Union[None, Unset, int]
+    json_year_max: Union[None, Unset, str]
     if isinstance(year_max, Unset):
         json_year_max = UNSET
     else:
         json_year_max = year_max
     params["year_max"] = json_year_max
 
-    json_runtime_min: Union[None, Unset, int]
+    json_runtime_min: Union[None, Unset, str]
     if isinstance(runtime_min, Unset):
         json_runtime_min = UNSET
     else:
         json_runtime_min = runtime_min
     params["runtime_min"] = json_runtime_min
 
-    json_runtime_max: Union[None, Unset, int]
+    json_runtime_max: Union[None, Unset, str]
     if isinstance(runtime_max, Unset):
         json_runtime_max = UNSET
     else:
@@ -72,6 +73,13 @@ def _get_kwargs(
     else:
         json_moods = moods
     params["moods"] = json_moods
+
+    json_order_by: Union[None, Unset, str]
+    if isinstance(order_by, Unset):
+        json_order_by = UNSET
+    else:
+        json_order_by = order_by
+    params["order_by"] = json_order_by
 
     params["page"] = page
 
@@ -122,12 +130,13 @@ def sync_detailed(
     *,
     client: Union[AuthenticatedClient, Client],
     q: Union[None, Unset, str] = UNSET,
-    year_min: Union[None, Unset, int] = UNSET,
-    year_max: Union[None, Unset, int] = UNSET,
-    runtime_min: Union[None, Unset, int] = UNSET,
-    runtime_max: Union[None, Unset, int] = UNSET,
+    year_min: Union[None, Unset, str] = UNSET,
+    year_max: Union[None, Unset, str] = UNSET,
+    runtime_min: Union[None, Unset, str] = UNSET,
+    runtime_max: Union[None, Unset, str] = UNSET,
     genres: Union[None, Unset, str] = UNSET,
     moods: Union[None, Unset, str] = UNSET,
+    order_by: Union[None, Unset, str] = "title_asc",
     page: Union[Unset, int] = 1,
     page_size: Union[Unset, int] = 24,
 ) -> Response[Union[HTTPValidationError, MovieSearchResponse]]:
@@ -135,12 +144,13 @@ def sync_detailed(
 
     Args:
         q (Union[None, Unset, str]): Case-insensitive search on movie title
-        year_min (Union[None, Unset, int]):
-        year_max (Union[None, Unset, int]):
-        runtime_min (Union[None, Unset, int]):
-        runtime_max (Union[None, Unset, int]):
+        year_min (Union[None, Unset, str]): Earliest release year to include
+        year_max (Union[None, Unset, str]): Latest release year to include
+        runtime_min (Union[None, Unset, str]): Minimum runtime in minutes
+        runtime_max (Union[None, Unset, str]): Maximum runtime in minutes
         genres (Union[None, Unset, str]): Comma separated list of genre names
         moods (Union[None, Unset, str]): Comma separated list of mood names
+        order_by (Union[None, Unset, str]):  Default: 'title_asc'.
         page (Union[Unset, int]):  Default: 1.
         page_size (Union[Unset, int]):  Default: 24.
 
@@ -160,6 +170,7 @@ def sync_detailed(
         runtime_max=runtime_max,
         genres=genres,
         moods=moods,
+        order_by=order_by,
         page=page,
         page_size=page_size,
     )
@@ -175,12 +186,13 @@ def sync(
     *,
     client: Union[AuthenticatedClient, Client],
     q: Union[None, Unset, str] = UNSET,
-    year_min: Union[None, Unset, int] = UNSET,
-    year_max: Union[None, Unset, int] = UNSET,
-    runtime_min: Union[None, Unset, int] = UNSET,
-    runtime_max: Union[None, Unset, int] = UNSET,
+    year_min: Union[None, Unset, str] = UNSET,
+    year_max: Union[None, Unset, str] = UNSET,
+    runtime_min: Union[None, Unset, str] = UNSET,
+    runtime_max: Union[None, Unset, str] = UNSET,
     genres: Union[None, Unset, str] = UNSET,
     moods: Union[None, Unset, str] = UNSET,
+    order_by: Union[None, Unset, str] = "title_asc",
     page: Union[Unset, int] = 1,
     page_size: Union[Unset, int] = 24,
 ) -> Optional[Union[HTTPValidationError, MovieSearchResponse]]:
@@ -188,12 +200,13 @@ def sync(
 
     Args:
         q (Union[None, Unset, str]): Case-insensitive search on movie title
-        year_min (Union[None, Unset, int]):
-        year_max (Union[None, Unset, int]):
-        runtime_min (Union[None, Unset, int]):
-        runtime_max (Union[None, Unset, int]):
+        year_min (Union[None, Unset, str]): Earliest release year to include
+        year_max (Union[None, Unset, str]): Latest release year to include
+        runtime_min (Union[None, Unset, str]): Minimum runtime in minutes
+        runtime_max (Union[None, Unset, str]): Maximum runtime in minutes
         genres (Union[None, Unset, str]): Comma separated list of genre names
         moods (Union[None, Unset, str]): Comma separated list of mood names
+        order_by (Union[None, Unset, str]):  Default: 'title_asc'.
         page (Union[Unset, int]):  Default: 1.
         page_size (Union[Unset, int]):  Default: 24.
 
@@ -214,6 +227,7 @@ def sync(
         runtime_max=runtime_max,
         genres=genres,
         moods=moods,
+        order_by=order_by,
         page=page,
         page_size=page_size,
     ).parsed
@@ -223,12 +237,13 @@ async def asyncio_detailed(
     *,
     client: Union[AuthenticatedClient, Client],
     q: Union[None, Unset, str] = UNSET,
-    year_min: Union[None, Unset, int] = UNSET,
-    year_max: Union[None, Unset, int] = UNSET,
-    runtime_min: Union[None, Unset, int] = UNSET,
-    runtime_max: Union[None, Unset, int] = UNSET,
+    year_min: Union[None, Unset, str] = UNSET,
+    year_max: Union[None, Unset, str] = UNSET,
+    runtime_min: Union[None, Unset, str] = UNSET,
+    runtime_max: Union[None, Unset, str] = UNSET,
     genres: Union[None, Unset, str] = UNSET,
     moods: Union[None, Unset, str] = UNSET,
+    order_by: Union[None, Unset, str] = "title_asc",
     page: Union[Unset, int] = 1,
     page_size: Union[Unset, int] = 24,
 ) -> Response[Union[HTTPValidationError, MovieSearchResponse]]:
@@ -236,12 +251,13 @@ async def asyncio_detailed(
 
     Args:
         q (Union[None, Unset, str]): Case-insensitive search on movie title
-        year_min (Union[None, Unset, int]):
-        year_max (Union[None, Unset, int]):
-        runtime_min (Union[None, Unset, int]):
-        runtime_max (Union[None, Unset, int]):
+        year_min (Union[None, Unset, str]): Earliest release year to include
+        year_max (Union[None, Unset, str]): Latest release year to include
+        runtime_min (Union[None, Unset, str]): Minimum runtime in minutes
+        runtime_max (Union[None, Unset, str]): Maximum runtime in minutes
         genres (Union[None, Unset, str]): Comma separated list of genre names
         moods (Union[None, Unset, str]): Comma separated list of mood names
+        order_by (Union[None, Unset, str]):  Default: 'title_asc'.
         page (Union[Unset, int]):  Default: 1.
         page_size (Union[Unset, int]):  Default: 24.
 
@@ -261,6 +277,7 @@ async def asyncio_detailed(
         runtime_max=runtime_max,
         genres=genres,
         moods=moods,
+        order_by=order_by,
         page=page,
         page_size=page_size,
     )
@@ -274,12 +291,13 @@ async def asyncio(
     *,
     client: Union[AuthenticatedClient, Client],
     q: Union[None, Unset, str] = UNSET,
-    year_min: Union[None, Unset, int] = UNSET,
-    year_max: Union[None, Unset, int] = UNSET,
-    runtime_min: Union[None, Unset, int] = UNSET,
-    runtime_max: Union[None, Unset, int] = UNSET,
+    year_min: Union[None, Unset, str] = UNSET,
+    year_max: Union[None, Unset, str] = UNSET,
+    runtime_min: Union[None, Unset, str] = UNSET,
+    runtime_max: Union[None, Unset, str] = UNSET,
     genres: Union[None, Unset, str] = UNSET,
     moods: Union[None, Unset, str] = UNSET,
+    order_by: Union[None, Unset, str] = "title_asc",
     page: Union[Unset, int] = 1,
     page_size: Union[Unset, int] = 24,
 ) -> Optional[Union[HTTPValidationError, MovieSearchResponse]]:
@@ -287,12 +305,13 @@ async def asyncio(
 
     Args:
         q (Union[None, Unset, str]): Case-insensitive search on movie title
-        year_min (Union[None, Unset, int]):
-        year_max (Union[None, Unset, int]):
-        runtime_min (Union[None, Unset, int]):
-        runtime_max (Union[None, Unset, int]):
+        year_min (Union[None, Unset, str]): Earliest release year to include
+        year_max (Union[None, Unset, str]): Latest release year to include
+        runtime_min (Union[None, Unset, str]): Minimum runtime in minutes
+        runtime_max (Union[None, Unset, str]): Maximum runtime in minutes
         genres (Union[None, Unset, str]): Comma separated list of genre names
         moods (Union[None, Unset, str]): Comma separated list of mood names
+        order_by (Union[None, Unset, str]):  Default: 'title_asc'.
         page (Union[Unset, int]):  Default: 1.
         page_size (Union[Unset, int]):  Default: 24.
 
@@ -314,6 +333,7 @@ async def asyncio(
             runtime_max=runtime_max,
             genres=genres,
             moods=moods,
+            order_by=order_by,
             page=page,
             page_size=page_size,
         )

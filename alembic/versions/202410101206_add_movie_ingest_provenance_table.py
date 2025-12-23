@@ -34,6 +34,8 @@ def _unique_constraint_exists(table: str, name: str) -> bool:
 
 
 def upgrade() -> None:
+    bind = op.get_bind()
+    is_sqlite = bind.dialect.name == "sqlite"
     if not _table_exists("movie_ingest_provenance"):
         op.create_table(
             "movie_ingest_provenance",
@@ -65,24 +67,45 @@ def upgrade() -> None:
             ["movie_id"],
         )
 
-    if not _unique_constraint_exists(
-        "movie_ingest_provenance", "uq_movie_ingest_provenance_movie_provider"
-    ):
-        op.create_unique_constraint(
-            "uq_movie_ingest_provenance_movie_provider",
-            "movie_ingest_provenance",
-            ["movie_id", "provider"],
-        )
+    if is_sqlite:
+        if not _index_exists(
+            "movie_ingest_provenance", "uq_movie_ingest_provenance_movie_provider"
+        ):
+            op.create_index(
+                "uq_movie_ingest_provenance_movie_provider",
+                "movie_ingest_provenance",
+                ["movie_id", "provider"],
+                unique=True,
+            )
+    else:
+        if not _unique_constraint_exists(
+            "movie_ingest_provenance", "uq_movie_ingest_provenance_movie_provider"
+        ):
+            op.create_unique_constraint(
+                "uq_movie_ingest_provenance_movie_provider",
+                "movie_ingest_provenance",
+                ["movie_id", "provider"],
+            )
 
 
 def downgrade() -> None:
+    bind = op.get_bind()
+    is_sqlite = bind.dialect.name == "sqlite"
     if _unique_constraint_exists(
         "movie_ingest_provenance", "uq_movie_ingest_provenance_movie_provider"
     ):
-        op.drop_constraint(
+        if not is_sqlite:
+            op.drop_constraint(
+                "uq_movie_ingest_provenance_movie_provider",
+                "movie_ingest_provenance",
+                type_="unique",
+            )
+    if is_sqlite and _index_exists(
+        "movie_ingest_provenance", "uq_movie_ingest_provenance_movie_provider"
+    ):
+        op.drop_index(
             "uq_movie_ingest_provenance_movie_provider",
-            "movie_ingest_provenance",
-            type_="unique",
+            table_name="movie_ingest_provenance",
         )
 
     if _index_exists("movie_ingest_provenance", "ix_movie_ingest_provenance_movie_id"):

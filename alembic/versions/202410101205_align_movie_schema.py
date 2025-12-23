@@ -46,6 +46,8 @@ def _table_exists(table: str) -> bool:
 
 
 def upgrade() -> None:
+    bind = op.get_bind()
+    is_sqlite = bind.dialect.name == "sqlite"
     for column in [
         sa.Column("tagline", sa.String(length=500), nullable=True),
         sa.Column("awards", sa.Text(), nullable=True),
@@ -71,14 +73,14 @@ def upgrade() -> None:
     if not _index_exists("movies", "ix_movies_tmdb_id"):
         op.create_index("ix_movies_tmdb_id", "movies", ["tmdb_id"], unique=True)
 
-    if not _check_constraint_exists("movies", "ck_movies_imdb_rating_range"):
+    if not is_sqlite and not _check_constraint_exists("movies", "ck_movies_imdb_rating_range"):
         op.create_check_constraint(
             "ck_movies_imdb_rating_range",
             "movies",
             sa.text("imdb_rating BETWEEN 0 AND 10"),
         )
 
-    if not _check_constraint_exists("movies", "ck_movies_metascore_range"):
+    if not is_sqlite and not _check_constraint_exists("movies", "ck_movies_metascore_range"):
         op.create_check_constraint(
             "ck_movies_metascore_range",
             "movies",
@@ -127,16 +129,18 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
+    bind = op.get_bind()
+    is_sqlite = bind.dialect.name == "sqlite"
     if _index_exists("movies", "ix_movies_tmdb_id"):
         op.drop_index("ix_movies_tmdb_id", table_name="movies")
 
     if _index_exists("movies", "ix_movies_imdb_id"):
         op.drop_index("ix_movies_imdb_id", table_name="movies")
 
-    if _check_constraint_exists("movies", "ck_movies_metascore_range"):
+    if not is_sqlite and _check_constraint_exists("movies", "ck_movies_metascore_range"):
         op.drop_constraint("ck_movies_metascore_range", "movies", type_="check")
 
-    if _check_constraint_exists("movies", "ck_movies_imdb_rating_range"):
+    if not is_sqlite and _check_constraint_exists("movies", "ck_movies_imdb_rating_range"):
         op.drop_constraint("ck_movies_imdb_rating_range", "movies", type_="check")
 
     for name in [
