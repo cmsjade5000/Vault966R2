@@ -7,12 +7,13 @@ import uuid
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from api.config import settings
-from api.db import Base, engine
-from api.routers import fliclists, health, movies, people, ui
+from api.db import bootstrap_sqlite_schema, engine
+from api.routers import ai, fliclists, health, movies, people, ui
 
 
 class JsonFormatter(logging.Formatter):
@@ -115,6 +116,11 @@ app.include_router(movies.router)
 app.include_router(people.router)
 app.include_router(ui.router)
 app.include_router(fliclists.router)
+app.include_router(ai.router)
+
+@app.get("/", include_in_schema=False)
+def root_redirect():
+    return RedirectResponse(url="/ui/movies")
 
 STATIC_DIR = pathlib.Path(__file__).resolve().parents[1] / "static"
 if STATIC_DIR.exists():
@@ -124,5 +130,5 @@ if STATIC_DIR.exists():
 if engine.url.get_backend_name() == "sqlite":
 
     @app.on_event("startup")
-    def _bootstrap_sqlite_schema() -> None:
-        Base.metadata.create_all(bind=engine)
+    def _bootstrap_sqlite_db() -> None:
+        bootstrap_sqlite_schema()

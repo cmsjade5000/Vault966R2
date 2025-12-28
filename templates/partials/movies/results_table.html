@@ -1,4 +1,4 @@
-<section class="table-card" id="results-table">
+<section class="table-card" id="results-table" data-results-table>
   <div class="table-card__header">
     <h2>Results Table</h2>
     <span class="table-card__hint">Tap a column to sort</span>
@@ -8,18 +8,23 @@
       <thead>
         <tr>
           <th scope="col" data-sort-key="title" data-sort-type="string" aria-sort="none">Title</th>
+          <th scope="col" data-sort-key="vaultId" data-sort-type="number" aria-sort="none">Vault ID</th>
           <th scope="col" data-sort-key="year" data-sort-type="number" aria-sort="none">Year</th>
-          <th scope="col" data-sort-key="runtime" data-sort-type="number" aria-sort="none">Runtime</th>
-          <th scope="col" data-sort-key="rating" data-sort-type="number" aria-sort="none">IMDb</th>
           <th scope="col" class="data-table__col-genres">Genres</th>
-          <th scope="col">Status</th>
+          <th scope="col" data-sort-key="runtime" data-sort-type="number" aria-sort="none">Runtime</th>
+          <th scope="col" class="data-table__col-status">Status</th>
         </tr>
       </thead>
       <tbody>
         {% for movie in table_movies %}
-        {% set genre_names = movie.genres | map(attribute='name') | list if movie.genres and movie.genres[0].__class__.__name__ == 'Genre' else movie.genres %}
+        {% set genre_names = movie.genre_display if movie.genre_display is defined and movie.genre_display else [] %}
+        {% if not genre_names and movie.genres %}
+          {% set genre_names = movie.genres | map(attribute='name') | list if movie.genres and movie.genres[0].__class__.__name__ == 'Genre' else movie.genres %}
+        {% endif %}
+        {% set genre_text = genre_names | join(', ') if genre_names else '—' %}
         <tr
           data-title="{{ movie.title | lower }}"
+          data-vault-id="{{ movie.id }}"
           data-year="{{ movie.year or '' }}"
           data-runtime="{{ movie.runtime or '' }}"
           data-rating="{{ movie.imdb_rating or '' }}"
@@ -30,18 +35,18 @@
         >
           <td data-label="Title">
             <a href="/ui/movies/{{ movie.id }}">{{ movie.title }}</a>
-            {% if movie.where_to_watch %}
-            {% set provider_field = movie.where_to_watch.strip().lower() %}
-            {% if 'vudu' in provider_field %}
-            <span class="table-tag table-tag--vudu">In Vudu</span>
-            {% endif %}
+            {% if order_by == 'flic' %}
+            {% set table_rank = flic_rank_offset + loop.index %}
+            <span class="table-tag table-tag--flic">
+              #{{ table_rank }} · Flic {{ "%.0f"|format(movie.flic_score) if movie.flic_score is defined else "—" }}
+            </span>
             {% endif %}
           </td>
+          <td data-label="Vault ID">V{{ "%04d"|format(movie.id) }}</td>
           <td data-label="Year">{{ movie.year or '—' }}</td>
+          <td data-label="Genres" class="data-table__cell-genres" title="{{ genre_text }}">{{ genre_text }}</td>
           <td data-label="Runtime">{{ movie.runtime or '—' }}</td>
-          <td data-label="IMDb">{{ movie.imdb_rating or '—' }}</td>
-          <td data-label="Genres" class="data-table__cell-genres">{{ genre_names | join(', ') if genre_names else '—' }}</td>
-          <td data-label="Status">
+          <td data-label="Status" class="data-table__cell-status">
             <div class="table-actions">
               <button
                 type="button"

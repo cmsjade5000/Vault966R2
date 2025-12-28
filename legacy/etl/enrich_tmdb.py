@@ -42,6 +42,42 @@ from api.utils.providers import merge_providers, split_providers  # noqa: E402
 
 TMDB_API_BASE = "https://api.themoviedb.org/3"
 TMDB_IMAGE_BASE = "https://image.tmdb.org/t/p"
+IMDB_ID_RE = re.compile(r"^tt\d{7,9}$", re.IGNORECASE)
+ISO2_RE = re.compile(r"^[A-Za-z]{2}$")
+YEAR_MIN = 1870
+YEAR_MAX = 2100
+
+# Contract: enriched_movies.csv must include these columns and pass validate_enriched_row.
+ENRICHED_CSV_REQUIRED_COLUMNS = [
+    "title",
+    "year",
+    "imdb_id",
+    "tmdb_id",
+    "runtime_min",
+    "plot",
+    "poster_url",
+    "backdrop_url",
+    "genres",
+    "moods",
+    "keywords",
+    "imdb_rating",
+    "imdb_votes",
+    "rt_score",
+    "watch_region",
+    "providers_stream",
+    "providers_rent",
+    "providers_buy",
+    "tmdb_watch_url",
+    "languages",
+    "countries",
+    "collection",
+    "tmdb_last_scraped",
+]
+
+ENRICHED_CSV_V2_COLUMNS = [
+    "languages_iso",
+    "countries_iso",
+]
 
 
 def parse_args() -> argparse.Namespace:
@@ -92,7 +128,66 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Enable debug logging",
     )
+    parser.add_argument(
+        "--v2",
+        action="store_true",
+        help="Emit normalized columns (providers_* + *_iso) alongside legacy columns.",
+    )
     return parser.parse_args()
+
+
+def _strip_value(value: Any) -> str:
+    return str(value).strip() if value is not None else ""
+
+
+def _is_valid_year(value: Any) -> bool:
+    text = _strip_value(value)
+    if not text:
+        return False
+    if not text.isdigit() or len(text) != 4:
+        return False
+    year = int(text)
+    return YEAR_MIN <= year <= YEAR_MAX
+
+
+def _is_valid_iso2(value: Any) -> bool:
+    text = _strip_value(value)
+    return bool(text and ISO2_RE.match(text))
+
+
+def validate_enriched_row(row: Mapping[str, Any], *, movie_title: str) -> None:
+    title = _strip_value(row.get("title"))
+    if not title:
+        raise ValueError(f"missing title for '{movie_title}'")
+
+    year_raw = _strip_value(row.get("year"))
+    imdb_id = _strip_value(row.get("imdb_id"))
+    tmdb_id = _strip_value(row.get("tmdb_id"))
+    if not year_raw and not imdb_id and not tmdb_id:
+        raise ValueError(f"missing year/imdb_id/tmdb_id for '{movie_title}'")
+    if year_raw and not _is_valid_year(year_raw):
+        raise ValueError(f"invalid year '{year_raw}' for '{movie_title}'")
+    if imdb_id and not IMDB_ID_RE.match(imdb_id):
+        raise ValueError(f"invalid imdb_id '{imdb_id}' for '{movie_title}'")
+    if tmdb_id and not tmdb_id.isdigit():
+        raise ValueError(f"invalid tmdb_id '{tmdb_id}' for '{movie_title}'")
+
+    watch_region = _strip_value(row.get("watch_region"))
+    if watch_region and not _is_valid_iso2(watch_region):
+        raise ValueError(f"invalid watch_region '{watch_region}' for '{movie_title}'")
+
+    runtime_raw = _strip_value(row.get("runtime_min"))
+    if runtime_raw and not runtime_raw.isdigit():
+        raise ValueError(f"invalid runtime_min '{runtime_raw}' for '{movie_title}'")
+
+    tmdb_last_scraped = _strip_value(row.get("tmdb_last_scraped"))
+    if tmdb_last_scraped:
+        try:
+            datetime.fromisoformat(tmdb_last_scraped.replace("Z", "+00:00"))
+        except ValueError as exc:
+            raise ValueError(
+                f"invalid tmdb_last_scraped '{tmdb_last_scraped}' for '{movie_title}'"
+            ) from exc
 
 
 def build_image_url(path: Optional[str], size: str) -> Optional[str]:
@@ -207,6 +302,79 @@ def extract_providers(payload: Dict[str, object], region: str) -> str:
     return join_unique(providers)
 
 
+def extract_provider_buckets(payload: Dict[str, object], region: str) -> Dict[str, object]:
+    root = payload.get("watch/providers")
+    if not isinstance(root, dict):
+        return {"stream": [], "rent": [], "buy": [], "tmdb_watch_url": None}
+    results = root.get("results")
+    if not isinstance(results, dict):
+        return {"stream": [], "rent": [], "buy": [], "tmdb_watch_url": None}
+    region_data = results.get(region.upper()) or results.get("US") or {}
+    if not isinstance(region_data, dict):
+        return {"stream": [], "rent": [], "buy": [], "tmdb_watch_url": None}
+
+    stream: List[str] = []
+    rent: List[str] = []
+    buy: List[str] = []
+
+    for bucket in ("flatrate", "ads", "free"):
+        entries = region_data.get(bucket) or []
+        if not isinstance(entries, list):
+            continue
+        for entry in entries:
+            if not isinstance(entry, dict):
+                continue
+            name = entry.get("provider_name")
+            if name:
+                stream.append(str(name))
+
+    for bucket, target in (("rent", rent), ("buy", buy)):
+        entries = region_data.get(bucket) or []
+        if not isinstance(entries, list):
+            continue
+        for entry in entries:
+            if not isinstance(entry, dict):
+                continue
+            name = entry.get("provider_name")
+            if name:
+                target.append(str(name))
+
+    link = region_data.get("link")
+    tmdb_watch_url = str(link).strip() if link else None
+    return {
+        "stream": split_providers(stream),
+        "rent": split_providers(rent),
+        "buy": split_providers(buy),
+        "tmdb_watch_url": tmdb_watch_url,
+    }
+
+
+def extract_language_codes(payload: Dict[str, object], existing: Optional[str]) -> str:
+    codes: List[str] = []
+    spoken = payload.get("spoken_languages") or []
+    if isinstance(spoken, list):
+        for item in spoken:
+            if isinstance(item, dict):
+                code = item.get("iso_639_1")
+                if code:
+                    codes.append(str(code).lower())
+    codes.extend([token.lower() for token in split_existing(existing) if len(token) == 2])
+    return join_unique(codes)
+
+
+def extract_country_codes(payload: Dict[str, object], existing: Optional[str]) -> str:
+    codes: List[str] = []
+    section = payload.get("production_countries") or []
+    if isinstance(section, list):
+        for item in section:
+            if isinstance(item, dict):
+                code = item.get("iso_3166_1")
+                if code:
+                    codes.append(str(code).upper())
+    codes.extend([token.upper() for token in split_existing(existing) if len(token) == 2])
+    return join_unique(codes)
+
+
 def extract_languages(payload: Dict[str, object], existing: Optional[str]) -> str:
     languages = []
     spoken = payload.get("spoken_languages") or []
@@ -297,10 +465,46 @@ def build_row(
     genres = join_unique(existing_genres)
     moods = join_unique(existing_moods)
     keywords = ""
-    provider_tokens = split_existing(movie.where_to_watch)
     languages = movie.languages
     countries = movie.countries
     collection = movie.collection
+    watch_region = provider_region.upper()
+    providers_stream: List[str] = []
+    providers_rent: List[str] = []
+    providers_buy: List[str] = []
+    tmdb_watch_url: Optional[str] = None
+
+    def _populate_existing_provider_buckets(value: Any, region: str) -> None:
+        nonlocal providers_stream, providers_rent, providers_buy
+        if value is None:
+            return
+        if isinstance(value, dict):
+            region_data = value.get(region.upper()) or value.get("US")
+            if isinstance(region_data, dict):
+                stream: List[str] = []
+                rent: List[str] = []
+                buy: List[str] = []
+                for bucket in ("flatrate", "ads", "free"):
+                    entries = region_data.get(bucket) or []
+                    if not isinstance(entries, list):
+                        continue
+                    for entry in entries:
+                        if isinstance(entry, dict) and entry.get("provider_name"):
+                            stream.append(str(entry["provider_name"]))
+                for bucket, target in (("rent", rent), ("buy", buy)):
+                    entries = region_data.get(bucket) or []
+                    if not isinstance(entries, list):
+                        continue
+                    for entry in entries:
+                        if isinstance(entry, dict) and entry.get("provider_name"):
+                            target.append(str(entry["provider_name"]))
+                providers_stream = split_providers(stream)
+                providers_rent = split_providers(rent)
+                providers_buy = split_providers(buy)
+                return
+
+        # Fallback: treat any provider tokens as stream-only.
+        providers_stream = split_existing(value)
 
     if payload:
         poster_candidate = build_image_url(payload.get("poster_path"), poster_size)
@@ -318,9 +522,6 @@ def build_row(
         genres = extract_genres(payload, existing_genres)
         moods = join_unique(existing_moods)  # TMDb does not provide moods
         keywords = extract_keywords(payload)
-        provider_string = extract_providers(payload, provider_region)
-        if provider_string:
-            provider_tokens = merge_providers(provider_tokens, split_existing(provider_string))
         languages = extract_languages(payload, movie.languages)
         countries = extract_countries(payload, movie.countries)
         collection_data = payload.get("belongs_to_collection")
@@ -328,6 +529,13 @@ def build_row(
             name = collection_data.get("name")
             if name:
                 collection = str(name)
+        buckets = extract_provider_buckets(payload, provider_region)
+        providers_stream = list(buckets.get("stream") or [])
+        providers_rent = list(buckets.get("rent") or [])
+        providers_buy = list(buckets.get("buy") or [])
+        tmdb_watch_url = buckets.get("tmdb_watch_url") if isinstance(buckets, dict) else None
+    else:
+        _populate_existing_provider_buckets(movie.where_to_watch, provider_region)
 
     row = {
         "title": movie.title,
@@ -344,12 +552,22 @@ def build_row(
         "imdb_rating": movie.imdb_rating,
         "imdb_votes": movie.imdb_votes,
         "rt_score": movie.rt_score,
-        "where_to_watch": "; ".join(provider_tokens) if provider_tokens else "",
+        "watch_region": watch_region,
+        "providers_stream": join_unique(providers_stream),
+        "providers_rent": join_unique(providers_rent),
+        "providers_buy": join_unique(providers_buy),
+        "tmdb_watch_url": tmdb_watch_url or "",
         "languages": languages,
         "countries": countries,
         "collection": collection,
         "tmdb_last_scraped": datetime.now(timezone.utc).isoformat(timespec="seconds"),
     }
+    if payload:
+        row["languages_iso"] = extract_language_codes(payload, movie.languages)
+        row["countries_iso"] = extract_country_codes(payload, movie.countries)
+    else:
+        row["languages_iso"] = ""
+        row["countries_iso"] = ""
     return row
 
 
@@ -397,27 +615,9 @@ def main() -> int:
         limits=httpx.Limits(max_connections=5, max_keepalive_connections=5),
     )
 
-    fieldnames = [
-        "title",
-        "year",
-        "imdb_id",
-        "tmdb_id",
-        "runtime_min",
-        "plot",
-        "poster_url",
-        "backdrop_url",
-        "genres",
-        "moods",
-        "keywords",
-        "imdb_rating",
-        "imdb_votes",
-        "rt_score",
-        "where_to_watch",
-        "languages",
-        "countries",
-        "collection",
-        "tmdb_last_scraped",
-    ]
+    fieldnames = list(ENRICHED_CSV_REQUIRED_COLUMNS)
+    if args.v2:
+        fieldnames.extend(ENRICHED_CSV_V2_COLUMNS)
 
     mode = "a" if args.append else "w"
     processed = 0
@@ -425,7 +625,7 @@ def main() -> int:
     failures = 0
 
     with output_path.open(mode, encoding="utf-8", newline="") as handle:
-        writer = csv.DictWriter(handle, fieldnames=fieldnames)
+        writer = csv.DictWriter(handle, fieldnames=fieldnames, extrasaction="ignore")
         if not args.append or handle.tell() == 0:
             writer.writeheader()
 
@@ -447,6 +647,11 @@ def main() -> int:
                 backdrop_size=args.backdrop_size,
                 provider_region=args.country,
             )
+            try:
+                validate_enriched_row(row, movie_title=movie.title)
+            except ValueError as exc:
+                logging.error("Enriched CSV contract violation: %s", exc)
+                raise SystemExit(1) from exc
             writer.writerow(row)
             processed += 1
 

@@ -23,7 +23,6 @@ class CollectionHealth:
     missing_runtime: int
     missing_plot: int
     missing_poster: int
-    missing_provider: int
     avg_runtime: float | None
     genre_gaps: List[str]
 
@@ -156,10 +155,6 @@ def get_collection_health(db: Session) -> CollectionHealth:
     missing_poster = base_query.filter(
         or_(Movie.poster_url.is_(None), Movie.poster_url == "")
     ).count()
-    missing_provider = base_query.filter(
-        or_(Movie.where_to_watch.is_(None), Movie.where_to_watch == "")
-    ).count()
-
     avg_runtime = db.query(func.avg(Movie.runtime)).filter(Movie.runtime.isnot(None)).scalar()
     avg_runtime = float(avg_runtime) if avg_runtime is not None else None
 
@@ -184,7 +179,6 @@ def get_collection_health(db: Session) -> CollectionHealth:
         missing_runtime=missing_runtime,
         missing_plot=missing_plot,
         missing_poster=missing_poster,
-        missing_provider=missing_provider,
         avg_runtime=avg_runtime,
         genre_gaps=genre_gaps,
     )

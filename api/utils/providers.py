@@ -65,7 +65,6 @@ def _tokenize_provider_text(value: str) -> List[str]:
         tokens.append(candidate)
     return tokens
 
-
 def collect_provider_tokens(value: Any) -> List[str]:
     """Return a flattened list of provider-like strings from arbitrary input."""
 

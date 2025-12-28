@@ -12,4 +12,3 @@ def test_collection_health_metrics(db_session) -> None:
     assert health.missing_runtime >= 0
     assert health.missing_plot >= 0
     assert health.missing_poster >= 0
-    assert health.missing_provider >= 0

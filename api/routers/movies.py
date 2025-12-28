@@ -22,6 +22,7 @@ from api.schemas.movie import (
     RoleAttach,
     RoleRead,
 )
+from api.schemas.llm_filters import LlmMovieSearchRequest, LlmMovieSearchResponse
 from api.schemas.movie_detail import MovieDetail
 from api.services.movies_detail import get_movie_detail
 from core.movie_filters import (
@@ -37,7 +38,13 @@ from api.services.movie_lookup import (
     MovieLookupUnavailable,
     lookup_movie_candidates,
 )
+from api.services.llm_filters import (
+    LlmFilterError,
+    LlmProviderUnavailable,
+    generate_llm_filters,
+)
 from api.services.movie_updates import apply_movie_update
+from api.services.flic_ordering import fetch_movies_in_rank_order, rank_movie_ids_by_flic
 from core.picker import (
     PickerCandidate,
     PickerFilters,
@@ -215,26 +222,17 @@ def search_movies(
     filtered_query = apply_filters(base_query, params)
 
     if params.order_by == "flic":
-        all_movies = filtered_query.options(
-            selectinload(Movie.genres), selectinload(Movie.moods)
-        ).all()
         filters = PickerFilters.from_params(params).to_payload()
-        scored = []
-        for movie in all_movies:
-            candidate = PickerCandidate.from_iterables(
-                genres=[g.name for g in movie.genres],
-                moods=[m.name for m in movie.moods],
-                runtime=movie.runtime,
-                year=movie.year,
-            ).to_payload()
-            score, _ = calculate_flic_score(candidate, filters)
-            scored.append((score, movie))
-
-        scored.sort(key=lambda item: item[0], reverse=True)
-        total = len(scored)
+        ranked = rank_movie_ids_by_flic(db, base_query=filtered_query, filters=filters)
+        total = len(ranked)
         start = (page - 1) * page_size
         end = start + page_size
-        items = [movie for _, movie in scored[start:end]]
+        page_ids = [movie_id for _, movie_id in ranked[start:end]]
+        items = fetch_movies_in_rank_order(
+            db,
+            ranked_ids=page_ids,
+            options=[selectinload(Movie.genres), selectinload(Movie.moods)],
+        )
         _attach_flag_status(db, items)
     else:
         clause = ordering_clause(params.order_by)
@@ -266,6 +264,97 @@ def search_movies(
     }
 
     return MovieSearchResponse(
+        items=items,
+        total=total,
+        page=page,
+        page_size=page_size,
+        facets=facets,
+    )
+
+
+@router.post("/search/llm", response_model=LlmMovieSearchResponse)
+def llm_search_movies(
+    payload: LlmMovieSearchRequest,
+    db: Session = Depends(get_db),
+):
+    allowed_genres = [
+        row[0] for row in db.query(Genre.name).order_by(Genre.name.asc()).all() if row[0]
+    ]
+    allowed_moods = [
+        row[0] for row in db.query(Mood.name).order_by(Mood.name.asc()).all() if row[0]
+    ]
+    try:
+        llm_filters = generate_llm_filters(
+            payload.query,
+            allowed_genres=allowed_genres,
+            allowed_moods=allowed_moods,
+        )
+    except LlmProviderUnavailable as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    except LlmFilterError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+    params: MovieFilterParams = parse_movie_filters(
+        q=llm_filters.q,
+        year_min=llm_filters.year_min,
+        year_max=llm_filters.year_max,
+        runtime_min=llm_filters.runtime_min,
+        runtime_max=llm_filters.runtime_max,
+        genres=llm_filters.genres,
+        moods=llm_filters.moods,
+        order_by=llm_filters.order_by,
+    )
+
+    base_query = db.query(Movie).options(selectinload(Movie.genres), selectinload(Movie.moods))
+    filtered_query = apply_filters(base_query, params)
+
+    page = payload.page
+    page_size = payload.page_size
+
+    if params.order_by == "flic":
+        filters = PickerFilters.from_params(params).to_payload()
+        ranked = rank_movie_ids_by_flic(db, base_query=filtered_query, filters=filters)
+        total = len(ranked)
+        start = (page - 1) * page_size
+        end = start + page_size
+        page_ids = [movie_id for _, movie_id in ranked[start:end]]
+        items = fetch_movies_in_rank_order(
+            db,
+            ranked_ids=page_ids,
+            options=[selectinload(Movie.genres), selectinload(Movie.moods)],
+        )
+        _attach_flag_status(db, items)
+    else:
+        clause = ordering_clause(params.order_by)
+        ordered_query = filtered_query.order_by(clause)
+        items, total = paginate(ordered_query, page=page, page_size=page_size)
+        _attach_flag_status(db, items)
+
+    movie_ids_subquery = filtered_query.with_entities(Movie.id.label("movie_id")).subquery()
+
+    genre_counts = dict(
+        db.query(Genre.name, func.count())
+        .join(movie_genres, Genre.id == movie_genres.c.genre_id)
+        .join(movie_ids_subquery, movie_ids_subquery.c.movie_id == movie_genres.c.movie_id)
+        .group_by(Genre.name)
+        .all()
+    )
+
+    mood_counts = dict(
+        db.query(Mood.name, func.count())
+        .join(movie_moods, Mood.id == movie_moods.c.mood_id)
+        .join(movie_ids_subquery, movie_ids_subquery.c.movie_id == movie_moods.c.movie_id)
+        .group_by(Mood.name)
+        .all()
+    )
+
+    facets = {
+        "genres": genre_counts,
+        "moods": mood_counts,
+    }
+
+    return LlmMovieSearchResponse(
+        filters=llm_filters,
         items=items,
         total=total,
         page=page,

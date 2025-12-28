@@ -21,3 +21,11 @@ def test_movies_grid_persists_filters_via_cookie(client: TestClient) -> None:
     assert 'option value="runtime_asc" selected' in html
     assert "Blade Runner" in html
     assert "Toy Story" not in html
+
+
+def test_movies_grid_filters_by_mood(client: TestClient) -> None:
+    response = client.get("/ui/movies", params={"moods": "Moody"})
+    assert response.status_code == 200
+    html = response.text
+    assert "Blade Runner" in html
+    assert "The Matrix" not in html

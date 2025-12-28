@@ -1,4 +1,5 @@
 import csv
+from typing import Optional
 
 from fastapi.testclient import TestClient
 
@@ -23,7 +24,11 @@ EXPECTED_ENRICHED_FIELDNAMES = [
     "imdb_rating",
     "imdb_votes",
     "rt_score",
-    "where_to_watch",
+    "watch_region",
+    "providers_stream",
+    "providers_rent",
+    "providers_buy",
+    "tmdb_watch_url",
     "languages",
     "countries",
     "collection",
@@ -31,7 +36,7 @@ EXPECTED_ENRICHED_FIELDNAMES = [
 ]
 
 
-def _fetch_movie(client: TestClient, title: str) -> dict | None:
+def _fetch_movie(client: TestClient, title: str) -> Optional[dict]:
     override = client.app.dependency_overrides[get_db]
     generator = override()
     db = next(generator)
@@ -154,7 +159,7 @@ def test_append_movie_to_enriched_csv_writes_header_for_new_file(tmp_path, monke
     assert len(rows) == 1
     assert rows[0]["title"] == "Arrival"
     assert rows[0]["imdb_id"] == "tt2543164"
-    assert rows[0]["where_to_watch"] == "Hulu"
+    assert rows[0]["providers_stream"] == "Hulu"
 
 
 def test_append_movie_to_enriched_csv_adds_header_for_empty_file(tmp_path, monkeypatch):
@@ -177,5 +182,8 @@ def test_append_movie_to_enriched_csv_adds_header_for_empty_file(tmp_path, monke
     assert rows[0]["year"] == "2014"
     for field in EXPECTED_ENRICHED_FIELDNAMES:
         if field in {"title", "year"}:
+            continue
+        if field == "watch_region":
+            assert rows[0][field] == "US"
             continue
         assert rows[0][field] == ""

@@ -1,17 +1,23 @@
-<details class="hero-stats" data-hero-stats open>
-  <summary class="hero-stats__summary">Library stats</summary>
-  <section class="facts" aria-label="Highlights">
-    <article class="fact">
-      <div class="fact-label">Total entries</div>
-      <div class="fact-value" data-total-entries>{{ stats.total }}</div>
-    </article>
-    <article class="fact">
-      <div class="fact-label">Average year</div>
-      <div class="fact-value">{{ stats.average_year or "—" }}</div>
-    </article>
-    <article class="fact">
-      <div class="fact-label">Top genre</div>
-      <div class="fact-value">{{ stats.top_genre }}</div>
-    </article>
-  </section>
-</details>
+<section class="overview" data-hero-stats aria-label="Vault highlights">
+  <article class="overview-card">
+    <span class="overview-icon" aria-hidden="true">🎞️</span>
+    <div class="overview-copy">
+      <span class="overview-label">Movies in Vault</span>
+      <span class="overview-value" data-total-entries>{{ stats.total }}</span>
+    </div>
+  </article>
+  <article class="overview-card">
+    <span class="overview-icon" aria-hidden="true">🗓️</span>
+    <div class="overview-copy">
+      <span class="overview-label">Average release year</span>
+      <span class="overview-value">{{ stats.average_year or "—" }}</span>
+    </div>
+  </article>
+  <article class="overview-card">
+    <span class="overview-icon" aria-hidden="true">⭐️</span>
+    <div class="overview-copy">
+      <span class="overview-label">Most popular genre</span>
+      <span class="overview-value">{{ stats.top_genre }}</span>
+    </div>
+  </article>
+</section>

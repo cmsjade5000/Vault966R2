@@ -20,11 +20,6 @@
       <p class="health-card__hint">Refresh posters to keep the wall vibrant.</p>
     </article>
     <article class="health-card">
-      <h3>No provider tags</h3>
-      <p class="health-card__value">{{ collection_health.missing_provider }}</p>
-      <p class="health-card__hint">Mark discs/digital spots for planning sessions.</p>
-    </article>
-    <article class="health-card">
       <h3>Average runtime</h3>
       <p class="health-card__value">{{ '%.0f' % collection_health.avg_runtime if collection_health.avg_runtime else '—' }}<span>min</span></p>
       <p class="health-card__hint">Use to balance future purchases.</p>

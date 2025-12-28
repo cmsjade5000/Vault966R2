@@ -342,7 +342,9 @@ def test_resolve_imdb_via_network_omdb_strips_parenthetical_titles(monkeypatch):
     assert imdb_id == "tt0066999"
     assert tag == "omdb_title_year"
     assert tmdb_id is None
-    assert calls[1]["params"]["t"].lower() == "dirty harry"
+    omdb_calls = [entry for entry in calls if "omdbapi.com" in entry["url"]]
+    assert omdb_calls
+    assert omdb_calls[0]["params"]["t"].lower() == "dirty harry"
 
 
 def test_resolve_imdb_via_network_allows_year_plus_minus_one(monkeypatch):

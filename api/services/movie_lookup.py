@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 from functools import lru_cache
-from typing import Dict, List, Optional, Sequence
+from typing import Dict, List, Optional, Sequence, Tuple
 
 import httpx
 
 from api.config import settings
+from api.utils.omdb import extract_rotten_tomatoes_score, parse_imdb_rating, parse_imdb_votes
 from api.utils.providers import merge_providers
 
 
@@ -255,13 +256,104 @@ def _enrich_with_omdb(candidate: Dict, omdb_data: Optional[Dict]) -> None:
         if runtime_int:
             candidate["runtime"] = runtime_int
 
+    imdb_rating = parse_imdb_rating(omdb_data.get("imdbRating"))
+    if imdb_rating is not None:
+        candidate["imdb_rating"] = imdb_rating
+
+    imdb_votes = parse_imdb_votes(omdb_data.get("imdbVotes"))
+    if imdb_votes is not None:
+        candidate["imdb_votes"] = imdb_votes
+
+    rt_score = extract_rotten_tomatoes_score(omdb_data)
+    if rt_score is not None:
+        candidate["rt_score"] = rt_score
+
+
+ROMAN_NUMERALS = {
+    "i": "1",
+    "ii": "2",
+    "iii": "3",
+    "iv": "4",
+    "v": "5",
+    "vi": "6",
+    "vii": "7",
+    "viii": "8",
+    "ix": "9",
+    "x": "10",
+}
+
+
+def _clean_title_aliases(title: str) -> str:
+    import re
+
+    cleaned = title.strip()
+    cleaned = re.sub(r"\[[^\]]*\]", " ", cleaned)
+    cleaned = re.sub(r"\s{2,}", " ", cleaned)
+    cleaned = cleaned.replace("&", "and")
+    cleaned = re.sub(r"\bpart\s+([ivx]+)\b", lambda m: f"part {ROMAN_NUMERALS.get(m.group(1).lower(), m.group(1))}", cleaned, flags=re.I)
+    cleaned = re.sub(r"\s{2,}", " ", cleaned)
+    return cleaned.strip()
+
+
+def iter_tmdb_search_variants(title: str, year: int | None) -> List[Tuple[str, Optional[int], str]]:
+    """Generate search retries for TMDb when a strict title+year match fails."""
+
+    variants: List[Tuple[str, Optional[int], str]] = []
+    base = title.strip()
+    cleaned = _clean_title_aliases(base)
+    for query, tag in ((base, "exact"), (cleaned, "alias_cleaned")):
+        variants.append((query, year, tag))
+        if year is not None:
+            for delta in (1, -1, 2, -2):
+                variants.append((query, year + delta, f"{tag}_year_{delta:+d}"))
+        variants.append((query, None, f"{tag}_title_only"))
+
+    # Dedupe by (query, year)
+    seen: set[Tuple[str, Optional[int]]] = set()
+    deduped: List[Tuple[str, Optional[int], str]] = []
+    for query, yr, tag in variants:
+        key = (query.lower().strip(), yr)
+        if key in seen:
+            continue
+        seen.add(key)
+        deduped.append((query, yr, tag))
+    return deduped
+
+
+def _compute_match_confidence(
+    requested_title: str,
+    requested_year: int | None,
+    matched_title: str,
+    matched_year: int | None,
+    strategy: str,
+) -> float:
+    import difflib
+
+    def norm(value: str) -> str:
+        return _clean_title_aliases(value).lower()
+
+    ratio = difflib.SequenceMatcher(a=norm(requested_title), b=norm(matched_title)).ratio()
+    year_bonus = 0.0
+    if requested_year is not None and matched_year is not None:
+        delta = abs(requested_year - matched_year)
+        year_bonus = 0.15 if delta == 0 else 0.08 if delta == 1 else 0.03 if delta == 2 else -0.08
+    penalty = 0.08 if "title_only" in strategy else 0.0
+    confidence = max(0.0, min(1.0, ratio + year_bonus - penalty))
+    return float(round(confidence, 3))
+
 
 def lookup_movie_candidates(title: str, year: int | None = None, limit: int = 5) -> List[dict]:
     api_key = settings.tmdb_api_key
     if not api_key:
         raise MovieLookupUnavailable("TMDb API key not configured")
 
-    identifiers = _tmdb_search_ids(api_key, title, year)
+    identifiers: tuple[int, ...] = ()
+    match_strategy = "exact"
+    for query, yr, strategy in iter_tmdb_search_variants(title, year):
+        identifiers = _tmdb_search_ids(api_key, query, yr)
+        if identifiers:
+            match_strategy = strategy
+            break
     if not identifiers:
         raise MovieLookupNotFound("No TMDb results found")
 
@@ -302,7 +394,17 @@ def lookup_movie_candidates(title: str, year: int | None = None, limit: int = 5)
             "source": "tmdb",
             "where_to_watch": providers,
             "keywords": keywords,
+            "matched_tmdb_title": detail.get("title") or detail.get("name") or "",
+            "matched_tmdb_year": release_year,
+            "match_strategy": match_strategy,
         }
+        candidate["match_confidence"] = _compute_match_confidence(
+            title,
+            year,
+            candidate["matched_tmdb_title"] or candidate["title"],
+            release_year,
+            match_strategy,
+        )
 
         if omdb_key and imdb_id:
             try:

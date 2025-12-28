@@ -24,6 +24,8 @@ def test_build_row_handles_json_where_to_watch():
         provider_region="US",
     )
 
-    assert result["where_to_watch"] == "Netflix; Hulu; Vudu"
+    assert result["watch_region"] == "US"
+    assert result["providers_stream"] == "Netflix; Hulu"
+    assert result["providers_rent"] == "Vudu"
     # Timestamp should be populated with an ISO-8601 value
     assert result["tmdb_last_scraped"]

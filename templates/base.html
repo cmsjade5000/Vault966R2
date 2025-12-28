@@ -54,18 +54,27 @@
       :root {
         --flic-primary: #0f2d4a;
         --flic-accent: #1e90ff;
-        --flic-bg: #0b1626;
+        --flic-bg: #030617;
         --flic-chip-bg: rgba(15, 45, 74, 0.8);
         --flic-text: #e2e8f0;
         --flic-muted: #94a3b8;
+        --nav-height: 72px;
+        --shell-max: clamp(320px, 92vw, 1200px);
       }
 
       body {
         margin: 0;
         font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
         background-color: var(--flic-bg);
+        background-image: radial-gradient(circle at 10% 20%, rgba(56, 189, 248, 0.08), transparent 45%),
+          radial-gradient(circle at 80% 0%, rgba(14, 165, 233, 0.08), transparent 40%),
+          linear-gradient(180deg, rgba(2, 6, 23, 0.85), rgba(2, 6, 23, 0.95));
         color: var(--flic-text);
         line-height: 1.6;
+        min-height: 100vh;
+        -webkit-font-smoothing: antialiased;
+        -webkit-text-size-adjust: 100%;
+        -webkit-tap-highlight-color: transparent;
       }
 
       a {
@@ -111,60 +120,154 @@
         left: 1rem;
       }
 
+      .app-shell {
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .app-main {
+        flex: 1;
+        display: block;
+      }
+
       .site-nav {
-        background: rgba(15, 45, 74, 0.95);
+        background: rgba(7, 16, 32, 0.95);
         border-bottom: 1px solid rgba(30, 144, 255, 0.15);
         position: sticky;
         top: 0;
         z-index: 900;
-        backdrop-filter: blur(12px);
+        backdrop-filter: blur(14px);
+        min-height: var(--nav-height);
+        box-shadow: 0 12px 24px rgba(2, 6, 23, 0.45);
       }
 
       .nav-inner {
-        max-width: clamp(320px, 90vw, 1080px);
+        max-width: var(--shell-max);
         margin: 0 auto;
         padding: 0.75rem clamp(1rem, 4vw, 2rem);
         display: flex;
         align-items: center;
         justify-content: space-between;
-        gap: 1.5rem;
+        gap: 1.25rem;
+        flex-wrap: wrap;
       }
 
       .brand {
+        display: flex;
+        flex-direction: column;
+        gap: 0.2rem;
         font-weight: 700;
-        font-size: 1.05rem;
+        font-size: 1rem;
         letter-spacing: 0.08em;
         text-transform: uppercase;
         color: #fff;
         text-decoration: none;
       }
 
-      .site-nav nav {
-        display: flex;
-        gap: 0.75rem;
-        flex-wrap: wrap;
-        align-items: center;
+      .brand-mark {
+        font-size: 1.05rem;
+        letter-spacing: 0.12em;
       }
 
-      .site-nav nav a,
-      .site-nav nav button {
-        background: rgba(30, 144, 255, 0.12);
-        border: 1px solid rgba(30, 144, 255, 0.25);
+      .brand-subtitle {
+        font-size: 0.7rem;
+        letter-spacing: 0.18em;
+        color: rgba(226, 232, 240, 0.7);
+        text-transform: uppercase;
+      }
+
+      .nav-toggle {
         border-radius: 999px;
-        padding: 0.35rem 0.8rem;
+        border: 1px solid rgba(30, 144, 255, 0.35);
+        background: rgba(30, 144, 255, 0.12);
         color: #f8fafc;
         font-size: 0.8rem;
-        text-decoration: none;
+        font-weight: 600;
+        padding: 0.4rem 0.9rem;
         cursor: pointer;
+        display: none;
       }
 
-      .site-nav nav a:hover,
-      .site-nav nav button:hover {
+      .nav-toggle[aria-expanded="true"] {
         background: rgba(30, 144, 255, 0.25);
       }
 
-      main {
-        display: block;
+      .primary-nav {
+        display: flex;
+        align-items: center;
+        gap: 0.65rem;
+        flex-wrap: wrap;
+        flex: 1 1 auto;
+        justify-content: flex-end;
+      }
+
+      .nav-group {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+      }
+
+      .nav-link {
+        display: inline-flex;
+        align-items: center;
+        border-radius: 999px;
+        min-height: 2.5rem;
+        border: 1px solid rgba(30, 144, 255, 0.25);
+        padding: 0.45rem 0.95rem;
+        background: transparent;
+        color: #f8fafc;
+        font-size: 0.85rem;
+        text-decoration: none;
+        font-weight: 600;
+        cursor: pointer;
+        letter-spacing: 0.01em;
+        transition: background 160ms ease, color 160ms ease, border 160ms ease, transform 160ms ease;
+        touch-action: manipulation;
+      }
+
+      .nav-link:hover,
+      .nav-link:focus-visible {
+        background: rgba(30, 144, 255, 0.25);
+        border-color: rgba(30, 144, 255, 0.5);
+      }
+
+      .nav-link.is-active {
+        background: rgba(30, 144, 255, 0.35);
+        border-color: rgba(125, 211, 252, 0.85);
+        color: #fff;
+        box-shadow: 0 6px 18px rgba(14, 116, 144, 0.4);
+      }
+
+      .nav-actions {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+      }
+
+      .nav-cta {
+        display: inline-flex;
+        align-items: center;
+        border-radius: 999px;
+        min-height: 2.5rem;
+        border: none;
+        padding: 0 1.25rem;
+        font-weight: 600;
+        font-size: 0.9rem;
+        letter-spacing: 0.04em;
+        cursor: pointer;
+        color: #04101f;
+        background: linear-gradient(135deg, rgba(56, 189, 248, 0.95), rgba(37, 99, 235, 0.9));
+        box-shadow: 0 12px 24px rgba(37, 99, 235, 0.35);
+        transition: transform 150ms ease, box-shadow 150ms ease;
+      }
+
+      .nav-cta:hover,
+      .nav-cta:focus-visible {
+        transform: translateY(-1px);
+        box-shadow: 0 16px 32px rgba(37, 99, 235, 0.45);
       }
 
       #toast-container {
@@ -209,31 +312,54 @@
         font-size: 1rem;
       }
 
-      @media (max-width: 768px) {
+      @media (max-width: 900px) {
         .nav-inner {
-          flex-direction: column;
-          align-items: flex-start;
           gap: 0.75rem;
+        }
+
+        .primary-nav {
           justify-content: flex-start;
         }
 
-        .site-nav nav {
-          width: 100%;
-          overflow-x: auto;
-          padding-bottom: 0.35rem;
-          gap: 0.5rem;
-          -webkit-overflow-scrolling: touch;
-          scrollbar-width: none;
+        .brand-subtitle {
+          font-size: 0.65rem;
+        }
+      }
+
+      @media (max-width: 640px) {
+        .nav-inner {
+          flex-direction: column;
+          align-items: stretch;
         }
 
-        .site-nav nav::-webkit-scrollbar {
+        .primary-nav {
           display: none;
+          width: 100%;
+          flex-direction: column;
+          align-items: stretch;
+          gap: 0.65rem;
+          border-top: 1px solid rgba(30, 144, 255, 0.15);
+          padding-top: 0.85rem;
+          margin-top: 0.5rem;
         }
 
-        .site-nav nav a,
-        .site-nav nav button {
-          flex: 0 0 auto;
-          white-space: nowrap;
+        .primary-nav.is-open {
+          display: flex;
+        }
+
+        .nav-actions {
+          flex-direction: column;
+          align-items: stretch;
+        }
+
+        .nav-cta {
+          width: 100%;
+          justify-content: center;
+        }
+
+        .nav-toggle {
+          display: inline-flex;
+          justify-content: center;
         }
       }
 
@@ -255,11 +381,63 @@
   </head>
   <body>
     <a href="#main" class="skip-link">Skip to main content</a>
-    <main id="main">
-      {% block content %}{% endblock %}
-    </main>
+    {% set current_path = request.url.path %}
+    <div class="app-shell">
+      <header class="site-nav">
+        <div class="nav-inner">
+          <a class="brand" href="/ui/movies">
+            <span class="brand-mark">Vault 966</span>
+            <span class="brand-subtitle">Movie dispatch</span>
+          </a>
+          <button class="nav-toggle" type="button" aria-expanded="false" data-nav-toggle>Menu</button>
+          <nav class="primary-nav" data-nav-menu>
+            <div class="nav-group" role="menubar">
+              <a
+                class="nav-link{% if current_path == '/ui/movies' %} is-active{% endif %}"
+                href="/ui/movies"
+                role="menuitem"
+                {% if current_path == '/ui/movies' %}aria-current="page"{% endif %}
+                >Library</a
+              >
+              <a
+                class="nav-link{% if current_path == '/ui/movies/health' %} is-active{% endif %}"
+                href="/ui/movies/health"
+                role="menuitem"
+                {% if current_path == '/ui/movies/health' %}aria-current="page"{% endif %}
+                >Collection Health</a
+              >
+            </div>
+            <div class="nav-actions"></div>
+          </nav>
+        </div>
+      </header>
+      <main id="main" class="app-main">
+        {% block content %}{% endblock %}
+      </main>
+    </div>
     <div id="toast-container" aria-live="polite" aria-atomic="true"></div>
     <script>
+      (function () {
+        const initNav = () => {
+          const navToggle = document.querySelector('[data-nav-toggle]');
+          const navMenu = document.querySelector('[data-nav-menu]');
+
+          navToggle?.addEventListener('click', () => {
+            const expanded = navToggle.getAttribute('aria-expanded') === 'true';
+            const next = !expanded;
+            navToggle.setAttribute('aria-expanded', String(next));
+            navMenu?.classList.toggle('is-open', next);
+          });
+
+        };
+
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', initNav, { once: true });
+        } else {
+          initNav();
+        }
+      })();
+
       window.showToast = function (message) {
         const container = document.getElementById('toast-container');
         if (!container) return;

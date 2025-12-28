@@ -1,13 +1,12 @@
-
 services:
   postgres:
     image: postgres:16
     container_name: vault966-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_USER: vault_user
-      POSTGRES_PASSWORD: vault_pass
-      POSTGRES_DB: vault966
+      POSTGRES_USER: ${POSTGRES_USER:-vault_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-vault_pass}
+      POSTGRES_DB: ${POSTGRES_DB:-vault966}
     ports:
       - "5432:5432"
     volumes:
@@ -26,11 +25,11 @@ services:
     env_file:
       - .env
     environment:
-      DATABASE_URL: postgresql+psycopg://vault_user:vault_pass@postgres:5432/vault966
-      TMDB_API_KEY: 2e8f01cbaa3b167711547b75bcd80991
-      OMDB_API_KEY: 6f9fb747
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-vault_user}:${POSTGRES_PASSWORD:-vault_pass}@postgres:5432/${POSTGRES_DB:-vault966}
+      PYTHONFAULTHANDLER: "1"
     ports:
       - "8000:8000"
+    command: uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload --log-level debug --access-log
     depends_on:
       postgres:
         condition: service_healthy

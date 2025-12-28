@@ -15,6 +15,7 @@ pip install -r requirements.txt
 # Create a local .env (optional)
 cp .env.example .env
 # Update .env with a strong `ADMIN_TOKEN`
+# Optional: set `TMDB_API_KEY` / `OMDB_API_KEY` for lookup + enrichment endpoints.
 
 # Run the API
 uvicorn api.main:app --reload

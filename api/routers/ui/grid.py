@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Optional
+from typing import Iterable, Optional, Tuple
 
 from fastapi import APIRouter, Depends, Query, Request
 from fastapi.responses import HTMLResponse
@@ -14,6 +14,7 @@ from api.services.movies_curated import get_collection_health
 from api.services.ui.grid import (
     FILTER_COOKIE_MAX_AGE,
     FILTER_COOKIE_NAME,
+    attach_genre_display,
     attach_poster_themes,
     dump_filter_cookie,
     get_built_in_presets,
@@ -27,6 +28,8 @@ from api.services.ui.grid import (
     serialize_user_presets,
 )
 from api.services.ui.templates import TEMPLATES
+from api.services.flic_ordering import fetch_movies_in_rank_order, rank_movie_ids_by_flic
+from api.utils.sampling import reorder_movies_by_id_sequence, sample_movie_ids
 from core.movie_filters import (
     MovieFilterParams,
     apply_filters,
@@ -37,12 +40,93 @@ from core.picker import PickerCandidate, PickerFilters, calculate_flic_score
 
 router = APIRouter()
 
+RANDOM_ORDER_LIMIT = 2000
+
+
+def _build_flic_filters(params: MovieFilterParams) -> Tuple[PickerFilters, bool]:
+    """Return picker filters plus a flag indicating whether defaults were applied."""
+
+    filters = PickerFilters.from_params(params)
+    has_inputs = any(
+        (
+            filters.genres,
+            filters.moods,
+            filters.runtime_min is not None,
+            filters.runtime_max is not None,
+            filters.year_min is not None,
+            filters.year_max is not None,
+        )
+    )
+    if has_inputs:
+        return filters, False
+
+    fallback = PickerFilters.from_values(
+        runtime_max=125,
+        year_min=1990,
+    )
+    return fallback, True
+
+
+def _summarize_flic_filters(filters: PickerFilters, *, used_defaults: bool) -> str:
+    parts: list[str] = []
+    if filters.genres:
+        genre_list = ", ".join(filters.genres[:2])
+        if len(filters.genres) > 2:
+            genre_list = f"{genre_list}…"
+        parts.append(f"Genres: {genre_list}")
+    if filters.moods:
+        mood_list = ", ".join(filters.moods[:2])
+        if len(filters.moods) > 2:
+            mood_list = f"{mood_list}…"
+        parts.append(f"Moods: {mood_list}")
+    if filters.runtime_max is not None:
+        parts.append(f"≤ {filters.runtime_max} min")
+    if filters.year_min is not None or filters.year_max is not None:
+        start = filters.year_min or "Any"
+        end = filters.year_max or "Now"
+        parts.append(f"Years: {start}–{end}")
+    if used_defaults:
+        parts.append("Default watch-night heuristics (≤ 2h, 1990+)")
+    return " • ".join(parts) if parts else "Default watch-night heuristics (≤ 2h, 1990+)"
+
+
+def _assign_flic_scores(movies: Iterable[Movie], filters: dict[str, object]) -> None:
+    if not movies or not filters:
+        return
+
+    for movie in movies:
+        try:
+            genre_names = [
+                getattr(genre, "name", None) or ""
+                for genre in getattr(movie, "genres", [])  # type: ignore[arg-type]
+            ]
+        except TypeError:
+            genre_names = []
+
+        try:
+            mood_names = [
+                getattr(mood, "name", None) or ""
+                for mood in getattr(movie, "moods", [])  # type: ignore[arg-type]
+            ]
+        except TypeError:
+            mood_names = []
+
+        candidate = PickerCandidate.from_iterables(
+            genres=genre_names,
+            moods=mood_names,
+            runtime=getattr(movie, "runtime", None),
+            year=getattr(movie, "year", None),
+        ).to_payload()
+        score, _ = calculate_flic_score(candidate, filters)
+        setattr(movie, "flic_score", score)
+
 
 @router.get("/ui/movies", response_class=HTMLResponse)
 def movies_grid(
     request: Request,
     q: Optional[str] = Query(default=None),
     genres: Optional[str] = Query(default=None),
+    moods: Optional[str] = Query(default=None),
     year_min: Optional[str] = Query(default=None),
     year_max: Optional[str] = Query(default=None),
     runtime_max: Optional[str] = Query(default=None),
@@ -63,7 +147,7 @@ def movies_grid(
         runtime_min=resolve(None, "runtime_min"),
         runtime_max=resolve(runtime_max, "runtime_max"),
         genres=resolve(genres, "genres"),
-        moods=resolve(None, "moods"),
+        moods=resolve(moods, "moods"),
         order_by=resolve(order_by, "order_by"),
     )
 
@@ -92,6 +176,11 @@ def movies_grid(
     runtime_presets = get_runtime_presets()
 
     page_size = 30
+    flic_filters_summary = None
+    flic_filters_default = False
+    flic_rank_offset = 0
+    flic_filters_payload: Optional[dict[str, object]] = None
+
     if total == 0:
         total_pages = 0
         current_page = 1
@@ -102,26 +191,29 @@ def movies_grid(
         current_page = min(max(current_page, 1), total_pages)
         offset = (current_page - 1) * page_size
         if params.order_by == "flic":
-            all_movies = filtered_query.options(
-                selectinload(Movie.genres), selectinload(Movie.moods)
-            ).all()
-            attach_poster_themes(all_movies)
-            filters = PickerFilters.from_params(params).to_payload()
-            scored = []
-            for movie in all_movies:
-                candidate = PickerCandidate.from_iterables(
-                    genres=[g.name for g in movie.genres],
-                    moods=[m.name for m in movie.moods],
-                    runtime=movie.runtime,
-                    year=movie.year,
-                ).to_payload()
-                score, _ = calculate_flic_score(candidate, filters)
-                scored.append((score, movie))
-
-            scored.sort(key=lambda item: item[0], reverse=True)
-            paginated = scored[offset : offset + page_size]
-            movies = [movie for _, movie in paginated]
+            flic_filters, used_defaults = _build_flic_filters(params)
+            flic_filters_default = used_defaults
+            flic_filters_payload = flic_filters.to_payload()
+            ranked = rank_movie_ids_by_flic(
+                db,
+                base_query=filtered_query,
+                filters=flic_filters_payload,
+            )
+            total = len(ranked)
+            page_ids = [movie_id for _, movie_id in ranked[offset : offset + page_size]]
+            score_by_id = {movie_id: score for score, movie_id in ranked}
+            movies = fetch_movies_in_rank_order(
+                db,
+                ranked_ids=page_ids,
+                options=[selectinload(Movie.genres), selectinload(Movie.moods)],
+            )
+            for movie in movies:
+                if movie.id is not None:
+                    setattr(movie, "flic_score", score_by_id.get(movie.id, float("-inf")))
             attach_poster_themes(movies)
+            attach_genre_display(movies)
+            flic_rank_offset = offset
+            flic_filters_summary = _summarize_flic_filters(flic_filters, used_defaults=used_defaults)
         else:
             clause = ordering_clause(params.order_by)
             movies = (
@@ -132,9 +224,106 @@ def movies_grid(
                 .all()
             )
             attach_poster_themes(movies)
+            attach_genre_display(movies)
 
+    featured_row_size = 4
+    featured_rows = 3
+    featured_limit = featured_row_size * featured_rows
+    featured_movies: list[Movie] = []
+    if total:
+        if total <= RANDOM_ORDER_LIMIT:
+            base_featured = (
+                filtered_query.options(selectinload(Movie.genres), selectinload(Movie.moods))
+                .order_by(func.random())
+                .limit(featured_limit)
+                .all()
+            )
+        else:
+            featured_ids = sample_movie_ids(filtered_query, total=total, limit=featured_limit)
+            base_featured_raw = (
+                db.query(Movie)
+                .options(selectinload(Movie.genres), selectinload(Movie.moods))
+                .filter(Movie.id.in_(featured_ids))
+                .all()
+            )
+            base_featured = reorder_movies_by_id_sequence(base_featured_raw, featured_ids)
+        featured_movies.extend(base_featured)
+        featured_ids = {movie.id for movie in featured_movies if movie.id is not None}
+        filler_needed = (featured_row_size - (len(featured_movies) % featured_row_size)) % featured_row_size
+
+        if filler_needed:
+            filler_movies: list[Movie] = []
+
+            def _append_candidate(candidate: Movie) -> bool:
+                if not candidate or candidate.id is None:
+                    return False
+                if candidate.id in featured_ids:
+                    return False
+                featured_ids.add(candidate.id)
+                filler_movies.append(candidate)
+                return len(filler_movies) >= filler_needed
+
+            for movie in movies:
+                if _append_candidate(movie):
+                    break
+
+            if len(filler_movies) < filler_needed:
+                extra_needed = filler_needed - len(filler_movies)
+                extra_query = filtered_query
+                if featured_ids:
+                    extra_query = extra_query.filter(~Movie.id.in_(list(featured_ids)))
+                extra_total = extra_query.with_entities(func.count(Movie.id)).scalar() or 0
+                if extra_total <= RANDOM_ORDER_LIMIT:
+                    extra_candidates = (
+                        extra_query.options(selectinload(Movie.genres), selectinload(Movie.moods))
+                        .order_by(func.random())
+                        .limit(extra_needed)
+                        .all()
+                    )
+                else:
+                    extra_ids = sample_movie_ids(extra_query, total=extra_total, limit=extra_needed)
+                    extra_raw = (
+                        db.query(Movie)
+                        .options(selectinload(Movie.genres), selectinload(Movie.moods))
+                        .filter(Movie.id.in_(extra_ids))
+                        .all()
+                    )
+                    extra_candidates = reorder_movies_by_id_sequence(extra_raw, extra_ids)
+                for candidate in extra_candidates:
+                    if _append_candidate(candidate):
+                        break
+
+            if len(filler_movies) < filler_needed:
+                needed = filler_needed - len(filler_movies)
+                pool = featured_movies or base_featured
+                filler_movies.extend(pool[:needed])
+
+            featured_movies.extend(filler_movies)
+
+        if len(featured_movies) < featured_rows * featured_row_size:
+            shortfall = featured_rows * featured_row_size - len(featured_movies)
+            pool = base_featured or featured_movies
+            featured_movies.extend(pool[:shortfall])
+
+        if featured_movies:
+            attach_poster_themes(featured_movies)
+            attach_genre_display(featured_movies)
+            if params.order_by == "flic" and flic_filters_payload:
+                _assign_flic_scores(featured_movies, flic_filters_payload)
+
+    combined_collections: list[list[Movie]] = []
     if movies:
-        movie_ids = [movie.id for movie in movies if movie.id is not None]
+        combined_collections.append(movies)
+    if featured_movies:
+        combined_collections.append(featured_movies)
+
+    if combined_collections:
+        movie_ids = {
+            movie.id
+            for collection in combined_collections
+            for movie in collection
+            if movie.id is not None
+        }
         if movie_ids:
             flagged_ids = {
                 row[0]
@@ -142,23 +331,48 @@ def movies_grid(
                 .filter(MovieFlag.movie_id.in_(movie_ids))
                 .all()
             }
-            for movie in movies:
-                setattr(movie, "flagged", movie.id in flagged_ids)
+            for collection in combined_collections:
+                for movie in collection:
+                    setattr(movie, "flagged", movie.id in flagged_ids)
 
-    featured_limit = 12
-    featured_movies = movies[:featured_limit]
     table_movies = movies
 
     carousel_limit = 20
     poster_carousel_movies = (
-        db.query(Movie)
-        .options(selectinload(Movie.genres), selectinload(Movie.moods))
-        .filter(Movie.poster_url.isnot(None))
-        .order_by(func.random())
-        .limit(carousel_limit)
-        .all()
+        db.query(Movie).options(selectinload(Movie.genres), selectinload(Movie.moods)).filter(
+            Movie.poster_url.isnot(None)
+        )
     )
+    carousel_total = poster_carousel_movies.with_entities(func.count(Movie.id)).scalar() or 0
+    if carousel_total <= RANDOM_ORDER_LIMIT:
+        poster_carousel_movies = (
+            poster_carousel_movies.order_by(func.random()).limit(carousel_limit).all()
+        )
+    else:
+        carousel_ids = sample_movie_ids(
+            poster_carousel_movies,
+            total=carousel_total,
+            limit=carousel_limit,
+        )
+        carousel_raw = (
+            db.query(Movie)
+            .options(selectinload(Movie.genres), selectinload(Movie.moods))
+            .filter(Movie.id.in_(carousel_ids))
+            .all()
+        )
+        poster_carousel_movies = reorder_movies_by_id_sequence(carousel_raw, carousel_ids)
     attach_poster_themes(poster_carousel_movies)
+
+    poster_carousel_payload = [
+        {
+            "id": movie.id,
+            "title": movie.title,
+            "poster_url": movie.poster_url,
+            "year": movie.year,
+        }
+        for movie in poster_carousel_movies
+        if movie.id is not None
+    ]
 
     genres_value = ", ".join(params.genres)
     runtime_max_value = params.runtime_max if params.runtime_max is not None else ""
@@ -191,8 +405,12 @@ def movies_grid(
         "table_movies": table_movies,
         "featured_limit": featured_limit,
         "poster_carousel_movies": poster_carousel_movies,
+        "poster_carousel_payload": poster_carousel_payload,
         "mood_options": mood_options,
         "moods": moods_value,
+        "flic_filters_summary": flic_filters_summary,
+        "flic_filters_default": flic_filters_default,
+        "flic_rank_offset": flic_rank_offset,
     }
 
     response = TEMPLATES.TemplateResponse("movies_grid.html", context)

@@ -4,6 +4,7 @@ import csv
 import pathlib
 from typing import Iterable, Tuple
 
+from core.enriched_csv import normalize_where_to_watch
 from api.utils.providers import merge_providers
 
 BASE_DIR = pathlib.Path(__file__).resolve().parents[2]
@@ -41,14 +42,52 @@ def _load_existing_pairs(path: pathlib.Path) -> set[Tuple[str, int | None]]:
 def _append_row(path: pathlib.Path, fieldnames: Iterable[str], row: dict) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     file_exists = path.exists()
+    writer_fieldnames = list(fieldnames)
+    if file_exists and path.stat().st_size > 0:
+        with path.open("r", encoding="utf-8", newline="") as read_handle:
+            reader = csv.DictReader(read_handle)
+            if reader.fieldnames:
+                writer_fieldnames = list(reader.fieldnames)
     with path.open("a", encoding="utf-8", newline="") as handle:
-        writer = csv.DictWriter(handle, fieldnames=fieldnames)
+        writer = csv.DictWriter(handle, fieldnames=writer_fieldnames, extrasaction="ignore")
         write_header = not file_exists
         if not write_header and handle.tell() == 0:
             write_header = True
         if write_header:
             writer.writeheader()
         writer.writerow(row)
+
+
+def _migrate_enriched_csv_schema(path: pathlib.Path, fieldnames: list[str]) -> None:
+    """Rewrite enriched_movies.csv in-place if it still contains legacy columns."""
+
+    if not path.exists() or path.stat().st_size == 0:
+        return
+
+    with path.open("r", encoding="utf-8", newline="") as handle:
+        reader = csv.DictReader(handle)
+        existing_fields = list(reader.fieldnames or [])
+        if not existing_fields:
+            return
+        if "where_to_watch" not in existing_fields:
+            return
+        rows = [dict(row) for row in reader]
+
+    tmp_path = path.with_suffix(".tmp")
+    with tmp_path.open("w", encoding="utf-8", newline="") as handle:
+        writer = csv.DictWriter(handle, fieldnames=fieldnames, extrasaction="ignore")
+        writer.writeheader()
+        for row in rows:
+            legacy = (row.get("where_to_watch") or "").strip()
+            watch = normalize_where_to_watch(legacy, region="US")
+            row.pop("where_to_watch", None)
+            row.setdefault("watch_region", "US")
+            row.setdefault("providers_stream", "; ".join(watch.stream))
+            row.setdefault("providers_rent", "; ".join(watch.rent))
+            row.setdefault("providers_buy", "; ".join(watch.buy))
+            row.setdefault("tmdb_watch_url", watch.tmdb_watch_url or "")
+            writer.writerow(row)
+    tmp_path.replace(path)
 
 
 def append_movie_to_cleaned_csv(title: str, year: int | None) -> bool:
@@ -81,11 +120,6 @@ def append_movie_to_enriched_csv(
     """
 
     path = DATA_DIR / "enriched_movies.csv"
-    existing = _load_existing_pairs(path)
-    key = _normalize_key(title, year)
-    if key in existing:
-        return False
-
     fieldnames = [
         "title",
         "year",
@@ -101,16 +135,27 @@ def append_movie_to_enriched_csv(
         "imdb_rating",
         "imdb_votes",
         "rt_score",
-        "where_to_watch",
+        "watch_region",
+        "providers_stream",
+        "providers_rent",
+        "providers_buy",
+        "tmdb_watch_url",
         "languages",
         "countries",
         "collection",
         "tmdb_last_scraped",
     ]
+    _migrate_enriched_csv_schema(path, fieldnames)
+
+    existing = _load_existing_pairs(path)
+    key = _normalize_key(title, year)
+    if key in existing:
+        return False
 
     row = {name: "" for name in fieldnames}
     row["title"] = title.strip()
     row["year"] = year or ""
+    row["watch_region"] = "US"
 
     provider_list = merge_providers(providers or [], (metadata or {}).get("where_to_watch"))
 
@@ -128,7 +173,7 @@ def append_movie_to_enriched_csv(
         row["tmdb_last_scraped"] = metadata.get("release_date") or ""
 
     if provider_list:
-        row["where_to_watch"] = "; ".join(provider_list)
+        row["providers_stream"] = "; ".join(provider_list)
 
     _append_row(path, fieldnames, row)
     return True

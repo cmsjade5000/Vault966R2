@@ -36,6 +36,7 @@ if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
 
 import api.models  # noqa: F401  # ensure all ORM mappers are registered (e.g., MovieFlag)
+from core.enriched_csv import normalize_countries, normalize_languages
 
 from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError
@@ -218,7 +219,14 @@ def sanitize_title_for_search(title: str) -> str:
     # Strip parenthetical descriptors such as "(2020)", "(Unrated)", etc., so search
     # queries focus on the canonical title text.
     without_parentheticals = re.sub(r"\s*\([^)]*\)\s*", " ", title)
-    sanitized = normalize_title(without_parentheticals)
+    without_brackets = re.sub(r"\s*\[[^\]]*\]\s*", " ", without_parentheticals)
+    part_normalized = re.sub(
+        r"\bpart\s+([ivx]+)\b",
+        lambda m: f"Part { {'i':'1','ii':'2','iii':'3','iv':'4','v':'5','vi':'6','vii':'7','viii':'8','ix':'9','x':'10'}.get(m.group(1).lower(), m.group(1)) }",
+        without_brackets,
+        flags=re.IGNORECASE,
+    )
+    sanitized = normalize_title(part_normalized)
     if sanitized:
         return sanitized
     # Fall back to a normalized version of the original title to avoid empty
@@ -379,6 +387,49 @@ def _split_providers(value: Any) -> List[str]:
     return collect_provider_tokens(value)
 
 
+# Merge helpers for JSONB providers
+def _merge_provider_lists(a, b):
+    """Merge lists of provider dicts, de-duplicating by provider_id or provider_name."""
+    if not isinstance(a, list):
+        a = []
+    if not isinstance(b, list):
+        b = []
+    index = {}
+    for item in a:
+        if not isinstance(item, dict):
+            continue
+        key = item.get("provider_id") or item.get("provider_name") or str(item)
+        index[key] = item
+    for item in b:
+        if not isinstance(item, dict):
+            continue
+        key = item.get("provider_id") or item.get("provider_name") or str(item)
+        if key not in index:
+            index[key] = item
+    return list(index.values())
+
+
+def _merge_providers_json(existing: dict, new: dict) -> dict:
+    """Deep-merge TMDb watch/providers dicts by country code; keep unique providers."""
+    if not isinstance(existing, dict):
+        existing = {}
+    if not isinstance(new, dict):
+        new = {}
+    merged = {**existing}
+    for cc, pdata in new.items():
+        if not isinstance(pdata, dict):
+            continue
+        base = merged.get(cc, {})
+        out = dict(base)
+        for key, val in pdata.items():
+            if isinstance(val, list):
+                out[key] = _merge_provider_lists(base.get(key, []), val)
+            else:
+                out[key] = val if val not in (None, "", []) else base.get(key)
+        merged[cc] = out
+    return merged
+
+
 def normalize_providers(value: Any) -> Optional[str]:
     providers = merge_providers(_split_providers(value))
     return "; ".join(providers) if providers else None
@@ -414,8 +465,8 @@ def normalize_row(raw: Dict[str, Any], row_number: int) -> Dict[str, Any]:
     imdb_votes_value = _first_value(raw, ["imdb_votes"])
     rt_score_value = _first_value(raw, ["rt_score", "rt_percent"])
     where_value = _first_value(raw, ["where_to_watch", "digital_location"])
-    languages_value = _first_value(raw, ["languages"])
-    countries_value = _first_value(raw, ["countries"])
+    languages_value = _first_value(raw, ["languages_iso", "languages"])
+    countries_value = _first_value(raw, ["countries_iso", "countries"])
     collection_value = _first_value(raw, ["collection", "franchise"])
 
     record = {
@@ -435,8 +486,8 @@ def normalize_row(raw: Dict[str, Any], row_number: int) -> Dict[str, Any]:
         "imdb_votes": coerce_int(imdb_votes_value),
         "rt_score": coerce_int(rt_score_value),
         "where_to_watch": normalize_providers(where_value),
-        "languages": clean_text(languages_value),
-        "countries": clean_text(countries_value),
+        "languages": normalize_languages(clean_text(languages_value)).iso or None,
+        "countries": normalize_countries(clean_text(countries_value)).iso or None,
         "collection": clean_text(collection_value),
     }
     return record
@@ -557,8 +608,18 @@ def _has_changes(existing: Movie, record: Dict[str, Any]) -> bool:
     return current_genres != set(record["genres"]) or current_moods != set(record["moods"])
 
 
+def _is_nullish(value: Optional[Any]) -> bool:
+    if value is None:
+        return True
+    if isinstance(value, str):
+        return value in _NULL_STRINGS
+    if isinstance(value, (list, tuple, set, dict)):
+        return len(value) == 0
+    return value in _NULL_STRINGS
+
+
 def _merge_values(existing_value: Optional[Any], new_value: Optional[Any]) -> Optional[Any]:
-    if new_value in _NULL_STRINGS or new_value is None:
+    if _is_nullish(new_value):
         return existing_value
     return new_value
 
@@ -676,29 +737,32 @@ def resolve_imdb_via_network(
 
     if tmdb_key:
         try:
-            params = {"query": sanitized_title, "api_key": tmdb_key}
-            if year:
-                params["year"] = year
-            response = _http_get_with_retries(
-                "https://api.themoviedb.org/3/search/movie",
-                params=params,
-                timeout=10.0,
-                max_retries=max_retries,
-                retry_delay=retry_delay,
-                tag="TMDb search",
-            )
-            data = response.json() if response is not None else {"results": []}
-            results = data.get("results", [])
-            for result in results:
-                result_title = str(result.get("title", ""))
-                if sanitize_title_for_search(result_title) != sanitized_title:
-                    continue
-                release_date = result.get("release_date") or ""
-                release_year = int(release_date[:4]) if release_date[:4].isdigit() else None
-                if year and release_year and abs(release_year - year) > 1:
-                    continue
-                tmdb_id = result.get("id")
-                if tmdb_id:
+            def _tmdb_search(query: str, yr: Optional[int], tag_suffix: str) -> Optional[str]:
+                nonlocal tmdb_candidate
+                params = {"query": query, "api_key": tmdb_key}
+                if yr:
+                    params["year"] = yr
+                response = _http_get_with_retries(
+                    "https://api.themoviedb.org/3/search/movie",
+                    params=params,
+                    timeout=10.0,
+                    max_retries=max_retries,
+                    retry_delay=retry_delay,
+                    tag=f"TMDb search {tag_suffix}",
+                )
+                data = response.json() if response is not None else {"results": []}
+                results = data.get("results", [])
+                for result in results:
+                    result_title = str(result.get("title", ""))
+                    if sanitize_title_for_search(result_title) != sanitize_title_for_search(query):
+                        continue
+                    release_date = result.get("release_date") or ""
+                    release_year = int(release_date[:4]) if release_date[:4].isdigit() else None
+                    if yr and release_year and abs(release_year - yr) > 2:
+                        continue
+                    tmdb_id = result.get("id")
+                    if not tmdb_id:
+                        continue
                     tmdb_candidate = tmdb_id
                     external = _http_get_with_retries(
                         f"https://api.themoviedb.org/3/movie/{tmdb_id}/external_ids",
@@ -712,10 +776,21 @@ def resolve_imdb_via_network(
                     imdb_id = extract_imdb_from_tmdb_external_ids(external_payload)
                     if imdb_id:
                         resolver_state.last_tmdb_imdb_id = imdb_id
-                        return imdb_id, "tmdb", tmdb_id
-                    resolver_state.last_tmdb_imdb_id = extract_imdb_from_tmdb_external_ids(
-                        external_payload
-                    )
+                        return imdb_id
+                    resolver_state.last_tmdb_imdb_id = extract_imdb_from_tmdb_external_ids(external_payload)
+                return None
+
+            # Try strict + small fallbacks (title-only / year tolerance / alias cleaned).
+            title_variants = [sanitized_title]
+            for query in title_variants:
+                if year:
+                    for candidate_year in (year, year - 1, year + 1, year - 2, year + 2):
+                        resolved = _tmdb_search(query, candidate_year, f"{candidate_year}")
+                        if resolved:
+                            return resolved, "tmdb", tmdb_candidate
+                resolved = _tmdb_search(query, None, "title_only")
+                if resolved:
+                    return resolved, "tmdb", tmdb_candidate
         except httpx.HTTPError as exc:
             logger.warning("TMDb lookup failed: %s", exc)
 
