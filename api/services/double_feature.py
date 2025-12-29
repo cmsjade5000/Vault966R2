@@ -94,7 +94,11 @@ def pick_double_feature(
     if len(ranked) < 2:
         return None
 
-    ranked_ids = [movie_id for _, movie_id in ranked]
+    # Limit to a reasonable pool for pairing.
+    top_ranked = ranked[:50]
+    ranked_ids = [movie_id for _, movie_id in top_ranked]
+    ranked_scores = {movie_id: score for score, movie_id in top_ranked}
+
     ranked_movies = fetch_movies_in_rank_order(
         db,
         ranked_ids=ranked_ids,
@@ -104,35 +108,42 @@ def pick_double_feature(
     ranked_by_id = {movie.id: movie for movie in ranked_movies if movie.id is not None}
     ordered_movies = [ranked_by_id[movie_id] for movie_id in ranked_ids if movie_id in ranked_by_id]
 
-    for primary in ordered_movies:
+    best_selection: Optional[DoubleFeatureSelection] = None
+    best_score: tuple[float, float, int] | None = (
+        None  # (primary_score, complement_score, total_runtime)
+    )
+
+    for idx, primary in enumerate(ordered_movies):
         if primary.runtime is None:
             continue
-        remaining = runtime_cap - primary.runtime
+        primary_runtime = primary.runtime
+        remaining = runtime_cap - primary_runtime
         if remaining <= 0:
             continue
 
-        complement_pool = [
-            movie
-            for movie in ordered_movies
-            if movie.id != primary.id
-            and movie.runtime is not None
-            and movie.runtime <= remaining
-        ]
-        if not complement_pool:
-            continue
-
+        primary_score = ranked_scores.get(primary.id, 0.0)
         complement_filters = _filters_from_movie(primary)
-        secondary = max(
-            complement_pool,
-            key=lambda movie: _complement_score(movie, filters=complement_filters),
-        )
-        total_runtime = primary.runtime + secondary.runtime
-        return DoubleFeatureSelection(
-            primary=primary,
-            secondary=secondary,
-            runtime_cap=runtime_cap,
-            total_runtime=total_runtime,
-        )
+
+        for secondary in ordered_movies[idx + 1 :]:
+            if secondary.id == primary.id or secondary.runtime is None:
+                continue
+            total_runtime = primary_runtime + secondary.runtime
+            if total_runtime > runtime_cap:
+                continue
+
+            complement_score = _complement_score(secondary, filters=complement_filters)
+            candidate_score = (primary_score, complement_score, total_runtime)
+
+            if best_score is None or candidate_score > best_score:
+                best_score = candidate_score
+                best_selection = DoubleFeatureSelection(
+                    primary=primary,
+                    secondary=secondary,
+                    runtime_cap=runtime_cap,
+                    total_runtime=total_runtime,
+                )
+
+    return best_selection
 
     return None
 
