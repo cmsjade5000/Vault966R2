@@ -1406,7 +1406,10 @@
 
       const entries = [];
       if (searchInput && searchInput.value.trim()) {
-        entries.push({ key: "q", label: `Search: ${searchInput.value.trim()}` });
+        entries.push({
+          key: "q",
+          label: `Search: ${searchInput.value.trim()}`,
+        });
       }
       const genresInput = document.getElementById("genres-input");
       parseCsv(genresInput?.value).forEach((value) => {
@@ -1860,7 +1863,9 @@
           } catch (error) {
             console.error("Flag toggle failed", error);
             const message =
-              error && error.message ? error.message : "Could not update that flag—try again soon?";
+              error && error.message
+                ? error.message
+                : "Could not update that flag—try again soon?";
             showToastMessage(message);
           } finally {
             delete button.dataset.flagBusy;

@@ -122,7 +122,7 @@ def test_search_rejects_inverted_year_range(client: TestClient) -> None:
         params={"year_min": 2020, "year_max": 2000},
     )
     assert response.status_code == 400
-    assert response.json()["detail"] == "year_min cannot be greater than year_max"
+    assert response.json()["message"] == "year_min cannot be greater than year_max"
 
 
 def test_search_rejects_inverted_runtime_range(client: TestClient) -> None:
@@ -131,7 +131,7 @@ def test_search_rejects_inverted_runtime_range(client: TestClient) -> None:
         params={"runtime_min": 150, "runtime_max": 90},
     )
     assert response.status_code == 400
-    assert response.json()["detail"] == "runtime_min cannot be greater than runtime_max"
+    assert response.json()["message"] == "runtime_min cannot be greater than runtime_max"
 
 
 def test_search_genre_synonyms(client: TestClient) -> None:

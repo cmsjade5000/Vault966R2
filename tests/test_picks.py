@@ -21,4 +21,4 @@ def test_pick_rejects_inverted_year_range(client: TestClient) -> None:
         params={"year_min": 2020, "year_max": 2000},
     )
     assert response.status_code == 400
-    assert response.json()["detail"] == "year_min cannot be greater than year_max"
+    assert response.json()["message"] == "year_min cannot be greater than year_max"

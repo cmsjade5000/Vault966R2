@@ -132,7 +132,7 @@ def test_update_movie_rejects_invalid_values(
 ) -> None:
     response = client.patch("/movies/1", json=payload, headers=admin_headers)
     assert response.status_code == 400
-    assert response.json()["detail"] == message
+    assert response.json()["message"] == message
 
 
 def test_resolve_flag_without_other_changes(
