@@ -344,9 +344,19 @@ def movies_grid(
     table_movies = movies
 
     daily_spotlight_movies = get_daily_spotlight_movies(db, limit=4)
+
+    runtime_cap = (
+        params.runtime_max if params.runtime_max is not None else DEFAULT_DOUBLE_FEATURE_RUNTIME
+    )
+    genre_filter = params.genres[0] if params.genres else None
+    mood_filter = params.moods[0] if params.moods else None
     double_feature = pick_double_feature(
         db,
-        runtime_cap=DEFAULT_DOUBLE_FEATURE_RUNTIME,
+        runtime_cap=runtime_cap,
+        genre=genre_filter,
+        mood=mood_filter,
+        year_min=params.year_min,
+        year_max=params.year_max,
     )
 
     genres_value = ", ".join(params.genres)
@@ -389,7 +399,7 @@ def movies_grid(
         "show_ai_search": False,
     }
 
-    response = TEMPLATES.TemplateResponse("movies_grid.html", context)
+    response = TEMPLATES.TemplateResponse(request, "movies_grid.html", context)
     cookie_payload = params.to_cookie_payload(page=current_page)
     response.set_cookie(
         FILTER_COOKIE_NAME,
@@ -404,8 +414,5 @@ def movies_grid(
 @router.get("/ui/movies/health", response_class=HTMLResponse)
 def movies_health(request: Request, db: Session = Depends(get_db)):
     collection_health = get_collection_health(db)
-    context = {
-        "request": request,
-        "collection_health": collection_health,
-    }
-    return TEMPLATES.TemplateResponse("movies_health.html", context)
+    context = {"collection_health": collection_health}
+    return TEMPLATES.TemplateResponse(request, "movies_health.html", context)

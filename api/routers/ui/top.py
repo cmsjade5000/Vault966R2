@@ -40,8 +40,7 @@ def movies_top(request: Request, db: Session = Depends(get_db)):
     )
 
     context = {
-        "request": request,
         "top_imdb": imdb_leaders,
         "top_rt": rt_leaders,
     }
-    return TEMPLATES.TemplateResponse("movies_top.html", context)
+    return TEMPLATES.TemplateResponse(request, "movies_top.html", context)

@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Dict, List, Optional, Union
 
-from pydantic import BaseModel, Field, computed_field, field_serializer
+from pydantic import BaseModel, ConfigDict, Field, computed_field, field_serializer
 
 from api.models.person import RoleType
 from api.schemas.person import PersonRead
@@ -18,8 +18,7 @@ class GenreRead(BaseModel):
     id: int
     name: str
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class MoodRead(BaseModel):
@@ -28,8 +27,7 @@ class MoodRead(BaseModel):
     emoji: Optional[str] = None
     description: Optional[str] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class MovieBase(BaseModel):
@@ -69,8 +67,7 @@ class MovieRead(MovieBase):
     tmdb_payload_sha: Optional[str] = None
     omdb_payload_sha: Optional[str] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
     @computed_field(return_type=List[str])
     def languages_iso(self) -> List[str]:
@@ -99,7 +96,9 @@ class MovieRead(MovieBase):
         if value is None:
             return None
         if isinstance(value, list):
-            codes = normalize_languages("; ".join(str(item) for item in value if item is not None)).iso
+            codes = normalize_languages(
+                "; ".join(str(item) for item in value if item is not None)
+            ).iso
             names = languages_display_from_iso(codes) if codes else [str(item) for item in value]
             return ", ".join(names)
         if isinstance(value, str):
@@ -114,7 +113,9 @@ class MovieRead(MovieBase):
         if value is None:
             return None
         if isinstance(value, list):
-            codes = normalize_countries("; ".join(str(item) for item in value if item is not None)).iso
+            codes = normalize_countries(
+                "; ".join(str(item) for item in value if item is not None)
+            ).iso
             names = countries_display_from_iso(codes) if codes else [str(item) for item in value]
             return ", ".join(names)
         if isinstance(value, str):
@@ -191,8 +192,7 @@ class MovieSearchResponse(BaseModel):
     page_size: int
     facets: MovieFacets
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class MovieDoubleFeature(BaseModel):
@@ -201,8 +201,7 @@ class MovieDoubleFeature(BaseModel):
     runtime_cap: int
     total_runtime: int
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class MovieFlagCreate(BaseModel):
@@ -217,8 +216,7 @@ class MovieFlagRead(BaseModel):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class RoleAttach(BaseModel):
@@ -237,5 +235,4 @@ class RoleRead(BaseModel):
     billing_order: Optional[int] = None
     person: PersonRead
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)

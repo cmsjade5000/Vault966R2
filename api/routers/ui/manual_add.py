@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import List, Optional
 
 from fastapi import APIRouter, Body, Depends, HTTPException, status
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
@@ -45,14 +45,16 @@ class ManualMovieCreate(BaseModel):
     metadata: Optional[ManualMovieMetadata] = None
     vudu: bool = False
 
-    @validator("title")
+    @field_validator("title")
+    @classmethod
     def _validate_title(cls, value: str) -> str:
         cleaned = value.strip()
         if not cleaned:
             raise ValueError("Title is required")
         return cleaned
 
-    @validator("year")
+    @field_validator("year")
+    @classmethod
     def _validate_year(cls, value: Optional[int]) -> Optional[int]:
         if value is None:
             return None

@@ -1,6 +1,6 @@
 from typing import List, Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class PersonCreate(BaseModel):
@@ -12,8 +12,7 @@ class PersonCreate(BaseModel):
 class PersonRead(PersonCreate):
     id: int
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class PersonListResponse(BaseModel):
@@ -22,5 +21,4 @@ class PersonListResponse(BaseModel):
     page: int
     page_size: int
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)

@@ -21,9 +21,9 @@ def movie_detail(
     detail = get_movie_detail(db, movie_id)
     if detail is None:
         return TEMPLATES.TemplateResponse(
+            request,
             "movie_detail.html",
             {
-                "request": request,
                 "movie": None,
                 "roles": [],
                 "similar": [],
@@ -38,9 +38,9 @@ def movie_detail(
         spotlight_reason = build_spotlight_reason(detail)
 
     return TEMPLATES.TemplateResponse(
+        request,
         "movie_detail.html",
         {
-            "request": request,
             "movie": detail,
             "roles": detail.roles,
             "similar": detail.similar,

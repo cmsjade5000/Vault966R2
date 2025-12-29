@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import List, Optional, Union
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class PersonNested(BaseModel):
@@ -22,8 +22,7 @@ class RoleWithPersonRead(BaseModel):
     billing_order: Optional[int] = None
     person: PersonNested
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class SimilarMovie(BaseModel):
@@ -80,5 +79,4 @@ class MovieDetail(BaseModel):
     flagged: bool = False
     top_billed: List[TopBilledEntry] = Field(default_factory=list)
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
