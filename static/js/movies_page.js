@@ -2453,6 +2453,21 @@
 
     loadMemory();
 
+    const copyVaultButton = document.querySelector("[data-copy-vault]");
+    if (copyVaultButton) {
+      copyVaultButton.addEventListener("click", async () => {
+        const vaultId = copyVaultButton.dataset.vaultId;
+        if (!vaultId) return;
+        const formatted = `V${String(vaultId).padStart(4, "0")}`;
+        const copied = await copyToClipboard(formatted);
+        if (copied) {
+          showToastMessage(`Copied ${formatted}`);
+        } else {
+          showToastMessage("Could not copy ID—try again.");
+        }
+      });
+    }
+
     const goToPage = (target) => {
       if (!form || !pageInput) return;
       if (!totalPages || totalPages <= 1) return;

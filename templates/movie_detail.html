@@ -60,6 +60,15 @@
         </div>
         <div class="hero-tags">
           <span class="chip chip-id" data-vault-id="{{ movie.id }}">V{{ "%04d"|format(movie.id) }}</span>
+          <button
+            type="button"
+            class="chip chip-ghost"
+            data-copy-vault
+            data-vault-id="{{ movie.id }}"
+            aria-label="Copy Vault ID"
+          >
+            Copy ID
+          </button>
           {% if movie.runtime %}<span class="chip chip-runtime" data-runtime="{{ movie.runtime }}">{{ movie.runtime }} min</span>{% endif %}
           {% if movie.year %}<span class="chip chip-year" data-year="{{ movie.year }}">{{ movie.year }}</span>{% endif %}
           {% for genre in movie.genres %}
