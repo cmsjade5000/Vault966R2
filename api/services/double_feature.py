@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Optional
+from datetime import date
+from random import Random
+from typing import Optional, Tuple
 
 from sqlalchemy.orm import Session, selectinload
 
@@ -65,6 +67,7 @@ def pick_double_feature(
     mood: Optional[str] = None,
     year_min: Optional[int] = None,
     year_max: Optional[int] = None,
+    seed: Optional[int] = None,
 ) -> Optional[DoubleFeatureSelection]:
     base_query = (
         db.query(Movie)
@@ -108,10 +111,8 @@ def pick_double_feature(
     ranked_by_id = {movie.id: movie for movie in ranked_movies if movie.id is not None}
     ordered_movies = [ranked_by_id[movie_id] for movie_id in ranked_ids if movie_id in ranked_by_id]
 
-    best_selection: Optional[DoubleFeatureSelection] = None
-    best_score: tuple[float, float, int] | None = (
-        None  # (primary_score, complement_score, total_runtime)
-    )
+    rng = Random(seed if seed is not None else date.today().toordinal())
+    candidate_pairs: list[Tuple[Tuple[float, float, int], DoubleFeatureSelection]] = []
 
     for idx, primary in enumerate(ordered_movies):
         if primary.runtime is None:
@@ -133,19 +134,28 @@ def pick_double_feature(
 
             complement_score = _complement_score(secondary, filters=complement_filters)
             candidate_score = (primary_score, complement_score, total_runtime)
-
-            if best_score is None or candidate_score > best_score:
-                best_score = candidate_score
-                best_selection = DoubleFeatureSelection(
-                    primary=primary,
-                    secondary=secondary,
-                    runtime_cap=runtime_cap,
-                    total_runtime=total_runtime,
+            candidate_pairs.append(
+                (
+                    candidate_score,
+                    DoubleFeatureSelection(
+                        primary=primary,
+                        secondary=secondary,
+                        runtime_cap=runtime_cap,
+                        total_runtime=total_runtime,
+                    ),
                 )
+            )
 
-    return best_selection
+    if not candidate_pairs:
+        return None
 
-    return None
+    # Sort by score and pick a deterministic-but-rotating entry from the top slice.
+    candidate_pairs.sort(key=lambda item: item[0], reverse=True)
+    top_pairs = candidate_pairs[: min(10, len(candidate_pairs))]
+    if len(top_pairs) == 1:
+        return top_pairs[0][1]
+    index = rng.randrange(len(top_pairs))
+    return top_pairs[index][1]
 
 
 __all__ = ["DEFAULT_DOUBLE_FEATURE_RUNTIME", "DoubleFeatureSelection", "pick_double_feature"]
