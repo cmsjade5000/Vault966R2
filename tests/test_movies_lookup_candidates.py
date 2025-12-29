@@ -71,9 +71,7 @@ def test_movies_lookup_candidates_success(client, movie_id, monkeypatch):
                         "results": [
                             {
                                 "iso_3166_1": "US",
-                                "release_dates": [
-                                    {"release_date": "1999-04-01T00:00:00.000Z"}
-                                ],
+                                "release_dates": [{"release_date": "1999-04-01T00:00:00.000Z"}],
                             }
                         ]
                     },
@@ -161,7 +159,7 @@ def test_movies_lookup_candidates_empty_results(client, movie_id, monkeypatch):
 
     response = client.get(f"/movies/{movie_id}/lookup")
     assert response.status_code == 404
-    assert response.json()["detail"] == "No TMDb results found"
+    assert response.json()["message"] == "No TMDb results found"
 
 
 def test_movies_lookup_candidates_missing_key(client, movie_id, monkeypatch):

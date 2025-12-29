@@ -13,3 +13,12 @@ def test_pick_with_mood(client: TestClient) -> None:
 def test_pick_mood_not_found(client: TestClient) -> None:
     response = client.get("/movies/picks", params={"mood": "Nonexistent"})
     assert response.status_code == 404
+
+
+def test_pick_rejects_inverted_year_range(client: TestClient) -> None:
+    response = client.get(
+        "/movies/picks",
+        params={"year_min": 2020, "year_max": 2000},
+    )
+    assert response.status_code == 400
+    assert response.json()["message"] == "year_min cannot be greater than year_max"

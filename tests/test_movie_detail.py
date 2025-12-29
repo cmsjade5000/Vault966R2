@@ -99,6 +99,7 @@ def test_movie_detail_template(client: TestClient, detail_movie_setup):
     html = resp.text
     assert "Case Worker" in html
     assert "Top billed" in html
+    assert "data-copy-vault" in html
 
 
 def test_movie_detail_accepts_json_languages_and_countries(client: TestClient, detail_movie_setup):

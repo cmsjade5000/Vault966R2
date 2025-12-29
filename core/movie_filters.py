@@ -96,6 +96,24 @@ def parse_movie_filters(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Invalid order_by value",
         )
+    if (
+        clean_year_min is not None
+        and clean_year_max is not None
+        and clean_year_min > clean_year_max
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="year_min cannot be greater than year_max",
+        )
+    if (
+        clean_runtime_min is not None
+        and clean_runtime_max is not None
+        and clean_runtime_min > clean_runtime_max
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="runtime_min cannot be greater than runtime_max",
+        )
     return MovieFilterParams(
         q=clean_q,
         year_min=clean_year_min,

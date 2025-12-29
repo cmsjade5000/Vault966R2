@@ -82,6 +82,8 @@ def get_pick(
     year_min = parse_optional_non_negative_int(year_min, "year_min")
     year_max = parse_optional_non_negative_int(year_max, "year_max")
     runtime_max = parse_optional_non_negative_int(runtime_max, "runtime_max")
+    if year_min is not None and year_max is not None and year_min > year_max:
+        raise HTTPException(status_code=400, detail="year_min cannot be greater than year_max")
 
     query = (
         db.query(Movie)

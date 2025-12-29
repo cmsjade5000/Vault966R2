@@ -117,7 +117,7 @@ def test_manual_add_rejects_duplicate_imdb(client: TestClient, admin_headers: di
         headers=admin_headers,
     )
     assert second.status_code == 409
-    assert "IMDb ID" in second.json()["detail"]
+    assert "IMDb ID" in second.json()["message"]
 
 
 def test_append_movie_to_cleaned_csv_writes_header_for_new_file(tmp_path, monkeypatch):

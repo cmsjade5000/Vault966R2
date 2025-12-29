@@ -1406,7 +1406,10 @@
 
       const entries = [];
       if (searchInput && searchInput.value.trim()) {
-        entries.push({ key: "q", label: `Search: ${searchInput.value.trim()}` });
+        entries.push({
+          key: "q",
+          label: `Search: ${searchInput.value.trim()}`,
+        });
       }
       const genresInput = document.getElementById("genres-input");
       parseCsv(genresInput?.value).forEach((value) => {
@@ -1860,7 +1863,9 @@
           } catch (error) {
             console.error("Flag toggle failed", error);
             const message =
-              error && error.message ? error.message : "Could not update that flag—try again soon?";
+              error && error.message
+                ? error.message
+                : "Could not update that flag—try again soon?";
             showToastMessage(message);
           } finally {
             delete button.dataset.flagBusy;
@@ -2447,6 +2452,21 @@
     };
 
     loadMemory();
+
+    const copyVaultButton = document.querySelector("[data-copy-vault]");
+    if (copyVaultButton) {
+      copyVaultButton.addEventListener("click", async () => {
+        const vaultId = copyVaultButton.dataset.vaultId;
+        if (!vaultId) return;
+        const formatted = `V${String(vaultId).padStart(4, "0")}`;
+        const copied = await copyToClipboard(formatted);
+        if (copied) {
+          showToastMessage(`Copied ${formatted}`);
+        } else {
+          showToastMessage("Could not copy ID—try again.");
+        }
+      });
+    }
 
     const goToPage = (target) => {
       if (!form || !pageInput) return;
