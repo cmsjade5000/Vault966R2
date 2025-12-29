@@ -41,7 +41,9 @@ def upgrade() -> None:
         op.create_index("ix_movies_year", "movies", ["year"], unique=False)
 
     if "ix_roles_role_type_movie_id" not in {ix["name"] for ix in inspector.get_indexes("roles")}:
-        op.create_index("ix_roles_role_type_movie_id", "roles", ["role_type", "movie_id"], unique=False)
+        op.create_index(
+            "ix_roles_role_type_movie_id", "roles", ["role_type", "movie_id"], unique=False
+        )
 
 
 def downgrade() -> None:
@@ -58,5 +60,7 @@ def downgrade() -> None:
         if "uq_people_name_tmdb_id" in {ix["name"] for ix in inspector.get_indexes("people")}:
             op.drop_index("uq_people_name_tmdb_id", table_name="people")
     else:
-        if "uq_people_name_tmdb_id" in {ck["name"] for ck in inspector.get_unique_constraints("people")}:
+        if "uq_people_name_tmdb_id" in {
+            ck["name"] for ck in inspector.get_unique_constraints("people")
+        }:
             op.drop_constraint("uq_people_name_tmdb_id", "people", type_="unique")

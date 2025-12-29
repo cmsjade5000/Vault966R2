@@ -30,19 +30,13 @@ def test_duplicate_movie_ids_surface_in_error_message(monkeypatch):
             )
         )
         connection.execute(
-            text(
-                "INSERT INTO movies (id, imdb_id, tmdb_id) VALUES (1, 'tt0001', 100)"
-            )
+            text("INSERT INTO movies (id, imdb_id, tmdb_id) VALUES (1, 'tt0001', 100)")
         )
         connection.execute(
-            text(
-                "INSERT INTO movies (id, imdb_id, tmdb_id) VALUES (2, 'tt0001', 101)"
-            )
+            text("INSERT INTO movies (id, imdb_id, tmdb_id) VALUES (2, 'tt0001', 101)")
         )
         connection.execute(
-            text(
-                "INSERT INTO movies (id, imdb_id, tmdb_id) VALUES (3, 'tt0002', 100)"
-            )
+            text("INSERT INTO movies (id, imdb_id, tmdb_id) VALUES (3, 'tt0002', 100)")
         )
 
     with pytest.raises(IntegrityError) as excinfo:

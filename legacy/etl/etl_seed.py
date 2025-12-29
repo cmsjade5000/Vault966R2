@@ -737,6 +737,7 @@ def resolve_imdb_via_network(
 
     if tmdb_key:
         try:
+
             def _tmdb_search(query: str, yr: Optional[int], tag_suffix: str) -> Optional[str]:
                 nonlocal tmdb_candidate
                 params = {"query": query, "api_key": tmdb_key}
@@ -777,7 +778,9 @@ def resolve_imdb_via_network(
                     if imdb_id:
                         resolver_state.last_tmdb_imdb_id = imdb_id
                         return imdb_id
-                    resolver_state.last_tmdb_imdb_id = extract_imdb_from_tmdb_external_ids(external_payload)
+                    resolver_state.last_tmdb_imdb_id = extract_imdb_from_tmdb_external_ids(
+                        external_payload
+                    )
                 return None
 
             # Try strict + small fallbacks (title-only / year tolerance / alias cleaned).

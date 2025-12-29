@@ -37,7 +37,7 @@ if str(REPO_ROOT) not in sys.path:
 from api.db import SessionLocal  # noqa: E402
 from api.models.movie import Movie  # noqa: E402
 from api.models.person import Role  # noqa: E402,F401  # ensure mapper registration
-from api.utils.providers import merge_providers, split_providers  # noqa: E402
+from api.utils.providers import split_providers  # noqa: E402
 
 
 TMDB_API_BASE = "https://api.themoviedb.org/3"
