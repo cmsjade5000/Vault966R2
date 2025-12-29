@@ -12,9 +12,7 @@ def test_search_by_query(client: TestClient) -> None:
     assert payload["items"][0]["title"] == "The Matrix"
 
 
-def test_search_query_with_literal_wildcards(
-    client: TestClient, db_session: Session
-) -> None:
+def test_search_query_with_literal_wildcards(client: TestClient, db_session: Session) -> None:
     library_genre = db_session.query(Genre).filter_by(name="Library").one()
     general_mood = db_session.query(Mood).filter_by(name="General").one()
 
@@ -37,9 +35,7 @@ def test_search_query_with_literal_wildcards(
     assert payload["items"][0]["title"] == "Discount 100%"
 
 
-def test_search_query_with_literal_underscore(
-    client: TestClient, db_session: Session
-) -> None:
+def test_search_query_with_literal_underscore(client: TestClient, db_session: Session) -> None:
     library_genre = db_session.query(Genre).filter_by(name="Library").one()
     general_mood = db_session.query(Mood).filter_by(name="General").one()
 
@@ -118,6 +114,24 @@ def test_search_facets_respect_filters(client: TestClient) -> None:
     assert facets["moods"]["Exciting"] == 1
     assert facets["genres"]["Sci-Fi"] == 1
     assert facets["genres"]["Action"] == 1
+
+
+def test_search_rejects_inverted_year_range(client: TestClient) -> None:
+    response = client.get(
+        "/movies/search",
+        params={"year_min": 2020, "year_max": 2000},
+    )
+    assert response.status_code == 400
+    assert response.json()["detail"] == "year_min cannot be greater than year_max"
+
+
+def test_search_rejects_inverted_runtime_range(client: TestClient) -> None:
+    response = client.get(
+        "/movies/search",
+        params={"runtime_min": 150, "runtime_max": 90},
+    )
+    assert response.status_code == 400
+    assert response.json()["detail"] == "runtime_min cannot be greater than runtime_max"
 
 
 def test_search_genre_synonyms(client: TestClient) -> None:
