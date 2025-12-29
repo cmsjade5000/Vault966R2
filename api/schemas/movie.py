@@ -195,6 +195,16 @@ class MovieSearchResponse(BaseModel):
         from_attributes = True
 
 
+class MovieDoubleFeature(BaseModel):
+    primary: MovieRead
+    secondary: MovieRead
+    runtime_cap: int
+    total_runtime: int
+
+    class Config:
+        from_attributes = True
+
+
 class MovieFlagCreate(BaseModel):
     reason: Optional[str] = None
     notes: Optional[str] = None

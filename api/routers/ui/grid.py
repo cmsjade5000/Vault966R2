@@ -29,6 +29,7 @@ from api.services.ui.grid import (
 )
 from api.services.ui.spotlight import get_daily_spotlight_movies
 from api.services.ui.templates import TEMPLATES
+from api.services.double_feature import DEFAULT_DOUBLE_FEATURE_RUNTIME, pick_double_feature
 from api.services.flic_ordering import fetch_movies_in_rank_order, rank_movie_ids_by_flic
 from api.utils.sampling import reorder_movies_by_id_sequence, sample_movie_ids
 from core.movie_filters import (
@@ -343,6 +344,10 @@ def movies_grid(
     table_movies = movies
 
     daily_spotlight_movies = get_daily_spotlight_movies(db, limit=4)
+    double_feature = pick_double_feature(
+        db,
+        runtime_cap=DEFAULT_DOUBLE_FEATURE_RUNTIME,
+    )
 
     genres_value = ", ".join(params.genres)
     runtime_max_value = params.runtime_max if params.runtime_max is not None else ""
@@ -375,6 +380,7 @@ def movies_grid(
         "table_movies": table_movies,
         "featured_limit": featured_limit,
         "daily_spotlight_movies": daily_spotlight_movies,
+        "double_feature": double_feature,
         "mood_options": mood_options,
         "moods": moods_value,
         "flic_filters_summary": flic_filters_summary,
