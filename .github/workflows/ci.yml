@@ -2,20 +2,58 @@ name: CI
 
 on:
   push:
-    branches: ["main", "master"]
+    branches: ["main", "master", "reliability-hardening"]
   pull_request:
 
 jobs:
-  lint-test:
+  build:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.9"
-      - name: Install dependencies
+          cache: "pip"
+          cache-dependency-path: |
+            requirements.txt
+            pyproject.toml
+
+      - name: Install Python dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           pip install black==24.10.0 ruff==0.7.1 pytest
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: package-lock.json
+
+      - name: Install Node dependencies
+        if: hashFiles('package-lock.json') != ''
+        run: npm ci
+
+      - name: Lint (Python)
+        run: |
+          black --check .
+          ruff check .
+
+      - name: Lint (Prettier)
+        if: hashFiles('package-lock.json') != ''
+        run: npm run lint
+
+      - name: Tests (Python)
+        env:
+          PYTHONWARNINGS: ignore
+        run: pytest
+
+      - name: Build Docker image (optional)
+        if: hashFiles('Dockerfile') != ''
+        run: |
+          docker build -t vault966-ci .
