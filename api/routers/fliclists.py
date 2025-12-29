@@ -6,6 +6,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from api.db import get_db
+from api.deps.auth import require_admin_if_configured
 from api.models.flic_memory import FlicMemory
 from api.models.flic_preset import FlicPreset
 from api.schemas.flic_memory import FlicMemoryRead
@@ -21,15 +22,17 @@ def list_presets(db: Session = Depends(get_db)):
 
 
 @router.post("/", response_model=FlicPresetRead, status_code=status.HTTP_201_CREATED)
-def create_preset(payload: FlicPresetCreate, db: Session = Depends(get_db)):
+def create_preset(
+    payload: FlicPresetCreate,
+    db: Session = Depends(get_db),
+    _: None = Depends(require_admin_if_configured),
+):
     clean_name = payload.name.strip()
     if not clean_name:
         raise HTTPException(status_code=400, detail="Preset name must not be empty")
 
     existing = (
-        db.query(FlicPreset)
-        .filter(func.lower(FlicPreset.name) == clean_name.lower())
-        .one_or_none()
+        db.query(FlicPreset).filter(func.lower(FlicPreset.name) == clean_name.lower()).one_or_none()
     )
     if existing:
         raise HTTPException(status_code=400, detail="Preset name already exists")
@@ -46,7 +49,11 @@ def create_preset(payload: FlicPresetCreate, db: Session = Depends(get_db)):
 
 
 @router.delete("/{preset_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_preset(preset_id: int, db: Session = Depends(get_db)):
+def delete_preset(
+    preset_id: int,
+    db: Session = Depends(get_db),
+    _: None = Depends(require_admin_if_configured),
+):
     preset = db.query(FlicPreset).filter(FlicPreset.id == preset_id).one_or_none()
     if preset is None:
         raise HTTPException(status_code=404, detail="Preset not found")

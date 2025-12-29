@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
 from api.db import get_db
-from api.deps.auth import require_admin
+from api.deps.auth import require_admin_if_configured
 from api.models.person import Person
 from api.schemas.person import PersonCreate, PersonListResponse, PersonRead
 from api.utils.pagination import paginate
@@ -25,7 +25,7 @@ def list_people(
 def create_person(
     payload: PersonCreate,
     db: Session = Depends(get_db),
-    _: None = Depends(require_admin),
+    _: None = Depends(require_admin_if_configured),
 ):
     person = Person(
         name=payload.name,

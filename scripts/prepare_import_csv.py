@@ -1,7 +1,9 @@
 """CLI helper to sanitize raw movie CSV data before running etl_seed.py.
 
+Related skill: `csv-import-guard`.
+
 Usage:
-    python scripts/prepare_csv.py --input dirty.csv --output cleaned.csv
+    python scripts/prepare_import_csv.py --input dirty.csv --output cleaned.csv
 
 Steps performed:
   * Removes leading garbage rows so the first row is the header containing

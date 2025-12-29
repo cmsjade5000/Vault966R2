@@ -27,3 +27,11 @@ def require_admin(
         )
 
     return None
+
+
+def require_admin_if_configured(
+    credentials: HTTPAuthorizationCredentials = Depends(_bearer_scheme),
+) -> None:
+    if not settings.admin_token:
+        return None
+    return require_admin(credentials)

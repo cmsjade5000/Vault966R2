@@ -4,9 +4,9 @@ import pytest
 from fastapi.testclient import TestClient
 
 
-def test_flag_and_unflag_movie(client: TestClient) -> None:
+def test_flag_and_unflag_movie(client: TestClient, admin_headers: dict[str, str]) -> None:
     payload = {"reason": "Missing poster", "notes": "Need Blu-ray scan"}
-    response = client.post("/movies/1/flag", json=payload)
+    response = client.post("/movies/1/flag", json=payload, headers=admin_headers)
     assert response.status_code == 200
     body = response.json()
     assert body["movie_id"] == 1
@@ -22,15 +22,21 @@ def test_flag_and_unflag_movie(client: TestClient) -> None:
     flagged_titles = [item for item in search_body["items"] if item["flagged"]]
     assert any(movie["id"] == 1 for movie in flagged_titles)
 
-    clear_response = client.delete("/movies/1/flag")
+    clear_response = client.delete("/movies/1/flag", headers=admin_headers)
     assert clear_response.status_code == 204
 
     flags_after = client.get("/movies/flags").json()
     assert all(flag["movie_id"] != 1 for flag in flags_after)
 
 
-def test_update_movie_metadata_resolves_flag(client: TestClient) -> None:
-    client.post("/movies/1/flag", json={"reason": "Needs runtime"})
+def test_update_movie_metadata_resolves_flag(
+    client: TestClient, admin_headers: dict[str, str]
+) -> None:
+    client.post(
+        "/movies/1/flag",
+        json={"reason": "Needs runtime"},
+        headers=admin_headers,
+    )
 
     payload = {
         "runtime": 123,
@@ -40,7 +46,7 @@ def test_update_movie_metadata_resolves_flag(client: TestClient) -> None:
         "genres": ["Science Fiction", "Adventure"],
         "resolve_flag": True,
     }
-    response = client.patch("/movies/1", json=payload)
+    response = client.patch("/movies/1", json=payload, headers=admin_headers)
     assert response.status_code == 200
     body = response.json()
     assert body["runtime"] == 123
@@ -51,7 +57,9 @@ def test_update_movie_metadata_resolves_flag(client: TestClient) -> None:
     assert detail["flagged"] is False
 
 
-def test_update_movie_metadata_handles_optional_fields(client: TestClient) -> None:
+def test_update_movie_metadata_handles_optional_fields(
+    client: TestClient, admin_headers: dict[str, str]
+) -> None:
     payload = {
         "awards": "Won 2 Oscars",
         "imdb_id": "tt0083658",
@@ -75,7 +83,7 @@ def test_update_movie_metadata_handles_optional_fields(client: TestClient) -> No
         "omdb_payload_sha": "sha-omdb",
     }
 
-    response = client.patch("/movies/1", json=payload)
+    response = client.patch("/movies/1", json=payload, headers=admin_headers)
     assert response.status_code == 200
     body = response.json()
     assert body["awards"] == "Won 2 Oscars"
@@ -117,17 +125,26 @@ def test_update_movie_metadata_handles_optional_fields(client: TestClient) -> No
     ],
 )
 def test_update_movie_rejects_invalid_values(
-    client: TestClient, payload: dict[str, object], message: str
+    client: TestClient,
+    payload: dict[str, object],
+    message: str,
+    admin_headers: dict[str, str],
 ) -> None:
-    response = client.patch("/movies/1", json=payload)
+    response = client.patch("/movies/1", json=payload, headers=admin_headers)
     assert response.status_code == 400
     assert response.json()["detail"] == message
 
 
-def test_resolve_flag_without_other_changes(client: TestClient) -> None:
-    client.post("/movies/1/flag", json={"reason": "Needs review"})
+def test_resolve_flag_without_other_changes(
+    client: TestClient, admin_headers: dict[str, str]
+) -> None:
+    client.post(
+        "/movies/1/flag",
+        json={"reason": "Needs review"},
+        headers=admin_headers,
+    )
 
-    response = client.patch("/movies/1", json={"resolve_flag": True})
+    response = client.patch("/movies/1", json={"resolve_flag": True}, headers=admin_headers)
     assert response.status_code == 200
     body = response.json()
     assert body["flagged"] is False

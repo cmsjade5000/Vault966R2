@@ -8,6 +8,7 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from api.db import get_db
+from api.deps.auth import require_admin_if_configured
 from api.models.movie import Genre, Movie
 from api.services.manual_add import (
     append_movie_to_cleaned_csv,
@@ -132,6 +133,7 @@ def manual_add_preview(
 def manual_add_movie(
     payload: ManualMovieCreate = Body(...),
     db: Session = Depends(get_db),
+    _: None = Depends(require_admin_if_configured),
 ):
     title = payload.title.strip()
     year = payload.year
@@ -142,9 +144,7 @@ def manual_add_movie(
             detail="A movie with that title and year already exists.",
         )
 
-    metadata_dict = (
-        payload.metadata.model_dump() if payload.metadata is not None else None
-    )
+    metadata_dict = payload.metadata.model_dump() if payload.metadata is not None else None
 
     if metadata_dict is None:
         try:

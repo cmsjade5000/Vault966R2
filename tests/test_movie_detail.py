@@ -121,9 +121,15 @@ def test_movie_detail_accepts_json_languages_and_countries(client: TestClient, d
     assert "United States" in payload["countries_display"]
 
 
-def test_movie_detail_flag_status(client: TestClient, detail_movie_setup):
+def test_movie_detail_flag_status(
+    client: TestClient, detail_movie_setup, admin_headers: dict[str, str]
+):
     movie_id = detail_movie_setup
-    client.post(f"/movies/{movie_id}/flag", json={"reason": "Poster"})
+    client.post(
+        f"/movies/{movie_id}/flag",
+        json={"reason": "Poster"},
+        headers=admin_headers,
+    )
     resp = client.get(f"/movies/{movie_id}/detail")
     assert resp.status_code == 200
     assert resp.json()["flagged"] is True

@@ -55,7 +55,7 @@ def _fetch_movie(client: TestClient, title: str) -> Optional[dict]:
         generator.close()
 
 
-def test_manual_add_creates_movie_with_vudu_tag(client: TestClient):
+def test_manual_add_creates_movie_with_vudu_tag(client: TestClient, admin_headers: dict[str, str]):
     payload = ManualMovieCreate(
         title="Inception",
         year=2010,
@@ -72,7 +72,11 @@ def test_manual_add_creates_movie_with_vudu_tag(client: TestClient):
         vudu=True,
     )
 
-    resp = client.post("/ui/movies/manual-add", json=payload.model_dump())
+    resp = client.post(
+        "/ui/movies/manual-add",
+        json=payload.model_dump(),
+        headers=admin_headers,
+    )
     assert resp.status_code == 201
     body = resp.json()
     assert body["title"] == "Inception"
@@ -86,7 +90,7 @@ def test_manual_add_creates_movie_with_vudu_tag(client: TestClient):
     assert "Vudu" in (db_movie["where_to_watch"] or "")
 
 
-def test_manual_add_rejects_duplicate_imdb(client: TestClient):
+def test_manual_add_rejects_duplicate_imdb(client: TestClient, admin_headers: dict[str, str]):
     base_payload = ManualMovieCreate(
         title="Edge of Tomorrow",
         year=2014,
@@ -99,11 +103,19 @@ def test_manual_add_rejects_duplicate_imdb(client: TestClient):
         ),
     )
 
-    first = client.post("/ui/movies/manual-add", json=base_payload.model_dump())
+    first = client.post(
+        "/ui/movies/manual-add",
+        json=base_payload.model_dump(),
+        headers=admin_headers,
+    )
     assert first.status_code == 201
 
     duplicate_title = base_payload.model_copy(update={"title": "Edge of Tomorrow Redux"})
-    second = client.post("/ui/movies/manual-add", json=duplicate_title.model_dump())
+    second = client.post(
+        "/ui/movies/manual-add",
+        json=duplicate_title.model_dump(),
+        headers=admin_headers,
+    )
     assert second.status_code == 409
     assert "IMDb ID" in second.json()["detail"]
 

@@ -1,5 +1,7 @@
 """Identify and optionally remove duplicate movies with year-suffix titles.
 
+Related skill: `duplicate-resolution`.
+
 Some imports create placeholder records such as "Footloose (1984)" alongside
 the canonical "Footloose" entry. These suffix variants often lack TMDb data, so
 they never receive poster URLs or enrichment. This helper groups movies by a

@@ -96,8 +96,44 @@ class RequestIDMiddleware(BaseHTTPMiddleware):
         return response
 
 
+class SecurityHeadersMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        response = await call_next(request)
+        csp = (
+            "default-src 'self'; "
+            "base-uri 'self'; "
+            "form-action 'self'; "
+            "frame-ancestors 'none'; "
+            "object-src 'none'; "
+            "img-src 'self' data: https:; "
+            "script-src 'self'; "
+            "script-src-attr 'none'; "
+            "style-src 'self'; "
+            "style-src-attr 'none'; "
+            "font-src 'self' data:; "
+            "connect-src 'self'"
+        )
+        response.headers.setdefault("Content-Security-Policy", csp)
+        response.headers.setdefault("X-Content-Type-Options", "nosniff")
+        response.headers.setdefault("X-Frame-Options", "DENY")
+        response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
+        response.headers.setdefault(
+            "Permissions-Policy",
+            "geolocation=(), microphone=(), camera=(), payment=(), usb=()",
+        )
+        response.headers.setdefault("Cross-Origin-Opener-Policy", "same-origin")
+        response.headers.setdefault("Cross-Origin-Resource-Policy", "same-origin")
+        if request.url.scheme == "https":
+            response.headers.setdefault(
+                "Strict-Transport-Security",
+                "max-age=63072000; includeSubDomains; preload",
+            )
+        return response
+
+
 app = FastAPI(title=settings.app_name)
 app.add_middleware(RequestIDMiddleware)
+app.add_middleware(SecurityHeadersMiddleware)
 
 # CORS (for future Next.js frontend)
 if settings.cors_origins:
@@ -118,9 +154,11 @@ app.include_router(ui.router)
 app.include_router(fliclists.router)
 app.include_router(ai.router)
 
+
 @app.get("/", include_in_schema=False)
 def root_redirect():
     return RedirectResponse(url="/ui/movies")
+
 
 STATIC_DIR = pathlib.Path(__file__).resolve().parents[1] / "static"
 if STATIC_DIR.exists():

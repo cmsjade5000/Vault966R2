@@ -5,7 +5,7 @@ Before running the importer, sanitize your data so the first row is the header a
 ## Quick Start
 
 ```bash
-python scripts/prepare_csv.py --input raw_movies.csv --output data/cleaned_movies.csv
+python scripts/prepare_import_csv.py --input raw_movies.csv --output data/cleaned_movies.csv
 ```
 
 The script will:
@@ -30,7 +30,7 @@ title,year
 Dirty Harry (Unrated),1971
 ```
 
-After running `scripts/prepare_csv.py`:
+After running `scripts/prepare_import_csv.py`:
 ```
 title,year
 Dirty Harry,1971

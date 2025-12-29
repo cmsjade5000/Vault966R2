@@ -6,7 +6,7 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session, selectinload
 
 from api.db import get_db
-from api.deps.auth import require_admin
+from api.deps.auth import require_admin_if_configured
 from api.models.flic_memory import FlicMemory
 from api.models.movie import Genre, Mood, Movie, movie_genres, movie_moods
 from api.models.movie_flag import MovieFlag
@@ -48,7 +48,6 @@ from api.services.flic_ordering import fetch_movies_in_rank_order, rank_movie_id
 from core.picker import (
     PickerCandidate,
     PickerFilters,
-    calculate_flic_score,
     pick_movie,
 )
 from api.utils.query_params import parse_optional_non_negative_int
@@ -374,6 +373,7 @@ def update_movie(
     movie_id: int,
     payload: MovieUpdate,
     db: Session = Depends(get_db),
+    _: None = Depends(require_admin_if_configured),
 ):
     movie = db.get(Movie, movie_id)
     if movie is None:
@@ -396,6 +396,7 @@ def flag_movie(
     movie_id: int,
     payload: MovieFlagCreate,
     db: Session = Depends(get_db),
+    _: None = Depends(require_admin_if_configured),
 ):
     movie = db.get(Movie, movie_id)
     if movie is None:
@@ -416,7 +417,11 @@ def flag_movie(
 
 
 @router.delete("/{movie_id}/flag", status_code=204)
-def clear_flag(movie_id: int, db: Session = Depends(get_db)) -> Response:
+def clear_flag(
+    movie_id: int,
+    db: Session = Depends(get_db),
+    _: None = Depends(require_admin_if_configured),
+) -> Response:
     flag = db.get(MovieFlag, movie_id)
     if flag is None:
         return Response(status_code=204)
@@ -436,7 +441,7 @@ def list_movies(db: Session = Depends(get_db)):
 def create_movie(
     payload: MovieCreate,
     db: Session = Depends(get_db),
-    _: None = Depends(require_admin),
+    _: None = Depends(require_admin_if_configured),
 ):
     # Upsert genres/moods by name
     genres = []
@@ -478,7 +483,7 @@ def attach_role(
     movie_id: int,
     payload: RoleAttach,
     db: Session = Depends(get_db),
-    _: None = Depends(require_admin),
+    _: None = Depends(require_admin_if_configured),
 ):
     movie = db.get(Movie, movie_id)
     if movie is None:

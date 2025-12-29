@@ -14,10 +14,14 @@ from api.utils.query_params import parse_optional_non_negative_int
 from core.genres import search_terms_for_label
 
 _ALLOWED_ORDERING = {
+    "id_asc",
+    "id_desc",
     "title_asc",
     "title_desc",
+    "year_asc",
     "year_desc",
     "runtime_asc",
+    "runtime_desc",
     "imdb_desc",
     "rt_desc",
     "flic",
@@ -137,10 +141,14 @@ def apply_filters(query: Query, params: MovieFilterParams) -> Query:
 
 def ordering_clause(order_by: str):
     mapping = {
+        "id_asc": Movie.id.asc(),
+        "id_desc": Movie.id.desc(),
         "title_asc": Movie.title.asc(),
         "title_desc": Movie.title.desc(),
+        "year_asc": Movie.year.asc().nullslast(),
         "year_desc": Movie.year.desc(),
         "runtime_asc": Movie.runtime.asc(),
+        "runtime_desc": Movie.runtime.desc().nullslast(),
         "imdb_desc": Movie.imdb_rating.desc().nullslast(),
         "rt_desc": Movie.rt_score.desc().nullslast(),
         "flic": None,

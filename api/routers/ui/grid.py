@@ -27,6 +27,7 @@ from api.services.ui.grid import (
     query_library_stats,
     serialize_user_presets,
 )
+from api.services.ui.spotlight import get_daily_spotlight_movies
 from api.services.ui.templates import TEMPLATES
 from api.services.flic_ordering import fetch_movies_in_rank_order, rank_movie_ids_by_flic
 from api.utils.sampling import reorder_movies_by_id_sequence, sample_movie_ids
@@ -213,7 +214,9 @@ def movies_grid(
             attach_poster_themes(movies)
             attach_genre_display(movies)
             flic_rank_offset = offset
-            flic_filters_summary = _summarize_flic_filters(flic_filters, used_defaults=used_defaults)
+            flic_filters_summary = _summarize_flic_filters(
+                flic_filters, used_defaults=used_defaults
+            )
         else:
             clause = ordering_clause(params.order_by)
             movies = (
@@ -249,7 +252,9 @@ def movies_grid(
             base_featured = reorder_movies_by_id_sequence(base_featured_raw, featured_ids)
         featured_movies.extend(base_featured)
         featured_ids = {movie.id for movie in featured_movies if movie.id is not None}
-        filler_needed = (featured_row_size - (len(featured_movies) % featured_row_size)) % featured_row_size
+        filler_needed = (
+            featured_row_size - (len(featured_movies) % featured_row_size)
+        ) % featured_row_size
 
         if filler_needed:
             filler_movies: list[Movie] = []
@@ -337,42 +342,7 @@ def movies_grid(
 
     table_movies = movies
 
-    carousel_limit = 20
-    poster_carousel_movies = (
-        db.query(Movie).options(selectinload(Movie.genres), selectinload(Movie.moods)).filter(
-            Movie.poster_url.isnot(None)
-        )
-    )
-    carousel_total = poster_carousel_movies.with_entities(func.count(Movie.id)).scalar() or 0
-    if carousel_total <= RANDOM_ORDER_LIMIT:
-        poster_carousel_movies = (
-            poster_carousel_movies.order_by(func.random()).limit(carousel_limit).all()
-        )
-    else:
-        carousel_ids = sample_movie_ids(
-            poster_carousel_movies,
-            total=carousel_total,
-            limit=carousel_limit,
-        )
-        carousel_raw = (
-            db.query(Movie)
-            .options(selectinload(Movie.genres), selectinload(Movie.moods))
-            .filter(Movie.id.in_(carousel_ids))
-            .all()
-        )
-        poster_carousel_movies = reorder_movies_by_id_sequence(carousel_raw, carousel_ids)
-    attach_poster_themes(poster_carousel_movies)
-
-    poster_carousel_payload = [
-        {
-            "id": movie.id,
-            "title": movie.title,
-            "poster_url": movie.poster_url,
-            "year": movie.year,
-        }
-        for movie in poster_carousel_movies
-        if movie.id is not None
-    ]
+    daily_spotlight_movies = get_daily_spotlight_movies(db, limit=4)
 
     genres_value = ", ".join(params.genres)
     runtime_max_value = params.runtime_max if params.runtime_max is not None else ""
@@ -404,13 +374,13 @@ def movies_grid(
         "featured_movies": featured_movies,
         "table_movies": table_movies,
         "featured_limit": featured_limit,
-        "poster_carousel_movies": poster_carousel_movies,
-        "poster_carousel_payload": poster_carousel_payload,
+        "daily_spotlight_movies": daily_spotlight_movies,
         "mood_options": mood_options,
         "moods": moods_value,
         "flic_filters_summary": flic_filters_summary,
         "flic_filters_default": flic_filters_default,
         "flic_rank_offset": flic_rank_offset,
+        "show_ai_search": False,
     }
 
     response = TEMPLATES.TemplateResponse("movies_grid.html", context)

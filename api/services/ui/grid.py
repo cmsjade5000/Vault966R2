@@ -5,7 +5,8 @@ import random
 from typing import Iterable
 
 from fastapi import Request
-from sqlalchemy import func
+from sqlalchemy import func, inspect, text
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from api.models.flic_preset import FlicPreset
@@ -57,6 +58,16 @@ def get_taglines() -> tuple[list[str], str]:
         "Your movie buddy—let’s find a vibe.",
         "Shortlist in two taps.",
         "Prefer surprises? I’ve got you.",
+        "Four-star picks without the scroll fatigue.",
+        "Pick a mood. We’ll do the rest.",
+        "Tonight’s watch, decided in minutes.",
+        "Deep cuts to crowd-pleasers, all in one vault.",
+        "Find the right film before the popcorn cools.",
+        "Roll credits on the indecision.",
+        "Cue the score—your next film is waiting.",
+        "A new marquee, every night.",
+        "From opening frame to final fade, it’s all here.",
+        "The vault lights up when you hit play.",
     ]
     return taglines, random.choice(taglines)
 
@@ -64,13 +75,11 @@ def get_taglines() -> tuple[list[str], str]:
 def get_built_in_presets() -> list[dict[str, object]]:
     return [
         {
-            "name": "Fresh & Breezy",
+            "name": "Top Rated",
             "filters": {
-                "year_min": 2015,
-                "runtime_max": 115,
-                "order_by": "year_desc",
+                "order_by": "imdb_desc",
             },
-            "description": "Recent releases that wrap in under two hours.",
+            "description": "Highest IMDb scores across the full library.",
         },
         {
             "name": "Horror Sprints",
@@ -112,14 +121,6 @@ def get_built_in_presets() -> list[dict[str, object]]:
             "description": "Classic quests and blockbuster expeditions.",
         },
         {
-            "name": "Documentary Spotlight",
-            "filters": {
-                "genres": ["Documentary"],
-                "order_by": "year_desc",
-            },
-            "description": "Non-fiction picks, newest stories first.",
-        },
-        {
             "name": "Short & Clever",
             "filters": {
                 "runtime_max": 95,
@@ -136,6 +137,50 @@ def get_built_in_presets() -> list[dict[str, object]]:
             },
             "description": "High-concept sci-fi from the modern era.",
         },
+        {
+            "name": "Velocity Picks",
+            "filters": {
+                "genres": ["Action"],
+                "runtime_max": 130,
+                "order_by": "year_desc",
+            },
+            "description": "Fast-paced action picks with a modern lean.",
+        },
+        {
+            "name": "Midnight Tension",
+            "filters": {
+                "genres": ["Thriller"],
+                "runtime_max": 140,
+                "order_by": "imdb_desc",
+            },
+            "description": "Moody, immersive stories with strong reviews.",
+        },
+        {
+            "name": "Golden Hearts",
+            "filters": {
+                "genres": ["Romance"],
+                "year_max": 2012,
+                "order_by": "title_asc",
+            },
+            "description": "Warm stories from the pre-streaming era.",
+        },
+        {
+            "name": "Thoughtful Dramas",
+            "filters": {
+                "genres": ["Drama"],
+                "order_by": "imdb_desc",
+            },
+            "description": "Character-driven stories with high IMDb scores.",
+        },
+        {
+            "name": "Gritty Crime Scenes",
+            "filters": {
+                "genres": ["Crime"],
+                "runtime_max": 135,
+                "order_by": "year_desc",
+            },
+            "description": "Hard-edged crime stories, newest first.",
+        },
     ]
 
 
@@ -151,24 +196,75 @@ def serialize_user_presets(db: Session) -> list[dict[str, object]]:
     ]
 
 
+def _extract_genre_tokens(value: object) -> list[str]:
+    if value is None:
+        return []
+    if isinstance(value, (list, tuple, set)):
+        return [str(item) for item in value if item]
+    if isinstance(value, dict):
+        return [str(key) for key in value.keys() if key]
+    text_value = str(value).strip()
+    if not text_value:
+        return []
+    try:
+        parsed = json.loads(text_value)
+    except (TypeError, ValueError):
+        return [text_value]
+    if isinstance(parsed, list):
+        return [str(item) for item in parsed if item]
+    if isinstance(parsed, dict):
+        return [str(key) for key in parsed.keys() if key]
+    return [str(parsed)] if parsed else []
+
+
+def _load_genres_from_movies_column(db: Session) -> list[str]:
+    try:
+        inspector = inspect(db.get_bind())
+        columns = {column["name"] for column in inspector.get_columns("movies")}
+    except SQLAlchemyError:
+        db.rollback()
+        return []
+
+    genre_column = None
+    for candidate in ("genres", "genre", "genre_list", "genres_list", "genre_names"):
+        if candidate in columns:
+            genre_column = candidate
+            break
+    if genre_column is None:
+        return []
+
+    try:
+        rows = db.execute(
+            text(f"SELECT DISTINCT {genre_column} FROM movies WHERE {genre_column} IS NOT NULL")
+        ).fetchall()
+    except SQLAlchemyError:
+        db.rollback()
+        return []
+    raw: list[str] = []
+    for (value,) in rows:
+        raw.extend(_extract_genre_tokens(value))
+    return raw
+
+
 def get_genre_options(db: Session) -> list[str]:
+    def _normalize_genres(items: list[str]) -> list[str]:
+        return [
+            label
+            for label in sorted(split_and_normalize(items), key=str.casefold)
+            if label.lower() != "nan"
+        ]
+
     raw_genres = [row[0] for row in db.query(Genre.name).order_by(Genre.name.asc()).all() if row[0]]
-    normalized = [
-        label
-        for label in sorted(split_and_normalize(raw_genres), key=str.casefold)
-        if label.lower() != "nan"
-    ]
+    normalized = _normalize_genres(raw_genres)
+    if not normalized:
+        normalized = _normalize_genres(_load_genres_from_movies_column(db))
     if len(normalized) <= 1:
         return normalized
     return [label for label in normalized if label.lower() != "tv movie"]
 
 
 def get_mood_options(db: Session) -> list[str]:
-    return [
-        row[0]
-        for row in db.query(Mood.name).order_by(Mood.name.asc()).all()
-        if row[0]
-    ]
+    return [row[0] for row in db.query(Mood.name).order_by(Mood.name.asc()).all() if row[0]]
 
 
 def get_decade_options(db: Session) -> list[dict[str, int]]:
@@ -219,9 +315,12 @@ def attach_genre_display(movies: Iterable[Movie]) -> None:
         raw = []
         try:
             raw = [
-                getattr(genre, "name", None) or ""
-                if hasattr(genre, "__class__") and getattr(genre.__class__, "__name__", "") == "Genre"
-                else (genre or "")
+                (
+                    getattr(genre, "name", None) or ""
+                    if hasattr(genre, "__class__")
+                    and getattr(genre.__class__, "__name__", "") == "Genre"
+                    else (genre or "")
+                )
                 for genre in getattr(movie, "genres", [])
             ]
         except TypeError:
