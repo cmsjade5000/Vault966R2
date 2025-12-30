@@ -12,7 +12,6 @@ from api.models.movie import Genre, Mood, Movie, movie_genres, movie_moods
 from api.models.movie_flag import MovieFlag
 from api.models.person import Person, Role
 from api.schemas.movie import (
-    FLAG_REASONS,
     MovieCreate,
     MovieDoubleFeature,
     MovieFlagCreate,
@@ -461,12 +460,6 @@ def flag_movie(
     if flag is None:
         flag = MovieFlag(movie_id=movie_id)
         db.add(flag)
-
-    if payload.reason and payload.reason not in FLAG_REASONS:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Invalid reason. Expected one of: {', '.join(FLAG_REASONS)}",
-        )
 
     flag.reason = payload.reason
     if payload.notes and len(payload.notes) > 500:
