@@ -27,9 +27,7 @@ from api.services.ui.grid import (
     query_library_stats,
     serialize_user_presets,
 )
-from api.services.ui.spotlight import get_daily_spotlight_movies
 from api.services.ui.templates import TEMPLATES
-from api.services.double_feature import DEFAULT_DOUBLE_FEATURE_RUNTIME, pick_double_feature
 from api.services.flic_ordering import fetch_movies_in_rank_order, rank_movie_ids_by_flic
 from api.utils.sampling import reorder_movies_by_id_sequence, sample_movie_ids
 from core.movie_filters import (
@@ -343,21 +341,42 @@ def movies_grid(
 
     table_movies = movies
 
-    daily_spotlight_movies = get_daily_spotlight_movies(db, limit=4)
+    carousel_limit = 20
+    poster_carousel_movies = (
+        db.query(Movie)
+        .options(selectinload(Movie.genres), selectinload(Movie.moods))
+        .filter(Movie.poster_url.isnot(None))
+    )
+    carousel_total = poster_carousel_movies.with_entities(func.count(Movie.id)).scalar() or 0
+    if carousel_total <= RANDOM_ORDER_LIMIT:
+        poster_carousel_movies = (
+            poster_carousel_movies.order_by(func.random()).limit(carousel_limit).all()
+        )
+    else:
+        carousel_ids = sample_movie_ids(
+            poster_carousel_movies,
+            total=carousel_total,
+            limit=carousel_limit,
+        )
+        carousel_raw = (
+            db.query(Movie)
+            .options(selectinload(Movie.genres), selectinload(Movie.moods))
+            .filter(Movie.id.in_(carousel_ids))
+            .all()
+        )
+        poster_carousel_movies = reorder_movies_by_id_sequence(carousel_raw, carousel_ids)
+    attach_poster_themes(poster_carousel_movies)
 
-    runtime_cap = (
-        params.runtime_max if params.runtime_max is not None else DEFAULT_DOUBLE_FEATURE_RUNTIME
-    )
-    genre_filter = params.genres[0] if params.genres else None
-    mood_filter = params.moods[0] if params.moods else None
-    double_feature = pick_double_feature(
-        db,
-        runtime_cap=runtime_cap,
-        genre=genre_filter,
-        mood=mood_filter,
-        year_min=params.year_min,
-        year_max=params.year_max,
-    )
+    poster_carousel_payload = [
+        {
+            "id": movie.id,
+            "title": movie.title,
+            "poster_url": movie.poster_url,
+            "year": movie.year,
+        }
+        for movie in poster_carousel_movies
+        if movie.id is not None
+    ]
 
     genres_value = ", ".join(params.genres)
     runtime_max_value = params.runtime_max if params.runtime_max is not None else ""
@@ -389,17 +408,16 @@ def movies_grid(
         "featured_movies": featured_movies,
         "table_movies": table_movies,
         "featured_limit": featured_limit,
-        "daily_spotlight_movies": daily_spotlight_movies,
-        "double_feature": double_feature,
+        "poster_carousel_movies": poster_carousel_movies,
+        "poster_carousel_payload": poster_carousel_payload,
         "mood_options": mood_options,
         "moods": moods_value,
         "flic_filters_summary": flic_filters_summary,
         "flic_filters_default": flic_filters_default,
         "flic_rank_offset": flic_rank_offset,
-        "show_ai_search": False,
     }
 
-    response = TEMPLATES.TemplateResponse(request, "movies_grid.html", context)
+    response = TEMPLATES.TemplateResponse("movies_grid.html", context)
     cookie_payload = params.to_cookie_payload(page=current_page)
     response.set_cookie(
         FILTER_COOKIE_NAME,
@@ -414,5 +432,8 @@ def movies_grid(
 @router.get("/ui/movies/health", response_class=HTMLResponse)
 def movies_health(request: Request, db: Session = Depends(get_db)):
     collection_health = get_collection_health(db)
-    context = {"collection_health": collection_health}
-    return TEMPLATES.TemplateResponse(request, "movies_health.html", context)
+    context = {
+        "request": request,
+        "collection_health": collection_health,
+    }
+    return TEMPLATES.TemplateResponse("movies_health.html", context)

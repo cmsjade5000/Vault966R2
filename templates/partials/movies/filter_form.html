@@ -16,26 +16,14 @@
       <label class="filter-bar__sort" for="order-by">
         <span>Sort by</span>
         <select id="order-by" name="order_by">
-          <option value="id_asc" {% if order_by == 'id_asc' %}selected{% endif %}>Vault ID (low to high)</option>
-          <option value="id_desc" {% if order_by == 'id_desc' %}selected{% endif %}>Vault ID (high to low)</option>
           <option value="title_asc" {% if order_by == 'title_asc' %}selected{% endif %}>Title A→Z</option>
           <option value="title_desc" {% if order_by == 'title_desc' %}selected{% endif %}>Title Z→A</option>
-          <option value="year_asc" {% if order_by == 'year_asc' %}selected{% endif %}>Oldest first</option>
           <option value="year_desc" {% if order_by == 'year_desc' %}selected{% endif %}>Newest first</option>
           <option value="runtime_asc" {% if order_by == 'runtime_asc' %}selected{% endif %}>Shortest runtime</option>
-          <option value="runtime_desc" {% if order_by == 'runtime_desc' %}selected{% endif %}>Longest runtime</option>
           <option value="imdb_desc" {% if order_by == 'imdb_desc' %}selected{% endif %}>Highest IMDb</option>
           <option value="rt_desc" {% if order_by == 'rt_desc' %}selected{% endif %}>Highest Rotten Tomatoes</option>
         </select>
       </label>
-    </div>
-    <div class="filter-bar__actions filter-bar__actions--search">
-      <button type="submit" class="button-primary" id="search-button" aria-label="Search library">
-        Search
-      </button>
-      <button type="button" class="button-tertiary" id="pick-button" aria-label="Let Flic pick a movie">
-        <span data-action-label>Random Pick</span>
-      </button>
     </div>
 
     <details class="filter-section" open id="fliclists">
@@ -158,6 +146,12 @@
       </div>
     </details>
 
+    <div class="form-footer">
+      <button type="button" class="button-tertiary" id="pick-button" aria-label="Let Flic pick a movie">
+        <span data-action-label>Random Pick</span>
+      </button>
+      <button type="button" class="button-ghost" id="reset-filters-bottom">Clear all filters</button>
+    </div>
   </div>
 
   <input type="hidden" name="genres" id="genres-input" value="{{ genres or '' }}" />

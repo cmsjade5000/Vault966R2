@@ -55,7 +55,6 @@ class ProvenanceContext:
 
 
 from api.models.person import Role  # noqa: F401 - ensure mapper registration
-from api.utils.providers import collect_provider_tokens, merge_providers
 
 logger = logging.getLogger(__name__)
 
@@ -379,12 +378,29 @@ def clean_text(value: Any) -> Optional[str]:
     return text or None
 
 
-def _split_providers(value: Any) -> List[str]:
-    if value is None:
-        return []
-    if isinstance(value, str) and value in _NULL_STRINGS:
-        return []
-    return collect_provider_tokens(value)
+def _split_providers(value: Any) -> dict:
+    """Normalize TMDb watch/providers payloads to a dict.
+    Accepts: None, dict (already JSON/JSONB), or a JSON string. Legacy pipe/csv strings -> {}.
+    """
+    # Null-like
+    if value is None or value in _NULL_STRINGS:
+        return {}
+    # Already structured JSON from DB (jsonb)
+    if isinstance(value, dict):
+        return value
+    # If value is a list, there's no canonical schema to merge; ignore -> {}
+    if isinstance(value, (list, tuple, set)):
+        return {}
+    # Strings: may be JSON or junk
+    s = str(value).strip()
+    if not s or s in _NULL_STRINGS:
+        return {}
+    try:
+        obj = json.loads(s)
+        return obj if isinstance(obj, dict) else {}
+    except Exception:
+        # Not valid JSON; legacy formats unsupported
+        return {}
 
 
 # Merge helpers for JSONB providers
@@ -430,14 +446,14 @@ def _merge_providers_json(existing: dict, new: dict) -> dict:
     return merged
 
 
-def normalize_providers(value: Any) -> Optional[str]:
-    providers = merge_providers(_split_providers(value))
-    return "; ".join(providers) if providers else None
+def normalize_providers(value: Any) -> Optional[dict]:
+    data = _split_providers(value)
+    return data or None
 
 
-def merge_where_to_watch(existing_value: Any, new_value: Any) -> Optional[str]:
-    providers = merge_providers(_split_providers(existing_value), _split_providers(new_value))
-    return "; ".join(providers) if providers else None
+def merge_where_to_watch(existing_value: Any, new_value: Any) -> Optional[dict]:
+    providers = _merge_providers_json(_split_providers(existing_value), _split_providers(new_value))
+    return providers or None
 
 
 def normalize_row(raw: Dict[str, Any], row_number: int) -> Dict[str, Any]:

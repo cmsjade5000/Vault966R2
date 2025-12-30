@@ -7,28 +7,12 @@
     <table class="data-table" id="results-table-table">
       <thead>
         <tr>
-          {% set title_sort = 'ascending' if order_by == 'title_asc' else 'descending' if order_by == 'title_desc' else 'none' %}
-          <th
-            scope="col"
-            data-order-by-asc="title_asc"
-            data-order-by-desc="title_desc"
-            aria-sort="{{ title_sort }}"
-            tabindex="0"
-          >
-            Title
-          </th>
-          {% set id_sort = 'ascending' if order_by == 'id_asc' else 'descending' if order_by == 'id_desc' else 'none' %}
-          <th
-            scope="col"
-            data-order-by-asc="id_asc"
-            data-order-by-desc="id_desc"
-            aria-sort="{{ id_sort }}"
-            tabindex="0"
-          >
-            Vault ID
-          </th>
-          <th scope="col" class="data-table__col-details">Details</th>
-          <th scope="col" class="data-table__col-status" hidden>Status</th>
+          <th scope="col" data-sort-key="title" data-sort-type="string" aria-sort="none">Title</th>
+          <th scope="col" data-sort-key="vaultId" data-sort-type="number" aria-sort="none">Vault ID</th>
+          <th scope="col" data-sort-key="year" data-sort-type="number" aria-sort="none">Year</th>
+          <th scope="col" class="data-table__col-genres">Genres</th>
+          <th scope="col" data-sort-key="runtime" data-sort-type="number" aria-sort="none">Runtime</th>
+          <th scope="col" class="data-table__col-status">Status</th>
         </tr>
       </thead>
       <tbody>
@@ -38,12 +22,6 @@
           {% set genre_names = movie.genres | map(attribute='name') | list if movie.genres and movie.genres[0].__class__.__name__ == 'Genre' else movie.genres %}
         {% endif %}
         {% set genre_text = genre_names | join(', ') if genre_names else '—' %}
-        {% set year_text = movie.year or '—' %}
-        {% set runtime_text = movie.runtime ~ ' min' if movie.runtime else '—' %}
-        {% set year_runtime_text = year_text ~ ' • ' ~ runtime_text %}
-        {% set imdb_text = 'IMDb ' ~ ('%.1f'|format(movie.imdb_rating)) if movie.imdb_rating is not none else 'IMDb —' %}
-        {% set rt_text = 'RT ' ~ movie.rt_score ~ '%' if movie.rt_score is not none else 'RT —' %}
-        {% set rating_text = imdb_text ~ ' • ' ~ rt_text %}
         <tr
           data-title="{{ movie.title | lower }}"
           data-vault-id="{{ movie.id }}"
@@ -65,13 +43,32 @@
             {% endif %}
           </td>
           <td data-label="Vault ID">V{{ "%04d"|format(movie.id) }}</td>
-          <td data-label="Details" class="data-table__cell-details">
-            <div class="table-detail-line">{{ year_runtime_text }}</div>
-            <div class="table-detail-line table-detail-line--muted">{{ rating_text }}</div>
-            <div class="table-detail-line table-detail-line--muted" title="{{ genre_text }}">{{ genre_text }}</div>
-          </td>
-          <td data-label="Status" class="data-table__cell-status" hidden>
-            {% if movie.flagged %}Needs review{% else %}—{% endif %}
+          <td data-label="Year">{{ movie.year or '—' }}</td>
+          <td data-label="Genres" class="data-table__cell-genres" title="{{ genre_text }}">{{ genre_text }}</td>
+          <td data-label="Runtime">{{ movie.runtime or '—' }}</td>
+          <td data-label="Status" class="data-table__cell-status">
+            <div class="table-actions">
+              <button
+                type="button"
+                class="edit-toggle edit-toggle--table"
+                data-edit-button
+                data-movie-id="{{ movie.id }}"
+                aria-label="Edit {{ movie.title }}"
+              >
+                Edit
+              </button>
+              <button
+                type="button"
+                class="flag-toggle flag-toggle--table{% if movie.flagged %} is-flagged{% endif %}"
+                data-flag-button
+                data-movie-id="{{ movie.id }}"
+                data-flagged="{{ 'true' if movie.flagged else 'false' }}"
+                data-flag-default="Metadata cleanup"
+                aria-pressed="{{ 'true' if movie.flagged else 'false' }}"
+              >
+                {% if movie.flagged %}Resolve{% else %}Flag{% endif %}
+              </button>
+            </div>
           </td>
         </tr>
         {% endfor %}

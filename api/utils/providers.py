@@ -1,8 +1,7 @@
 from __future__ import annotations
 
-import re
-from collections.abc import Iterable as IterableCollection, Mapping
-from typing import Any, Iterable, List
+from collections.abc import Mapping, Sequence as SequenceABC
+from typing import Any, Iterable, List, Sequence
 
 
 def normalize_provider(label: str | None) -> str:
@@ -29,110 +28,34 @@ def merge_providers(*lists: Iterable[str | None]) -> List[str]:
     return seen
 
 
-def _tokenize_provider_text(value: str) -> List[str]:
-    parts = re.split(r"[;,]", value)
-    tokens: List[str] = []
-    for part in parts:
-        candidate = part.strip()
-        if not candidate:
-            continue
-        lowered = candidate.lower()
-        if lowered in {
-            "n/a",
-            "na",
-            "none",
-            "null",
-            "unknown",
-            "true",
-            "false",
-            "link",
-            "links",
-            "logo_path",
-            "provider_id",
-            "providerid",
-            "metadata",
-            "results",
-            "last_updated",
-        }:
-            continue
-        if candidate.startswith("/"):
-            continue
-        if "://" in candidate or lowered.startswith("www."):
-            continue
-        if all(ch.isdigit() for ch in candidate):
-            continue
-        if not any(ch.isalpha() for ch in candidate):
-            continue
-        tokens.append(candidate)
-    return tokens
+def _iter_provider_candidates(value: Any) -> Iterable[Any]:
+    if value is None:
+        return
+    if isinstance(value, str):
+        for part in value.replace(";", ",").split(","):
+            yield part
+        return
+    if isinstance(value, Mapping):
+        # Common TMDb payload shape: {"flatrate": [...], "rent": [...]}
+        provider_name = value.get("provider_name") or value.get("name")
+        if provider_name:
+            yield provider_name
+        for sub_value in value.values():
+            if sub_value is value:
+                continue
+            yield from _iter_provider_candidates(sub_value)
+        return
+    if isinstance(value, SequenceABC) and not isinstance(value, (bytes, bytearray)):
+        for item in value:
+            yield from _iter_provider_candidates(item)
+        return
+    yield value
 
 
-def collect_provider_tokens(value: Any) -> List[str]:
-    """Return a flattened list of provider-like strings from arbitrary input."""
-
-    def _collect(current: Any, visited: set[int]) -> List[str]:
-        if current is None:
-            return []
-
-        if isinstance(current, str):
-            return _tokenize_provider_text(current)
-
-        if isinstance(current, (bytes, bytearray)):
-            try:
-                decoded = current.decode("utf-8")  # type: ignore[union-attr]
-            except UnicodeDecodeError:
-                decoded = current.decode("latin-1", errors="ignore")  # type: ignore[union-attr]
-            return _tokenize_provider_text(decoded)
-
-        if isinstance(current, (int, float, bool)):
-            return []
-
-        if isinstance(current, Mapping):
-            obj_id = id(current)
-            if obj_id in visited:
-                return []
-            visited.add(obj_id)
-
-            tokens: List[str] = []
-            for key in ("provider_name", "name", "display_name", "label"):
-                if key in current:
-                    tokens.extend(_collect(current[key], visited))
-            if tokens:
-                return tokens
-
-            for item in current.values():
-                tokens.extend(_collect(item, visited))
-            if tokens:
-                return tokens
-
-            for key in current.keys():
-                tokens.extend(_collect(key, visited))
-            return tokens
-
-        if isinstance(current, IterableCollection):
-            obj_id = id(current)
-            if obj_id in visited:
-                return []
-            visited.add(obj_id)
-
-            tokens: List[str] = []
-            for item in current:
-                tokens.extend(_collect(item, visited))
-            return tokens
-
-        text = str(current).strip()
-        if not text:
-            return []
-        return _tokenize_provider_text(text)
-
-    return _collect(value, set())
-
-
-def split_providers(value: Any) -> List[str]:
-    tokens = collect_provider_tokens(value)
+def split_providers(value: Sequence[str] | str | None) -> List[str]:
     normalized: list[str] = []
-    for item in tokens:
-        normalized_item = normalize_provider(item)
+    for candidate in _iter_provider_candidates(value):
+        normalized_item = normalize_provider(str(candidate) if candidate is not None else None)
         if normalized_item and normalized_item not in normalized:
             normalized.append(normalized_item)
     return normalized
@@ -143,10 +66,4 @@ def serialize_providers(values: Iterable[str] | None) -> str | None:
     return "; ".join(merged) if merged else None
 
 
-__all__ = [
-    "normalize_provider",
-    "merge_providers",
-    "collect_provider_tokens",
-    "split_providers",
-    "serialize_providers",
-]
+__all__ = ["normalize_provider", "merge_providers", "split_providers", "serialize_providers"]

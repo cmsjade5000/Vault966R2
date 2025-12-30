@@ -20,20 +20,4 @@
       <span class="overview-value">{{ stats.top_genre }}</span>
     </div>
   </article>
-  {% if double_feature %}
-  <article class="overview-card overview-card--double-feature">
-    <span class="overview-icon" aria-hidden="true">🎬</span>
-    <div class="overview-copy">
-      <span class="overview-label">Tonight's double feature</span>
-      <div class="double-feature__titles">
-        <a href="/ui/movies/{{ double_feature.primary.id }}">{{ double_feature.primary.title }}</a>
-        <span class="double-feature__divider" aria-hidden="true">+</span>
-        <a href="/ui/movies/{{ double_feature.secondary.id }}">{{ double_feature.secondary.title }}</a>
-      </div>
-      <span class="double-feature__meta">
-        {{ double_feature.total_runtime }} min total · Cap {{ double_feature.runtime_cap }} min
-      </span>
-    </div>
-  </article>
-  {% endif %}
 </section>
