@@ -84,12 +84,6 @@ Integration tests that depend on Postgres are marked with
 `pytest -m integration`. They will be skipped automatically when a
 Postgres `DATABASE_URL` is not configured.
 
-## Debugging and observability
-
-- Each request gets an `X-Request-ID` (client-supplied or generated) and the same value is echoed in responses.
-- Structured JSON logs (`vault966` logger) include method, path, status, duration, and `request_id`. Tail them while debugging: `uvicorn api.main:app --reload | jq`.
-- Errors return JSON with `error_code`, `message`, and `request_id`, making it easy to correlate with logs without exposing request bodies.
-
 ## Generating API clients
 
 ```bash
