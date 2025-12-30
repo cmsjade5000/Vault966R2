@@ -195,6 +195,15 @@ class MovieSearchResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class MovieDoubleFeature(BaseModel):
+    primary: MovieRead
+    secondary: MovieRead
+    runtime_cap: int
+    total_runtime: int
+
+    model_config = ConfigDict(from_attributes=True)
+
+
 class MovieFlagCreate(BaseModel):
     reason: Optional[str] = None
     notes: Optional[str] = None

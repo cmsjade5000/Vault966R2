@@ -417,7 +417,7 @@ def movies_grid(
         "flic_rank_offset": flic_rank_offset,
     }
 
-    response = TEMPLATES.TemplateResponse(request, "movies_grid.html", context)
+    response = TEMPLATES.TemplateResponse("movies_grid.html", context)
     cookie_payload = params.to_cookie_payload(page=current_page)
     response.set_cookie(
         FILTER_COOKIE_NAME,
@@ -432,5 +432,8 @@ def movies_grid(
 @router.get("/ui/movies/health", response_class=HTMLResponse)
 def movies_health(request: Request, db: Session = Depends(get_db)):
     collection_health = get_collection_health(db)
-    context = {"collection_health": collection_health}
-    return TEMPLATES.TemplateResponse(request, "movies_health.html", context)
+    context = {
+        "request": request,
+        "collection_health": collection_health,
+    }
+    return TEMPLATES.TemplateResponse("movies_health.html", context)
