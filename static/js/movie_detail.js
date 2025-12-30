@@ -81,11 +81,14 @@
         dialog
           .querySelector("[data-flag-cancel]")
           ?.addEventListener("click", () => close(null));
-        dialog.querySelector("[data-flag-save]")?.addEventListener("click", () => {
-          const reason = dialog.querySelector("#flag-reason")?.value || "";
-          const notes = dialog.querySelector("#flag-notes")?.value.trim() || null;
-          close({ reason, notes });
-        });
+        dialog
+          .querySelector("[data-flag-save]")
+          ?.addEventListener("click", () => {
+            const reason = dialog.querySelector("#flag-reason")?.value || "";
+            const notes =
+              dialog.querySelector("#flag-notes")?.value.trim() || null;
+            close({ reason, notes });
+          });
         setTimeout(() => {
           dialog.querySelector("#flag-reason")?.focus();
         }, 0);
@@ -117,7 +120,9 @@
         Accept: "application/json",
       };
       const withAuth = (token) =>
-        token ? { ...baseHeaders, Authorization: `Bearer ${token}` } : baseHeaders;
+        token
+          ? { ...baseHeaders, Authorization: `Bearer ${token}` }
+          : baseHeaders;
       button.dataset.flagBusy = "true";
       try {
         if (currentlyFlagged) {
@@ -136,7 +141,8 @@
             });
           }
           if (!resp.ok && resp.status !== 204) {
-            const detail = (await parseErrorDetail(resp)) || "Failed to clear flag";
+            const detail =
+              (await parseErrorDetail(resp)) || "Failed to clear flag";
             throw new Error(detail);
           }
           updateFlagButton(button, false);
@@ -170,7 +176,8 @@
             });
           }
           if (!resp.ok) {
-            const detail = (await parseErrorDetail(resp)) || "Failed to flag movie";
+            const detail =
+              (await parseErrorDetail(resp)) || "Failed to flag movie";
             throw new Error(detail);
           }
           updateFlagButton(button, true);

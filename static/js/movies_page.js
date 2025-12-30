@@ -535,7 +535,10 @@
           editLookupEmpty.textContent = message;
         }
         editLookupEmpty.hidden = false;
-        editLookupEmpty.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        editLookupEmpty.scrollIntoView({
+          behavior: "smooth",
+          block: "nearest",
+        });
       }
       if (editLookupCards) {
         editLookupCards.hidden = true;
@@ -834,9 +837,15 @@
 
       if (canRenderTable) {
         editLookupResults.hidden = false;
-        editLookupResults.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        editLookupResults.scrollIntoView({
+          behavior: "smooth",
+          block: "nearest",
+        });
       } else if (editLookupCards) {
-        editLookupCards.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        editLookupCards.scrollIntoView({
+          behavior: "smooth",
+          block: "nearest",
+        });
       }
     };
 
@@ -934,7 +943,9 @@
       } catch (error) {
         console.error("Lookup failed", error);
         if (requestId === lookupRequestToken) {
-          setLookupPlaceholder("Lookup failed—check your connection and try again.");
+          setLookupPlaceholder(
+            "Lookup failed—check your connection and try again.",
+          );
           setEditStatus(
             "Lookup failed—check your connection and try again.",
             true,
