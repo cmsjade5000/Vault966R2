@@ -36,5 +36,12 @@
       <p class="health-card__value">Solid spread!</p>
       {% endif %}
     </article>
+    <article class="health-card">
+      <h3>Open flags</h3>
+      <p class="health-card__value">{{ collection_health.flags_open or 0 }}</p>
+      <p class="health-card__hint">
+        <a href="/ui/flags" class="hero-health-link">Review flags →</a>
+      </p>
+    </article>
   </div>
 </section>
