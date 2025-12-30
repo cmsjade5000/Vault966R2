@@ -7,6 +7,7 @@ from sqlalchemy import func, or_
 from sqlalchemy.orm import Session, selectinload
 
 from api.models.movie import Genre, Movie
+from api.models.movie_flag import MovieFlag
 from core.genres import split_and_normalize
 
 
@@ -25,6 +26,7 @@ class CollectionHealth:
     missing_poster: int
     avg_runtime: float | None
     genre_gaps: List[str]
+    flags_open: int
 
 
 def _run_base_query(db: Session):
@@ -158,6 +160,8 @@ def get_collection_health(db: Session) -> CollectionHealth:
     avg_runtime = db.query(func.avg(Movie.runtime)).filter(Movie.runtime.isnot(None)).scalar()
     avg_runtime = float(avg_runtime) if avg_runtime is not None else None
 
+    flags_open = db.query(func.count()).select_from(MovieFlag).scalar() or 0
+
     genre_counts = func.count(Movie.id)
     top_genres = (
         db.query(Genre.name, genre_counts)
@@ -181,6 +185,7 @@ def get_collection_health(db: Session) -> CollectionHealth:
         missing_poster=missing_poster,
         avg_runtime=avg_runtime,
         genre_gaps=genre_gaps,
+        flags_open=flags_open,
     )
 
 
