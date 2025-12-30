@@ -25,6 +25,8 @@ class Settings(BaseSettings):
         validation_alias="LLM_BASE_URL",
     )
     llm_model: str = Field(default="gpt-4o-mini", validation_alias="LLM_MODEL")
+    spotlight_rotate: bool = Field(default=False, validation_alias="SPOTLIGHT_ROTATE")
+    double_feature_rotate: bool = Field(default=False, validation_alias="DOUBLE_FEATURE_ROTATE")
 
     @field_validator("cors_origins", mode="before")
     @classmethod

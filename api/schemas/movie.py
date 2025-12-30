@@ -170,19 +170,22 @@ class MovieLookupCandidate(BaseModel):
     runtime: Optional[int] = None
     synopsis: str = ""
     overview: str = ""
-    tmdb_id: int
+    tmdb_id: Optional[int] = None
     imdb_id: Optional[str] = None
     poster_url: Optional[str] = None
     backdrop_url: Optional[str] = None
     release_date: Optional[str] = None
     genres: List[str] = Field(default_factory=list)
     source: str = "tmdb"
+    vault_id: Optional[int] = None
+    match_confidence: Optional[float] = None
     where_to_watch: List[str] = Field(default_factory=list)
     keywords: List[str] = Field(default_factory=list)
 
 
 class MovieLookupResponse(BaseModel):
     items: List[MovieLookupCandidate] = Field(default_factory=list)
+    notice: Optional[str] = None
 
 
 class MovieSearchResponse(BaseModel):

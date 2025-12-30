@@ -4,8 +4,11 @@ from functools import lru_cache
 from typing import Dict, List, Optional, Sequence, Tuple
 
 import httpx
+from sqlalchemy import func, or_
+from sqlalchemy.orm import Session, selectinload
 
 from api.config import settings
+from api.models.movie import Movie
 from api.utils.omdb import extract_rotten_tomatoes_score, parse_imdb_rating, parse_imdb_votes
 from api.utils.providers import merge_providers
 
@@ -422,6 +425,75 @@ def lookup_movie_candidates(title: str, year: int | None = None, limit: int = 5)
 
     if not results:
         raise MovieLookupNotFound("No TMDb results found")
+
+    return results
+
+
+def lookup_local_candidates(
+    db: Session,
+    title: str,
+    year: int | None = None,
+    limit: int = 5,
+    exclude_id: int | None = None,
+) -> List[dict]:
+    search_title = title.strip()
+    if not search_title:
+        return []
+
+    def tokenize(value: str) -> List[str]:
+        import re
+
+        tokens = re.split(r"[^a-zA-Z0-9]+", value.lower())
+        return [token for token in tokens if len(token) > 2]
+
+    tokens = tokenize(search_title)
+    query = db.query(Movie).options(selectinload(Movie.genres))
+    if exclude_id is not None:
+        query = query.filter(Movie.id != exclude_id)
+    if tokens:
+        conditions = [func.lower(Movie.title).like(f"%{token}%") for token in tokens]
+        query = query.filter(or_(*conditions))
+    else:
+        query = query.filter(Movie.title.ilike(f"%{search_title}%"))
+    if year is not None:
+        query = query.filter(Movie.year.between(year - 2, year + 2))
+
+    candidates = query.limit(max(limit * 5, 20)).all()
+    if not candidates:
+        return []
+
+    scored = []
+    for movie in candidates:
+        confidence = _compute_match_confidence(
+            search_title,
+            year,
+            movie.title or "",
+            movie.year,
+            "vault",
+        )
+        scored.append((confidence, movie))
+    scored.sort(key=lambda item: item[0], reverse=True)
+
+    results: List[dict] = []
+    for confidence, movie in scored[:limit]:
+        genres = [genre.name for genre in movie.genres] if movie.genres else []
+        results.append(
+            {
+                "title": movie.title or "",
+                "year": movie.year,
+                "runtime": movie.runtime,
+                "synopsis": movie.plot or "",
+                "overview": movie.plot or "",
+                "tmdb_id": movie.tmdb_id,
+                "imdb_id": movie.imdb_id,
+                "poster_url": movie.poster_url,
+                "backdrop_url": movie.backdrop_url,
+                "genres": genres,
+                "source": "vault",
+                "vault_id": movie.id,
+                "match_confidence": confidence,
+            }
+        )
 
     return results
 

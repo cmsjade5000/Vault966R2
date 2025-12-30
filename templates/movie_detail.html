@@ -34,29 +34,6 @@
         {% endif %}
         <div class="header-meta">
           <h1>{{ movie.title }}</h1>
-          <div class="detail-actions">
-            <button
-              type="button"
-              class="edit-toggle"
-              data-edit-button
-              data-movie-id="{{ movie.id }}"
-              aria-label="Edit {{ movie.title }}"
-            >
-              Edit
-            </button>
-            <button
-              type="button"
-              class="flag-toggle{% if movie.flagged %} is-flagged{% endif %}"
-              data-flag-button
-              data-movie-id="{{ movie.id }}"
-              data-flagged="{{ 'true' if movie.flagged else 'false' }}"
-              data-flag-default="Metadata cleanup"
-              aria-pressed="{{ 'true' if movie.flagged else 'false' }}"
-              aria-label="{% if movie.flagged %}Resolve flag{% else %}Flag to fix{% endif %}"
-            >
-              {% if movie.flagged %}Resolve flag{% else %}Flag{% endif %}
-            </button>
-          </div>
         </div>
         <div class="hero-tags">
           <button
@@ -68,7 +45,18 @@
           >
             V{{ "%04d"|format(movie.id) }}
           </button>
-          {% if movie.runtime %}<span class="chip chip-runtime" data-runtime="{{ movie.runtime }}">{{ movie.runtime }} min</span>{% endif %}
+          {% if movie.runtime %}
+          {% set rounded_runtime = ((movie.runtime + 4) // 5) * 5 %}
+          {% set runtime_hours = rounded_runtime // 60 %}
+          {% set runtime_minutes = rounded_runtime % 60 %}
+          <span class="chip chip-runtime" data-runtime="{{ rounded_runtime }}">
+            {% if runtime_hours > 0 %}
+            {{ runtime_hours }} hour{% if runtime_hours != 1 %}s{% endif %}{% if runtime_minutes %}, {{ runtime_minutes }} minute{% if runtime_minutes != 1 %}s{% endif %}{% endif %}
+            {% else %}
+            {{ runtime_minutes }} minutes
+            {% endif %}
+          </span>
+          {% endif %}
           {% if movie.year %}<span class="chip chip-year" data-year="{{ movie.year }}">{{ movie.year }}</span>{% endif %}
           {% for genre in movie.genres %}
           <span class="chip chip-genre" data-genre="{{ genre }}">{{ genre }}</span>
@@ -223,6 +211,51 @@
       {% endif %}
 
     </div>
+    <div class="detail-actions detail-actions--footer">
+      <button
+        type="button"
+        class="edit-toggle"
+        data-edit-button
+        data-movie-id="{{ movie.id }}"
+        aria-label="Edit {{ movie.title }}"
+      >
+        Edit
+      </button>
+      <button
+        type="button"
+        class="flag-toggle{% if movie.flagged %} is-flagged{% endif %}"
+        data-flag-button
+        data-movie-id="{{ movie.id }}"
+        data-flagged="{{ 'true' if movie.flagged else 'false' }}"
+        data-flag-default="Metadata cleanup"
+        aria-pressed="{{ 'true' if movie.flagged else 'false' }}"
+        aria-label="{% if movie.flagged %}Resolve flag{% else %}Flag to fix{% endif %}"
+      >
+        {% if movie.flagged %}Resolve flag{% else %}Flag{% endif %}
+      </button>
+    </div>
+    {% if review_mode %}
+    <div class="review-bar review-bar--top" role="region" aria-label="Review mode">
+      <div class="review-bar__inner">
+        <span class="review-bar__label">Review mode</span>
+        <div class="review-bar__actions">
+          {% if review_prev_id %}
+          <a class="button-ghost review-bar__button" href="/ui/movies/{{ review_prev_id }}?review=1">← Prev</a>
+          {% else %}
+          <span class="review-bar__button is-disabled">← Prev</span>
+          {% endif %}
+          {% if review_next_id %}
+          <a class="button-primary review-bar__button" href="/ui/movies/{{ review_next_id }}?review=1">Next →</a>
+          {% else %}
+          <span class="review-bar__button is-disabled">Done</span>
+          {% endif %}
+          <a class="button-ghost review-bar__button" href="/ui/movies">Exit</a>
+        </div>
+      </div>
+    </div>
+    {% else %}
+    <a class="review-tab" href="/ui/movies/review">Start Vault Review</a>
+    {% endif %}
   </div>
   {% include "partials/movies/edit_dialog.html" %}
   {% else %}

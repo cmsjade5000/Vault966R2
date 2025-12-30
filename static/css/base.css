@@ -6,7 +6,10 @@
   --flic-text: #e2e8f0;
   --flic-muted: #94a3b8;
   --nav-height: 72px;
-  --shell-max: clamp(320px, 92vw, 1200px);
+  --shell-max: clamp(320px, 92vw, 1080px);
+  --flic-projector-glow: radial-gradient(circle at 20% 25%, rgba(251, 191, 36, 0.55), transparent 55%),
+    radial-gradient(circle at 80% 10%, rgba(248, 113, 113, 0.45), transparent 60%),
+    linear-gradient(135deg, #1f2937 0%, #111827 55%, #0b0f19 100%);
 }
 
 *,
@@ -54,9 +57,12 @@ input:focus-visible {
 }
 
 .chip-flic {
-  background: var(--flic-primary);
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: radial-gradient(circle at 20% 20%, rgba(248, 113, 113, 0.7), transparent 60%),
+    radial-gradient(circle at 80% 0%, rgba(251, 191, 36, 0.65), transparent 60%),
+    linear-gradient(135deg, rgba(30, 41, 59, 0.95), rgba(15, 23, 42, 0.98));
+  border: 1px solid rgba(248, 113, 113, 0.35);
   color: #fff;
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.35);
 }
 
 .skip-link {
