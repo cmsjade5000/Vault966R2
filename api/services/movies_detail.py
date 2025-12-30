@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 import math
 from functools import lru_cache
-from typing import List, Optional
+from typing import List, Optional, Tuple
 
 import httpx
 from sqlalchemy.exc import StatementError
@@ -459,3 +459,17 @@ def get_movie_detail(db: Session, movie_id: int) -> Optional[MovieDetail]:
         top_billed=top_billed,
     )
     return detail
+
+
+def get_review_neighbors(db: Session, movie_id: int) -> Tuple[Optional[int], Optional[int]]:
+    previous_id = (
+        db.query(Movie.id).filter(Movie.id < movie_id).order_by(Movie.id.desc()).limit(1).scalar()
+    )
+    next_id = (
+        db.query(Movie.id).filter(Movie.id > movie_id).order_by(Movie.id.asc()).limit(1).scalar()
+    )
+    return previous_id, next_id
+
+
+def get_first_movie_id(db: Session) -> Optional[int]:
+    return db.query(Movie.id).order_by(Movie.id.asc()).limit(1).scalar()

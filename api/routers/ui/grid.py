@@ -4,7 +4,7 @@ from typing import Iterable, Optional, Tuple
 
 from fastapi import APIRouter, Depends, Query, Request
 from fastapi.responses import HTMLResponse
-from sqlalchemy import func
+from sqlalchemy import func, or_
 from sqlalchemy.orm import Session, selectinload
 
 from api.db import get_db
@@ -416,3 +416,31 @@ def movies_health(request: Request, db: Session = Depends(get_db)):
     collection_health = get_collection_health(db)
     context = {"collection_health": collection_health}
     return TEMPLATES.TemplateResponse(request, "movies_health.html", context)
+
+
+@router.get("/ui/movies/health/missing", response_class=HTMLResponse)
+def movies_health_missing(
+    request: Request,
+    limit: int = Query(default=200, ge=1, le=500),
+    db: Session = Depends(get_db),
+):
+    base_query = db.query(Movie).order_by(Movie.title.asc())
+    missing_runtime = base_query.filter(Movie.runtime.is_(None)).limit(limit).all()
+    missing_plot = base_query.filter(or_(Movie.plot.is_(None), Movie.plot == "")).limit(limit).all()
+    missing_poster = (
+        base_query.filter(or_(Movie.poster_url.is_(None), Movie.poster_url == ""))
+        .limit(limit)
+        .all()
+    )
+
+    context = {
+        "missing_runtime": missing_runtime,
+        "missing_plot": missing_plot,
+        "missing_poster": missing_poster,
+        "limit": limit,
+    }
+    return TEMPLATES.TemplateResponse(
+        request,
+        "movies_health_missing.html",
+        context,
+    )

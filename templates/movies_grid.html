@@ -7,7 +7,7 @@
   <header class="app-hero page-shell">
     <div class="app-hero__inner">
       <div class="hero-title hero-title--center">
-        <h1>Library</h1>
+        <h1>Vault 966</h1>
         <span class="chip chip-flic">by Flic</span>
       </div>
       <p class="tagline app-hero__tagline" id="tagline">{{ initial_tagline }}</p>
@@ -30,7 +30,7 @@
           <a
             class="poster-banner__link poster-banner__tile"
             role="listitem"
-            href="/ui/movies/{{ movie.id }}"
+            href="/ui/movies/{{ movie.id }}?spotlight=1"
             aria-label="View details for {{ movie.title }}"
           >
             <div class="poster-banner__poster">
@@ -173,6 +173,7 @@
 
   <main class="results-shell page-shell" aria-live="polite" id="results" data-results-shell>
     {% if movies %}
+      {% set spotlight_ids = daily_spotlight_movies | map(attribute='id') | list if daily_spotlight_movies else [] %}
       {% if featured_movies %}
       <details class="grid-toggle" open>
         <summary class="grid-toggle__summary" aria-label="Toggle poster grid">
@@ -181,7 +182,7 @@
         <div class="grid" data-featured-grid data-results-grid aria-label="Featured movie results">
           {% for movie in featured_movies %}
           <article
-            class="card{% if movie.flagged %} card--flagged{% endif %}"
+            class="card{% if movie.flagged %} card--flagged{% endif %}{% if movie.id in spotlight_ids %} card--spotlight{% endif %}"
             data-movie-card
             data-movie-id="{{ movie.id }}"
             data-flagged="{{ 'true' if movie.flagged else 'false' }}"
@@ -207,6 +208,9 @@
                 {% endif %}
                 <div class="card-title-row">
                   <h2 class="card-title">{{ movie.title }}</h2>
+                  {% if movie.id in spotlight_ids %}
+                  <span class="card-status card-status--spotlight">Spotlight</span>
+                  {% endif %}
                   {% if movie.flagged %}
                   <span class="card-status card-status--flagged">Needs review</span>
                   {% endif %}

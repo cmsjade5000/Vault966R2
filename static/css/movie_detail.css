@@ -32,7 +32,7 @@
     position: relative;
     margin: -80px auto 0;
     padding: clamp(0.2rem, 1.8vw, 0.6rem) clamp(1rem, 6vw, 4rem) clamp(2.25rem, 6vw, 3.5rem);
-    max-width: clamp(320px, 92vw, 1080px);
+    max-width: var(--shell-max);
     width: 100%;
     color: var(--flic-text);
   }
@@ -262,6 +262,87 @@
     display: flex;
     flex-wrap: wrap;
     gap: 0.5rem;
+  }
+
+  .detail-actions--footer {
+    margin-top: 2rem;
+    justify-content: flex-end;
+  }
+
+  .review-bar {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    padding: 0.75rem 1rem calc(env(safe-area-inset-bottom, 0px) + 0.75rem);
+    background: rgba(10, 15, 28, 0.9);
+    border-top: 1px solid rgba(148, 163, 184, 0.2);
+    backdrop-filter: blur(8px);
+    z-index: 1300;
+  }
+
+  .review-bar--top {
+    top: 0;
+    bottom: auto;
+    padding: calc(env(safe-area-inset-top, 0px) + 0.75rem) 1rem 0.75rem;
+    border-top: none;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+  }
+
+  .review-bar__inner {
+    max-width: var(--shell-max);
+    margin: 0 auto;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+  }
+
+  .review-bar__label {
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.12em;
+    color: rgba(226, 232, 240, 0.7);
+  }
+
+  .review-bar__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: center;
+  }
+
+  .review-bar__button {
+    text-decoration: none;
+  }
+
+  .review-bar__button.is-disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+
+  .review-tab {
+    position: fixed;
+    right: clamp(1rem, 4vw, 2.5rem);
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 1rem);
+    padding: 0.5rem 1rem;
+    border-radius: 999px;
+    border: 1px solid rgba(14, 165, 233, 0.4);
+    background: rgba(15, 23, 42, 0.85);
+    color: #f8fafc;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.85rem;
+    box-shadow: 0 12px 26px rgba(2, 6, 23, 0.35);
+    z-index: 1200;
+  }
+
+  .review-tab:hover,
+  .review-tab:focus-visible {
+    background: rgba(30, 64, 175, 0.75);
+    border-color: rgba(59, 130, 246, 0.6);
   }
 
   .hero-tags {

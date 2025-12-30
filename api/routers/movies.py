@@ -37,6 +37,7 @@ from api.services.movie_lookup import (
     MovieLookupError,
     MovieLookupNotFound,
     MovieLookupUnavailable,
+    lookup_local_candidates,
     lookup_movie_candidates,
 )
 from api.services.llm_filters import (
@@ -226,14 +227,47 @@ def movie_lookup(
 
     try:
         candidates = lookup_movie_candidates(search_title, search_year, limit=limit)
-    except MovieLookupUnavailable as exc:
-        raise HTTPException(status_code=503, detail=str(exc)) from exc
+        return MovieLookupResponse(items=candidates)
+    except MovieLookupUnavailable:
+        fallback = lookup_local_candidates(
+            db,
+            search_title,
+            search_year,
+            limit=limit,
+            exclude_id=movie.id,
+        )
+        notice = (
+            "External lookup unavailable—showing vault matches only."
+            if fallback
+            else "External lookup unavailable—no vault matches found."
+        )
+        return MovieLookupResponse(items=fallback, notice=notice)
     except MovieLookupNotFound as exc:
+        fallback = lookup_local_candidates(
+            db,
+            search_title,
+            search_year,
+            limit=limit,
+            exclude_id=movie.id,
+        )
+        if fallback:
+            notice = "No external matches found—showing vault matches."
+            return MovieLookupResponse(items=fallback, notice=notice)
         raise HTTPException(status_code=404, detail=str(exc)) from exc
-    except MovieLookupError as exc:
-        raise HTTPException(status_code=502, detail=str(exc)) from exc
-
-    return MovieLookupResponse(items=candidates)
+    except MovieLookupError:
+        fallback = lookup_local_candidates(
+            db,
+            search_title,
+            search_year,
+            limit=limit,
+            exclude_id=movie.id,
+        )
+        notice = (
+            "External lookup failed—showing vault matches only."
+            if fallback
+            else "External lookup failed—no vault matches found."
+        )
+        return MovieLookupResponse(items=fallback, notice=notice)
 
 
 @router.get("/search", response_model=MovieSearchResponse)
@@ -443,6 +477,20 @@ def update_movie(
     db.refresh(movie)
     _attach_flag_status(db, [movie])
     return movie
+
+
+@router.delete("/{movie_id}", status_code=204)
+def delete_movie(
+    movie_id: int,
+    db: Session = Depends(get_db),
+    _: None = Depends(require_admin_if_configured),
+) -> Response:
+    movie = db.get(Movie, movie_id)
+    if movie is None:
+        raise HTTPException(status_code=404, detail="Movie not found")
+    db.delete(movie)
+    db.commit()
+    return Response(status_code=204)
 
 
 @router.post("/{movie_id}/flag", response_model=MovieFlagRead)

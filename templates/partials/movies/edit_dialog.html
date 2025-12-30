@@ -44,24 +44,34 @@
           <button type="button" class="button-ghost" id="edit-lookup-button">Find matches</button>
           <button type="button" class="button-ghost" id="edit-lookup-retry" hidden>Search again</button>
         </div>
+        <p class="edit-form__hint" id="edit-lookup-hint" hidden>
+          Pick a match to replace this entry's details.
+        </p>
+        <p class="edit-form__hint" id="edit-lookup-empty" hidden>
+          Run “Find matches” to see replacement options.
+        </p>
         <p class="edit-form__status" id="edit-status" role="status" aria-live="polite" hidden></p>
+        <div class="edit-lookup-cards" id="edit-lookup-cards" hidden></div>
       </div>
       <div class="edit-form__lookup-results" id="edit-lookup-results" hidden>
         <table class="edit-lookup-table">
           <thead>
             <tr>
+              <th scope="col">Poster</th>
               <th scope="col">Title</th>
               <th scope="col">Year</th>
               <th scope="col">Runtime</th>
+              <th scope="col">Match</th>
               <th scope="col">IDs</th>
               <th scope="col">Synopsis</th>
-              <th scope="col" class="edit-lookup-table__actions">Apply</th>
+              <th scope="col" class="edit-lookup-table__actions">Replace</th>
             </tr>
           </thead>
           <tbody id="edit-lookup-results-body"></tbody>
         </table>
       </div>
       <div class="edit-form__actions">
+        <button type="button" class="button-ghost button-danger" id="edit-delete-button">Delete</button>
         <button type="button" class="button-ghost" data-edit-cancel>Cancel</button>
         <button type="submit" class="button-primary" id="edit-submit">Save changes</button>
       </div>

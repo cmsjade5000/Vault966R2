@@ -35,6 +35,7 @@
     const editResolveInput = document.getElementById("edit-resolve-flag");
     const editStatusEl = document.getElementById("edit-status");
     const editSubmitButton = document.getElementById("edit-submit");
+    const editDeleteButton = document.getElementById("edit-delete-button");
     const editCancelButton = document.querySelector("[data-edit-cancel]");
     const editCloseButton = document.querySelector("[data-edit-close]");
     const editLookupButton = document.getElementById("edit-lookup-button");
@@ -43,6 +44,9 @@
     const editLookupResultsBody = document.getElementById(
       "edit-lookup-results-body",
     );
+    const editLookupHint = document.getElementById("edit-lookup-hint");
+    const editLookupEmpty = document.getElementById("edit-lookup-empty");
+    const editLookupCards = document.getElementById("edit-lookup-cards");
     const heroPickButtons = document.querySelectorAll("[data-hero-pick]");
     const heroHistoryButtons = document.querySelectorAll("[data-hero-history]");
     const aiSearchForm = document.querySelector("[data-ai-search-form]");
@@ -387,17 +391,6 @@
     const dialogMediaQuery = window.matchMedia("(min-width: 900px)");
     dialogMediaQuery.addEventListener("change", syncDialogToViewport);
     syncDialogToViewport();
-    const taglines = Array.isArray(pageData.taglines) ? pageData.taglines : [];
-    let current = taglines.indexOf(pageData.initialTagline);
-    if (current < 0) current = 0;
-    const taglineEl = document.getElementById("tagline");
-    if (taglines.length && taglineEl) {
-      setInterval(() => {
-        current = (current + 1) % taglines.length;
-        taglineEl.textContent = taglines[current];
-      }, 12000);
-    }
-
     const pageContext = pageData.pageContext || "grid";
     const total = Number(pageData.total ?? 0);
     const totalPages = Number(pageData.totalPages ?? 0);
@@ -526,6 +519,71 @@
       editStatusEl.classList.toggle("is-error", Boolean(isError));
     };
 
+    const setLookupView = () => {
+      if (!editForm) return "table";
+      const useCards = window.matchMedia("(max-width: 900px)").matches;
+      editForm.dataset.lookupView = useCards ? "cards" : "table";
+      return useCards ? "cards" : "table";
+    };
+
+    const showLookupEmpty = (message) => {
+      setLookupView();
+      if (editLookupResults) editLookupResults.hidden = true;
+      if (editLookupHint) editLookupHint.hidden = true;
+      if (editLookupEmpty) {
+        if (message) {
+          editLookupEmpty.textContent = message;
+        }
+        editLookupEmpty.hidden = false;
+        editLookupEmpty.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      }
+      if (editLookupCards) {
+        editLookupCards.hidden = true;
+        editLookupCards.innerHTML = "";
+      }
+    };
+
+    const setLookupPlaceholder = (message) => {
+      setLookupView();
+      if (editLookupResultsBody && editLookupResults) {
+        editLookupResults.hidden = false;
+        editLookupResults.removeAttribute("hidden");
+        editLookupResults.style.display = "block";
+        const headers = editLookupResults.querySelectorAll("thead th").length;
+        const colSpan = headers || 1;
+        editLookupResultsBody.innerHTML = "";
+        const row = document.createElement("tr");
+        const cell = document.createElement("td");
+        cell.colSpan = colSpan;
+        cell.className = "edit-lookup-table__empty";
+        cell.textContent = message;
+        row.appendChild(cell);
+        editLookupResultsBody.appendChild(row);
+      }
+      if (editLookupHint) editLookupHint.hidden = true;
+      if (editLookupEmpty) editLookupEmpty.hidden = true;
+      if (editLookupCards) {
+        editLookupCards.hidden = false;
+        editLookupCards.removeAttribute("hidden");
+        editLookupCards.innerHTML = "";
+        const card = document.createElement("div");
+        card.className = "edit-lookup-card edit-lookup-card--empty";
+        card.textContent = message;
+        editLookupCards.appendChild(card);
+      }
+      if (editLookupResults) {
+        editLookupResults.scrollIntoView({
+          behavior: "smooth",
+          block: "nearest",
+        });
+      } else if (editLookupCards) {
+        editLookupCards.scrollIntoView({
+          behavior: "smooth",
+          block: "nearest",
+        });
+      }
+    };
+
     const clearLookupResults = ({ hideRetry = false } = {}) => {
       currentLookupCandidates = [];
       if (editLookupResultsBody) {
@@ -533,6 +591,16 @@
       }
       if (editLookupResults) {
         editLookupResults.hidden = true;
+      }
+      if (editLookupHint) {
+        editLookupHint.hidden = true;
+      }
+      if (editLookupEmpty) {
+        editLookupEmpty.hidden = true;
+      }
+      if (editLookupCards) {
+        editLookupCards.hidden = true;
+        editLookupCards.innerHTML = "";
       }
       if (hideRetry && editLookupRetryButton) {
         editLookupRetryButton.hidden = true;
@@ -574,22 +642,79 @@
       setEditStatus(`Applied details from "${candidate.title || "match"}".`);
     };
 
+    const formatVaultId = (value) => {
+      const id = Number.parseInt(String(value || ""), 10);
+      if (!Number.isFinite(id)) return null;
+      return `V${String(id).padStart(4, "0")}`;
+    };
+
+    const formatConfidence = (value) => {
+      if (typeof value !== "number" || !Number.isFinite(value)) return "—";
+      return `${Math.round(value * 100)}%`;
+    };
+
     const renderLookupCandidates = (candidates) => {
-      if (!editLookupResultsBody || !editLookupResults) return;
-      editLookupResultsBody.innerHTML = "";
+      const view = setLookupView();
+      const canRenderTable =
+        view !== "cards" && Boolean(editLookupResultsBody && editLookupResults);
+      const canRenderCards = view === "cards" && Boolean(editLookupCards);
+      if (!canRenderTable && !canRenderCards) return;
+      if (canRenderTable) {
+        editLookupResultsBody.innerHTML = "";
+      }
 
       if (!Array.isArray(candidates) || !candidates.length) {
-        editLookupResults.hidden = true;
+        setLookupPlaceholder(
+          "No matches yet—adjust title/year, then tap Find matches.",
+        );
         return;
       }
 
+      if (canRenderTable) {
+        editLookupResults.hidden = false;
+        editLookupResults.removeAttribute("hidden");
+        editLookupResults.style.display = "block";
+      }
+      if (editLookupHint) editLookupHint.hidden = false;
+      if (editLookupEmpty) editLookupEmpty.hidden = true;
+      if (editLookupCards) {
+        if (canRenderCards) {
+          editLookupCards.hidden = false;
+          editLookupCards.removeAttribute("hidden");
+          editLookupCards.innerHTML = "";
+        } else {
+          editLookupCards.hidden = true;
+          editLookupCards.innerHTML = "";
+        }
+      }
       candidates.forEach((candidate, index) => {
         const row = document.createElement("tr");
+        const isVaultMatch =
+          candidate?.source === "vault" || candidate?.vault_id;
+
+        const posterCell = document.createElement("td");
+        if (candidate.poster_url) {
+          const poster = document.createElement("img");
+          poster.className = "edit-lookup-poster";
+          poster.src = candidate.poster_url;
+          poster.alt = `${candidate.title || "Match"} poster`;
+          poster.loading = "lazy";
+          posterCell.appendChild(poster);
+        } else {
+          posterCell.textContent = "—";
+        }
+        row.appendChild(posterCell);
 
         const titleCell = document.createElement("td");
         const titleStrong = document.createElement("strong");
         titleStrong.textContent = candidate.title || "Untitled";
         titleCell.appendChild(titleStrong);
+        if (isVaultMatch) {
+          const tag = document.createElement("span");
+          tag.className = "edit-lookup-table__tag";
+          tag.textContent = "Vault match";
+          titleCell.appendChild(tag);
+        }
         row.appendChild(titleCell);
 
         const yearCell = document.createElement("td");
@@ -605,8 +730,14 @@
           : "—";
         row.appendChild(runtimeCell);
 
+        const matchCell = document.createElement("td");
+        matchCell.textContent = formatConfidence(candidate.match_confidence);
+        row.appendChild(matchCell);
+
         const idsCell = document.createElement("td");
         const ids = [];
+        const vaultLabel = formatVaultId(candidate.vault_id);
+        if (vaultLabel) ids.push(`Vault ${vaultLabel}`);
         if (candidate.tmdb_id) ids.push(`TMDb ${candidate.tmdb_id}`);
         if (candidate.imdb_id) ids.push(`IMDb ${candidate.imdb_id}`);
         idsCell.textContent = ids.length ? ids.join(" • ") : "—";
@@ -618,20 +749,95 @@
 
         const actionsCell = document.createElement("td");
         actionsCell.className = "edit-lookup-table__actions";
-        const applyButton = document.createElement("button");
-        applyButton.type = "button";
-        applyButton.className = "button-ghost";
-        applyButton.textContent = "Use";
-        applyButton.addEventListener("click", () => {
-          applyLookupCandidate(currentLookupCandidates[index]);
-        });
-        actionsCell.appendChild(applyButton);
+        if (isVaultMatch && candidate.vault_id) {
+          const link = document.createElement("a");
+          link.className = "button-ghost";
+          link.textContent = "Open";
+          link.href = `/ui/movies/${candidate.vault_id}`;
+          link.target = "_blank";
+          link.rel = "noreferrer";
+          actionsCell.appendChild(link);
+        } else {
+          const applyButton = document.createElement("button");
+          applyButton.type = "button";
+          applyButton.className = "button-ghost";
+          applyButton.textContent = "Replace";
+          applyButton.addEventListener("click", () => {
+            applyLookupCandidate(currentLookupCandidates[index]);
+          });
+          actionsCell.appendChild(applyButton);
+        }
         row.appendChild(actionsCell);
 
-        editLookupResultsBody.appendChild(row);
+        if (canRenderTable) {
+          editLookupResultsBody.appendChild(row);
+        }
+
+        if (editLookupCards) {
+          const card = document.createElement("div");
+          card.className = "edit-lookup-card";
+          const poster = document.createElement("div");
+          poster.className = "edit-lookup-card__poster";
+          if (candidate.poster_url) {
+            const img = document.createElement("img");
+            img.src = candidate.poster_url;
+            img.alt = `${candidate.title || "Match"} poster`;
+            img.loading = "lazy";
+            poster.appendChild(img);
+          } else {
+            poster.textContent = "—";
+          }
+          const info = document.createElement("div");
+          info.className = "edit-lookup-card__info";
+          const title = document.createElement("div");
+          title.className = "edit-lookup-card__title";
+          title.textContent = candidate.title || "Untitled";
+          const meta = document.createElement("div");
+          meta.className = "edit-lookup-card__meta";
+          const yearLabel =
+            candidate.year !== null && candidate.year !== undefined
+              ? String(candidate.year)
+              : "—";
+          const runtimeLabel = candidate.runtime
+            ? `${candidate.runtime} min`
+            : "—";
+          const confidence = formatConfidence(candidate.match_confidence);
+          meta.textContent = `${yearLabel} • ${runtimeLabel} • ${confidence} match`;
+          info.appendChild(title);
+          info.appendChild(meta);
+          const action = document.createElement("div");
+          action.className = "edit-lookup-card__action";
+          if (isVaultMatch && candidate.vault_id) {
+            const link = document.createElement("a");
+            link.className = "button-ghost";
+            link.textContent = "Open";
+            link.href = `/ui/movies/${candidate.vault_id}`;
+            link.target = "_blank";
+            link.rel = "noreferrer";
+            action.appendChild(link);
+          } else {
+            const applyButton = document.createElement("button");
+            applyButton.type = "button";
+            applyButton.className = "button-ghost";
+            applyButton.textContent = "Replace";
+            applyButton.addEventListener("click", () => {
+              applyLookupCandidate(currentLookupCandidates[index]);
+            });
+            action.appendChild(applyButton);
+          }
+          card.appendChild(poster);
+          card.appendChild(info);
+          card.appendChild(action);
+          editLookupCards.appendChild(card);
+        }
       });
 
-      editLookupResults.hidden = false;
+      if (canRenderTable) {
+        editLookupResults.hidden = false;
+        editLookupResults.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      } else if (editLookupCards) {
+        editLookupCards.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      }
     };
 
     const fetchLookupCandidates = async () => {
@@ -656,6 +862,7 @@
 
       setLookupButtonsPending(true);
       setEditStatus("Finding matches…");
+      setLookupPlaceholder("Finding matches…");
 
       try {
         const response = await fetch(
@@ -672,7 +879,9 @@
         }
 
         if (response.status === 404) {
-          clearLookupResults();
+          setLookupPlaceholder(
+            "No matches found—try adjusting the title or year.",
+          );
           setEditStatus(
             "No matches found—try adjusting the title or year.",
             true,
@@ -681,35 +890,51 @@
         }
 
         if (response.status === 503) {
-          setEditStatus("Lookup service is temporarily unavailable.", true);
+          setLookupPlaceholder("External lookup unavailable—try again later.");
+          setEditStatus("External lookup unavailable—try again later.", true);
           return;
         }
 
         if (!response.ok) {
+          setLookupPlaceholder("Lookup failed—try again.");
           setEditStatus(`Lookup failed (${response.status}).`, true);
           return;
         }
 
         const payload = await response.json();
         const items = Array.isArray(payload?.items) ? payload.items : [];
+        const notice =
+          payload && typeof payload.notice === "string" ? payload.notice : "";
+        if (items.length === 0 && notice) {
+          setLookupPlaceholder(notice);
+        }
+        const allVaultMatches =
+          items.length > 0 &&
+          items.every((item) => item?.source === "vault" || item?.vault_id);
         currentLookupCandidates = items;
         renderLookupCandidates(items);
         if (items.length) {
-          setEditStatus(
+          const label = allVaultMatches ? "vault matches" : "matches";
+          const singularLabel = allVaultMatches ? "vault match" : "match";
+          const foundMessage =
             items.length === 1
-              ? "Found 1 match."
-              : `Found ${items.length} matches.`,
-          );
+              ? `Found 1 ${singularLabel}.`
+              : `Found ${items.length} ${label}.`;
+          const message = notice ? `${notice} ${foundMessage}` : foundMessage;
+          setEditStatus(message);
         } else {
-          clearLookupResults();
+          setLookupPlaceholder(
+            notice || "No matches found—try adjusting the title or year.",
+          );
           setEditStatus(
-            "No matches found—try adjusting the title or year.",
-            true,
+            notice || "No matches found—try adjusting the title or year.",
+            Boolean(!notice),
           );
         }
       } catch (error) {
         console.error("Lookup failed", error);
         if (requestId === lookupRequestToken) {
+          setLookupPlaceholder("Lookup failed—check your connection and try again.");
           setEditStatus(
             "Lookup failed—check your connection and try again.",
             true,
@@ -736,6 +961,11 @@
       if (editMovieIdInput) editMovieIdInput.value = "";
       resetEditStatus();
       clearLookupResults({ hideRetry: true });
+      if (editLookupHint) editLookupHint.hidden = true;
+      if (editLookupEmpty) editLookupEmpty.hidden = true;
+      if (editForm && editForm.dataset.lookupView) {
+        delete editForm.dataset.lookupView;
+      }
       setLookupButtonsPending(false);
       lookupRequestToken += 1;
     };
@@ -819,6 +1049,47 @@
 
     editCloseButton?.addEventListener("click", () => {
       closeEditDialog({ restoreFocus: true });
+    });
+
+    editDeleteButton?.addEventListener("click", async () => {
+      if (!currentEditMovieId) {
+        closeEditDialog();
+        return;
+      }
+      const title =
+        editTitleInput?.value?.trim() ||
+        currentEditDetail?.title ||
+        "this movie";
+      const confirmed = window.confirm(
+        `Delete "${title}" from Vault 966? This cannot be undone.`,
+      );
+      if (!confirmed) return;
+      try {
+        editDeleteButton.disabled = true;
+        editDeleteButton.setAttribute("aria-busy", "true");
+        setEditStatus("Deleting movie…");
+        const response = await authFetch(
+          `/movies/${currentEditMovieId}`,
+          { method: "DELETE" },
+          { authPrompt: "Admin token required to delete movies." },
+        );
+        if (response.status === 401) {
+          setEditStatus("Admin token required to delete movies.", true);
+          return;
+        }
+        if (!response.ok && response.status !== 204) {
+          throw new Error(`Delete failed (${response.status})`);
+        }
+        showToastMessage(`Deleted "${title}".`);
+        closeEditDialog();
+        window.location.href = "/ui/movies";
+      } catch (error) {
+        console.error("Failed to delete movie", error);
+        setEditStatus("Could not delete that movie—try again?", true);
+      } finally {
+        editDeleteButton.disabled = false;
+        editDeleteButton.removeAttribute("aria-busy");
+      }
     });
 
     editDialog?.addEventListener("click", (event) => {
@@ -1765,6 +2036,7 @@
       "Poster/backdrop issue",
       "Missing poster",
       "Broken link",
+      "Movie mismatch",
       "Wrong runtime/year",
       "Needs runtime",
       "Other",

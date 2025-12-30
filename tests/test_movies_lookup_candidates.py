@@ -162,9 +162,16 @@ def test_movies_lookup_candidates_empty_results(client, movie_id, monkeypatch):
     assert response.json()["message"] == "No TMDb results found"
 
 
-def test_movies_lookup_candidates_missing_key(client, movie_id, monkeypatch):
+def test_movies_lookup_candidates_missing_key(client, movie_id, monkeypatch, db_session):
     monkeypatch.setattr(movie_lookup.settings, "tmdb_api_key", None)
     monkeypatch.setattr(movie_lookup.settings, "omdb_api_key", None)
 
+    db_session.add(Movie(title="Blade Runner Final Cut", year=1982, runtime=116))
+    db_session.commit()
+
     response = client.get(f"/movies/{movie_id}/lookup")
-    assert response.status_code == 503
+    assert response.status_code == 200
+    payload = response.json()
+    assert "notice" in payload
+    assert payload["items"]
+    assert any(item["source"] == "vault" for item in payload["items"])
