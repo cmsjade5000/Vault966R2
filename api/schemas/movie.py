@@ -204,6 +204,18 @@ class MovieDoubleFeature(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+FLAG_REASONS = (
+    "Metadata cleanup",
+    "Poster/backdrop issue",
+    "Broken link",
+    "Wrong runtime/year",
+    "Missing poster",
+    "Needs runtime",
+    "Poster",
+    "Other",
+)
+
+
 class MovieFlagCreate(BaseModel):
     reason: Optional[str] = None
     notes: Optional[str] = None

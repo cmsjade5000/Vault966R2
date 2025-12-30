@@ -12,6 +12,7 @@ from api.models.movie import Genre, Mood, Movie, movie_genres, movie_moods
 from api.models.movie_flag import MovieFlag
 from api.models.person import Person, Role
 from api.schemas.movie import (
+    FLAG_REASONS,
     MovieCreate,
     MovieDoubleFeature,
     MovieFlagCreate,
@@ -407,8 +408,18 @@ def llm_search_movies(
 
 
 @router.get("/flags", response_model=List[MovieFlagRead])
-def list_flags(db: Session = Depends(get_db)) -> List[MovieFlagRead]:
-    flags = db.query(MovieFlag).order_by(MovieFlag.updated_at.desc()).all()
+def list_flags(
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=100, ge=1, le=500),
+    db: Session = Depends(get_db),
+) -> List[MovieFlagRead]:
+    flags = (
+        db.query(MovieFlag)
+        .order_by(MovieFlag.updated_at.desc())
+        .offset((page - 1) * page_size)
+        .limit(page_size)
+        .all()
+    )
     return flags
 
 
@@ -451,7 +462,15 @@ def flag_movie(
         flag = MovieFlag(movie_id=movie_id)
         db.add(flag)
 
+    if payload.reason and payload.reason not in FLAG_REASONS:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid reason. Expected one of: {', '.join(FLAG_REASONS)}",
+        )
+
     flag.reason = payload.reason
+    if payload.notes and len(payload.notes) > 500:
+        raise HTTPException(status_code=400, detail="Notes must be 500 characters or less")
     flag.notes = payload.notes
     flag.updated_at = datetime.now(timezone.utc)
 

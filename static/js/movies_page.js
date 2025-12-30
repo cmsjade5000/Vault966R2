@@ -1760,6 +1760,138 @@
         });
     };
 
+    const FLAG_REASONS = [
+      "Metadata cleanup",
+      "Poster/backdrop issue",
+      "Missing poster",
+      "Broken link",
+      "Wrong runtime/year",
+      "Needs runtime",
+      "Other",
+    ];
+
+    let flagDialogStylesInjected = false;
+
+    const ensureFlagDialogStyles = () => {
+      if (flagDialogStylesInjected) return;
+      const style = document.createElement("style");
+      style.textContent = `
+      .flag-dialog-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.35);
+        display: grid;
+        place-items: center;
+        z-index: 1000;
+      }
+      .flag-dialog {
+        background: #111;
+        color: #f5f5f5;
+        border-radius: 12px;
+        padding: 16px;
+        max-width: 420px;
+        width: 90%;
+        box-shadow: 0 14px 40px rgba(0,0,0,0.4);
+      }
+      .flag-dialog h3 {
+        margin: 0 0 8px 0;
+        font-size: 1.1rem;
+      }
+      .flag-dialog label {
+        display: block;
+        font-size: 0.9rem;
+        margin: 8px 0 4px 0;
+      }
+      .flag-dialog select,
+      .flag-dialog textarea {
+        width: 100%;
+        border-radius: 8px;
+        border: 1px solid #333;
+        background: #1a1a1a;
+        color: #f5f5f5;
+        padding: 8px;
+        box-sizing: border-box;
+      }
+      .flag-dialog textarea {
+        min-height: 80px;
+        resize: vertical;
+      }
+      .flag-dialog__actions {
+        display: flex;
+        gap: 8px;
+        justify-content: flex-end;
+        margin-top: 12px;
+      }
+      .flag-dialog__actions button {
+        border-radius: 8px;
+        border: none;
+        padding: 8px 12px;
+        cursor: pointer;
+      }
+      .flag-dialog__actions .button-primary {
+        background: #e1a228;
+        color: #111;
+      }
+      .flag-dialog__actions .button-ghost {
+        background: transparent;
+        color: #f5f5f5;
+        border: 1px solid #333;
+      }
+      `;
+      document.head.append(style);
+      flagDialogStylesInjected = true;
+    };
+
+    const openFlagDialog = (defaultReason) =>
+      new Promise((resolve) => {
+        ensureFlagDialogStyles();
+        const overlay = document.createElement("div");
+        overlay.className = "flag-dialog-overlay";
+        const dialog = document.createElement("div");
+        dialog.className = "flag-dialog";
+        dialog.innerHTML = `
+          <h3>Flag this movie</h3>
+          <label for="flag-reason">Reason</label>
+          <select id="flag-reason">
+            ${FLAG_REASONS.map((reason) => {
+              const selected = reason === defaultReason ? "selected" : "";
+              return `<option value="${reason}" ${selected}>${reason}</option>`;
+            }).join("")}
+          </select>
+          <label for="flag-notes">Notes (optional)</label>
+          <textarea id="flag-notes" maxlength="500" placeholder="What needs a fix?"></textarea>
+          <div class="flag-dialog__actions">
+            <button type="button" class="button-ghost" data-flag-cancel>Cancel</button>
+            <button type="button" class="button-primary" data-flag-save>Save</button>
+          </div>
+        `;
+        overlay.append(dialog);
+        document.body.append(overlay);
+
+        const cleanup = () => overlay.remove();
+        overlay.addEventListener("click", (event) => {
+          if (event.target === overlay) {
+            cleanup();
+            resolve(null);
+          }
+        });
+        dialog
+          .querySelector("[data-flag-cancel]")
+          ?.addEventListener("click", () => {
+            cleanup();
+            resolve(null);
+          });
+        dialog
+          .querySelector("[data-flag-save]")
+          ?.addEventListener("click", () => {
+            const reason = dialog.querySelector("#flag-reason")?.value || "";
+            const notes =
+              dialog.querySelector("#flag-notes")?.value.trim() || null;
+            cleanup();
+            resolve({ reason, notes });
+          });
+      });
+
     const updateFlagUI = (movieId, flagged) => {
       const flagValue = flagged ? "true" : "false";
       document
@@ -1829,14 +1961,11 @@
             } else {
               const defaultReason =
                 button.dataset.flagDefault || "Metadata cleanup";
-              const rawReason = window.prompt(
-                "What needs a fix?",
-                defaultReason,
-              );
-              if (rawReason === null) {
+              const dialogResult = await openFlagDialog(defaultReason);
+              if (!dialogResult) {
                 return;
               }
-              const reason = rawReason.trim();
+              const { reason, notes } = dialogResult;
               const response = await authFetch(
                 `/movies/${movieId}/flag`,
                 {
@@ -1845,7 +1974,10 @@
                     "Content-Type": "application/json",
                     Accept: "application/json",
                   },
-                  body: JSON.stringify({ reason: reason || null }),
+                  body: JSON.stringify({
+                    reason: reason || null,
+                    notes: notes || null,
+                  }),
                 },
                 { authPrompt: "Admin token required to manage flags." },
               );

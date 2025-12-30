@@ -29,6 +29,31 @@ def test_flag_and_unflag_movie(client: TestClient, admin_headers: dict[str, str]
     assert all(flag["movie_id"] != 1 for flag in flags_after)
 
 
+def test_flag_movie_rejects_invalid_reason(
+    client: TestClient, admin_headers: dict[str, str]
+) -> None:
+    movie_id = 1
+    resp = client.post(
+        f"/movies/{movie_id}/flag",
+        json={"reason": "Not a reason"},
+        headers=admin_headers,
+    )
+    assert resp.status_code == 400
+    assert "Invalid reason" in resp.json()["message"]
+
+
+def test_flag_movie_rejects_long_notes(client: TestClient, admin_headers: dict[str, str]) -> None:
+    movie_id = 1
+    long_notes = "a" * 501
+    resp = client.post(
+        f"/movies/{movie_id}/flag",
+        json={"reason": "Metadata cleanup", "notes": long_notes},
+        headers=admin_headers,
+    )
+    assert resp.status_code == 400
+    assert "Notes" in resp.json()["message"]
+
+
 def test_update_movie_metadata_resolves_flag(
     client: TestClient, admin_headers: dict[str, str]
 ) -> None:

@@ -29,3 +29,14 @@ def test_movies_grid_filters_by_mood(client: TestClient) -> None:
     html = response.text
     assert "Blade Runner" in html
     assert "The Matrix" not in html
+
+
+def test_flags_page_lists_flagged_movies(client: TestClient, admin_headers: dict[str, str]) -> None:
+    resp = client.post("/movies/1/flag", json={"reason": "Metadata cleanup"}, headers=admin_headers)
+    assert resp.status_code == 200
+
+    page = client.get("/ui/flags")
+    assert page.status_code == 200
+    html = page.text
+    assert "Flags" in html
+    assert "Metadata cleanup" in html
