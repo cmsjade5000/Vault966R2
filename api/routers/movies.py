@@ -6,13 +6,14 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session, selectinload
 
 from api.db import get_db
-from api.deps.auth import require_admin
+from api.deps.auth import require_admin_if_configured
 from api.models.flic_memory import FlicMemory
 from api.models.movie import Genre, Mood, Movie, movie_genres, movie_moods
 from api.models.movie_flag import MovieFlag
 from api.models.person import Person, Role
 from api.schemas.movie import (
     MovieCreate,
+    MovieDoubleFeature,
     MovieFlagCreate,
     MovieFlagRead,
     MovieLookupResponse,
@@ -44,6 +45,7 @@ from api.services.llm_filters import (
     generate_llm_filters,
 )
 from api.services.movie_updates import apply_movie_update
+from api.services.double_feature import DEFAULT_DOUBLE_FEATURE_RUNTIME, pick_double_feature
 from api.services.flic_ordering import fetch_movies_in_rank_order, rank_movie_ids_by_flic
 from core.picker import (
     PickerCandidate,
@@ -80,6 +82,8 @@ def get_pick(
     year_min = parse_optional_non_negative_int(year_min, "year_min")
     year_max = parse_optional_non_negative_int(year_max, "year_max")
     runtime_max = parse_optional_non_negative_int(runtime_max, "runtime_max")
+    if year_min is not None and year_max is not None and year_min > year_max:
+        raise HTTPException(status_code=400, detail="year_min cannot be greater than year_max")
 
     query = (
         db.query(Movie)
@@ -152,6 +156,46 @@ def get_pick(
 
     setattr(selected_movie, "flagged", selected_movie.flag is not None)
     return selected_movie
+
+
+@router.get("/double-feature", response_model=MovieDoubleFeature)
+def get_double_feature(
+    genre: Optional[str] = Query(default=None, description="Restrict to this genre"),
+    mood: Optional[str] = Query(default=None, description="Desired mood name"),
+    year_min: Optional[str] = Query(default=None),
+    year_max: Optional[str] = Query(default=None),
+    runtime_max: Optional[str] = Query(
+        default=str(DEFAULT_DOUBLE_FEATURE_RUNTIME),
+        description="Combined runtime cap (minutes)",
+    ),
+    db: Session = Depends(get_db),
+):
+    """Public endpoint for a complementary double-feature pairing."""
+
+    year_min = parse_optional_non_negative_int(year_min, "year_min")
+    year_max = parse_optional_non_negative_int(year_max, "year_max")
+    runtime_max = parse_optional_non_negative_int(runtime_max, "runtime_max")
+    runtime_cap = runtime_max if runtime_max is not None else DEFAULT_DOUBLE_FEATURE_RUNTIME
+
+    selection = pick_double_feature(
+        db,
+        runtime_cap=runtime_cap,
+        genre=genre,
+        mood=mood,
+        year_min=year_min,
+        year_max=year_max,
+    )
+    if selection is None:
+        raise HTTPException(status_code=404, detail="No double feature available")
+
+    _attach_flag_status(db, [selection.primary, selection.secondary])
+
+    return MovieDoubleFeature(
+        primary=selection.primary,
+        secondary=selection.secondary,
+        runtime_cap=selection.runtime_cap,
+        total_runtime=selection.total_runtime,
+    )
 
 
 @router.get("/{movie_id}/detail", response_model=MovieDetail)
@@ -373,6 +417,7 @@ def update_movie(
     movie_id: int,
     payload: MovieUpdate,
     db: Session = Depends(get_db),
+    _: None = Depends(require_admin_if_configured),
 ):
     movie = db.get(Movie, movie_id)
     if movie is None:
@@ -395,6 +440,7 @@ def flag_movie(
     movie_id: int,
     payload: MovieFlagCreate,
     db: Session = Depends(get_db),
+    _: None = Depends(require_admin_if_configured),
 ):
     movie = db.get(Movie, movie_id)
     if movie is None:
@@ -415,7 +461,11 @@ def flag_movie(
 
 
 @router.delete("/{movie_id}/flag", status_code=204)
-def clear_flag(movie_id: int, db: Session = Depends(get_db)) -> Response:
+def clear_flag(
+    movie_id: int,
+    db: Session = Depends(get_db),
+    _: None = Depends(require_admin_if_configured),
+) -> Response:
     flag = db.get(MovieFlag, movie_id)
     if flag is None:
         return Response(status_code=204)
@@ -435,7 +485,7 @@ def list_movies(db: Session = Depends(get_db)):
 def create_movie(
     payload: MovieCreate,
     db: Session = Depends(get_db),
-    _: None = Depends(require_admin),
+    _: None = Depends(require_admin_if_configured),
 ):
     # Upsert genres/moods by name
     genres = []
@@ -477,7 +527,7 @@ def attach_role(
     movie_id: int,
     payload: RoleAttach,
     db: Session = Depends(get_db),
-    _: None = Depends(require_admin),
+    _: None = Depends(require_admin_if_configured),
 ):
     movie = db.get(Movie, movie_id)
     if movie is None:

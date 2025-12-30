@@ -7,84 +7,50 @@
   <header class="app-hero page-shell">
     <div class="app-hero__inner">
       <div class="hero-title hero-title--center">
-        <h1>Vault 966</h1>
+        <h1>Library</h1>
         <span class="chip chip-flic">by Flic</span>
       </div>
       <p class="tagline app-hero__tagline" id="tagline">{{ initial_tagline }}</p>
-      <div class="hero-actions" aria-label="Quick actions">
-        <button type="button" class="hero-action hero-action--primary" data-hero-pick>
-          <span data-action-label>Surprise me</span>
-          <small>Queue a pick instantly</small>
-        </button>
-        <a class="hero-action" href="#filters">
-          <span>Refine filters</span>
-          <small>Dial in genre, runtime, year</small>
-        </a>
-        <a class="hero-action hero-action--mobile-hide" href="/ui/movies/top">
-          <span>View top lists</span>
-          <small>Critics &amp; crowds agree</small>
-        </a>
-      </div>
     </div>
   </header>
 
-  {% if poster_carousel_movies %}
+  {% include "partials/movies/hero.html" %}
+
+  {% if daily_spotlight_movies %}
   <section class="poster-banner">
-    <div class="poster-banner__inner" aria-label="Poster carousel">
+    <div class="poster-banner__inner" aria-label="Daily spotlight">
       <header class="poster-banner__header">
         <div>
-          <h2 class="poster-banner__title">Tonight’s spotlight</h2>
-          <p class="poster-banner__subtitle">Swipe (or use arrows) to skim a random slice of the vault.</p>
-        </div>
-        <div class="poster-banner__controls" aria-label="Carousel controls">
-          <button type="button" class="poster-banner__shuffle" data-carousel-shuffle aria-label="Shuffle posters">
-            <span class="poster-banner__shuffle-icon" aria-hidden="true">↻</span>
-            Shuffle
-          </button>
-          <button type="button" class="poster-banner__nav" data-carousel-prev aria-label="Previous posters" disabled>
-            <span aria-hidden="true">‹</span>
-          </button>
-          <button type="button" class="poster-banner__nav" data-carousel-next aria-label="Next posters" disabled>
-            <span aria-hidden="true">›</span>
-          </button>
+          <h2 class="poster-banner__title">Daily Spotlight</h2>
+          <p class="poster-banner__subtitle">Four curated picks, refreshed each day.</p>
         </div>
       </header>
-      <div class="poster-banner__viewport" data-poster-viewport tabindex="0">
-        <div class="poster-banner__track" data-poster-rotator>
-          {% for movie in poster_carousel_movies %}
-            <div class="poster-banner__slot" data-poster-slot>
-              <div class="poster-banner__card" data-poster-card>
-                <div class="poster-banner__face poster-banner__face--front" data-poster-face="front">
-                  <figure class="poster-banner__item">
-                    <a
-                      class="poster-banner__link"
-                      href="/ui/movies/{{ movie.id }}"
-                      aria-label="View details for {{ movie.title }}"
-                    >
-                      <div class="poster-banner__poster">
-                        <img
-                          class="poster-banner__image"
-                          src="{{ movie.poster_url }}"
-                          alt="{{ movie.title }} poster"
-                          loading="lazy"
-                          title="{{ movie.title }}"
-                        />
-                        <span class="poster-banner__shine" aria-hidden="true"></span>
-                        <div class="poster-banner__meta" aria-hidden="true">
-                          <span class="poster-banner__meta-title">{{ movie.title }}</span>
-                          {% if movie.year %}
-                          <span class="poster-banner__meta-subtitle">{{ movie.year }}</span>
-                          {% endif %}
-                        </div>
-                      </div>
-                    </a>
-                  </figure>
-                </div>
-                <div class="poster-banner__face poster-banner__face--back" data-poster-face="back" aria-hidden="true"></div>
+      <div class="poster-banner__grid" role="list">
+        {% for movie in daily_spotlight_movies %}
+          <a
+            class="poster-banner__link poster-banner__tile"
+            role="listitem"
+            href="/ui/movies/{{ movie.id }}"
+            aria-label="View details for {{ movie.title }}"
+          >
+            <div class="poster-banner__poster">
+              <img
+                class="poster-banner__image"
+                src="{{ movie.poster_url }}"
+                alt="{{ movie.title }} poster"
+                loading="lazy"
+                title="{{ movie.title }}"
+              />
+              <span class="poster-banner__shine" aria-hidden="true"></span>
+              <div class="poster-banner__meta" aria-hidden="true">
+                <span class="poster-banner__meta-title">{{ movie.title }}</span>
+                {% if movie.year %}
+                <span class="poster-banner__meta-subtitle">{{ movie.year }}</span>
+                {% endif %}
               </div>
             </div>
-          {% endfor %}
-        </div>
+          </a>
+        {% endfor %}
       </div>
     </div>
   </section>
@@ -107,8 +73,49 @@
         </div>
       </div>
       {% endif %}
-      {% include "partials/movies/hero.html" %}
       <div class="filters-shell" data-filters-shell>
+        {% set active_filters = [] %}
+        {% if q %}
+          {% set active_filters = active_filters + [{'key':'q','label':'Search: ' ~ q, 'value': q}] %}
+        {% endif %}
+        {% set genre_list = genres.split(',') if genres else [] %}
+        {% for label in genre_list %}
+          {% set clean = label | replace('+',' ') | replace('%2C', ',') | replace('%20', ' ') | replace('%2F','/') | replace('%26', '&') | replace('%3A', ':') | trim %}
+          {% if clean %}
+            {% set active_filters = active_filters + [{'key':'genre','label': clean, 'value': clean}] %}
+          {% endif %}
+        {% endfor %}
+        {% set mood_list = moods.split(',') if moods else [] %}
+        {% for label in mood_list %}
+          {% set clean = label | replace('+',' ') | replace('%2C', ',') | replace('%20', ' ') | replace('%2F','/') | replace('%26', '&') | replace('%3A', ':') | trim %}
+          {% if clean %}
+            {% set active_filters = active_filters + [{'key':'mood','label': clean, 'value': clean}] %}
+          {% endif %}
+        {% endfor %}
+        {% if year_min or year_max %}
+          {% set yr_label = (year_min or 'Any') ~ '–' ~ (year_max or 'Now') %}
+          {% set active_filters = active_filters + [{'key':'year','label':'Years: ' ~ yr_label, 'value': yr_label}] %}
+        {% endif %}
+        {% if runtime_max %}
+          {% set active_filters = active_filters + [{'key':'runtime','label':'≤ ' ~ runtime_max ~ ' min', 'value': runtime_max}] %}
+        {% endif %}
+        {% if active_filters %}
+        <div class="active-filters" data-active-filters>
+          <div class="active-filters__label">Active</div>
+          <div class="active-filters__chips">
+            {% for item in active_filters %}
+            <button type="button" class="chip chip-active" data-clear-filter="{{ item.key }}" data-filter-value="{{ item.value }}">
+              {{ item.label }}
+              <span aria-hidden="true">×</span>
+            </button>
+            {% endfor %}
+          </div>
+          <button type="button" class="button-ghost" id="clear-active-filters">Clear all</button>
+        </div>
+        {% else %}
+        <div class="active-filters" data-active-filters-root hidden></div>
+        {% endif %}
+        {% if show_ai_search %}
         <div class="ai-search" data-ai-search>
           <form class="ai-search__form" data-ai-search-form>
             <label class="ai-search__label" for="ai-search-input">
@@ -137,6 +144,7 @@
           </div>
           <p class="ai-search__status" data-ai-status hidden></p>
         </div>
+        {% endif %}
         <div class="filters-shell__bar">
           <button type="button" class="filters-toggle" data-filters-open>
             <span class="filters-toggle__label">Filters</span>
@@ -166,110 +174,97 @@
   <main class="results-shell page-shell" aria-live="polite" id="results" data-results-shell>
     {% if movies %}
       {% if featured_movies %}
-      <div class="grid" data-featured-grid data-results-grid aria-label="Featured movie results">
-        {% for movie in featured_movies %}
-        <article
-          class="card{% if movie.flagged %} card--flagged{% endif %}"
-          data-movie-card
-          data-movie-id="{{ movie.id }}"
-          data-flagged="{{ 'true' if movie.flagged else 'false' }}"
-        >
-          <a class="card-link" href="/ui/movies/{{ movie.id }}">
-            <div class="card-media">
-              {% if movie.poster_url %}
-              <img class="poster" src="{{ movie.poster_url }}" alt="{{ movie.title }} poster" loading="lazy" />
-              {% else %}
-              <div class="poster poster--empty {{ movie.poster_theme or 'poster-theme-default' }}" aria-hidden="true">🍿</div>
-              {% endif %}
-            </div>
-            <div class="card-body">
-              {% if order_by == 'flic' %}
-              {% set rank = flic_rank_offset + loop.index %}
-              <div class="card-rank-chip" aria-label="Flic rank {{ rank }}">
-                <span class="card-rank-number">#{{ rank }}</span>
-                {% set flic_value = movie.flic_score if movie.flic_score is defined else None %}
-                {% if flic_value %}
-                <span class="card-rank-score">{{ "%.0f"|format(flic_value) }}</span>
+      <details class="grid-toggle" open>
+        <summary class="grid-toggle__summary" aria-label="Toggle poster grid">
+          <span class="grid-toggle__label">Poster Grid</span>
+        </summary>
+        <div class="grid" data-featured-grid data-results-grid aria-label="Featured movie results">
+          {% for movie in featured_movies %}
+          <article
+            class="card{% if movie.flagged %} card--flagged{% endif %}"
+            data-movie-card
+            data-movie-id="{{ movie.id }}"
+            data-flagged="{{ 'true' if movie.flagged else 'false' }}"
+          >
+            <a class="card-link" href="/ui/movies/{{ movie.id }}">
+              <div class="card-media">
+                {% if movie.poster_url %}
+                <img class="poster" src="{{ movie.poster_url }}" alt="{{ movie.title }} poster" loading="lazy" />
+                {% else %}
+                <div class="poster poster--empty {{ movie.poster_theme or 'poster-theme-default' }}" aria-hidden="true">🍿</div>
                 {% endif %}
               </div>
-              {% endif %}
-              <div class="card-title-row">
-                <h2 class="card-title">{{ movie.title }}</h2>
-                {% if movie.flagged %}
-                <span class="card-status card-status--flagged">Needs review</span>
-                {% endif %}
-              </div>
-              <div class="card-statline" aria-label="Movie details">
-                {% if movie.year %}
-                <span class="card-stat">{{ movie.year }}</span>
-                {% endif %}
-                {% if movie.runtime %}
-                <span class="card-stat">{{ movie.runtime }} min</span>
-                {% endif %}
-                {% if order_by == 'flic' and movie.flic_score is defined %}
-                <span class="card-stat card-stat--flic">Flic {{ "%.0f"|format(movie.flic_score) }}</span>
-                {% endif %}
-                {% if movie.imdb_rating %}
-                <span class="card-stat card-stat--rating" title="IMDb rating">
-                  <span aria-hidden="true">🎞️</span>
-                  {{ "%.1f"|format(movie.imdb_rating) }}
-                </span>
-                {% endif %}
-                {% if movie.rt_score %}
-                <span class="card-stat card-stat--rating" title="Rotten Tomatoes score">
-                  <span aria-hidden="true">🍅</span>
-                  {{ movie.rt_score }}%
-                </span>
-                {% endif %}
-              </div>
-              {% set genre_labels = movie.genre_display if movie.genre_display is defined and movie.genre_display else [] %}
-              {% if not genre_labels and movie.genres %}
-                {% set genre_labels = [] %}
-                {% for genre in movie.genres %}
-                  {% set genre_label = genre.name if genre.__class__.__name__ == 'Genre' else genre %}
-                  {% if genre_label %}
-                    {% set genre_labels = genre_labels + [genre_label] %}
+              <div class="card-body">
+                {% if order_by == 'flic' %}
+                {% set rank = flic_rank_offset + loop.index %}
+                <div class="card-rank-chip" aria-label="Flic rank {{ rank }}">
+                  <span class="card-rank-number">#{{ rank }}</span>
+                  {% set flic_value = movie.flic_score if movie.flic_score is defined else None %}
+                  {% if flic_value %}
+                  <span class="card-rank-score">{{ "%.0f"|format(flic_value) }}</span>
                   {% endif %}
-                {% endfor %}
-              {% endif %}
-              {% if genre_labels %}
-              <div class="card-chips" aria-label="Genres">
-                {% for label in genre_labels[:3] %}
-                <span class="card-chip">{{ label }}</span>
-                {% endfor %}
+                </div>
+                {% endif %}
+                <div class="card-title-row">
+                  <h2 class="card-title">{{ movie.title }}</h2>
+                  {% if movie.flagged %}
+                  <span class="card-status card-status--flagged">Needs review</span>
+                  {% endif %}
+                </div>
+                {% set genre_labels = movie.genre_display if movie.genre_display is defined and movie.genre_display else [] %}
+                {% if not genre_labels and movie.genres %}
+                  {% set genre_labels = [] %}
+                  {% for genre in movie.genres %}
+                    {% set genre_label = genre.name if genre.__class__.__name__ == 'Genre' else genre %}
+                    {% if genre_label %}
+                      {% set genre_labels = genre_labels + [genre_label] %}
+                    {% endif %}
+                  {% endfor %}
+                {% endif %}
+                <div class="card-statline" aria-label="Movie details">
+                  <div class="card-statline__row">
+                    <span class="card-stat">{{ movie.year or '—' }}</span>
+                    <span class="card-stat">
+                      {% if movie.runtime %}{{ movie.runtime }} min{% else %}—{% endif %}
+                    </span>
+                    {% if order_by == 'flic' and movie.flic_score is defined %}
+                    <span class="card-stat card-stat--flic">Flic {{ "%.0f"|format(movie.flic_score) }}</span>
+                    {% endif %}
+                  </div>
+                  <div class="card-statline__row">
+                    <span class="card-stat card-stat--rating" title="IMDb rating">
+                      <span aria-hidden="true">🎞️</span>
+                      {% if movie.imdb_rating is not none %}{{ "%.1f"|format(movie.imdb_rating) }}{% else %}—{% endif %}
+                    </span>
+                    <span class="card-stat card-stat--rating" title="Rotten Tomatoes score">
+                      <span aria-hidden="true">🍅</span>
+                      {% if movie.rt_score is not none %}{{ movie.rt_score }}%{% else %}—{% endif %}
+                    </span>
+                  </div>
+                  <div class="card-statline__row card-statline__row--chips" aria-label="Genres">
+                    {% if genre_labels %}
+                      {% for label in genre_labels[:3] %}
+                      <span class="card-chip">{{ label }}</span>
+                      {% endfor %}
+                    {% else %}
+                      <span class="card-chip">—</span>
+                    {% endif %}
+                  </div>
+                </div>
               </div>
-              {% endif %}
-            </div>
-          </a>
-          <div class="card-actions">
-            <button
-              type="button"
-              class="edit-toggle"
-              data-edit-button
-              data-movie-id="{{ movie.id }}"
-              aria-label="Edit {{ movie.title }}"
-            >
-              Edit
-            </button>
-            <button
-              type="button"
-              class="flag-toggle{% if movie.flagged %} is-flagged{% endif %}"
-              data-flag-button
-              data-movie-id="{{ movie.id }}"
-              data-flagged="{{ 'true' if movie.flagged else 'false' }}"
-              data-flag-default="Metadata cleanup"
-              aria-pressed="{{ 'true' if movie.flagged else 'false' }}"
-              aria-label="{% if movie.flagged %}Resolve flag{% else %}Flag to fix{% endif %}"
-            >
-              {% if movie.flagged %}Resolve flag{% else %}🚩{% endif %}
-            </button>
-          </div>
-        </article>
-        {% endfor %}
-      </div>
+            </a>
+          </article>
+          {% endfor %}
+        </div>
+      </details>
       {% else %}
       <div class="empty" role="status" data-results-empty>
-        <p>No posters available for this filter set yet.</p>
+        <p>No posters available for this filter set.</p>
+        <div class="empty-actions">
+          <button type="button" class="button-primary" id="reset-empty">Clear filters</button>
+          <a class="button-secondary" href="/ui/movies#fliclists">Try Fliclists</a>
+          <a class="button-ghost" href="/ui/movies">View all movies</a>
+        </div>
       </div>
       {% endif %}
 
@@ -283,7 +278,7 @@
           class="pager-link"
           data-goto-page="{{ page - 1 }}"
           data-disabled="{{ 'true' if page <= 1 else 'false' }}"
-          href="/ui/movies?q={{ q or '' }}&genres={{ genres or '' }}&moods={{ moods or '' }}&year_min={{ year_min or '' }}&year_max={{ year_max or '' }}&runtime_max={{ runtime_max or '' }}&order_by={{ order_by or 'title_asc' }}&_filters=1&page={{ page - 1 }}"
+          href="/ui/movies?q={{ q or '' }}&genres={{ genres or '' }}&moods={{ moods or '' }}&year_min={{ year_min or '' }}&year_max={{ year_max or '' }}&runtime_max={{ runtime_max or '' }}&order_by={{ order_by or 'title_asc' }}&_filters=1&page={{ page - 1 }}#results-table"
           aria-disabled="{{ 'true' if page <= 1 else 'false' }}"
         >&laquo; Previous</a>
         <span>Page {{ page }} of {{ total_pages }}</span>
@@ -291,7 +286,7 @@
           class="pager-link"
           data-goto-page="{{ page + 1 }}"
           data-disabled="{{ 'true' if page >= total_pages else 'false' }}"
-          href="/ui/movies?q={{ q or '' }}&genres={{ genres or '' }}&moods={{ moods or '' }}&year_min={{ year_min or '' }}&year_max={{ year_max or '' }}&runtime_max={{ runtime_max or '' }}&order_by={{ order_by or 'title_asc' }}&_filters=1&page={{ page + 1 }}"
+          href="/ui/movies?q={{ q or '' }}&genres={{ genres or '' }}&moods={{ moods or '' }}&year_min={{ year_min or '' }}&year_max={{ year_max or '' }}&runtime_max={{ runtime_max or '' }}&order_by={{ order_by or 'title_asc' }}&_filters=1&page={{ page + 1 }}#results-table"
           aria-disabled="{{ 'true' if page >= total_pages else 'false' }}"
         >Next &raquo;</a>
       </nav>
@@ -354,8 +349,12 @@
       </div>
     {% else %}
       <div class="empty" role="status" data-results-empty>
-        <p>Nothing matched these filters—want me to widen the net?</p>
-        <button type="button" class="button-secondary" id="reset-empty">Widen filters</button>
+        <p>Nothing matched these filters.</p>
+        <div class="empty-actions">
+          <button type="button" class="button-primary" id="reset-empty">Clear filters</button>
+          <a class="button-secondary" href="/ui/movies#fliclists">Try Fliclists</a>
+          <a class="button-ghost" href="/ui/movies">View all movies</a>
+        </div>
       </div>
     {% endif %}
   </main>
@@ -364,15 +363,13 @@
 
 {% block scripts %}
   {{ super() }}
-  <script>
-    window.__moviesPageData = {{ {
-      'taglines': taglines,
-      'initialTagline': initial_tagline,
-      'total': total,
-      'totalPages': total_pages,
-      'page': page,
-      'posterCarouselMovies': poster_carousel_payload
-    } | tojson }};
-  </script>
+  <script type="application/json" id="movies-page-data">{{ {
+    'taglines': taglines,
+    'initialTagline': initial_tagline,
+    'total': total,
+    'totalPages': total_pages,
+    'page': page,
+    'pageContext': 'grid'
+  } | tojson }}</script>
   <script src="{{ url_for('static', path='js/movies_page.js') }}" defer></script>
 {% endblock %}
