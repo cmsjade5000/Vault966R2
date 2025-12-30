@@ -24,7 +24,6 @@ class CollectionHealth:
     missing_runtime: int
     missing_plot: int
     missing_poster: int
-    avg_runtime: float | None
     genre_gaps: List[str]
     flags_open: int
 
@@ -157,9 +156,6 @@ def get_collection_health(db: Session) -> CollectionHealth:
     missing_poster = base_query.filter(
         or_(Movie.poster_url.is_(None), Movie.poster_url == "")
     ).count()
-    avg_runtime = db.query(func.avg(Movie.runtime)).filter(Movie.runtime.isnot(None)).scalar()
-    avg_runtime = float(avg_runtime) if avg_runtime is not None else None
-
     flags_open = db.query(func.count()).select_from(MovieFlag).scalar() or 0
 
     genre_counts = func.count(Movie.id)
@@ -183,7 +179,6 @@ def get_collection_health(db: Session) -> CollectionHealth:
         missing_runtime=missing_runtime,
         missing_plot=missing_plot,
         missing_poster=missing_poster,
-        avg_runtime=avg_runtime,
         genre_gaps=genre_gaps,
         flags_open=flags_open,
     )

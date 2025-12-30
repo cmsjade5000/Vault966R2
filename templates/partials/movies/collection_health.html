@@ -20,11 +20,6 @@
       <p class="health-card__hint">Refresh posters to keep the wall vibrant.</p>
     </article>
     <article class="health-card">
-      <h3>Average runtime</h3>
-      <p class="health-card__value">{{ '%.0f' % collection_health.avg_runtime if collection_health.avg_runtime else '—' }}<span>min</span></p>
-      <p class="health-card__hint">Use to balance future purchases.</p>
-    </article>
-    <article class="health-card">
       <h3>Genre gaps</h3>
       {% if collection_health.genre_gaps %}
       <ul>

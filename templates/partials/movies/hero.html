@@ -14,6 +14,19 @@
     </div>
   </article>
   <article class="overview-card">
+    <span class="overview-icon" aria-hidden="true">⏱️</span>
+    <div class="overview-copy">
+      <span class="overview-label">Average runtime</span>
+      <span class="overview-value">
+        {% if stats.average_runtime %}
+        {{ stats.average_runtime }} <span class="overview-unit">min</span>
+        {% else %}
+        —
+        {% endif %}
+      </span>
+    </div>
+  </article>
+  <article class="overview-card">
     <span class="overview-icon" aria-hidden="true">⭐️</span>
     <div class="overview-copy">
       <span class="overview-label">Most popular genre</span>

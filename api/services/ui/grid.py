@@ -37,6 +37,8 @@ def query_library_stats(db: Session) -> dict[str, object]:
     total = db.query(func.count(Movie.id)).scalar() or 0
     avg_year_value = db.query(func.avg(Movie.year)).filter(Movie.year.isnot(None)).scalar()
     avg_year = int(round(avg_year_value)) if avg_year_value is not None else None
+    avg_runtime_value = db.query(func.avg(Movie.runtime)).filter(Movie.runtime.isnot(None)).scalar()
+    avg_runtime = int(round(avg_runtime_value)) if avg_runtime_value is not None else None
     top_genre = (
         db.query(Genre.name, func.count().label("count"))
         .join(movie_genres, Genre.id == movie_genres.c.genre_id)
@@ -49,6 +51,7 @@ def query_library_stats(db: Session) -> dict[str, object]:
     return {
         "total": total,
         "average_year": avg_year,
+        "average_runtime": avg_runtime,
         "top_genre": top_genre[0] if top_genre else "—",
     }
 
