@@ -28,6 +28,7 @@ def merge_providers(*lists: Iterable[str | None]) -> List[str]:
                 seen.append(normalized)
     return seen
 
+
 def _tokenize_provider_text(value: str) -> List[str]:
     parts = re.split(r"[;,]", value)
     tokens: List[str] = []
@@ -64,6 +65,7 @@ def _tokenize_provider_text(value: str) -> List[str]:
             continue
         tokens.append(candidate)
     return tokens
+
 
 def collect_provider_tokens(value: Any) -> List[str]:
     """Return a flattened list of provider-like strings from arbitrary input."""

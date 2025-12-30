@@ -36,7 +36,9 @@ TMDB_API_BASE = "https://api.themoviedb.org/3"
 def _tmdb_related_ids(api_key: str, tmdb_id: int, endpoint: str) -> tuple[int, ...]:
     params = {"api_key": api_key}
     try:
-        response = httpx.get(f"{TMDB_API_BASE}/movie/{tmdb_id}/{endpoint}", params=params, timeout=8.0)
+        response = httpx.get(
+            f"{TMDB_API_BASE}/movie/{tmdb_id}/{endpoint}", params=params, timeout=8.0
+        )
         response.raise_for_status()
     except httpx.HTTPError as exc:
         logger = logging.getLogger(__name__)
@@ -263,7 +265,9 @@ def _score_similar(movie: Movie, candidates: List[Movie]) -> List[SimilarMovie]:
             score += max(0.0, 10.0 - min(year_delta, 10))
 
         candidate_runtime = _coerce_int(candidate.runtime)
-        runtime_delta = abs(base_runtime - candidate_runtime) if base_runtime and candidate_runtime else 999
+        runtime_delta = (
+            abs(base_runtime - candidate_runtime) if base_runtime and candidate_runtime else 999
+        )
         if runtime_delta != 999:
             score += max(0.0, 8.0 - min(runtime_delta / 10.0, 8.0))
 
@@ -318,7 +322,9 @@ def _score_similar(movie: Movie, candidates: List[Movie]) -> List[SimilarMovie]:
     return [item[-1] for item in scored[:12]]
 
 
-def _merge_similar(primary: List[SimilarMovie], fallback: List[SimilarMovie], limit: int = 12) -> List[SimilarMovie]:
+def _merge_similar(
+    primary: List[SimilarMovie], fallback: List[SimilarMovie], limit: int = 12
+) -> List[SimilarMovie]:
     if len(primary) >= limit:
         return primary[:limit]
 

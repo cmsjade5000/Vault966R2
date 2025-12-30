@@ -290,7 +290,12 @@ def _clean_title_aliases(title: str) -> str:
     cleaned = re.sub(r"\[[^\]]*\]", " ", cleaned)
     cleaned = re.sub(r"\s{2,}", " ", cleaned)
     cleaned = cleaned.replace("&", "and")
-    cleaned = re.sub(r"\bpart\s+([ivx]+)\b", lambda m: f"part {ROMAN_NUMERALS.get(m.group(1).lower(), m.group(1))}", cleaned, flags=re.I)
+    cleaned = re.sub(
+        r"\bpart\s+([ivx]+)\b",
+        lambda m: f"part {ROMAN_NUMERALS.get(m.group(1).lower(), m.group(1))}",
+        cleaned,
+        flags=re.I,
+    )
     cleaned = re.sub(r"\s{2,}", " ", cleaned)
     return cleaned.strip()
 
