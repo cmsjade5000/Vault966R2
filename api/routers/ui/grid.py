@@ -36,6 +36,7 @@ from api.services.semantic_search import (
     SemanticSearchError,
     SemanticSearchUnavailable,
     apply_semantic_query_overrides,
+    parse_semantic_intent,
     semantic_query_forces_animation,
     semantic_search_enabled,
     semantic_search_movies,
@@ -187,8 +188,11 @@ def movies_grid(
         moods=params.moods,
         order_by="title_asc",
     )
+    semantic_intent = None
     if semantic_active and params.q:
         semantic_filters = apply_semantic_query_overrides(params.q, semantic_filters)
+        semantic_intent = parse_semantic_intent(params.q, semantic_filters)
+        semantic_filters = semantic_intent.params
 
     base_query = db.query(Movie)
     filtered_query = apply_filters(base_query, params)
@@ -234,6 +238,7 @@ def movies_grid(
                     limit=limit,
                     page=current_page,
                     page_size=page_size,
+                    intent=semantic_intent,
                 )
             except (SemanticSearchUnavailable, SemanticSearchError):
                 rows = []

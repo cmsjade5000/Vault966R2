@@ -3,13 +3,14 @@ from __future__ import annotations
 import hashlib
 import json
 import logging
+import re
 import time
-from dataclasses import replace
+from dataclasses import dataclass, replace
 from datetime import datetime, timedelta, timezone
 from typing import Iterable, List, Tuple
 
 import httpx
-from sqlalchemy import func, text
+from sqlalchemy import text
 from sqlalchemy.orm import Session, selectinload
 
 from api.config import settings
@@ -34,6 +35,129 @@ class SemanticSearchError(Exception):
 
 def _normalize_query(query: str) -> str:
     return " ".join(query.strip().split())
+
+
+@dataclass(frozen=True)
+class SemanticIntent:
+    params: MovieFilterParams
+    boost_genres: tuple[str, ...] = ()
+    boost_moods: tuple[str, ...] = ()
+    boost_year_range: tuple[int, int] | None = None
+
+
+def _extract_decade(text: str) -> tuple[int, int] | None:
+    match = re.search(r"\b(19|20)\d0s\b", text)
+    if match:
+        decade = int(match.group(0)[:4])
+        return decade, decade + 9
+    short = re.search(r"\b(\d{2})s\b", text)
+    if not short:
+        return None
+    decade_suffix = int(short.group(1))
+    if decade_suffix in {80, 90}:
+        decade = 1900 + decade_suffix
+    elif decade_suffix in {0, 10, 20, 30}:
+        decade = 2000 + decade_suffix
+    else:
+        return None
+    return decade, decade + 9
+
+
+def _extract_runtime_bounds(text: str) -> tuple[int | None, int | None]:
+    under = re.search(r"\bunder\s+(\d{2,3})\b", text)
+    over = re.search(r"\bover\s+(\d{2,3})\b", text)
+    if under:
+        return None, int(under.group(1))
+    if over:
+        return int(over.group(1)), None
+    if re.search(r"\b(short|quick|snappy)\b", text):
+        return None, 100
+    if re.search(r"\b(long|epic|lengthy)\b", text):
+        return 140, None
+    return None, None
+
+
+def parse_semantic_intent(query: str, params: MovieFilterParams) -> SemanticIntent:
+    text = _normalize_query(query).lower()
+    boost_genres: set[str] = set()
+    boost_moods: set[str] = set()
+
+    genre_phrases = {
+        "science fiction": "Science Fiction",
+        "sci-fi": "Science Fiction",
+        "scifi": "Science Fiction",
+        "romcom": "Romance",
+        "rom-com": "Romance",
+    }
+    genre_tokens = {
+        "horror": "Horror",
+        "thriller": "Thriller",
+        "romance": "Romance",
+        "comedy": "Comedy",
+        "drama": "Drama",
+        "action": "Action",
+        "adventure": "Adventure",
+        "fantasy": "Fantasy",
+        "crime": "Crime",
+        "mystery": "Mystery",
+        "family": "Family",
+        "documentary": "Documentary",
+        "animation": "Animation",
+        "animated": "Animation",
+    }
+    mood_phrases = {
+        "slow burn": "Thoughtful",
+        "slow-burn": "Thoughtful",
+        "feel good": "Heartfelt",
+    }
+    mood_tokens = {
+        "cozy": "Heartfelt",
+        "comfort": "Heartfelt",
+        "heartfelt": "Heartfelt",
+        "moody": "Atmospheric",
+        "atmospheric": "Atmospheric",
+        "dark": "Gritty",
+        "gritty": "Gritty",
+        "thoughtful": "Thoughtful",
+        "reflective": "Thoughtful",
+        "fast": "High-octane",
+        "fast-paced": "High-octane",
+        "high-octane": "High-octane",
+    }
+
+    for phrase, genre in genre_phrases.items():
+        if phrase in text:
+            boost_genres.add(genre)
+    tokens = set(re.findall(r"[a-z0-9-]+", text))
+    for token, genre in genre_tokens.items():
+        if token in tokens:
+            boost_genres.add(genre)
+    for phrase, mood in mood_phrases.items():
+        if phrase in text:
+            boost_moods.add(mood)
+    for token, mood in mood_tokens.items():
+        if token in tokens:
+            boost_moods.add(mood)
+
+    updated_params = params
+    decade = _extract_decade(text)
+    boost_year_range = None
+    if decade and updated_params.year_min is None and updated_params.year_max is None:
+        updated_params = replace(updated_params, year_min=decade[0], year_max=decade[1])
+        boost_year_range = decade
+
+    runtime_min, runtime_max = _extract_runtime_bounds(text)
+    if runtime_min is not None and updated_params.runtime_min is None:
+        updated_params = replace(updated_params, runtime_min=runtime_min)
+    if runtime_max is not None and updated_params.runtime_max is None:
+        updated_params = replace(updated_params, runtime_max=runtime_max)
+
+    return SemanticIntent(
+        params=updated_params,
+        boost_genres=tuple(sorted(boost_genres)),
+        boost_moods=tuple(sorted(boost_moods)),
+        boost_year_range=boost_year_range,
+    )
 
 
 def semantic_query_forces_animation(query: str) -> bool:
@@ -278,6 +402,7 @@ def semantic_search_movies(
     limit: int,
     page: int,
     page_size: int,
+    intent: SemanticIntent | None = None,
 ) -> Tuple[List[Tuple[Movie, float]], int]:
     if not semantic_search_enabled(db):
         raise SemanticSearchUnavailable("Semantic search is not enabled")
@@ -307,15 +432,34 @@ def semantic_search_movies(
     filtered_query = filtered_query(filtered_base)
     filtered_query = filtered_query.order_by(text("distance asc"))
 
-    total = filtered_query.order_by(None).with_entities(func.count(Movie.id)).scalar() or 0
-    if total == 0:
+    rows = filtered_query.options(selectinload(Movie.genres), selectinload(Movie.moods)).all()
+    if not rows:
         return [], 0
 
+    total = len(rows)
+    boost_genres = set(intent.boost_genres) if intent else set()
+    boost_moods = set(intent.boost_moods) if intent else set()
+    boost_year_range = intent.boost_year_range if intent else None
+
+    scored_rows = []
+    for movie, distance in rows:
+        score = 1.0 / (1.0 + float(distance))
+        if boost_genres and getattr(movie, "genres", None):
+            genre_names = {getattr(genre, "name", None) for genre in movie.genres} - {None}
+            if genre_names:
+                matches = len(genre_names & boost_genres)
+                score += min(matches * 0.08, 0.24)
+        if boost_moods and getattr(movie, "moods", None):
+            mood_names = {getattr(mood, "name", None) for mood in movie.moods} - {None}
+            if mood_names:
+                matches = len(mood_names & boost_moods)
+                score += min(matches * 0.05, 0.15)
+        if boost_year_range and movie.year:
+            if boost_year_range[0] <= movie.year <= boost_year_range[1]:
+                score += 0.03
+        scored_rows.append((movie, distance, score))
+
+    scored_rows.sort(key=lambda row: (-row[2], row[1]))
     page_offset = (page - 1) * page_size
-    rows = (
-        filtered_query.options(selectinload(Movie.genres), selectinload(Movie.moods))
-        .offset(page_offset)
-        .limit(page_size)
-        .all()
-    )
-    return [(row[0], row[1]) for row in rows], total
+    paged = scored_rows[page_offset : page_offset + page_size]
+    return [(row[0], row[1]) for row in paged], total

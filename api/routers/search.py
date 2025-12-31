@@ -19,6 +19,7 @@ from api.services.semantic_search import (
     SemanticSearchError,
     SemanticSearchUnavailable,
     apply_semantic_query_overrides,
+    parse_semantic_intent,
     semantic_query_forces_animation,
     semantic_search_enabled,
     semantic_search_movies,
@@ -101,11 +102,26 @@ def semantic_search(
         order_by="title_asc",
     )
     params = apply_semantic_query_overrides(query, params)
+    intent = parse_semantic_intent(query, params)
+    params = intent.params
+    LOG.info(
+        "semantic_search_intent",
+        extra={
+            "query_hash": _query_hash(query),
+            "boost_genres": list(intent.boost_genres),
+            "boost_moods": list(intent.boost_moods),
+            "boost_year_range": intent.boost_year_range,
+            "runtime_min": params.runtime_min,
+            "runtime_max": params.runtime_max,
+            "year_min": params.year_min,
+            "year_max": params.year_max,
+        },
+    )
 
     if not semantic_search_enabled(db):
         LOG.info(
             "Semantic search disabled; falling back to keyword search",
-            extra={"query_hash": _query_hash(query)},
+            extra={"query_hash": _query_hash(query), "fallback_reason": "disabled"},
         )
         return _keyword_fallback(
             db,
@@ -131,11 +147,12 @@ def semantic_search(
             limit=limit,
             page=payload.page,
             page_size=payload.page_size,
+            intent=intent,
         )
     except SemanticSearchUnavailable:
         LOG.info(
             "Semantic search unavailable; falling back to keyword search",
-            extra={"query_hash": _query_hash(query)},
+            extra={"query_hash": _query_hash(query), "fallback_reason": "unavailable"},
         )
         return _keyword_fallback(
             db,
@@ -148,7 +165,7 @@ def semantic_search(
     except SemanticSearchError:
         LOG.warning(
             "Semantic search failed; falling back to keyword search",
-            extra={"query_hash": _query_hash(query)},
+            extra={"query_hash": _query_hash(query), "fallback_reason": "error"},
         )
         return _keyword_fallback(
             db,
@@ -162,7 +179,7 @@ def semantic_search(
     if not rows:
         LOG.info(
             "Semantic search empty; falling back to keyword search",
-            extra={"query_hash": _query_hash(query)},
+            extra={"query_hash": _query_hash(query), "fallback_reason": "empty"},
         )
         return _keyword_fallback(
             db,
@@ -185,6 +202,14 @@ def semantic_search(
         items.append(
             SemanticSearchItem.model_validate({**movie.__dict__, "similarity_score": score})
         )
+    LOG.info(
+        "semantic_search_success",
+        extra={
+            "query_hash": _query_hash(query),
+            "total": total,
+            "returned": len(items),
+        },
+    )
 
     return SemanticSearchResponse(
         items=items,
