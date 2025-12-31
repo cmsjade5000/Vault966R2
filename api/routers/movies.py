@@ -55,6 +55,29 @@ from core.picker import (
 )
 from api.utils.query_params import parse_optional_non_negative_int
 
+
+def _build_facets(db: Session, filtered_query) -> dict:
+    movie_ids_subquery = filtered_query.with_entities(Movie.id.label("movie_id")).subquery()
+
+    genre_counts = dict(
+        db.query(Genre.name, func.count())
+        .join(movie_genres, Genre.id == movie_genres.c.genre_id)
+        .join(movie_ids_subquery, movie_ids_subquery.c.movie_id == movie_genres.c.movie_id)
+        .group_by(Genre.name)
+        .all()
+    )
+
+    mood_counts = dict(
+        db.query(Mood.name, func.count())
+        .join(movie_moods, Mood.id == movie_moods.c.mood_id)
+        .join(movie_ids_subquery, movie_ids_subquery.c.movie_id == movie_moods.c.movie_id)
+        .group_by(Mood.name)
+        .all()
+    )
+
+    return {"genres": genre_counts, "moods": mood_counts}
+
+
 router = APIRouter(prefix="/movies", tags=["movies"])
 
 
@@ -317,28 +340,7 @@ def search_movies(
         items, total = paginate(ordered_query, page=page, page_size=page_size)
         _attach_flag_status(db, items)
 
-    movie_ids_subquery = filtered_query.with_entities(Movie.id.label("movie_id")).subquery()
-
-    genre_counts = dict(
-        db.query(Genre.name, func.count())
-        .join(movie_genres, Genre.id == movie_genres.c.genre_id)
-        .join(movie_ids_subquery, movie_ids_subquery.c.movie_id == movie_genres.c.movie_id)
-        .group_by(Genre.name)
-        .all()
-    )
-
-    mood_counts = dict(
-        db.query(Mood.name, func.count())
-        .join(movie_moods, Mood.id == movie_moods.c.mood_id)
-        .join(movie_ids_subquery, movie_ids_subquery.c.movie_id == movie_moods.c.movie_id)
-        .group_by(Mood.name)
-        .all()
-    )
-
-    facets = {
-        "genres": genre_counts,
-        "moods": mood_counts,
-    }
+    facets = _build_facets(db, filtered_query)
 
     return MovieSearchResponse(
         items=items,
@@ -407,28 +409,7 @@ def llm_search_movies(
         items, total = paginate(ordered_query, page=page, page_size=page_size)
         _attach_flag_status(db, items)
 
-    movie_ids_subquery = filtered_query.with_entities(Movie.id.label("movie_id")).subquery()
-
-    genre_counts = dict(
-        db.query(Genre.name, func.count())
-        .join(movie_genres, Genre.id == movie_genres.c.genre_id)
-        .join(movie_ids_subquery, movie_ids_subquery.c.movie_id == movie_genres.c.movie_id)
-        .group_by(Genre.name)
-        .all()
-    )
-
-    mood_counts = dict(
-        db.query(Mood.name, func.count())
-        .join(movie_moods, Mood.id == movie_moods.c.mood_id)
-        .join(movie_ids_subquery, movie_ids_subquery.c.movie_id == movie_moods.c.movie_id)
-        .group_by(Mood.name)
-        .all()
-    )
-
-    facets = {
-        "genres": genre_counts,
-        "moods": mood_counts,
-    }
+    facets = _build_facets(db, filtered_query)
 
     return LlmMovieSearchResponse(
         filters=llm_filters,

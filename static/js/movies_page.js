@@ -359,6 +359,252 @@
       }
     };
 
+    const normalizeGenreLabels = (genres = []) =>
+      genres
+        .map((genre) => (typeof genre === "string" ? genre : genre?.name))
+        .filter(Boolean);
+
+    const buildTableRow = (movie) => {
+      const row = document.createElement("tr");
+      const title = movie.title || "Untitled";
+      const lowerTitle = title.toLowerCase();
+      const yearText = movie.year ? String(movie.year) : "—";
+      const runtimeText = movie.runtime ? `${movie.runtime} min` : "—";
+      const imdb = formatRating(movie.imdb_rating, 1);
+      const imdbText = imdb ? `IMDb ${imdb}` : "IMDb —";
+      const rtText =
+        typeof movie.rt_score === "number" ? `RT ${movie.rt_score}%` : "RT —";
+      const ratingText = `${imdbText} • ${rtText}`;
+      const genreLabels = normalizeGenreLabels(movie.genres || []);
+      const genreText = genreLabels.length ? genreLabels.join(", ") : "—";
+      const flagged = Boolean(movie.flagged);
+
+      row.dataset.title = lowerTitle;
+      row.dataset.vaultId = String(movie.id);
+      row.dataset.year = movie.year ?? "";
+      row.dataset.runtime = movie.runtime ?? "";
+      row.dataset.rating = movie.imdb_rating ?? "";
+      row.dataset.movieRow = "true";
+      row.dataset.movieId = String(movie.id);
+      row.dataset.flagged = flagged ? "true" : "false";
+      if (flagged) {
+        row.classList.add("is-flagged");
+      }
+
+      const titleCell = document.createElement("td");
+      titleCell.setAttribute("data-label", "Title");
+      const link = document.createElement("a");
+      link.href = `/ui/movies/${movie.id}`;
+      link.textContent = title;
+      titleCell.appendChild(link);
+
+      const vaultCell = document.createElement("td");
+      vaultCell.setAttribute("data-label", "Vault ID");
+      const paddedId = String(movie.id).padStart(4, "0");
+      vaultCell.textContent = `V${paddedId}`;
+
+      const detailCell = document.createElement("td");
+      detailCell.setAttribute("data-label", "Details");
+      detailCell.className = "data-table__cell-details";
+      const detailLine = document.createElement("div");
+      detailLine.className = "table-detail-line";
+      detailLine.textContent = `${yearText} • ${runtimeText}`;
+      const ratingLine = document.createElement("div");
+      ratingLine.className = "table-detail-line table-detail-line--muted";
+      ratingLine.textContent = ratingText;
+      const genreLine = document.createElement("div");
+      genreLine.className = "table-detail-line table-detail-line--muted";
+      genreLine.title = genreText;
+      genreLine.textContent = genreText;
+      detailCell.appendChild(detailLine);
+      detailCell.appendChild(ratingLine);
+      detailCell.appendChild(genreLine);
+
+      const statusCell = document.createElement("td");
+      statusCell.setAttribute("data-label", "Status");
+      statusCell.className = "data-table__cell-status";
+      statusCell.hidden = true;
+      statusCell.textContent = flagged ? "Needs review" : "—";
+
+      row.appendChild(titleCell);
+      row.appendChild(vaultCell);
+      row.appendChild(detailCell);
+      row.appendChild(statusCell);
+
+      return row;
+    };
+
+    const updatePager = (newTotal, page, pageSize, snapshot) => {
+      if (!resultsPager) return;
+      const computedPages = Math.max(
+        1,
+        Math.ceil(newTotal / Math.max(pageSize, 1)),
+      );
+      totalPages = computedPages;
+      currentPage = page;
+      const hasPages = computedPages > 1;
+      resultsPager.hidden = !hasPages;
+      if (!hasPages) return;
+
+      const pageLabel = resultsPager.querySelector("span");
+      if (pageLabel) {
+        pageLabel.textContent = `Page ${page} of ${computedPages}`;
+      }
+
+      const links = resultsPager.querySelectorAll(".pager-link");
+      const [prevLink, nextLink] = links;
+      const prevPage = Math.max(1, page - 1);
+      const nextPage = Math.min(computedPages, page + 1);
+
+      const updateLink = (link, target, isDisabled) => {
+        if (!link) return;
+        link.dataset.gotoPage = String(target);
+        link.dataset.disabled = isDisabled ? "true" : "false";
+        link.setAttribute("aria-disabled", isDisabled ? "true" : "false");
+        const params = new URLSearchParams();
+        if (snapshot.q) params.set("q", snapshot.q);
+        if (snapshot.genres?.length)
+          params.set("genres", snapshot.genres.join(", "));
+        if (snapshot.moods?.length)
+          params.set("moods", snapshot.moods.join(", "));
+        if (typeof snapshot.year_min === "number")
+          params.set("year_min", snapshot.year_min);
+        if (typeof snapshot.year_max === "number")
+          params.set("year_max", snapshot.year_max);
+        if (typeof snapshot.runtime_max === "number")
+          params.set("runtime_max", snapshot.runtime_max);
+        if (snapshot.order_by) params.set("order_by", snapshot.order_by);
+        if (snapshot.semantic) params.set("semantic", "1");
+        params.set("_filters", "1");
+        params.set("page", String(target));
+        link.href = `${formBaseAction}?${params.toString()}#results-table`;
+      };
+
+      updateLink(prevLink, prevPage, page <= 1);
+      updateLink(nextLink, nextPage, page >= computedPages);
+    };
+
+    const renderSemanticResults = (payload, snapshot) => {
+      const items = payload.items || [];
+      const grid = ensureResultsGrid();
+      if (grid) {
+        grid.innerHTML = "";
+        items.forEach((movie) => {
+          if (!movie || !movie.id) return;
+          grid.appendChild(buildMovieCard(movie));
+        });
+        grid.hidden = items.length === 0;
+      }
+
+      const tableBody = document.querySelector("#results-table-table tbody");
+      if (tableBody) {
+        tableBody.innerHTML = "";
+        items.forEach((movie) => {
+          if (!movie || !movie.id) return;
+          tableBody.appendChild(buildTableRow(movie));
+        });
+      }
+
+      const hasItems = items.length > 0;
+      if (resultsEmpty) {
+        resultsEmpty.hidden = hasItems;
+        if (resultsEmptyMessage) {
+          resultsEmptyMessage.textContent = hasItems
+            ? resultsEmptyDefault || resultsEmptyMessage.textContent
+            : "No semantic matches yet.";
+        }
+      }
+      resultsTableSection?.removeAttribute("hidden");
+      resultsPager?.removeAttribute("hidden");
+      attachFlagButtons();
+      attachEditButtons();
+
+      total = Number(payload.total ?? 0);
+      updatePager(
+        total,
+        payload.page || 1,
+        payload.page_size || semanticPageSize,
+        snapshot,
+      );
+      if (resultsShell) {
+        resultsShell.dataset.semanticActive = "true";
+      }
+    };
+
+    const runSemanticSearch = async ({ page = 1 } = {}) => {
+      if (!searchInput) return false;
+      const query = searchInput.value.trim();
+      if (!query) return false;
+      const snapshot = getFiltersSnapshot();
+      const releaseBusy = setActionBusy(
+        document.getElementById("search-button"),
+        { busyLabel: "Searching…" },
+      );
+
+      try {
+        const response = await fetch("/api/search/semantic", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            query,
+            page,
+            page_size: semanticPageSize,
+            year_min: snapshot.year_min,
+            year_max: snapshot.year_max,
+            runtime_max: snapshot.runtime_max,
+            genres: snapshot.genres || [],
+            moods: snapshot.moods || [],
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error(`Semantic search failed (${response.status})`);
+        }
+
+        const payload = await response.json();
+        renderSemanticResults(payload, snapshot);
+        if (payload.notice && typeof window.showToast === "function") {
+          window.showToast(payload.notice);
+        } else if (typeof window.showToast === "function") {
+          window.showToast(
+            payload.items?.length
+              ? `I found ${payload.total} titles.`
+              : "Nothing matched—want me to widen the net?",
+          );
+        }
+        if (pageInput) pageInput.value = String(payload.page || 1);
+        const params = new URLSearchParams();
+        params.set("q", query);
+        if (snapshot.genres?.length)
+          params.set("genres", snapshot.genres.join(", "));
+        if (snapshot.moods?.length)
+          params.set("moods", snapshot.moods.join(", "));
+        if (typeof snapshot.year_min === "number")
+          params.set("year_min", snapshot.year_min);
+        if (typeof snapshot.year_max === "number")
+          params.set("year_max", snapshot.year_max);
+        if (typeof snapshot.runtime_max === "number")
+          params.set("runtime_max", snapshot.runtime_max);
+        if (snapshot.order_by) params.set("order_by", snapshot.order_by);
+        params.set("semantic", "1");
+        params.set("_filters", "1");
+        params.set("page", String(payload.page || 1));
+        const nextUrl = `${formBaseAction}?${params.toString()}#results-table`;
+        window.history.replaceState({}, "", nextUrl);
+        return true;
+      } catch (error) {
+        console.error("Semantic search failed", error);
+        if (typeof window.showToast === "function") {
+          window.showToast("Semantic search failed—try again?");
+        }
+        return false;
+      } finally {
+        releaseBusy();
+      }
+    };
+
     const runQuickPick = (indicator) => {
       const releaseBusy = indicator
         ? setActionBusy(indicator, { busyLabel: "Picking…" })
@@ -392,10 +638,11 @@
     dialogMediaQuery.addEventListener("change", syncDialogToViewport);
     syncDialogToViewport();
     const pageContext = pageData.pageContext || "grid";
-    const total = Number(pageData.total ?? 0);
-    const totalPages = Number(pageData.totalPages ?? 0);
+    let total = Number(pageData.total ?? 0);
+    let totalPages = Number(pageData.totalPages ?? 0);
     let currentPage = Number(pageData.page ?? 1);
     if (!Number.isFinite(currentPage) || currentPage < 1) currentPage = 1;
+    const semanticPageSize = 30;
 
     const ADMIN_TOKEN_KEY = "vaultAdminToken";
     const getAdminToken = () => {
@@ -1120,6 +1367,7 @@
     const searchInput = document.getElementById("search-q");
     const orderSelect = document.getElementById("order-by");
     const pageInput = form?.querySelector('input[name="page"]');
+    const semanticToggle = document.getElementById("semantic-toggle");
 
     const hiddenGenresInput = document.getElementById("genres-input");
     const hiddenMoodsInput = document.getElementById("moods-input");
@@ -1222,6 +1470,7 @@
         year_max: yearState.max,
         runtime_max: runtimeValue,
         order_by: orderSelect?.value || "title_asc",
+        semantic: Boolean(semanticToggle?.checked),
       };
     };
 
@@ -1249,6 +1498,7 @@
         typeof filters.runtime_max === "number" ? filters.runtime_max : null,
       genres: canonicalList(filters.genres),
       moods: canonicalList(filters.moods),
+      semantic: Boolean(filters.semantic),
     });
 
     const loadStoredPreset = () => {
@@ -1297,7 +1547,8 @@
         left.year_max === right.year_max &&
         left.runtime_max === right.runtime_max &&
         arraysEqual(left.genres, right.genres) &&
-        arraysEqual(left.moods, right.moods)
+        arraysEqual(left.moods, right.moods) &&
+        left.semantic === right.semantic
       );
     };
 
@@ -1391,6 +1642,9 @@
 
       if (orderBy && orderBy !== "title_asc") {
         parts.push(ORDER_LABELS[orderBy] || orderBy);
+      }
+      if (snapshot.semantic) {
+        parts.push("Semantic");
       }
 
       filtersSummaryEl.textContent = parts.length
@@ -1596,11 +1850,22 @@
       scheduleSubmit(240);
     });
 
+    const isSemanticQuery = () => {
+      if (!semanticToggle?.checked) return false;
+      const query = searchInput?.value.trim() || "";
+      return query.length > 0;
+    };
+
     const submitSearch = ({ resetPage = true } = {}) => {
       if (!form) return;
       if (resetPage && pageInput) pageInput.value = "1";
       syncHiddenInputs();
       closeFilters();
+      if (isSemanticQuery()) {
+        const targetPage = Number(pageInput?.value || 1);
+        runSemanticSearch({ page: targetPage });
+        return;
+      }
       if (form && formBaseAction) {
         form.action = formBaseAction;
       }
@@ -1630,6 +1895,7 @@
       if (yearCustomMinInput) yearCustomMinInput.value = "";
       if (yearCustomMaxInput) yearCustomMaxInput.value = "";
       if (runtimeCustomInput) runtimeCustomInput.value = "";
+      if (semanticToggle) semanticToggle.checked = false;
       refreshUI();
       syncHiddenInputs();
       submitSearch();
@@ -1654,6 +1920,9 @@
         case "runtime":
           runtimeValue = null;
           if (runtimeCustomInput) runtimeCustomInput.value = "";
+          break;
+        case "semantic":
+          if (semanticToggle) semanticToggle.checked = false;
           break;
         default:
           break;
@@ -1717,6 +1986,12 @@
           key: "runtime",
           label: `≤ ${runtimeInput.value.trim()} min`,
           value: runtimeInput.value.trim(),
+        });
+      }
+      if (semanticToggle?.checked) {
+        entries.push({
+          key: "semantic",
+          label: "Semantic",
         });
       }
 
@@ -1785,6 +2060,9 @@
         typeof filters.runtime_max === "number" ? filters.runtime_max : null;
       if (orderSelect) {
         orderSelect.value = filters.order_by || "title_asc";
+      }
+      if (semanticToggle) {
+        semanticToggle.checked = Boolean(filters.semantic);
       }
       if (pageInput) pageInput.value = "1";
       refreshUI();
@@ -1983,7 +2261,14 @@
       });
     }
 
-    form?.addEventListener("submit", syncHiddenInputs);
+    form?.addEventListener("submit", (event) => {
+      syncHiddenInputs();
+      if (isSemanticQuery()) {
+        event.preventDefault();
+        const targetPage = Number(pageInput?.value || 1);
+        runSemanticSearch({ page: targetPage });
+      }
+    });
 
     refreshUI();
 
@@ -2893,6 +3178,10 @@
       pageInput.value = String(clamped);
       currentPage = clamped;
       syncHiddenInputs();
+      if (isSemanticQuery()) {
+        runSemanticSearch({ page: clamped });
+        return;
+      }
       form.requestSubmit();
     };
 

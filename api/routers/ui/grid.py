@@ -7,6 +7,7 @@ from fastapi.responses import HTMLResponse
 from sqlalchemy import func, or_
 from sqlalchemy.orm import Session, selectinload
 
+from api.config import settings
 from api.db import get_db
 from api.models.movie import Movie
 from api.models.movie_flag import MovieFlag
@@ -31,6 +32,15 @@ from api.services.ui.spotlight import get_daily_spotlight_movies
 from api.services.ui.templates import TEMPLATES
 from api.services.double_feature import DEFAULT_DOUBLE_FEATURE_RUNTIME, pick_double_feature
 from api.services.flic_ordering import fetch_movies_in_rank_order, rank_movie_ids_by_flic
+from api.services.semantic_search import (
+    SemanticSearchError,
+    SemanticSearchUnavailable,
+    apply_semantic_query_overrides,
+    parse_semantic_intent,
+    semantic_query_forces_animation,
+    semantic_search_enabled,
+    semantic_search_movies,
+)
 from api.utils.sampling import reorder_movies_by_id_sequence, sample_movie_ids
 from core.movie_filters import (
     MovieFilterParams,
@@ -134,6 +144,7 @@ def movies_grid(
     runtime_max: Optional[str] = Query(default=None),
     page: int = Query(default=1, ge=1),
     order_by: str = Query(default="title_asc"),
+    semantic: Optional[str] = Query(default=None),
     db: Session = Depends(get_db),
 ):
     cookie_data = load_filter_cookie(request)
@@ -153,6 +164,9 @@ def movies_grid(
         order_by=resolve(order_by, "order_by"),
     )
 
+    semantic_value = resolve(semantic, "semantic")
+    semantic_active = str(semantic_value).lower() in {"1", "true", "yes", "on"}
+
     current_page = page
     if not using_query:
         cookie_page = cookie_data.get("page")
@@ -163,6 +177,22 @@ def movies_grid(
                 current_page = page
     if current_page < 1:
         current_page = 1
+
+    semantic_filters = MovieFilterParams(
+        q=None,
+        year_min=params.year_min,
+        year_max=params.year_max,
+        runtime_min=params.runtime_min,
+        runtime_max=params.runtime_max,
+        genres=params.genres,
+        moods=params.moods,
+        order_by="title_asc",
+    )
+    semantic_intent = None
+    if semantic_active and params.q:
+        semantic_filters = apply_semantic_query_overrides(params.q, semantic_filters)
+        semantic_intent = parse_semantic_intent(params.q, semantic_filters)
+        semantic_filters = semantic_intent.params
 
     base_query = db.query(Movie)
     filtered_query = apply_filters(base_query, params)
@@ -192,7 +222,46 @@ def movies_grid(
         total_pages = (total + page_size - 1) // page_size
         current_page = min(max(current_page, 1), total_pages)
         offset = (current_page - 1) * page_size
-        if params.order_by == "flic":
+        if semantic_active and params.q and semantic_search_enabled(db):
+
+            def apply_semantic_filters(queryset):
+                return apply_filters(queryset, semantic_filters)
+
+            limit = settings.semantic_search_top_k
+            if semantic_query_forces_animation(params.q):
+                limit = min(max(limit * 5, 500), 2000)
+            try:
+                rows, total = semantic_search_movies(
+                    db,
+                    query=params.q,
+                    filtered_query=apply_semantic_filters,
+                    limit=limit,
+                    page=current_page,
+                    page_size=page_size,
+                    intent=semantic_intent,
+                )
+            except (SemanticSearchUnavailable, SemanticSearchError):
+                rows = []
+
+            if rows:
+                movies = [row[0] for row in rows]
+            else:
+                semantic_active = False
+                total = filtered_query.with_entities(func.count(Movie.id)).scalar() or 0
+                total_pages = (total + page_size - 1) // page_size
+                current_page = min(max(current_page, 1), total_pages)
+                offset = (current_page - 1) * page_size
+                clause = ordering_clause(params.order_by)
+                movies = (
+                    filtered_query.options(selectinload(Movie.genres), selectinload(Movie.moods))
+                    .order_by(clause)
+                    .offset(offset)
+                    .limit(page_size)
+                    .all()
+                )
+                attach_poster_themes(movies)
+                attach_genre_display(movies)
+        elif params.order_by == "flic":
             flic_filters, used_defaults = _build_flic_filters(params)
             flic_filters_default = used_defaults
             flic_filters_payload = flic_filters.to_payload()
@@ -234,16 +303,21 @@ def movies_grid(
     featured_rows = 3
     featured_limit = featured_row_size * featured_rows
     featured_movies: list[Movie] = []
+    featured_query = (
+        apply_filters(base_query, semantic_filters)
+        if semantic_active and params.q
+        else filtered_query
+    )
     if total:
         if total <= RANDOM_ORDER_LIMIT:
             base_featured = (
-                filtered_query.options(selectinload(Movie.genres), selectinload(Movie.moods))
+                featured_query.options(selectinload(Movie.genres), selectinload(Movie.moods))
                 .order_by(func.random())
                 .limit(featured_limit)
                 .all()
             )
         else:
-            featured_ids = sample_movie_ids(filtered_query, total=total, limit=featured_limit)
+            featured_ids = sample_movie_ids(featured_query, total=total, limit=featured_limit)
             base_featured_raw = (
                 db.query(Movie)
                 .options(selectinload(Movie.genres), selectinload(Movie.moods))
@@ -275,7 +349,7 @@ def movies_grid(
 
             if len(filler_movies) < filler_needed:
                 extra_needed = filler_needed - len(filler_movies)
-                extra_query = filtered_query
+                extra_query = featured_query
                 if featured_ids:
                     extra_query = extra_query.filter(~Movie.id.in_(list(featured_ids)))
                 extra_total = extra_query.with_entities(func.count(Movie.id)).scalar() or 0
@@ -396,11 +470,14 @@ def movies_grid(
         "flic_filters_summary": flic_filters_summary,
         "flic_filters_default": flic_filters_default,
         "flic_rank_offset": flic_rank_offset,
+        "semantic_active": semantic_active,
+        "semantic_enabled": semantic_search_enabled(db),
         "show_ai_search": False,
     }
 
     response = TEMPLATES.TemplateResponse(request, "movies_grid.html", context)
     cookie_payload = params.to_cookie_payload(page=current_page)
+    cookie_payload["semantic"] = 1 if semantic_active else 0
     response.set_cookie(
         FILTER_COOKIE_NAME,
         dump_filter_cookie(cookie_payload),

@@ -16,7 +16,8 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from api.config import settings
 from api.db import bootstrap_sqlite_schema, engine
-from api.routers import ai, fliclists, health, movies, people, ui
+from api.routers import ai, fliclists, health, movies, people, search, ui
+import api.models  # noqa: F401  # ensure all model mappers are registered
 
 
 class JsonFormatter(logging.Formatter):
@@ -292,6 +293,7 @@ app.include_router(people.router)
 app.include_router(ui.router)
 app.include_router(fliclists.router)
 app.include_router(ai.router)
+app.include_router(search.router)
 
 
 @app.get("/", include_in_schema=False)

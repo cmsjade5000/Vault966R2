@@ -20,6 +20,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 if TYPE_CHECKING:  # pragma: no cover - import for typing only
     from api.models.movie_flag import MovieFlag
+    from api.models.semantic_search import MovieDocument
 
 from api.db import Base
 from api.db_types import LenientJSONText
@@ -120,6 +121,12 @@ class Movie(Base):
         "MovieIngestProvenance",
         back_populates="movie",
         cascade="all, delete-orphan",
+    )
+    document: Mapped[Optional["MovieDocument"]] = relationship(
+        "MovieDocument",
+        back_populates="movie",
+        cascade="all, delete-orphan",
+        uselist=False,
     )
 
 
