@@ -25,6 +25,17 @@ class Settings(BaseSettings):
         validation_alias="LLM_BASE_URL",
     )
     llm_model: str = Field(default="gpt-4o-mini", validation_alias="LLM_MODEL")
+    llm_embedding_model: str = Field(
+        default="text-embedding-3-small", validation_alias="LLM_EMBEDDING_MODEL"
+    )
+    llm_embedding_dim: int = Field(default=1536, validation_alias="LLM_EMBEDDING_DIM")
+    semantic_search_enabled: bool = Field(default=False, validation_alias="SEMANTIC_SEARCH_ENABLED")
+    semantic_search_top_k: int = Field(default=200, validation_alias="SEMANTIC_SEARCH_TOP_K")
+    semantic_cache_ttl_hours: int = Field(default=24, validation_alias="SEMANTIC_CACHE_TTL_HOURS")
+    semantic_backfill_batch: int = Field(default=32, validation_alias="SEMANTIC_BACKFILL_BATCH")
+    semantic_backfill_sleep: float = Field(
+        default=0.4, validation_alias="SEMANTIC_BACKFILL_SLEEP_SECONDS"
+    )
     spotlight_rotate: bool = Field(default=False, validation_alias="SPOTLIGHT_ROTATE")
     double_feature_rotate: bool = Field(default=False, validation_alias="DOUBLE_FEATURE_ROTATE")
 

@@ -41,7 +41,7 @@ Tip: Build a themed Fliclist (runtime, decade, genre), flip to Flic Score orderi
 
 ```bash
 cp .env.example .env  # updates DATABASE_URL to use Postgres
-make db.up            # start postgres:16 in docker
+make db.up            # start pgvector-enabled postgres in docker
 
 # once the container reports healthy, run migrations
 make db.migrate
@@ -56,6 +56,32 @@ make db.down
 `make db.reset` will drop and recreate the `vault966` database inside the
 container before running migrations again. The command is limited to the
 database defined by `POSTGRES_DB` (default `vault966`).
+
+## Semantic search (pgvector + OpenAI)
+
+Semantic search runs server-side only and requires Postgres + pgvector.
+
+1) Configure `.env`:
+   - `LLM_API_KEY=...` (server-side only)
+   - `LLM_EMBEDDING_MODEL=text-embedding-3-small`
+   - `LLM_EMBEDDING_DIM=1536` (must match the migration)
+   - `SEMANTIC_SEARCH_ENABLED=true`
+
+2) Run migrations (adds `pgvector`, `movie_documents`, and `ai_cache`):
+
+```bash
+make db.migrate
+```
+
+3) Backfill embeddings (resumable batches):
+
+```bash
+python scripts/backfill_semantic_documents.py --limit 500
+python scripts/backfill_semantic_documents.py --after-id 500
+```
+
+The `/ui/movies` page includes a "Semantic search" toggle. The API endpoint is
+`POST /api/search/semantic` (falls back to keyword search if embeddings are unavailable).
 
 ## Running migrations manually
 

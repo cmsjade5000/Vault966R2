@@ -38,6 +38,21 @@
       </button>
     </div>
 
+    {% if semantic_enabled %}
+    <div class="filter-bar__actions filter-bar__actions--semantic">
+      <label class="semantic-toggle">
+        <input
+          type="checkbox"
+          id="semantic-toggle"
+          name="semantic"
+          value="1"
+          {% if semantic_active %}checked{% endif %}
+        />
+        <span>Semantic search</span>
+      </label>
+    </div>
+    {% endif %}
+
     <details class="filter-section" open id="fliclists">
       <summary class="filter-section__summary">
         <h3>Fliclists</h3>
