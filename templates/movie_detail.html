@@ -17,7 +17,7 @@
     <a class="back-link" href="/ui/movies" data-back-link>← Back to results</a>
     <div class="hero">
       <div class="poster-shell">
-        <div class="poster-frame">
+        <div class="poster-frame{% if spotlight_reason %} poster-frame--spotlight{% endif %}">
           {% if movie.poster_url %}
           <img class="poster" src="{{ movie.poster_url }}" alt="{{ movie.title }} poster" />
           {% else %}
@@ -81,6 +81,28 @@
             <span>TMDb</span>
           </a>
           {% endif %}
+        </div>
+        <div class="preference-actions" aria-label="Movie preferences">
+          <button
+            type="button"
+            class="preference-button{% if movie_liked %} is-active{% endif %}"
+            data-preference-button
+            data-preference-type="like"
+            data-movie-id="{{ movie.id }}"
+            aria-pressed="{{ 'true' if movie_liked else 'false' }}"
+          >
+            Like
+          </button>
+          <button
+            type="button"
+            class="preference-button{% if movie_watchlist %} is-active{% endif %}"
+            data-preference-button
+            data-preference-type="watchlist"
+            data-movie-id="{{ movie.id }}"
+            aria-pressed="{{ 'true' if movie_watchlist else 'false' }}"
+          >
+            Watchlist
+          </button>
         </div>
       </div>
     </div>

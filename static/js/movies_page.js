@@ -3250,6 +3250,72 @@
       doPick();
     });
 
+    const updatePreferenceButtons = (movieId, payload) => {
+      const selector = `[data-preference-button][data-movie-id="${movieId}"]`;
+      document.querySelectorAll(selector).forEach((button) => {
+        const type = button.dataset.preferenceType;
+        const active =
+          type === "like" ? payload.liked : payload.watchlist;
+        button.classList.toggle("is-active", Boolean(active));
+        button.setAttribute("aria-pressed", active ? "true" : "false");
+      });
+      const card = document.querySelector(
+        `[data-movie-card][data-movie-id="${movieId}"]`,
+      );
+      if (card) {
+        card.dataset.liked = payload.liked ? "true" : "false";
+        card.dataset.watchlist = payload.watchlist ? "true" : "false";
+      }
+    };
+
+    const handlePreferenceClick = async (event) => {
+      const button = event.target.closest("[data-preference-button]");
+      if (!button) return;
+      event.preventDefault();
+      event.stopPropagation();
+      const movieId = button.dataset.movieId;
+      const type = button.dataset.preferenceType;
+      if (!movieId || !type) return;
+      if (button.dataset.prefBusy === "true") return;
+      button.dataset.prefBusy = "true";
+      button.classList.add("is-busy");
+      const isActive = button.classList.contains("is-active");
+      const method = isActive ? "DELETE" : "POST";
+      try {
+        const response = await fetch(`/movies/${movieId}/${type}`, {
+          method,
+          headers: { Accept: "application/json" },
+        });
+        if (!response.ok) {
+          throw new Error("Preference update failed");
+        }
+        const payload = await response.json();
+        if (payload && typeof payload === "object") {
+          updatePreferenceButtons(movieId, payload);
+          if (
+            pageData?.pageContext === "watchlist" &&
+            type === "watchlist" &&
+            !payload.watchlist
+          ) {
+            const card = document.querySelector(
+              `[data-movie-card][data-movie-id="${movieId}"]`,
+            );
+            card?.remove();
+          }
+        }
+      } catch (error) {
+        console.warn("Preference update failed", error);
+        if (typeof window.showToast === "function") {
+          window.showToast("Could not update that preference—try again.");
+        }
+      } finally {
+        delete button.dataset.prefBusy;
+        button.classList.remove("is-busy");
+      }
+    };
+
+    document.addEventListener("click", handlePreferenceClick);
+
     document.addEventListener("keydown", (event) => {
       if (event.key !== "Escape") return;
       if (editDialog && editDialog.classList.contains("is-open")) {

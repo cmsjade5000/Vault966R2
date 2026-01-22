@@ -198,6 +198,56 @@ def _ensure_sqlite_movie_columns() -> None:
                 )
             )
 
+        ai_cache_exists = connection.execute(
+            text("SELECT name FROM sqlite_master WHERE type='table' AND name='ai_cache'")
+        ).first()
+        if not ai_cache_exists:
+            connection.execute(
+                text(
+                    """
+                    CREATE TABLE ai_cache (
+                        cache_key TEXT PRIMARY KEY,
+                        value JSON NOT NULL,
+                        expires_at TIMESTAMP NULL,
+                        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+                    )
+                    """
+                )
+            )
+            connection.execute(
+                text(
+                    """
+                    CREATE INDEX IF NOT EXISTS ix_ai_cache_expires_at
+                    ON ai_cache (expires_at)
+                    """
+                )
+            )
+
+        movie_documents_exists = connection.execute(
+            text("SELECT name FROM sqlite_master WHERE type='table' AND name='movie_documents'")
+        ).first()
+        if not movie_documents_exists:
+            connection.execute(
+                text(
+                    """
+                    CREATE TABLE movie_documents (
+                        movie_id INTEGER PRIMARY KEY REFERENCES movies(id) ON DELETE CASCADE,
+                        doc_version INTEGER NOT NULL,
+                        content TEXT NOT NULL,
+                        embedding JSON NOT NULL,
+                        updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+                    )
+                    """
+                )
+            )
+            connection.execute(
+                text(
+                    """
+                    CREATE INDEX IF NOT EXISTS ix_movie_documents_movie_id
+                    ON movie_documents (movie_id)
+                    """
+                )
+            )
         provenance_exists = connection.execute(
             text(
                 "SELECT name FROM sqlite_master WHERE type='table' AND name='movie_ingest_provenance'"

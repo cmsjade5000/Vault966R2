@@ -6,6 +6,11 @@
 .DEFAULT_GOAL := help
 SERVICE ?= api
 PORT ?= 8000
+HOST ?= 0.0.0.0
+UVICORN_APP ?= api.main:app
+RELOAD_DIR ?= api
+ENV_FILE ?= .env.local
+LOG_LEVEL ?= info
 
 # ---- META / HELP ----
 .PHONY: help
@@ -36,9 +41,42 @@ pr: ## Create a GitHub PR (requires gh auth)
 	gh pr create -f
 
 # ---- SERVER (LOCAL) ----
-.PHONY: dev
-dev: ## Run Uvicorn dev server (hot reload)
-	uvicorn api.main:app --reload
+.PHONY: dev devserver
+dev: ## Run Uvicorn dev server (hot reload, focused logs)
+	@ENV_FLAG=""; \
+	if [ -f "$(ENV_FILE)" ]; then \
+		ENV_FLAG="--env-file $(ENV_FILE)"; \
+	elif [ -f ".env" ]; then \
+		ENV_FLAG="--env-file .env"; \
+	fi; \
+	if command -v lsof >/dev/null 2>&1; then \
+		if lsof -i tcp:$(PORT) | grep -v "COMMAND" >/dev/null 2>&1; then \
+			echo "Port $(PORT) is in use. Either stop the process (lsof -i tcp:$(PORT)) or run: make dev PORT=<free-port>"; \
+			exit 1; \
+		fi; \
+	fi; \
+	if command -v jq >/dev/null 2>&1; then \
+		uvicorn $(UVICORN_APP) \
+		  --host $(HOST) \
+		  --port $(PORT) \
+		  --reload \
+		  --reload-dir $(RELOAD_DIR) \
+		  --log-level $(LOG_LEVEL) \
+		  --access-log \
+		  $$ENV_FLAG | jq; \
+	else \
+		echo "jq not found; streaming raw logs. Install jq for pretty output."; \
+		uvicorn $(UVICORN_APP) \
+		  --host $(HOST) \
+		  --port $(PORT) \
+		  --reload \
+		  --reload-dir $(RELOAD_DIR) \
+		  --log-level $(LOG_LEVEL) \
+		  --access-log \
+		  $$ENV_FLAG; \
+	fi
+
+devserver: dev ## Alias for dev
 
 # ---- DOCKER ----
 .PHONY: up down restart logs db-logs bash ps

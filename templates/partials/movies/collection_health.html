@@ -3,6 +3,39 @@
     <h2>Collection Health</h2>
     <p>Quick maintenance snapshot so you know what needs love next.</p>
   </header>
+  {% if collection_health.recommendation %}
+  <div class="collection-health__recommendation" role="status" aria-live="polite">
+    <div class="collection-health__recommendation-copy">
+      <span class="chip chip-flic">Flic Recommendation</span>
+      <p data-recommendation-text>{{ collection_health.recommendation }}</p>
+    </div>
+    <button
+      type="button"
+      class="collection-health__refresh"
+      data-recommendation-refresh
+      aria-label="Refresh recommendation"
+      title="Refresh recommendation"
+    >
+      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <path
+          d="M20 12a8 8 0 1 1-2.34-5.66"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+        />
+        <path
+          d="M20 4v6h-6"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        />
+      </svg>
+    </button>
+  </div>
+  {% endif %}
   <div class="collection-health__grid">
     <article class="health-card">
       <h3>Missing runtime</h3>

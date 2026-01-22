@@ -6,7 +6,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from api.db import get_db
-from api.deps.auth import require_admin_if_configured
+from api.deps.auth import require_admin
 from api.models.flic_memory import FlicMemory
 from api.models.flic_preset import FlicPreset
 from api.schemas.flic_memory import FlicMemoryRead
@@ -25,7 +25,7 @@ def list_presets(db: Session = Depends(get_db)):
 def create_preset(
     payload: FlicPresetCreate,
     db: Session = Depends(get_db),
-    _: None = Depends(require_admin_if_configured),
+    _: None = Depends(require_admin),
 ):
     clean_name = payload.name.strip()
     if not clean_name:
@@ -52,7 +52,7 @@ def create_preset(
 def delete_preset(
     preset_id: int,
     db: Session = Depends(get_db),
-    _: None = Depends(require_admin_if_configured),
+    _: None = Depends(require_admin),
 ):
     preset = db.query(FlicPreset).filter(FlicPreset.id == preset_id).one_or_none()
     if preset is None:

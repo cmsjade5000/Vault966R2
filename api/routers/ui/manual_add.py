@@ -8,7 +8,7 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from api.db import get_db
-from api.deps.auth import require_admin_if_configured
+from api.deps.auth import require_admin
 from api.models.movie import Genre, Movie
 from api.services.manual_add import (
     append_movie_to_cleaned_csv,
@@ -135,7 +135,7 @@ def manual_add_preview(
 def manual_add_movie(
     payload: ManualMovieCreate = Body(...),
     db: Session = Depends(get_db),
-    _: None = Depends(require_admin_if_configured),
+    _: None = Depends(require_admin),
 ):
     title = payload.title.strip()
     year = payload.year

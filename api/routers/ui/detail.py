@@ -5,10 +5,12 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlalchemy.orm import Session
 
 from api.db import get_db
-from api.services.movies_detail import (
-    get_first_movie_id,
-    get_movie_detail,
-    get_review_neighbors,
+from api.services.movies_detail import get_first_movie_id, get_movie_detail, get_review_neighbors
+from api.services.profiles import (
+    ensure_profile_cookie,
+    get_active_profile_id,
+    get_preferences_for_movies,
+    get_profiles,
 )
 from api.services.ui.spotlight import build_spotlight_reason, get_daily_spotlight_ids
 from api.services.ui.templates import TEMPLATES
@@ -45,6 +47,8 @@ def movie_detail(
                 "review_mode": False,
                 "review_prev_id": None,
                 "review_next_id": None,
+                "profiles": get_profiles(db),
+                "active_profile_id": get_active_profile_id(request, db),
             },
             status_code=404,
         )
@@ -59,7 +63,12 @@ def movie_detail(
     if review:
         review_prev_id, review_next_id = get_review_neighbors(db, detail.id)
 
-    return TEMPLATES.TemplateResponse(
+    profiles = get_profiles(db)
+    active_profile_id = get_active_profile_id(request, db)
+    preferences = get_preferences_for_movies(db, active_profile_id, [detail.id])
+    pref = preferences.get(detail.id, {})
+
+    response = TEMPLATES.TemplateResponse(
         request,
         "movie_detail.html",
         {
@@ -70,5 +79,11 @@ def movie_detail(
             "review_mode": review,
             "review_prev_id": review_prev_id,
             "review_next_id": review_next_id,
+            "profiles": profiles,
+            "active_profile_id": active_profile_id,
+            "movie_liked": pref.get("liked", False),
+            "movie_watchlist": pref.get("watchlist", False),
         },
     )
+    ensure_profile_cookie(request, response, db)
+    return response

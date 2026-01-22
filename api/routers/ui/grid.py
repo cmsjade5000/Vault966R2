@@ -32,6 +32,13 @@ from api.services.ui.spotlight import get_daily_spotlight_movies
 from api.services.ui.templates import TEMPLATES
 from api.services.double_feature import DEFAULT_DOUBLE_FEATURE_RUNTIME, pick_double_feature
 from api.services.flic_ordering import fetch_movies_in_rank_order, rank_movie_ids_by_flic
+from api.services.profiles import (
+    ensure_profile_cookie,
+    get_active_profile_id,
+    get_preferences_for_movies,
+    get_profiles,
+    get_watchlist_movies,
+)
 from api.services.semantic_search import (
     SemanticSearchError,
     SemanticSearchUnavailable,
@@ -147,6 +154,8 @@ def movies_grid(
     semantic: Optional[str] = Query(default=None),
     db: Session = Depends(get_db),
 ):
+    profiles = get_profiles(db)
+    active_profile_id = get_active_profile_id(request, db)
     cookie_data = load_filter_cookie(request)
     using_query = bool(request.query_params)
 
@@ -411,9 +420,13 @@ def movies_grid(
                 .filter(MovieFlag.movie_id.in_(movie_ids))
                 .all()
             }
+            preferences = get_preferences_for_movies(db, active_profile_id, movie_ids)
             for collection in combined_collections:
                 for movie in collection:
                     setattr(movie, "flagged", movie.id in flagged_ids)
+                    pref = preferences.get(movie.id or 0, {})
+                    setattr(movie, "liked", pref.get("liked", False))
+                    setattr(movie, "watchlist", pref.get("watchlist", False))
 
     table_movies = movies
 
@@ -473,9 +486,12 @@ def movies_grid(
         "semantic_active": semantic_active,
         "semantic_enabled": semantic_search_enabled(db),
         "show_ai_search": False,
+        "profiles": profiles,
+        "active_profile_id": active_profile_id,
     }
 
     response = TEMPLATES.TemplateResponse(request, "movies_grid.html", context)
+    ensure_profile_cookie(request, response, db)
     cookie_payload = params.to_cookie_payload(page=current_page)
     cookie_payload["semantic"] = 1 if semantic_active else 0
     response.set_cookie(
@@ -491,8 +507,16 @@ def movies_grid(
 @router.get("/ui/movies/health", response_class=HTMLResponse)
 def movies_health(request: Request, db: Session = Depends(get_db)):
     collection_health = get_collection_health(db)
-    context = {"collection_health": collection_health}
-    return TEMPLATES.TemplateResponse(request, "movies_health.html", context)
+    profiles = get_profiles(db)
+    active_profile_id = get_active_profile_id(request, db)
+    context = {
+        "collection_health": collection_health,
+        "profiles": profiles,
+        "active_profile_id": active_profile_id,
+    }
+    response = TEMPLATES.TemplateResponse(request, "movies_health.html", context)
+    ensure_profile_cookie(request, response, db)
+    return response
 
 
 @router.get("/ui/movies/health/missing", response_class=HTMLResponse)
@@ -510,14 +534,47 @@ def movies_health_missing(
         .all()
     )
 
+    profiles = get_profiles(db)
+    active_profile_id = get_active_profile_id(request, db)
     context = {
         "missing_runtime": missing_runtime,
         "missing_plot": missing_plot,
         "missing_poster": missing_poster,
         "limit": limit,
+        "profiles": profiles,
+        "active_profile_id": active_profile_id,
     }
-    return TEMPLATES.TemplateResponse(
+    response = TEMPLATES.TemplateResponse(
         request,
         "movies_health_missing.html",
         context,
     )
+    ensure_profile_cookie(request, response, db)
+    return response
+
+
+@router.get("/ui/watchlist", response_class=HTMLResponse)
+def watchlist(request: Request, db: Session = Depends(get_db)):
+    profiles = get_profiles(db)
+    active_profile_id = get_active_profile_id(request, db)
+    movies = get_watchlist_movies(db, profile_id=active_profile_id)
+    if movies:
+        attach_poster_themes(movies)
+        attach_genre_display(movies)
+        preferences = get_preferences_for_movies(
+            db, active_profile_id, [movie.id for movie in movies if movie.id is not None]
+        )
+        for movie in movies:
+            pref = preferences.get(movie.id or 0, {})
+            setattr(movie, "liked", pref.get("liked", False))
+            setattr(movie, "watchlist", pref.get("watchlist", False))
+
+    context = {
+        "movies": movies,
+        "profiles": profiles,
+        "active_profile_id": active_profile_id,
+        "total": len(movies),
+    }
+    response = TEMPLATES.TemplateResponse(request, "movies_watchlist.html", context)
+    ensure_profile_cookie(request, response, db)
+    return response

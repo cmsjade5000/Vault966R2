@@ -186,6 +186,8 @@
             data-movie-card
             data-movie-id="{{ movie.id }}"
             data-flagged="{{ 'true' if movie.flagged else 'false' }}"
+            data-liked="{{ 'true' if movie.liked else 'false' }}"
+            data-watchlist="{{ 'true' if movie.watchlist else 'false' }}"
           >
             <a class="card-link" href="/ui/movies/{{ movie.id }}">
               <div class="card-media">
@@ -257,6 +259,28 @@
                 </div>
               </div>
             </a>
+            <div class="card-preferences" aria-label="Movie preferences">
+              <button
+                type="button"
+                class="preference-button{% if movie.liked %} is-active{% endif %}"
+                data-preference-button
+                data-preference-type="like"
+                data-movie-id="{{ movie.id }}"
+                aria-pressed="{{ 'true' if movie.liked else 'false' }}"
+              >
+                Like
+              </button>
+              <button
+                type="button"
+                class="preference-button{% if movie.watchlist %} is-active{% endif %}"
+                data-preference-button
+                data-preference-type="watchlist"
+                data-movie-id="{{ movie.id }}"
+                aria-pressed="{{ 'true' if movie.watchlist else 'false' }}"
+              >
+                Watchlist
+              </button>
+            </div>
           </article>
           {% endfor %}
         </div>

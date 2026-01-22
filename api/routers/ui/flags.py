@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session, joinedload
 from api.db import get_db
 from api.models.movie import Movie
 from api.models.movie_flag import MovieFlag
+from api.services.profiles import ensure_profile_cookie, get_active_profile_id, get_profiles
 from api.services.ui.templates import TEMPLATES
 
 router = APIRouter(tags=["ui"])
@@ -21,8 +22,16 @@ def list_flags_ui(request: Request, db: Session = Depends(get_db)):
         .order_by(desc(MovieFlag.updated_at))
         .all()
     )
-    return TEMPLATES.TemplateResponse(
+    profiles = get_profiles(db)
+    active_profile_id = get_active_profile_id(request, db)
+    response = TEMPLATES.TemplateResponse(
         request,
         "flags.html",
-        {"flags": flags},
+        {
+            "flags": flags,
+            "profiles": profiles,
+            "active_profile_id": active_profile_id,
+        },
     )
+    ensure_profile_cookie(request, response, db)
+    return response

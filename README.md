@@ -18,7 +18,7 @@ cp .env.example .env
 # Optional: set `TMDB_API_KEY` / `OMDB_API_KEY` for lookup + enrichment endpoints.
 
 # Run the API
-uvicorn api.main:app --reload
+make dev          # alias: make devserver; uses .env.local (or .env fallback) automatically
 ```
 
 Visit http://127.0.0.1:8000/health and http://127.0.0.1:8000/docs
@@ -27,7 +27,9 @@ Visit http://127.0.0.1:8000/health and http://127.0.0.1:8000/docs
 
 - Set `ADMIN_TOKEN` in `.env` (the example file includes a placeholder).
 - In Swagger UI (`/docs`), click the "Authorize" button and enter `Bearer <your token>`.
-- Admin-only endpoints include movie/person creation and role attachments.
+- Admin-only endpoints include movie/person creation, role attachments, manual add, and collection
+  health refresh. For UI buttons that call admin endpoints (e.g., collection health refresh), set
+  `localStorage.vaultAdminToken = "<ADMIN_TOKEN>"` in your browser console to attach the header.
 
 ## Meet Flic
 
@@ -113,7 +115,7 @@ Postgres `DATABASE_URL` is not configured.
 ## Debugging and observability
 
 - Each request gets an `X-Request-ID` (client-supplied or generated) and the same value is echoed in responses.
-- Structured JSON logs (`vault966` logger) include method, path, status, duration, and `request_id`. Tail them while debugging: `uvicorn api.main:app --reload | jq`.
+- Structured JSON logs (`vault966` logger) include method, path, status, duration, and `request_id`. Tail them while debugging: `make dev` (pipes through `jq` for readability).
 - Errors return JSON with `error_code`, `message`, and `request_id`, making it easy to correlate with logs without exposing request bodies.
 
 ## Generating API clients

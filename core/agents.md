@@ -3,13 +3,15 @@
 This file is a quick orientation for maintaining context when the CLI session resets. It highlights the primary folders and what lives in them so you can reopen only what you need.
 
 ## Quick Commands & APIs
-- Run API: `uvicorn api.main:app --reload`
+- Run API: `make dev` (alias: `make devserver`; loads `.env.local` or `.env` if present and pipes logs through `jq`)
 - Tests: `python3 -m pytest`
 - JS lint (after `npm install`): `npm run lint`
 - `GET /ui/movies` renders `templates/movies_grid.html`
 - `GET /movies/{id}/detail` returns `MovieDetail` (edit drawer data)
 - `PATCH /movies/{id}` accepts `MovieUpdate` (metadata + optional `resolve_flag`)
 - `POST/DELETE /movies/{id}/flag`, `GET /movies/flags` manage the flag queue
+- Admin endpoints require `Authorization: Bearer <ADMIN_TOKEN>`; for UI admin actions (manual add,
+  collection health refresh) set `localStorage.vaultAdminToken` in the browser.
 
 ## Top-Level Map
 - **api/** – FastAPI backend. Key subfolders:

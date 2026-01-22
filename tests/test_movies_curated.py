@@ -12,3 +12,9 @@ def test_collection_health_metrics(db_session) -> None:
     assert health.missing_runtime >= 0
     assert health.missing_plot >= 0
     assert health.missing_poster >= 0
+
+
+def test_collection_health_recommendation_fallback(db_session) -> None:
+    health = get_collection_health(db_session)
+    assert isinstance(health.recommendation, str)
+    assert health.recommendation.strip()

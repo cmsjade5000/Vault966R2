@@ -1,9 +1,11 @@
 import json
 import logging
 import logging.config
+import os
 import pathlib
 import time
 import uuid
+from contextlib import asynccontextmanager
 from typing import Any
 
 from fastapi import FastAPI, HTTPException, Request
@@ -16,7 +18,17 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from api.config import settings
 from api.db import bootstrap_sqlite_schema, engine
-from api.routers import ai, fliclists, health, movies, people, search, ui
+from api.routers import (
+    ai,
+    collection_health,
+    fliclists,
+    health,
+    movies,
+    people,
+    profiles,
+    search,
+    ui,
+)
 import api.models  # noqa: F401  # ensure all model mappers are registered
 
 
@@ -35,6 +47,8 @@ class JsonFormatter(logging.Formatter):
 
 
 def configure_logging() -> None:
+    log_style = os.getenv("LOG_STYLE", "json").lower()
+    formatter = "console" if log_style in {"console", "dev"} else "json"
     logging.config.dictConfig(
         {
             "version": 1,
@@ -42,12 +56,16 @@ def configure_logging() -> None:
             "formatters": {
                 "json": {
                     "()": JsonFormatter,
-                }
+                },
+                "console": {
+                    # Dev-friendly format; keep JSON for log processors.
+                    "format": "%(levelname)s %(name)s %(message)s",
+                },
             },
             "handlers": {
                 "console": {
                     "class": "logging.StreamHandler",
-                    "formatter": "json",
+                    "formatter": formatter,
                 }
             },
             "loggers": {
@@ -223,7 +241,15 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         return response
 
 
-app = FastAPI(title=settings.app_name)
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Ensure SQLite dev databases have required tables before handling requests.
+    if engine.url.get_backend_name() == "sqlite":
+        bootstrap_sqlite_schema()
+    yield
+
+
+app = FastAPI(title=settings.app_name, lifespan=lifespan)
 app.add_middleware(ObservabilityMiddleware)
 app.add_middleware(SecurityHeadersMiddleware)
 
@@ -294,6 +320,8 @@ app.include_router(ui.router)
 app.include_router(fliclists.router)
 app.include_router(ai.router)
 app.include_router(search.router)
+app.include_router(collection_health.router)
+app.include_router(profiles.router)
 
 
 @app.get("/", include_in_schema=False)
@@ -304,10 +332,3 @@ def root_redirect():
 STATIC_DIR = pathlib.Path(__file__).resolve().parents[1] / "static"
 if STATIC_DIR.exists():
     app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
-
-
-if engine.url.get_backend_name() == "sqlite":
-
-    @app.on_event("startup")
-    def _bootstrap_sqlite_db() -> None:
-        bootstrap_sqlite_schema()

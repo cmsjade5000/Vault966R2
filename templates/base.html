@@ -74,6 +74,13 @@
                 >Library</a
               >
               <a
+                class="nav-link{% if current_path == '/ui/watchlist' %} is-active{% endif %}"
+                href="/ui/watchlist"
+                role="menuitem"
+                {% if current_path == '/ui/watchlist' %}aria-current="page"{% endif %}
+                >Watchlist</a
+              >
+              <a
                 class="nav-link{% if current_path == '/ui/movies/health' %} is-active{% endif %}"
                 href="/ui/movies/health"
                 role="menuitem"
@@ -81,7 +88,20 @@
                 >Collection Health</a
               >
             </div>
-            <div class="nav-actions"></div>
+            <div class="nav-actions">
+              {% if profiles %}
+              <label class="profile-switcher">
+                <span>Profile</span>
+                <select data-profile-select>
+                  {% for profile in profiles %}
+                  <option value="{{ profile.id }}" {% if profile.id == active_profile_id %}selected{% endif %}>
+                    {{ profile.name }}
+                  </option>
+                  {% endfor %}
+                </select>
+              </label>
+              {% endif %}
+            </div>
           </nav>
         </div>
       </header>
@@ -91,6 +111,7 @@
     </div>
     <div id="toast-container" aria-live="polite" aria-atomic="true"></div>
     <script src="{{ url_for('static', path='js/base.js') }}" defer></script>
+    <script src="{{ url_for('static', path='js/profile_switcher.js') }}" defer></script>
     <script src="{{ url_for('static', path='js/back_link.js') }}" defer></script>
     {% block scripts %}{% endblock %}
   </body>

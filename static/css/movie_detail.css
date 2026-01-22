@@ -103,6 +103,25 @@
     box-shadow: 0 26px 50px rgba(15, 23, 42, 0.55);
   }
 
+  .poster-frame:not(.poster-frame--spotlight) {
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .poster-frame--spotlight {
+    background: var(--flic-projector-glow);
+    box-shadow: 0 28px 55px rgba(15, 23, 42, 0.6), 0 0 0 1px rgba(248, 113, 113, 0.25);
+  }
+
+  .poster-frame--spotlight::before {
+    content: "";
+    position: absolute;
+    inset: 0.25rem;
+    border-radius: 1.05rem;
+    border: 1px solid rgba(251, 191, 36, 0.45);
+    pointer-events: none;
+  }
+
   .poster-frame::after {
     content: "";
     position: absolute;
@@ -110,6 +129,10 @@
     border-radius: 1.1rem;
     border: 1px solid rgba(226, 232, 240, 0.2);
     pointer-events: none;
+  }
+
+  .poster-frame:not(.poster-frame--spotlight)::after {
+    border-color: transparent;
   }
 
   .poster {
@@ -580,6 +603,13 @@
     gap: 0.4rem;
     flex-wrap: wrap;
     margin-top: 0.75rem;
+  }
+
+  .preference-actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin-top: 0.6rem;
   }
 
   .badge-link {

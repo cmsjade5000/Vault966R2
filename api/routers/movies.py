@@ -1,12 +1,12 @@
 from datetime import datetime, timezone
 from typing import List, Optional, Sequence
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Response
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
 from sqlalchemy import func
 from sqlalchemy.orm import Session, selectinload
 
 from api.db import get_db
-from api.deps.auth import require_admin_if_configured
+from api.deps.auth import require_admin
 from api.models.flic_memory import FlicMemory
 from api.models.movie import Genre, Mood, Movie, movie_genres, movie_moods
 from api.models.movie_flag import MovieFlag
@@ -48,6 +48,7 @@ from api.services.llm_filters import (
 from api.services.movie_updates import apply_movie_update
 from api.services.double_feature import DEFAULT_DOUBLE_FEATURE_RUNTIME, pick_double_feature
 from api.services.flic_ordering import fetch_movies_in_rank_order, rank_movie_ids_by_flic
+from api.services.profiles import get_active_profile_id, update_movie_preference
 from core.picker import (
     PickerCandidate,
     PickerFilters,
@@ -92,6 +93,19 @@ def _attach_flag_status(db: Session, movies: Sequence[Movie]) -> None:
     }
     for movie in movies:
         setattr(movie, "flagged", movie.id in flagged_ids)
+
+
+def _ensure_movie_exists(db: Session, movie_id: int) -> None:
+    exists = db.query(Movie.id).filter(Movie.id == movie_id).first()
+    if not exists:
+        raise HTTPException(status_code=404, detail="Movie not found")
+
+
+def _preference_response(pref) -> dict:
+    return {
+        "liked": bool(pref.liked) if pref else False,
+        "watchlist": bool(pref.watchlist) if pref else False,
+    }
 
 
 @router.get("/picks", response_model=MovieRead)
@@ -442,7 +456,7 @@ def update_movie(
     movie_id: int,
     payload: MovieUpdate,
     db: Session = Depends(get_db),
-    _: None = Depends(require_admin_if_configured),
+    _: None = Depends(require_admin),
 ):
     movie = db.get(Movie, movie_id)
     if movie is None:
@@ -464,7 +478,7 @@ def update_movie(
 def delete_movie(
     movie_id: int,
     db: Session = Depends(get_db),
-    _: None = Depends(require_admin_if_configured),
+    _: None = Depends(require_admin),
 ) -> Response:
     movie = db.get(Movie, movie_id)
     if movie is None:
@@ -479,7 +493,7 @@ def flag_movie(
     movie_id: int,
     payload: MovieFlagCreate,
     db: Session = Depends(get_db),
-    _: None = Depends(require_admin_if_configured),
+    _: None = Depends(require_admin),
 ):
     movie = db.get(Movie, movie_id)
     if movie is None:
@@ -505,7 +519,7 @@ def flag_movie(
 def clear_flag(
     movie_id: int,
     db: Session = Depends(get_db),
-    _: None = Depends(require_admin_if_configured),
+    _: None = Depends(require_admin),
 ) -> Response:
     flag = db.get(MovieFlag, movie_id)
     if flag is None:
@@ -513,6 +527,74 @@ def clear_flag(
     db.delete(flag)
     db.commit()
     return Response(status_code=204)
+
+
+@router.post("/{movie_id}/like")
+def like_movie(
+    movie_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+) -> dict:
+    _ensure_movie_exists(db, movie_id)
+    profile_id = get_active_profile_id(request, db)
+    pref = update_movie_preference(
+        db,
+        profile_id=profile_id,
+        movie_id=movie_id,
+        liked=True,
+    )
+    return _preference_response(pref)
+
+
+@router.delete("/{movie_id}/like")
+def unlike_movie(
+    movie_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+) -> dict:
+    _ensure_movie_exists(db, movie_id)
+    profile_id = get_active_profile_id(request, db)
+    pref = update_movie_preference(
+        db,
+        profile_id=profile_id,
+        movie_id=movie_id,
+        liked=False,
+    )
+    return _preference_response(pref)
+
+
+@router.post("/{movie_id}/watchlist")
+def watchlist_movie(
+    movie_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+) -> dict:
+    _ensure_movie_exists(db, movie_id)
+    profile_id = get_active_profile_id(request, db)
+    pref = update_movie_preference(
+        db,
+        profile_id=profile_id,
+        movie_id=movie_id,
+        watchlist=True,
+    )
+    return _preference_response(pref)
+
+
+@router.delete("/{movie_id}/watchlist")
+def unwatchlist_movie(
+    movie_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+) -> dict:
+    _ensure_movie_exists(db, movie_id)
+    profile_id = get_active_profile_id(request, db)
+    pref = update_movie_preference(
+        db,
+        profile_id=profile_id,
+        movie_id=movie_id,
+        watchlist=False,
+    )
+    return _preference_response(pref)
 
 
 @router.get("/", response_model=List[MovieRead])
@@ -526,7 +608,7 @@ def list_movies(db: Session = Depends(get_db)):
 def create_movie(
     payload: MovieCreate,
     db: Session = Depends(get_db),
-    _: None = Depends(require_admin_if_configured),
+    _: None = Depends(require_admin),
 ):
     # Upsert genres/moods by name
     genres = []
@@ -568,7 +650,7 @@ def attach_role(
     movie_id: int,
     payload: RoleAttach,
     db: Session = Depends(get_db),
-    _: None = Depends(require_admin_if_configured),
+    _: None = Depends(require_admin),
 ):
     movie = db.get(Movie, movie_id)
     if movie is None:

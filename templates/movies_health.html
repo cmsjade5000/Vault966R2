@@ -19,3 +19,6 @@
 
   {% include "partials/movies/collection_health.html" %}
 {% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', path='js/collection_health.js') }}" defer></script>
+{% endblock %}
