@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% block title %}Vault 966 · Login{% endblock %}
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', path='css/login.css') }}" />
+<script src="{{ url_for('static', path='js/login.js') }}" defer></script>
+<script src="{{ url_for('static', path='js/login_archive.js') }}" defer></script>
+{% endblock %}
+{% block body_class %}auth-page{% if unlocked %} auth-page--unlocked{% endif %}{% endblock %}
+{% block content %}
+  <div class="login-crt" aria-hidden="true"></div>
+  <div class="login-archive{% if unlocked %} is-unlocked{% endif %}" aria-hidden="true">
+    {% for poster_url in archive_tiles %}
+    <span class="login-archive__poster">
+      {% if poster_url %}
+      <img src="{{ poster_url }}" alt="" loading="lazy" decoding="async" data-archive-img />
+      {% endif %}
+    </span>
+    {% endfor %}
+  </div>
+  <section
+    class="login-shell{% if unlocked %} is-unlocked{% endif %}"
+    aria-label="Vault 966 login"
+    data-unlocked="{{ '1' if unlocked else '0' }}"
+  >
+    <div class="login-ambient" aria-hidden="true">
+      <span class="login-ambient__beam login-ambient__beam--one"></span>
+      <span class="login-ambient__beam login-ambient__beam--two"></span>
+      <span class="login-ambient__marquee"></span>
+    </div>
+    <div class="login-card">
+      <header class="login-card__header">
+        <span class="login-card__label">Archive Terminal</span>
+        <h1>Vault 966</h1>
+      </header>
+      <p class="login-card__subhead">Access the vault to unlock the secured film registry.</p>
+      <div class="login-ticker" aria-hidden="true">
+        <div class="login-ticker__track">
+          {% if unlocked %}
+          <span>Vault Unlocked</span>
+          <span>Vault Unlocked</span>
+          <span>Vault Unlocked</span>
+          <span>Vault Unlocked</span>
+          <span>Vault Unlocked</span>
+          {% else %}
+          <span>Vault Secured</span>
+          <span>Vault Secured</span>
+          <span>Vault Secured</span>
+          <span>Vault Secured</span>
+          <span>Vault Secured</span>
+          {% endif %}
+        </div>
+        <div class="login-ticker__track" aria-hidden="true">
+          {% if unlocked %}
+          <span>Vault Unlocked</span>
+          <span>Vault Unlocked</span>
+          <span>Vault Unlocked</span>
+          <span>Vault Unlocked</span>
+          <span>Vault Unlocked</span>
+          <span>Vault Unlocked</span>
+          {% else %}
+          <span>Vault Secured</span>
+          <span>Vault Secured</span>
+          <span>Vault Secured</span>
+          <span>Vault Secured</span>
+          <span>Vault Secured</span>
+          <span>Vault Secured</span>
+          {% endif %}
+        </div>
+      </div>
+      <p class="login-card__error" role="alert" {% if not error %}hidden{% endif %}>{{ error or "" }}</p>
+      <form class="login-form" method="post" autocomplete="off" aria-label="Vault login">
+        <div class="login-divider">
+          <span>Credentials</span>
+        </div>
+        <label class="login-field">
+          <span>Vault Username</span>
+          <input
+            type="text"
+            name="access_key"
+            placeholder="••••••••••"
+            maxlength="64"
+            autocomplete="username"
+            required
+          />
+        </label>
+        <label class="login-field">
+          <span>Passcode</span>
+          <input
+            type="password"
+            name="passcode"
+            placeholder="••••••••••"
+            maxlength="128"
+            autocomplete="current-password"
+            required
+          />
+        </label>
+        <div class="login-card__actions">
+          <button class="login-button" type="submit">
+            <span class="login-button__value">UNLOCK</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </section>
+{% endblock %}
+
+{% block scripts %}
+  {{ super() }}
+  <script type="application/json" id="login-archive-data">{{ {
+    'posters': archive_poster_urls
+  } | tojson }}</script>
+{% endblock %}

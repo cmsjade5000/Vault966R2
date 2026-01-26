@@ -7,8 +7,8 @@ from sqlalchemy.orm import Session
 from api.db import get_db
 from api.services.profiles import get_active_profile_id, get_profiles, set_active_profile_cookie
 
-# Profile endpoints stay intentionally public; profile selection is cookie-scoped,
-# not authenticated user identity.
+# Profile endpoints are gated by the login session; profile selection is still
+# cookie-scoped, not a full user identity.
 router = APIRouter(prefix="/api/profiles", tags=["profiles"])
 
 
@@ -33,6 +33,9 @@ def set_active_profile(
     response: Response,
     db: Session = Depends(get_db),
 ) -> dict:
+    session_profile_id = getattr(request.state, "session_profile_id", None)
+    if isinstance(session_profile_id, int) and payload.profile_id != session_profile_id:
+        raise HTTPException(status_code=403, detail="Profile switching is restricted.")
     profiles = get_profiles(db)
     if not any(profile.id == payload.profile_id for profile in profiles):
         raise HTTPException(status_code=400, detail="Unknown profile")

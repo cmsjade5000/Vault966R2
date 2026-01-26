@@ -350,7 +350,7 @@ def search_movies(
         _attach_flag_status(db, items)
     else:
         clause = ordering_clause(params.order_by)
-        ordered_query = filtered_query.order_by(clause)
+        ordered_query = filtered_query.order_by(*clause)
         items, total = paginate(ordered_query, page=page, page_size=page_size)
         _attach_flag_status(db, items)
 
@@ -419,7 +419,7 @@ def llm_search_movies(
         _attach_flag_status(db, items)
     else:
         clause = ordering_clause(params.order_by)
-        ordered_query = filtered_query.order_by(clause)
+        ordered_query = filtered_query.order_by(*clause)
         items, total = paginate(ordered_query, page=page, page_size=page_size)
         _attach_flag_status(db, items)
 

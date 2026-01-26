@@ -104,6 +104,9 @@ def _get_tmdb_similar(db: Session, movie: Movie, limit: int = 12) -> List[Simila
                 year=candidate.year,
                 flic_score=None,
                 poster_theme=select_poster_theme(candidate_genres),
+                genres=candidate_genres,
+                imdb_rating=candidate.imdb_rating,
+                rt_score=candidate.rt_score,
             )
         )
         if len(resolved) >= limit:
@@ -285,6 +288,9 @@ def _score_similar(movie: Movie, candidates: List[Movie]) -> List[SimilarMovie]:
                     year=candidate.year,
                     flic_score=round(score, 2),
                     poster_theme=select_poster_theme(candidate_genre_labels),
+                    genres=candidate_genre_labels,
+                    imdb_rating=candidate.imdb_rating,
+                    rt_score=candidate.rt_score,
                 ),
             )
         )
@@ -315,6 +321,9 @@ def _score_similar(movie: Movie, candidates: List[Movie]) -> List[SimilarMovie]:
                 year=candidate.year,
                 flic_score=None,
                 poster_theme=select_poster_theme(_extract_genre_labels(candidate)),
+                genres=_extract_genre_labels(candidate),
+                imdb_rating=candidate.imdb_rating,
+                rt_score=candidate.rt_score,
             )
             for candidate in fallback
         ]

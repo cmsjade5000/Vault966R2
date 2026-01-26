@@ -32,6 +32,9 @@ class SimilarMovie(BaseModel):
     year: Optional[int] = None
     flic_score: Optional[float] = None
     poster_theme: Optional[str] = None
+    genres: List[str] = Field(default_factory=list)
+    imdb_rating: Optional[float] = None
+    rt_score: Optional[int] = None
 
 
 class TopBilledEntry(BaseModel):

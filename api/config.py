@@ -36,8 +36,32 @@ class Settings(BaseSettings):
     semantic_backfill_sleep: float = Field(
         default=0.4, validation_alias="SEMANTIC_BACKFILL_SLEEP_SECONDS"
     )
+    assistant_access_token: Optional[str] = Field(
+        default=None, validation_alias="ASSISTANT_API_TOKEN"
+    )
     spotlight_rotate: bool = Field(default=False, validation_alias="SPOTLIGHT_ROTATE")
     double_feature_rotate: bool = Field(default=False, validation_alias="DOUBLE_FEATURE_ROTATE")
+    login_access_key: Optional[str] = Field(default=None, validation_alias="LOGIN_ACCESS_KEY")
+    login_passcode: Optional[str] = Field(default=None, validation_alias="LOGIN_PASSCODE")
+    login_access_key_user_a: Optional[str] = Field(
+        default=None, validation_alias="LOGIN_ACCESS_KEY_USER_A"
+    )
+    login_passcode_user_a: Optional[str] = Field(
+        default=None, validation_alias="LOGIN_PASSCODE_USER_A"
+    )
+    login_access_key_user_b: Optional[str] = Field(
+        default=None, validation_alias="LOGIN_ACCESS_KEY_USER_B"
+    )
+    login_passcode_user_b: Optional[str] = Field(
+        default=None, validation_alias="LOGIN_PASSCODE_USER_B"
+    )
+    login_session_secret: Optional[str] = Field(
+        default=None, validation_alias="LOGIN_SESSION_SECRET"
+    )
+    login_session_ttl_hours: int = Field(default=168, validation_alias="LOGIN_SESSION_TTL_HOURS")
+    disable_auth: bool = Field(default=False, validation_alias="DISABLE_AUTH")
+    log_style: str = Field(default="json", validation_alias="LOG_STYLE")
+    log_color: bool = Field(default=False, validation_alias="LOG_COLOR")
 
     @field_validator("cors_origins", mode="before")
     @classmethod

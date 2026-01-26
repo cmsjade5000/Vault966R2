@@ -3,58 +3,10 @@
 {% block head %}
 <link rel="stylesheet" href="{{ url_for('static', path='css/movies.css') }}" />
 {% endblock %}
+{% block body_class %}library-page{% endblock %}
 {% block content %}
-  <header class="app-hero page-shell">
-    <div class="app-hero__inner">
-      <div class="hero-title hero-title--center">
-        <h1>Vault 966</h1>
-        <span class="chip chip-flic">by Flic</span>
-      </div>
-      <p class="tagline app-hero__tagline" id="tagline">{{ initial_tagline }}</p>
-    </div>
-  </header>
-
   {% include "partials/movies/hero.html" %}
 
-  {% if daily_spotlight_movies %}
-  <section class="poster-banner">
-    <div class="poster-banner__inner" aria-label="Daily spotlight">
-      <header class="poster-banner__header">
-        <div>
-          <h2 class="poster-banner__title">Daily Spotlight</h2>
-          <p class="poster-banner__subtitle">Four curated picks, refreshed each day.</p>
-        </div>
-      </header>
-      <div class="poster-banner__grid" role="list">
-        {% for movie in daily_spotlight_movies %}
-          <a
-            class="poster-banner__link poster-banner__tile"
-            role="listitem"
-            href="/ui/movies/{{ movie.id }}?spotlight=1"
-            aria-label="View details for {{ movie.title }}"
-          >
-            <div class="poster-banner__poster">
-              <img
-                class="poster-banner__image"
-                src="{{ movie.poster_url }}"
-                alt="{{ movie.title }} poster"
-                loading="lazy"
-                title="{{ movie.title }}"
-              />
-              <span class="poster-banner__shine" aria-hidden="true"></span>
-              <div class="poster-banner__meta" aria-hidden="true">
-                <span class="poster-banner__meta-title">{{ movie.title }}</span>
-                {% if movie.year %}
-                <span class="poster-banner__meta-subtitle">{{ movie.year }}</span>
-                {% endif %}
-              </div>
-            </div>
-          </a>
-        {% endfor %}
-      </div>
-    </div>
-  </section>
-  {% endif %}
   <section class="page-hero page-shell" id="filters">
     <div class="page-hero__primary">
       {% if order_by == 'flic' and flic_filters_summary %}
@@ -68,7 +20,7 @@
           </div>
           <p>{{ flic_filters_summary }}</p>
           {% if flic_filters_default %}
-          <p class="flic-ordering-callout__hint">Tip: add a mood, genre, or runtime filter to personalize the mix.</p>
+          <p class="flic-ordering-callout__hint">Tip: add a genre or runtime filter to personalize the mix.</p>
           {% endif %}
         </div>
       </div>
@@ -83,13 +35,6 @@
           {% set clean = label | replace('+',' ') | replace('%2C', ',') | replace('%20', ' ') | replace('%2F','/') | replace('%26', '&') | replace('%3A', ':') | trim %}
           {% if clean %}
             {% set active_filters = active_filters + [{'key':'genre','label': clean, 'value': clean}] %}
-          {% endif %}
-        {% endfor %}
-        {% set mood_list = moods.split(',') if moods else [] %}
-        {% for label in mood_list %}
-          {% set clean = label | replace('+',' ') | replace('%2C', ',') | replace('%20', ' ') | replace('%2F','/') | replace('%26', '&') | replace('%3A', ':') | trim %}
-          {% if clean %}
-            {% set active_filters = active_filters + [{'key':'mood','label': clean, 'value': clean}] %}
           {% endif %}
         {% endfor %}
         {% if year_min or year_max %}
@@ -173,7 +118,6 @@
 
   <main class="results-shell page-shell" aria-live="polite" id="results" data-results-shell>
     {% if movies %}
-      {% set spotlight_ids = daily_spotlight_movies | map(attribute='id') | list if daily_spotlight_movies else [] %}
       {% if featured_movies %}
       <details class="grid-toggle" open>
         <summary class="grid-toggle__summary" aria-label="Toggle poster grid">
@@ -182,7 +126,7 @@
         <div class="grid" data-featured-grid data-results-grid aria-label="Featured movie results">
           {% for movie in featured_movies %}
           <article
-            class="card{% if movie.flagged %} card--flagged{% endif %}{% if movie.id in spotlight_ids %} card--spotlight{% endif %}"
+            class="card{% if movie.flagged %} card--flagged{% endif %}"
             data-movie-card
             data-movie-id="{{ movie.id }}"
             data-flagged="{{ 'true' if movie.flagged else 'false' }}"
@@ -210,9 +154,6 @@
                 {% endif %}
                 <div class="card-title-row">
                   <h2 class="card-title">{{ movie.title }}</h2>
-                  {% if movie.id in spotlight_ids %}
-                  <span class="card-status card-status--spotlight">Spotlight</span>
-                  {% endif %}
                   {% if movie.flagged %}
                   <span class="card-status card-status--flagged">Needs review</span>
                   {% endif %}
@@ -306,7 +247,7 @@
           class="pager-link"
           data-goto-page="{{ page - 1 }}"
           data-disabled="{{ 'true' if page <= 1 else 'false' }}"
-          href="/ui/movies?q={{ q or '' }}&genres={{ genres or '' }}&moods={{ moods or '' }}&year_min={{ year_min or '' }}&year_max={{ year_max or '' }}&runtime_max={{ runtime_max or '' }}&order_by={{ order_by or 'title_asc' }}&semantic={{ 1 if semantic_active else '' }}&_filters=1&page={{ page - 1 }}#results-table"
+          href="/ui/movies?q={{ q or '' }}&genres={{ genres or '' }}&year_min={{ year_min or '' }}&year_max={{ year_max or '' }}&runtime_max={{ runtime_max or '' }}&order_by={{ order_by or 'title_asc' }}&semantic={{ 1 if semantic_active else '' }}&_filters=1&page={{ page - 1 }}#results-table"
           aria-disabled="{{ 'true' if page <= 1 else 'false' }}"
         >&laquo; Previous</a>
         <span>Page {{ page }} of {{ total_pages }}</span>
@@ -314,7 +255,7 @@
           class="pager-link"
           data-goto-page="{{ page + 1 }}"
           data-disabled="{{ 'true' if page >= total_pages else 'false' }}"
-          href="/ui/movies?q={{ q or '' }}&genres={{ genres or '' }}&moods={{ moods or '' }}&year_min={{ year_min or '' }}&year_max={{ year_max or '' }}&runtime_max={{ runtime_max or '' }}&order_by={{ order_by or 'title_asc' }}&semantic={{ 1 if semantic_active else '' }}&_filters=1&page={{ page + 1 }}#results-table"
+          href="/ui/movies?q={{ q or '' }}&genres={{ genres or '' }}&year_min={{ year_min or '' }}&year_max={{ year_max or '' }}&runtime_max={{ runtime_max or '' }}&order_by={{ order_by or 'title_asc' }}&semantic={{ 1 if semantic_active else '' }}&_filters=1&page={{ page + 1 }}#results-table"
           aria-disabled="{{ 'true' if page >= total_pages else 'false' }}"
         >Next &raquo;</a>
       </nav>
@@ -327,53 +268,6 @@
           </ul>
         </details>
 
-        <details class="manual-add" id="manual-add">
-          <summary>Add a movie</summary>
-          <form class="manual-add__form" id="manual-add-form" autocomplete="off">
-            <div class="manual-add__row">
-              <label for="manual-add-title">
-                <span>Title</span>
-                <input id="manual-add-title" name="title" type="text" required placeholder="e.g. Arrival" />
-              </label>
-              <label for="manual-add-year">
-                <span>Year</span>
-                <input
-                  id="manual-add-year"
-                  name="year"
-                  type="number"
-                  inputmode="numeric"
-                  min="1888"
-                  max="2100"
-                  placeholder="e.g. 2016"
-                />
-              </label>
-            </div>
-            <div class="manual-add__actions">
-              <button type="submit" class="button-secondary" id="manual-add-submit">Save</button>
-              <span class="manual-add__status" id="manual-add-status" role="status" aria-live="polite" hidden></span>
-            </div>
-          </form>
-          <div class="manual-add__preview" id="manual-add-preview" hidden>
-            <div class="manual-add-preview__card">
-              <div class="manual-add-preview__layout">
-                <div id="manual-add-preview-poster"></div>
-                <div>
-                  <div class="manual-add-preview__header">
-                    <h4 class="manual-add-preview__title" id="manual-add-preview-title"></h4>
-                    <div class="manual-add-preview__meta" id="manual-add-preview-meta"></div>
-                  </div>
-                  <div class="manual-add-preview__body" id="manual-add-preview-overview"></div>
-                  <div class="manual-add-preview__meta" id="manual-add-preview-genres"></div>
-                </div>
-              </div>
-            </div>
-            <div class="manual-add__preview-actions">
-              <button type="button" class="button-primary" id="manual-add-confirm">Looks good</button>
-              <button type="button" class="button-ghost" id="manual-add-cancel">Cancel</button>
-              <button type="button" class="button-secondary" id="manual-add-confirm-minimal" hidden>Add without metadata</button>
-            </div>
-          </div>
-        </details>
       </div>
     {% else %}
       <div class="empty" role="status" data-results-empty>
@@ -392,8 +286,6 @@
 {% block scripts %}
   {{ super() }}
   <script type="application/json" id="movies-page-data">{{ {
-    'taglines': taglines,
-    'initialTagline': initial_tagline,
     'total': total,
     'totalPages': total_pages,
     'page': page,

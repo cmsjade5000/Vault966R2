@@ -208,6 +208,89 @@
     background: linear-gradient(135deg, rgba(167, 139, 250, 0.88), rgba(56, 189, 248, 0.85));
   }
 
+  .detail-recs {
+    margin-top: 1.5rem;
+    display: grid;
+    gap: 1rem;
+  }
+
+  .detail-recs__header h2 {
+    margin: 0;
+    font-size: 1.35rem;
+  }
+
+  .detail-recs__header p {
+    margin: 0.35rem 0 0;
+    color: rgba(148, 163, 184, 0.85);
+  }
+
+  .detail-recs__grid {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  }
+
+  .detail-rec-card {
+    background: rgba(15, 23, 42, 0.55);
+    border: 1px solid rgba(148, 163, 184, 0.18);
+    border-radius: 1rem;
+    padding: 0.85rem;
+    display: grid;
+    gap: 0.6rem;
+    box-shadow: 0 16px 28px rgba(15, 23, 42, 0.35);
+  }
+
+  .detail-rec-card__link {
+    text-decoration: none;
+    color: inherit;
+    display: grid;
+    gap: 0.6rem;
+  }
+
+  .detail-rec-card__poster img,
+  .detail-rec-card__poster .poster {
+    width: 100%;
+    border-radius: 0.75rem;
+    aspect-ratio: 2 / 3;
+    object-fit: cover;
+    box-shadow: 0 10px 22px rgba(15, 23, 42, 0.4);
+  }
+
+  .detail-rec-card__meta h3 {
+    margin: 0;
+    font-size: 1rem;
+  }
+
+  .detail-rec-card__meta span {
+    color: rgba(148, 163, 184, 0.75);
+    font-size: 0.85rem;
+  }
+
+  .detail-rec-card__reasons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+  }
+
+  .detail-rec-card__reasons .chip-reason {
+    background: rgba(15, 23, 42, 0.7);
+    border: 1px solid rgba(148, 163, 184, 0.3);
+    color: rgba(226, 232, 240, 0.9);
+    font-size: 0.62rem;
+    padding: 0.2rem 0.5rem;
+  }
+
+  .detail-rec-card__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+
+  .detail-rec-card__actions .preference-button {
+    font-size: 0.68rem;
+    padding: 0.25rem 0.55rem;
+  }
+
   .hero-meta h1 {
     margin: 0;
     font-size: clamp(2rem, 5vw, 3rem);
@@ -344,28 +427,6 @@
     opacity: 0.45;
     cursor: not-allowed;
     pointer-events: none;
-  }
-
-  .review-tab {
-    position: fixed;
-    right: clamp(1rem, 4vw, 2.5rem);
-    bottom: calc(env(safe-area-inset-bottom, 0px) + 1rem);
-    padding: 0.5rem 1rem;
-    border-radius: 999px;
-    border: 1px solid rgba(14, 165, 233, 0.4);
-    background: rgba(15, 23, 42, 0.85);
-    color: #f8fafc;
-    text-decoration: none;
-    font-weight: 600;
-    font-size: 0.85rem;
-    box-shadow: 0 12px 26px rgba(2, 6, 23, 0.35);
-    z-index: 1200;
-  }
-
-  .review-tab:hover,
-  .review-tab:focus-visible {
-    background: rgba(30, 64, 175, 0.75);
-    border-color: rgba(59, 130, 246, 0.6);
   }
 
   .hero-tags {

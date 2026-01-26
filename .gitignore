@@ -10,6 +10,13 @@ dist/
 node_modules/
 # data/report artifacts
 data/*.csv
+data/*.log
+data/*.pid
+data/*_status.json
 reports/*.csv
+reports/*.png
+reports/*.jpg
+reports/*.jpeg
 legacy/data/
 legacy/reports/
+llm-council/

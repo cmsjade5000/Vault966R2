@@ -37,13 +37,38 @@
     return url.toString();
   }
 
+  const referrer = document.referrer;
+  if (referrer) {
+    try {
+      const url = new URL(referrer);
+      if (url.origin === window.location.origin) {
+        if (url.pathname.startsWith("/ui/discover")) {
+          link.textContent = "← Back to Discover";
+          link.setAttribute("href", "/ui/discover");
+        } else if (url.pathname.startsWith("/ui/watchlist")) {
+          link.textContent = "← Back to Watchlist";
+          link.setAttribute("href", "/ui/watchlist");
+        } else if (url.pathname.startsWith("/ui/movies")) {
+          link.textContent = "← Back to Library";
+          link.setAttribute("href", "/ui/movies");
+        }
+      }
+    } catch (err) {
+      console.warn("Failed to read referrer", err);
+    }
+  }
+
   link.addEventListener("click", (event) => {
+    const baseHref = link.getAttribute("href") || "/ui/movies";
+    if (!baseHref.startsWith("/ui/movies")) {
+      return;
+    }
     const params = readPersistedFilters();
     if (!params) {
       return;
     }
     try {
-      const url = buildUrl(link.getAttribute("href") || "/ui/movies", params);
+      const url = buildUrl(baseHref, params);
       event.preventDefault();
       window.location.href = url;
     } catch (err) {

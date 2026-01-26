@@ -233,6 +233,138 @@
       {% endif %}
 
     </div>
+    {% if pair_with %}
+    <section class="section-card section-card--wide detail-recs">
+      <header class="detail-recs__header">
+        <h2>Pair with this</h2>
+        <p>Two more picks that complement the tone, pace, or theme.</p>
+      </header>
+      <div class="detail-recs__grid" role="list">
+        {% for rec in pair_with %}
+        {% set pref = similar_preferences.get(rec.id, {}) %}
+        {% set reasons = similar_reasons.get(rec.id, []) %}
+        <article
+          class="detail-rec-card"
+          role="listitem"
+          data-movie-card
+          data-movie-id="{{ rec.id }}"
+          data-liked="{{ 'true' if pref.get('liked') else 'false' }}"
+          data-watchlist="{{ 'true' if pref.get('watchlist') else 'false' }}"
+        >
+          <a class="detail-rec-card__link" href="/ui/movies/{{ rec.id }}">
+            <div class="detail-rec-card__poster">
+              {% if rec.poster_url %}
+              <img src="{{ rec.poster_url }}" alt="{{ rec.title }} poster" loading="lazy" />
+              {% else %}
+              <div class="poster poster--empty {{ rec.poster_theme or 'poster-theme-default' }}" aria-hidden="true">🍿</div>
+              {% endif %}
+            </div>
+            <div class="detail-rec-card__meta">
+              <h3>{{ rec.title }}</h3>
+              <span>{{ rec.year or "—" }}</span>
+            </div>
+          </a>
+          {% if reasons %}
+          <div class="detail-rec-card__reasons">
+            {% for reason in reasons %}
+            <span class="chip chip-reason">{{ reason }}</span>
+            {% endfor %}
+          </div>
+          {% endif %}
+          <div class="detail-rec-card__actions">
+            <button
+              type="button"
+              class="preference-button{% if pref.get('liked') %} is-active{% endif %}"
+              data-preference-button
+              data-preference-type="like"
+              data-movie-id="{{ rec.id }}"
+              aria-pressed="{{ 'true' if pref.get('liked') else 'false' }}"
+            >
+              Like
+            </button>
+            <button
+              type="button"
+              class="preference-button{% if pref.get('watchlist') %} is-active{% endif %}"
+              data-preference-button
+              data-preference-type="watchlist"
+              data-movie-id="{{ rec.id }}"
+              aria-pressed="{{ 'true' if pref.get('watchlist') else 'false' }}"
+            >
+              Watchlist
+            </button>
+          </div>
+        </article>
+        {% endfor %}
+      </div>
+    </section>
+    {% endif %}
+    {% if more_like %}
+    <section class="section-card section-card--wide detail-recs detail-recs--more">
+      <header class="detail-recs__header">
+        <h2>
+          {% if movie_liked %}Because you liked {{ movie.title }}{% else %}More like this{% endif %}
+        </h2>
+        <p>Similar energy from the vault, ready for the queue.</p>
+      </header>
+      <div class="detail-recs__grid" role="list">
+        {% for rec in more_like %}
+        {% set pref = similar_preferences.get(rec.id, {}) %}
+        {% set reasons = similar_reasons.get(rec.id, []) %}
+        <article
+          class="detail-rec-card"
+          role="listitem"
+          data-movie-card
+          data-movie-id="{{ rec.id }}"
+          data-liked="{{ 'true' if pref.get('liked') else 'false' }}"
+          data-watchlist="{{ 'true' if pref.get('watchlist') else 'false' }}"
+        >
+          <a class="detail-rec-card__link" href="/ui/movies/{{ rec.id }}">
+            <div class="detail-rec-card__poster">
+              {% if rec.poster_url %}
+              <img src="{{ rec.poster_url }}" alt="{{ rec.title }} poster" loading="lazy" />
+              {% else %}
+              <div class="poster poster--empty {{ rec.poster_theme or 'poster-theme-default' }}" aria-hidden="true">🍿</div>
+              {% endif %}
+            </div>
+            <div class="detail-rec-card__meta">
+              <h3>{{ rec.title }}</h3>
+              <span>{{ rec.year or "—" }}</span>
+            </div>
+          </a>
+          {% if reasons %}
+          <div class="detail-rec-card__reasons">
+            {% for reason in reasons %}
+            <span class="chip chip-reason">{{ reason }}</span>
+            {% endfor %}
+          </div>
+          {% endif %}
+          <div class="detail-rec-card__actions">
+            <button
+              type="button"
+              class="preference-button{% if pref.get('liked') %} is-active{% endif %}"
+              data-preference-button
+              data-preference-type="like"
+              data-movie-id="{{ rec.id }}"
+              aria-pressed="{{ 'true' if pref.get('liked') else 'false' }}"
+            >
+              Like
+            </button>
+            <button
+              type="button"
+              class="preference-button{% if pref.get('watchlist') %} is-active{% endif %}"
+              data-preference-button
+              data-preference-type="watchlist"
+              data-movie-id="{{ rec.id }}"
+              aria-pressed="{{ 'true' if pref.get('watchlist') else 'false' }}"
+            >
+              Watchlist
+            </button>
+          </div>
+        </article>
+        {% endfor %}
+      </div>
+    </section>
+    {% endif %}
     <div class="detail-actions detail-actions--footer">
       <button
         type="button"
@@ -275,8 +407,6 @@
         </div>
       </div>
     </div>
-    {% else %}
-    <a class="review-tab" href="/ui/movies/review">Start Vault Review</a>
     {% endif %}
   </div>
   {% include "partials/movies/edit_dialog.html" %}

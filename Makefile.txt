@@ -11,6 +11,7 @@ UVICORN_APP ?= api.main:app
 RELOAD_DIR ?= api
 ENV_FILE ?= .env.local
 LOG_LEVEL ?= info
+SNAP_BRANCH ?= autosnap
 
 # ---- META / HELP ----
 .PHONY: help
@@ -77,6 +78,19 @@ dev: ## Run Uvicorn dev server (hot reload, focused logs)
 	fi
 
 devserver: dev ## Alias for dev
+
+.PHONY: snapshot
+snapshot: ## Run tests, lint (if present), show status, and create a timestamped commit on SNAP_BRANCH (default: autosnap)
+	@if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then :; else echo "Not a git repo"; exit 1; fi
+	@TIMESTAMP=$$(date +%Y-%m-%d-%H%M); \
+	BRANCH=$${SNAP_BRANCH:-autosnap}; \
+	git checkout -B $$BRANCH && \
+	python3 -m pytest && \
+	if [ -f package.json ]; then npm run lint || true; fi && \
+	git status -sb && \
+	git add -A && \
+	git commit -m "$$TIMESTAMP snapshot" && \
+	echo "Snapshot committed on branch $$BRANCH. Push with: git push origin $$BRANCH"
 
 # ---- DOCKER ----
 .PHONY: up down restart logs db-logs bash ps

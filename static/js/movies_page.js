@@ -20,7 +20,7 @@
     const heroStats = document.querySelector("[data-hero-stats]");
     const filtersDialog = document.querySelector("[data-filters-dialog]");
     const filtersOpenButton = document.querySelector("[data-filters-open]");
-    const filtersCloseButton = document.querySelector("[data-filters-close]");
+    const filtersCloseButtons = document.querySelectorAll("[data-filters-close]");
     const filtersApplyButton = document.querySelector("[data-filters-apply]");
     const filtersSummaryEl = document.querySelector("[data-filters-summary]");
     const editDialog = document.querySelector("[data-edit-dialog]");
@@ -77,15 +77,46 @@
     let lastAiPlan = null;
 
     const isDesktop = () => window.matchMedia("(min-width: 900px)").matches;
-    let previousOverflow = document.body.style.overflow || "";
+    let scrollLock = {
+      y: 0,
+      bodyOverflow: "",
+      bodyPosition: "",
+      bodyTop: "",
+      bodyWidth: "",
+      htmlOverflow: "",
+    };
 
     const lockScroll = () => {
-      previousOverflow = document.body.style.overflow || "";
+      if (document.body.dataset.scrollLocked === "true") {
+        return;
+      }
+      scrollLock = {
+        y: window.scrollY || window.pageYOffset || 0,
+        bodyOverflow: document.body.style.overflow || "",
+        bodyPosition: document.body.style.position || "",
+        bodyTop: document.body.style.top || "",
+        bodyWidth: document.body.style.width || "",
+        htmlOverflow: document.documentElement.style.overflow || "",
+      };
       document.body.style.overflow = "hidden";
+      document.body.style.position = "fixed";
+      document.body.style.top = `-${scrollLock.y}px`;
+      document.body.style.width = "100%";
+      document.documentElement.style.overflow = "hidden";
+      document.body.dataset.scrollLocked = "true";
     };
 
     const unlockScroll = () => {
-      document.body.style.overflow = previousOverflow;
+      if (document.body.dataset.scrollLocked !== "true") {
+        return;
+      }
+      document.body.style.overflow = scrollLock.bodyOverflow;
+      document.body.style.position = scrollLock.bodyPosition;
+      document.body.style.top = scrollLock.bodyTop;
+      document.body.style.width = scrollLock.bodyWidth;
+      document.documentElement.style.overflow = scrollLock.htmlOverflow;
+      delete document.body.dataset.scrollLocked;
+      window.scrollTo(0, scrollLock.y);
     };
 
     const closeFilters = ({ restoreFocus = false } = {}) => {
@@ -94,6 +125,7 @@
         filtersDialog.setAttribute("aria-hidden", "false");
         if (filtersApplyButton) filtersApplyButton.hidden = true;
         unlockScroll();
+        document.body.classList.remove("filters-open");
         return;
       }
       if (!filtersDialog.classList.contains("is-open")) return;
@@ -101,6 +133,7 @@
       filtersDialog.setAttribute("aria-hidden", "true");
       if (filtersApplyButton) filtersApplyButton.hidden = true;
       unlockScroll();
+      document.body.classList.remove("filters-open");
       if (restoreFocus && filtersOpenButton) {
         filtersOpenButton.focus();
       }
@@ -114,6 +147,7 @@
       filtersDialog.setAttribute("aria-hidden", "false");
       if (filtersApplyButton) filtersApplyButton.hidden = false;
       lockScroll();
+      document.body.classList.add("filters-open");
     };
 
     const syncHeroStats = () => {
@@ -134,8 +168,10 @@
         filtersDialog.setAttribute("aria-hidden", "false");
         if (filtersApplyButton) filtersApplyButton.hidden = true;
         unlockScroll();
+        document.body.classList.remove("filters-open");
       } else if (!filtersDialog.classList.contains("is-open")) {
         filtersDialog.setAttribute("aria-hidden", "true");
+        document.body.classList.remove("filters-open");
       }
       syncHeroStats();
     };
@@ -144,8 +180,10 @@
       openFilters();
     });
 
-    filtersCloseButton?.addEventListener("click", () => {
-      closeFilters({ restoreFocus: true });
+    filtersCloseButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        closeFilters({ restoreFocus: true });
+      });
     });
 
     filtersDialog?.addEventListener("click", (event) => {
@@ -1387,18 +1425,6 @@
       return Number.isNaN(parsed) ? null : parsed;
     };
 
-    let submitTimer = null;
-    const scheduleSubmit = (delay = 120) => {
-      if (!form) return;
-      if (submitTimer) {
-        clearTimeout(submitTimer);
-      }
-      submitTimer = window.setTimeout(() => {
-        submitTimer = null;
-        submitSearch();
-      }, delay);
-    };
-
     const genreChips = Array.from(
       document.querySelectorAll('[data-filter-group="genres"] .chip-select'),
     );
@@ -1775,7 +1801,6 @@
         }
         refreshUI();
         queueResultsScroll();
-        scheduleSubmit();
       });
     };
 
@@ -1805,7 +1830,6 @@
           };
         }
         refreshUI();
-        scheduleSubmit(range === "custom" ? 240 : 0);
       });
     });
 
@@ -1816,7 +1840,6 @@
       yearState.min = toNumber(yearCustomMinInput?.value ?? null);
       yearState.max = toNumber(yearCustomMaxInput?.value ?? null);
       refreshUI();
-      scheduleSubmit(240);
     };
 
     yearCustomMinInput?.addEventListener("input", handleYearCustomInput);
@@ -1838,7 +1861,6 @@
           if (runtimeCustomInput) runtimeCustomInput.value = "";
         }
         refreshUI();
-        scheduleSubmit(raw === "custom" ? 240 : 0);
       });
     });
 
@@ -1847,7 +1869,6 @@
       runtimeValue = toNumber(runtimeCustomInput.value);
       runtimeCustomContainer?.removeAttribute("hidden");
       refreshUI();
-      scheduleSubmit(240);
     });
 
     const isSemanticQuery = () => {
@@ -1879,7 +1900,7 @@
     orderSelect?.addEventListener("change", () => {
       markFiltersCustom();
       if (pageInput) pageInput.value = "1";
-      scheduleSubmit();
+      refreshUI();
     });
 
     const reset = () => {
@@ -3250,29 +3271,65 @@
       doPick();
     });
 
-    const updatePreferenceButtons = (movieId, payload) => {
-      const selector = `[data-preference-button][data-movie-id="${movieId}"]`;
-      document.querySelectorAll(selector).forEach((button) => {
-        const type = button.dataset.preferenceType;
-        const active =
-          type === "like" ? payload.liked : payload.watchlist;
-        button.classList.toggle("is-active", Boolean(active));
-        button.setAttribute("aria-pressed", active ? "true" : "false");
-      });
-      const card = document.querySelector(
-        `[data-movie-card][data-movie-id="${movieId}"]`,
-      );
-      if (card) {
-        card.dataset.liked = payload.liked ? "true" : "false";
-        card.dataset.watchlist = payload.watchlist ? "true" : "false";
-      }
-    };
+  const updatePreferenceButtons = (movieId, payload) => {
+    const selector = `[data-preference-button][data-movie-id="${movieId}"]`;
+    document.querySelectorAll(selector).forEach((button) => {
+      const type = button.dataset.preferenceType;
+      const active =
+        type === "like" ? payload.liked : payload.watchlist;
+      button.classList.toggle("is-active", Boolean(active));
+      button.setAttribute("aria-pressed", active ? "true" : "false");
+    });
+    const card = document.querySelector(
+      `[data-movie-card][data-movie-id="${movieId}"]`,
+    );
+    if (card) {
+      card.dataset.liked = payload.liked ? "true" : "false";
+      card.dataset.watchlist = payload.watchlist ? "true" : "false";
+    }
+  };
 
-    const handlePreferenceClick = async (event) => {
-      const button = event.target.closest("[data-preference-button]");
-      if (!button) return;
-      event.preventDefault();
-      event.stopPropagation();
+  const triggerLikeBurst = (button) => {
+    if (!button) return;
+    button.classList.add("just-liked");
+    const burst = document.createElement("span");
+    burst.className = "like-burst";
+    const heart = document.createElement("span");
+    heart.className = "like-heart";
+    heart.textContent = "❤";
+    burst.appendChild(heart);
+    button.appendChild(burst);
+    const cleanup = () => {
+      burst.remove();
+      button.classList.remove("just-liked");
+    };
+    burst.addEventListener("animationend", cleanup, { once: true });
+    setTimeout(() => button.classList.remove("just-liked"), 700);
+  };
+
+  const triggerWatchlistBurst = (button) => {
+    if (!button) return;
+    button.classList.add("just-watchlisted");
+    const burst = document.createElement("span");
+    burst.className = "watchlist-burst";
+    const badge = document.createElement("span");
+    badge.className = "watchlist-badge";
+    badge.textContent = "🔖";
+    burst.appendChild(badge);
+    button.appendChild(burst);
+    const cleanup = () => {
+      burst.remove();
+      button.classList.remove("just-watchlisted");
+    };
+    burst.addEventListener("animationend", cleanup, { once: true });
+    setTimeout(() => button.classList.remove("just-watchlisted"), 700);
+  };
+
+  const handlePreferenceClick = async (event) => {
+    const button = event.target.closest("[data-preference-button]");
+    if (!button) return;
+    event.preventDefault();
+    event.stopPropagation();
       const movieId = button.dataset.movieId;
       const type = button.dataset.preferenceType;
       if (!movieId || !type) return;
@@ -3280,23 +3337,29 @@
       button.dataset.prefBusy = "true";
       button.classList.add("is-busy");
       const isActive = button.classList.contains("is-active");
-      const method = isActive ? "DELETE" : "POST";
-      try {
-        const response = await fetch(`/movies/${movieId}/${type}`, {
-          method,
-          headers: { Accept: "application/json" },
+    const method = isActive ? "DELETE" : "POST";
+    try {
+      const response = await fetch(`/movies/${movieId}/${type}`, {
+        method,
+        headers: { Accept: "application/json" },
         });
         if (!response.ok) {
           throw new Error("Preference update failed");
         }
-        const payload = await response.json();
-        if (payload && typeof payload === "object") {
-          updatePreferenceButtons(movieId, payload);
-          if (
-            pageData?.pageContext === "watchlist" &&
-            type === "watchlist" &&
-            !payload.watchlist
-          ) {
+      const payload = await response.json();
+      if (payload && typeof payload === "object") {
+        updatePreferenceButtons(movieId, payload);
+        if (type === "like" && payload.liked && !isActive) {
+          triggerLikeBurst(button);
+        }
+        if (type === "watchlist" && payload.watchlist && !isActive) {
+          triggerWatchlistBurst(button);
+        }
+        if (
+          pageData?.pageContext === "watchlist" &&
+          type === "watchlist" &&
+          !payload.watchlist
+        ) {
             const card = document.querySelector(
               `[data-movie-card][data-movie-id="${movieId}"]`,
             );

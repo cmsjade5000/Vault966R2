@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session, selectinload
 
 from api.config import settings
 from api.db import get_db
+from api.deps.auth import require_profile_role
 from api.models.movie import Movie
 from api.models.movie_flag import MovieFlag
 from api.services.movies_curated import get_collection_health
@@ -28,11 +29,10 @@ from api.services.ui.grid import (
     query_library_stats,
     serialize_user_presets,
 )
-from api.services.ui.spotlight import get_daily_spotlight_movies
 from api.services.ui.templates import TEMPLATES
-from api.services.double_feature import DEFAULT_DOUBLE_FEATURE_RUNTIME, pick_double_feature
 from api.services.flic_ordering import fetch_movies_in_rank_order, rank_movie_ids_by_flic
 from api.services.profiles import (
+    ROLE_ADMIN,
     ensure_profile_cookie,
     get_active_profile_id,
     get_preferences_for_movies,
@@ -175,6 +175,17 @@ def movies_grid(
 
     semantic_value = resolve(semantic, "semantic")
     semantic_active = str(semantic_value).lower() in {"1", "true", "yes", "on"}
+    filters_active = bool(
+        params.q
+        or params.genres
+        or params.moods
+        or params.year_min is not None
+        or params.year_max is not None
+        or params.runtime_min is not None
+        or params.runtime_max is not None
+        or semantic_active
+        or params.order_by != "title_asc"
+    )
 
     current_page = page
     if not using_query:
@@ -263,7 +274,7 @@ def movies_grid(
                 clause = ordering_clause(params.order_by)
                 movies = (
                     filtered_query.options(selectinload(Movie.genres), selectinload(Movie.moods))
-                    .order_by(clause)
+                    .order_by(*clause)
                     .offset(offset)
                     .limit(page_size)
                     .all()
@@ -300,7 +311,7 @@ def movies_grid(
             clause = ordering_clause(params.order_by)
             movies = (
                 filtered_query.options(selectinload(Movie.genres), selectinload(Movie.moods))
-                .order_by(clause)
+                .order_by(*clause)
                 .offset(offset)
                 .limit(page_size)
                 .all()
@@ -317,7 +328,14 @@ def movies_grid(
         if semantic_active and params.q
         else filtered_query
     )
-    if total:
+    if total and filters_active:
+        featured_movies = movies[:featured_limit]
+        if featured_movies:
+            attach_poster_themes(featured_movies)
+            attach_genre_display(featured_movies)
+            if params.order_by == "flic" and flic_filters_payload:
+                _assign_flic_scores(featured_movies, flic_filters_payload)
+    elif total:
         if total <= RANDOM_ORDER_LIMIT:
             base_featured = (
                 featured_query.options(selectinload(Movie.genres), selectinload(Movie.moods))
@@ -430,22 +448,6 @@ def movies_grid(
 
     table_movies = movies
 
-    daily_spotlight_movies = get_daily_spotlight_movies(db, limit=4)
-
-    runtime_cap = (
-        params.runtime_max if params.runtime_max is not None else DEFAULT_DOUBLE_FEATURE_RUNTIME
-    )
-    genre_filter = params.genres[0] if params.genres else None
-    mood_filter = params.moods[0] if params.moods else None
-    double_feature = pick_double_feature(
-        db,
-        runtime_cap=runtime_cap,
-        genre=genre_filter,
-        mood=mood_filter,
-        year_min=params.year_min,
-        year_max=params.year_max,
-    )
-
     genres_value = ", ".join(params.genres)
     runtime_max_value = params.runtime_max if params.runtime_max is not None else ""
     moods_value = ", ".join(params.moods)
@@ -476,8 +478,6 @@ def movies_grid(
         "featured_movies": featured_movies,
         "table_movies": table_movies,
         "featured_limit": featured_limit,
-        "daily_spotlight_movies": daily_spotlight_movies,
-        "double_feature": double_feature,
         "mood_options": mood_options,
         "moods": moods_value,
         "flic_filters_summary": flic_filters_summary,
@@ -505,7 +505,11 @@ def movies_grid(
 
 
 @router.get("/ui/movies/health", response_class=HTMLResponse)
-def movies_health(request: Request, db: Session = Depends(get_db)):
+def movies_health(
+    request: Request,
+    db: Session = Depends(get_db),
+    _: str = Depends(require_profile_role(ROLE_ADMIN)),
+):
     collection_health = get_collection_health(db)
     profiles = get_profiles(db)
     active_profile_id = get_active_profile_id(request, db)
@@ -524,6 +528,7 @@ def movies_health_missing(
     request: Request,
     limit: int = Query(default=200, ge=1, le=500),
     db: Session = Depends(get_db),
+    _: str = Depends(require_profile_role(ROLE_ADMIN)),
 ):
     base_query = db.query(Movie).order_by(Movie.title.asc())
     missing_runtime = base_query.filter(Movie.runtime.is_(None)).limit(limit).all()

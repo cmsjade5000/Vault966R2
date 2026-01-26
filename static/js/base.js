@@ -1,13 +1,33 @@
 (() => {
   const initNav = () => {
-    const navToggle = document.querySelector("[data-nav-toggle]");
+    const navToggles = Array.from(
+      document.querySelectorAll("[data-nav-toggle]"),
+    );
     const navMenu = document.querySelector("[data-nav-menu]");
 
-    navToggle?.addEventListener("click", () => {
-      const expanded = navToggle.getAttribute("aria-expanded") === "true";
-      const next = !expanded;
-      navToggle.setAttribute("aria-expanded", String(next));
-      navMenu?.classList.toggle("is-open", next);
+    if (!navToggles.length || !navMenu) {
+      return;
+    }
+
+    const isMobileNav = () =>
+      window.matchMedia("(max-width: 820px)").matches;
+
+    const setExpanded = (next) => {
+      navToggles.forEach((toggle) =>
+        toggle.setAttribute("aria-expanded", String(next)),
+      );
+    };
+
+    navToggles.forEach((toggle) => {
+      toggle.addEventListener("click", (event) => {
+        if (isMobileNav()) {
+          event.preventDefault();
+        }
+        const expanded = navMenu.classList.contains("is-open");
+        const next = !expanded;
+        navMenu.classList.toggle("is-open", next);
+        setExpanded(next);
+      });
     });
   };
 
@@ -15,6 +35,13 @@
     document.addEventListener("DOMContentLoaded", initNav, { once: true });
   } else {
     initNav();
+  }
+
+  const isStandalone =
+    window.matchMedia("(display-mode: standalone)").matches ||
+    window.navigator.standalone === true;
+  if (isStandalone) {
+    document.body.classList.add("is-standalone");
   }
 })();
 

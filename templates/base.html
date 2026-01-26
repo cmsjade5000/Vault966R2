@@ -2,14 +2,20 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>{% block title %}Vault 966{% endblock %}</title>
     <link rel="icon" type="image/x-icon" href="{{ url_for('static', path='favicon.ico') }}" />
     <link rel="apple-touch-icon" href="{{ url_for('static', path='img/apple-touch-icon.png') }}" />
     <link rel="apple-touch-icon-precomposed" href="{{ url_for('static', path='img/apple-touch-icon-precomposed.png') }}" />
     <link rel="manifest" href="{{ url_for('static', path='site.webmanifest') }}" />
+    <meta name="theme-color" content="#0b1626" />
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#0b1626" />
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0b1626" />
+    <meta name="apple-mobile-web-app-title" content="Vault 966" />
+    <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="format-detection" content="telephone=no" />
     <link
       rel="apple-touch-startup-image"
       href="{{ url_for('static', path='img/splash-2048x2732.png') }}"
@@ -50,22 +56,35 @@
       href="{{ url_for('static', path='img/splash-2048x1536.png') }}"
       media="(device-width: 1024px) and (device-height: 768px) and (-webkit-device-pixel-ratio: 2)"
     />
+    <script src="{{ url_for('static', path='js/install_prompt.js') }}" defer></script>
     <link rel="stylesheet" href="{{ url_for('static', path='css/base.css') }}" />
     {% block head %}{% endblock %}
   </head>
-  <body>
+  <body class="{% block body_class %}{% endblock %}">
     <a href="#main" class="skip-link">Skip to main content</a>
     {% set current_path = request.url.path %}
     <div class="app-shell">
       <header class="site-nav">
         <div class="nav-inner">
-          <a class="brand" href="/ui/movies">
+          <a
+            class="brand"
+            href="/ui/movies"
+            data-nav-toggle
+            aria-expanded="false"
+            aria-controls="primary-nav"
+          >
             <span class="brand-mark">Vault 966</span>
             <span class="brand-subtitle">Movie dispatch</span>
           </a>
-          <button class="nav-toggle" type="button" aria-expanded="false" data-nav-toggle>Menu</button>
-          <nav class="primary-nav" data-nav-menu>
+          <nav class="primary-nav" id="primary-nav" data-nav-menu>
             <div class="nav-group" role="menubar">
+              <a
+                class="nav-link{% if current_path == '/ui/discover' %} is-active{% endif %}"
+                href="/ui/discover"
+                role="menuitem"
+                {% if current_path == '/ui/discover' %}aria-current="page"{% endif %}
+                >Discover</a
+              >
               <a
                 class="nav-link{% if current_path == '/ui/movies' %} is-active{% endif %}"
                 href="/ui/movies"
@@ -80,6 +99,7 @@
                 {% if current_path == '/ui/watchlist' %}aria-current="page"{% endif %}
                 >Watchlist</a
               >
+              {% if request.state.session_profile_role == 'admin' %}
               <a
                 class="nav-link{% if current_path == '/ui/movies/health' %} is-active{% endif %}"
                 href="/ui/movies/health"
@@ -87,31 +107,89 @@
                 {% if current_path == '/ui/movies/health' %}aria-current="page"{% endif %}
                 >Collection Health</a
               >
-            </div>
-            <div class="nav-actions">
-              {% if profiles %}
-              <label class="profile-switcher">
-                <span>Profile</span>
-                <select data-profile-select>
-                  {% for profile in profiles %}
-                  <option value="{{ profile.id }}" {% if profile.id == active_profile_id %}selected{% endif %}>
-                    {{ profile.name }}
-                  </option>
-                  {% endfor %}
-                </select>
-              </label>
+              {% endif %}
+              {% if request.state.session_profile_id %}
+              <form class="nav-logout" method="post" action="/logout">
+                <button class="nav-link nav-link--logout" type="submit">Log out</button>
+              </form>
               {% endif %}
             </div>
           </nav>
         </div>
       </header>
+      {% if current_path != '/login' %}
+      <nav class="bottom-nav" aria-label="Primary navigation">
+        <a
+          class="bottom-nav__link{% if current_path == '/ui/discover' %} is-active{% endif %}"
+          href="/ui/discover"
+          {% if current_path == '/ui/discover' %}aria-current="page"{% endif %}
+        >
+          <span class="bottom-nav__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
+              <path
+                d="M12 3l2.4 5.8L20 11l-5.6 2.2L12 19l-2.4-5.8L4 11l5.6-2.2L12 3z"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.5"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </span>
+          <span class="bottom-nav__label">Discover</span>
+        </a>
+        <a
+          class="bottom-nav__link{% if current_path == '/ui/movies' %} is-active{% endif %}"
+          href="/ui/movies"
+          {% if current_path == '/ui/movies' %}aria-current="page"{% endif %}
+        >
+          <span class="bottom-nav__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
+              <rect
+                x="4"
+                y="5"
+                width="16"
+                height="14"
+                rx="2"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.5"
+              />
+              <path
+                d="M8 5v14"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.5"
+              />
+            </svg>
+          </span>
+          <span class="bottom-nav__label">Library</span>
+        </a>
+        <a
+          class="bottom-nav__link{% if current_path == '/ui/watchlist' %} is-active{% endif %}"
+          href="/ui/watchlist"
+          {% if current_path == '/ui/watchlist' %}aria-current="page"{% endif %}
+        >
+          <span class="bottom-nav__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
+              <path
+                d="M6 4h12v16l-6-4-6 4z"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.5"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </span>
+          <span class="bottom-nav__label">Watchlist</span>
+        </a>
+      </nav>
+      {% endif %}
       <main id="main" class="app-main">
         {% block content %}{% endblock %}
       </main>
     </div>
     <div id="toast-container" aria-live="polite" aria-atomic="true"></div>
     <script src="{{ url_for('static', path='js/base.js') }}" defer></script>
-    <script src="{{ url_for('static', path='js/profile_switcher.js') }}" defer></script>
     <script src="{{ url_for('static', path='js/back_link.js') }}" defer></script>
     {% block scripts %}{% endblock %}
   </body>

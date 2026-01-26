@@ -1,0 +1,415 @@
+.discover-hero {
+  padding: clamp(2.5rem, 6vw, 4.5rem) 0 1.5rem;
+  text-align: center;
+  justify-items: center;
+}
+
+.discover-hero .app-hero__inner {
+  text-align: center;
+  justify-items: center;
+}
+
+.discover-hero__actions {
+  margin-top: 1.5rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  justify-content: center;
+}
+
+.discover-section {
+  margin: clamp(2rem, 5vw, 3.5rem) auto 0;
+  display: grid;
+  gap: 1.25rem;
+}
+
+.discover-section__header {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.discover-section__header--action {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.discover-section__title {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.discover-section__header h2 {
+  margin: 0;
+  font-size: clamp(1.4rem, 3vw, 2rem);
+}
+
+.discover-section__header p {
+  margin: 0;
+  color: rgba(148, 163, 184, 0.85);
+}
+
+.discover-refresh {
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  background: rgba(15, 23, 42, 0.6);
+  color: rgba(226, 232, 240, 0.95);
+  padding: 0.45rem 1rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  transition: transform 140ms ease, border-color 140ms ease, background 140ms ease;
+}
+
+.discover-refresh:hover,
+.discover-refresh:focus-visible {
+  transform: translateY(-1px);
+  border-color: rgba(56, 189, 248, 0.6);
+  background: rgba(30, 64, 175, 0.5);
+}
+
+.discover-refresh.is-busy {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.discover-selected__row {
+  display: grid;
+  gap: 0.9rem;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+}
+
+.discover-overview {
+  justify-items: center;
+}
+
+.discover-overview .overview-card--double-feature {
+  width: min(960px, 100%);
+}
+
+.poster-banner__tile {
+  width: 100%;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.poster-banner__link,
+.discover-pairing__poster-link,
+.discover-genre-card__link,
+.curated-card__link {
+  touch-action: manipulation;
+}
+
+.poster-banner__caption {
+  margin: 0;
+  font-size: 0.85rem;
+  color: rgba(226, 232, 240, 0.78);
+  text-align: center;
+}
+
+.poster-banner__image--empty {
+  display: grid;
+  place-items: center;
+  border-radius: 0.85rem;
+  font-size: 2rem;
+  color: rgba(248, 250, 252, 0.8);
+  background: rgba(15, 23, 42, 0.6);
+}
+
+.discover-pairings {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.discover-pairing {
+  background: rgba(15, 23, 42, 0.55);
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: 1.25rem;
+  padding: 1.25rem;
+  display: grid;
+  gap: 1.1rem;
+  box-shadow: 0 18px 34px rgba(15, 23, 42, 0.35);
+}
+
+.discover-pairing__posters {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.discover-pairing__poster-card {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.discover-pairing__poster-link {
+  display: block;
+  text-decoration: none;
+}
+
+.discover-pairing__poster-link img,
+.discover-pairing__poster-link .poster {
+  width: 100%;
+  border-radius: 0.85rem;
+  aspect-ratio: 2 / 3;
+  object-fit: cover;
+  box-shadow: 0 16px 28px rgba(15, 23, 42, 0.45);
+}
+
+.discover-pairing__meta h3 {
+  margin: 0.35rem 0 0.25rem;
+  font-size: 1.15rem;
+}
+
+.discover-pairing__meta p {
+  margin: 0 0 0.65rem;
+  color: rgba(148, 163, 184, 0.85);
+}
+
+.discover-pairing__reasons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-bottom: 0.6rem;
+}
+
+.discover-pairing__runtime {
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgba(148, 163, 184, 0.85);
+}
+
+.discover-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  align-items: center;
+}
+
+.discover-card-actions__label {
+  flex: 1 1 100%;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgba(148, 163, 184, 0.8);
+}
+
+.discover-card-reasons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  flex: 1 1 100%;
+}
+
+.chip-reason {
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  color: rgba(226, 232, 240, 0.9);
+  font-size: 0.62rem;
+  padding: 0.2rem 0.5rem;
+}
+
+.discover-card-actions .preference-button {
+  font-size: 0.68rem;
+  padding: 0.25rem 0.55rem;
+}
+
+.discover-genre-grid {
+  display: grid;
+  gap: 1rem;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(190px, 1fr);
+  overflow-x: auto;
+  padding-bottom: 0.5rem;
+  scroll-snap-type: x proximity;
+  -webkit-overflow-scrolling: touch;
+}
+
+.discover-genre-card {
+  display: grid;
+  gap: 0.6rem;
+  text-decoration: none;
+  color: inherit;
+  background: rgba(15, 23, 42, 0.45);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 1rem;
+  padding: 0.9rem;
+  box-shadow: 0 14px 26px rgba(15, 23, 42, 0.3);
+  scroll-snap-align: start;
+}
+
+.discover-genre-grid::-webkit-scrollbar {
+  display: none;
+}
+
+.discover-genre-card__link {
+  text-decoration: none;
+  color: inherit;
+  display: grid;
+  gap: 0.6rem;
+}
+
+.discover-genre-card__poster {
+  position: relative;
+}
+
+.discover-genre-card__poster img,
+.discover-genre-card__poster .poster {
+  width: 100%;
+  border-radius: 0.85rem;
+  aspect-ratio: 2 / 3;
+  object-fit: cover;
+}
+
+@supports (content-visibility: auto) {
+  .discover-pairing,
+  .discover-genre-card,
+  .poster-banner__tile,
+  .curated-card {
+    content-visibility: auto;
+    contain-intrinsic-size: 320px 420px;
+  }
+}
+
+.discover-genre-card__tag {
+  position: absolute;
+  bottom: 0.6rem;
+  left: 0.6rem;
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  color: #f8fafc;
+}
+
+.discover-genre-card__meta h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.discover-genre-card__meta span {
+  color: rgba(148, 163, 184, 0.75);
+  font-size: 0.85rem;
+}
+
+.discover-curated {
+  margin: clamp(2.5rem, 5vw, 4rem) auto 0;
+}
+
+.discover-curated .curated-section__row {
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(160px, 1fr);
+  overflow-x: auto;
+  padding-bottom: 0.5rem;
+  gap: 0.9rem;
+  scroll-snap-type: x proximity;
+  -webkit-overflow-scrolling: touch;
+}
+
+.discover-curated .curated-card {
+  scroll-snap-align: start;
+}
+
+.discover-curated .curated-section__row::-webkit-scrollbar {
+  display: none;
+}
+
+.discover-curated-card {
+  position: relative;
+}
+
+.discover-curated-card .curated-card__link {
+  text-decoration: none;
+  color: inherit;
+  display: grid;
+  gap: 0.55rem;
+}
+
+@media (min-width: 900px) {
+  .discover-pairing {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+    align-items: center;
+  }
+
+  .discover-pairing__posters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .discover-spotlight__reasons {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .discover-hero {
+    padding: 1.75rem 0 1.1rem;
+    text-align: center;
+    justify-items: center;
+  }
+
+  .discover-hero .app-hero__inner {
+    text-align: center;
+    justify-items: center;
+  }
+
+  .discover-hero .hero-title,
+  .discover-hero .hero-title--center {
+    justify-content: center;
+  }
+
+  .discover-hero .app-hero__tagline {
+    text-align: center;
+    max-width: 32ch;
+  }
+
+  .discover-section {
+    margin-top: 1.6rem;
+    gap: 0.9rem;
+  }
+
+  .discover-section__header {
+    gap: 0.25rem;
+  }
+
+  .discover-section__header h2 {
+    font-size: clamp(1.25rem, 5vw, 1.6rem);
+  }
+
+  .discover-section__header p {
+    font-size: 0.9rem;
+  }
+
+  .discover-overview {
+    padding-inline: clamp(1rem, 5vw, 1.5rem);
+  }
+
+  .discover-overview .overview-card--double-feature {
+    width: 100%;
+  }
+
+  .discover-pairing__meta h3 {
+    font-size: 1.05rem;
+    line-height: 1.25;
+  }
+
+  .discover-pairing__meta p {
+    margin-bottom: 0.5rem;
+  }
+
+  .discover-curated {
+    margin-top: 2rem;
+  }
+
+  .discover-hero__actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

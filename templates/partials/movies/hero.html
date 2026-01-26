@@ -33,22 +33,4 @@
       <span class="overview-value">{{ stats.top_genre }}</span>
     </div>
   </article>
-  {% if double_feature %}
-  <article class="overview-card overview-card--double-feature overview-card--wide">
-    <div class="overview-copy">
-      <span class="overview-label">Tonight's double feature</span>
-      <div class="double-feature__titles">
-        <a href="/ui/movies/{{ double_feature.primary.id }}">{{ double_feature.primary.title }}</a>
-        <span class="double-feature__divider" aria-hidden="true">+</span>
-        <a href="/ui/movies/{{ double_feature.secondary.id }}">{{ double_feature.secondary.title }}</a>
-      </div>
-      <span class="double-feature__meta">
-        {{ double_feature.total_runtime }} total
-      </span>
-      {% if double_feature.theme_label %}
-      <span class="double-feature__theme">{{ double_feature.theme_label }}</span>
-      {% endif %}
-    </div>
-  </article>
-  {% endif %}
 </section>

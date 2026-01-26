@@ -3,6 +3,11 @@
     <h2>Collection Health</h2>
     <p>Quick maintenance snapshot so you know what needs love next.</p>
   </header>
+  <div class="collection-health__actions">
+    <a class="button-secondary collection-health__review" href="/ui/movies/review">
+      Start Vault Review
+    </a>
+  </div>
   {% if collection_health.recommendation %}
   <div class="collection-health__recommendation" role="status" aria-live="polite">
     <div class="collection-health__recommendation-copy">
@@ -36,6 +41,70 @@
     </button>
   </div>
   {% endif %}
+  <div class="collection-health__update" role="status" aria-live="polite">
+    <div class="collection-health__update-copy">
+      <span class="chip chip-flic">Vault update</span>
+      <p>Run the vault maintenance scripts and capture the latest results.</p>
+      <p class="collection-health__update-status" data-update-status>
+        Last update: not run yet.
+      </p>
+      <div class="collection-health__update-steps" data-update-steps></div>
+    </div>
+    <button
+      type="button"
+      class="collection-health__update-button"
+      data-update-trigger
+    >
+      Update Vault
+    </button>
+  </div>
+  <details class="manual-add" id="manual-add">
+    <summary>Add a movie</summary>
+    <form class="manual-add__form" id="manual-add-form" autocomplete="off">
+      <div class="manual-add__row">
+        <label for="manual-add-title">
+          <span>Title</span>
+          <input id="manual-add-title" name="title" type="text" required placeholder="e.g. Arrival" />
+        </label>
+        <label for="manual-add-year">
+          <span>Year</span>
+          <input
+            id="manual-add-year"
+            name="year"
+            type="number"
+            inputmode="numeric"
+            min="1888"
+            max="2100"
+            placeholder="e.g. 2016"
+          />
+        </label>
+      </div>
+      <div class="manual-add__actions">
+        <button type="submit" class="button-secondary" id="manual-add-submit">Save</button>
+        <span class="manual-add__status" id="manual-add-status" role="status" aria-live="polite" hidden></span>
+      </div>
+    </form>
+    <div class="manual-add__preview" id="manual-add-preview" hidden>
+      <div class="manual-add-preview__card">
+        <div class="manual-add-preview__layout">
+          <div id="manual-add-preview-poster"></div>
+          <div>
+            <div class="manual-add-preview__header">
+              <h4 class="manual-add-preview__title" id="manual-add-preview-title"></h4>
+              <div class="manual-add-preview__meta" id="manual-add-preview-meta"></div>
+            </div>
+            <div class="manual-add-preview__body" id="manual-add-preview-overview"></div>
+            <div class="manual-add-preview__meta" id="manual-add-preview-genres"></div>
+          </div>
+        </div>
+      </div>
+      <div class="manual-add__preview-actions">
+        <button type="button" class="button-primary" id="manual-add-confirm">Looks good</button>
+        <button type="button" class="button-ghost" id="manual-add-cancel">Cancel</button>
+        <button type="button" class="button-secondary" id="manual-add-confirm-minimal" hidden>Add without metadata</button>
+      </div>
+    </div>
+  </details>
   <div class="collection-health__grid">
     <article class="health-card">
       <h3>Missing runtime</h3>

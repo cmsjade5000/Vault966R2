@@ -1,6 +1,9 @@
 {
   "name": "Vault 966",
   "short_name": "Vault966",
+  "description": "Curated movie discovery and vault management.",
+  "start_url": "/ui/discover",
+  "scope": "/",
   "icons": [
     {
       "src": "/static/img/android-chrome-192x192.png",
@@ -15,5 +18,6 @@
   ],
   "theme_color": "#0b1626",
   "background_color": "#0b1626",
-  "display": "standalone"
+  "display": "standalone",
+  "orientation": "portrait"
 }
