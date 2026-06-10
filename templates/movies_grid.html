@@ -14,21 +14,36 @@
     </header>
 
     <form method="get" action="/ui/movies" id="filters-form" data-base-action="/ui/movies">
-      <div class="library-toolbar" aria-label="Library controls">
+      <section class="library-search-panel" aria-labelledby="library-search-title">
+        <div class="library-search-panel__heading">
+          <div>
+            <h2 id="library-search-title">Search your Vault</h2>
+            <p>Find a movie by title, Vault ID, year, director, actor, genre, or IMDb ID.</p>
+          </div>
+          {% if q %}
+          <button type="button" class="button-ghost" data-clear-search>Clear search</button>
+          {% endif %}
+        </div>
         <label class="library-search" for="search-q">
-          <span class="sr-only">Search library</span>
+          <span class="sr-only">Search your Vault</span>
           <input
             id="search-q"
             name="q"
             type="search"
             inputmode="search"
             autocomplete="off"
+            maxlength="120"
             value="{{ q or '' }}"
-            placeholder="Search titles"
+            placeholder="Try “V0038”, “Ridley Scott”, “1999”, or a movie title"
           />
-          <button type="submit" class="library-icon-button" id="search-button" aria-label="Search library" title="Search">⌕</button>
+          <button type="submit" class="library-search__submit" id="search-button">
+            <span aria-hidden="true">⌕</span>
+            Search
+          </button>
         </label>
+      </section>
 
+      <div class="library-toolbar" aria-label="Library controls">
         <label class="library-sort" for="order-by">
           <span class="sr-only">Sort movies</span>
           <select id="order-by" name="order_by" aria-label="Sort movies">

@@ -1,6 +1,7 @@
 from fastapi.testclient import TestClient
 
 from api.models.movie import Movie
+from api.models.person import Person, Role, RoleType
 from api.services.ui.grid import FILTER_COOKIE_NAME
 
 
@@ -30,6 +31,37 @@ def test_movies_grid_filters_by_mood(client: TestClient) -> None:
     html = response.text
     assert "Blade Runner" in html
     assert "The Matrix" not in html
+
+
+def test_library_search_is_prominent_and_searches_identity_fields(
+    client: TestClient, db_session
+) -> None:
+    movie = db_session.query(Movie).filter(Movie.title == "Blade Runner").one()
+    movie.vault_id = "V0001"
+    director = Person(name="Ridley Scott")
+    db_session.add(director)
+    db_session.flush()
+    db_session.add(
+        Role(
+            movie_id=movie.id,
+            person_id=director.id,
+            role_type=RoleType.DIRECTOR,
+        )
+    )
+    db_session.commit()
+
+    page = client.get("/ui/movies")
+
+    assert "Search your Vault" in page.text
+    assert "director, actor, genre, or IMDb ID" in page.text
+
+    by_vault_id = client.get("/ui/movies", params={"q": "V0001"})
+    by_year = client.get("/ui/movies", params={"q": "1982"})
+    by_person = client.get("/ui/movies", params={"q": "Ridley Scott"})
+
+    assert "Blade Runner" in by_vault_id.text
+    assert "Blade Runner" in by_year.text
+    assert "Blade Runner" in by_person.text
 
 
 def test_flags_page_lists_flagged_movies(client: TestClient, admin_headers: dict[str, str]) -> None:

@@ -163,6 +163,13 @@
       ?.addEventListener("click", () => {
         window.location.href = "/ui/movies";
       });
+    document
+      .querySelector("[data-clear-search]")
+      ?.addEventListener("click", () => {
+        const searchInput = document.getElementById("search-q");
+        if (searchInput) searchInput.value = "";
+        form?.requestSubmit();
+      });
 
     form?.addEventListener("submit", () => {
       const hasFilters = Boolean(

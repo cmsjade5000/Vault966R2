@@ -182,7 +182,7 @@ def _assign_flic_scores(movies: Iterable[Movie], filters: dict[str, object]) -> 
 @router.get("/ui/movies", response_class=HTMLResponse)
 def movies_grid(
     request: Request,
-    q: Optional[str] = Query(default=None),
+    q: Optional[str] = Query(default=None, max_length=120),
     genres: Optional[str] = Query(default=None),
     moods: Optional[str] = Query(default=None),
     year_min: Optional[str] = Query(default=None),
