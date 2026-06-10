@@ -23,6 +23,8 @@ if str(ROOT) not in sys.path:
 import api.models  # noqa: E402,F401
 from api.models.movie import Movie, MovieIngestProvenance  # noqa: E402
 from api.models.person import Role, RoleType  # noqa: E402
+from api.models.source_sync import SourceFieldDecision  # noqa: E402
+from api.services.source_sync import parse_directors  # noqa: E402
 from api.utils.providers import split_providers  # noqa: E402
 from core.genres import split_and_normalize  # noqa: E402
 from core.movie_metadata import MovieMetadata  # noqa: E402
@@ -115,6 +117,45 @@ def _load_source(path: pathlib.Path) -> dict[str, dict[str, Any]]:
     }
 
 
+def _approved_source_decisions(
+    db: Session,
+) -> dict[tuple[int, str], SourceFieldDecision]:
+    latest: dict[tuple[int, str], SourceFieldDecision] = {}
+    decisions = (
+        db.query(SourceFieldDecision)
+        .options(selectinload(SourceFieldDecision.source_row))
+        .filter(SourceFieldDecision.undone_at.is_(None))
+        .order_by(
+            SourceFieldDecision.decided_at.desc(),
+            SourceFieldDecision.id.desc(),
+        )
+        .all()
+    )
+    for decision in decisions:
+        latest.setdefault((decision.movie_id, decision.field_name), decision)
+    return {key: decision for key, decision in latest.items() if decision.decision == "use_source"}
+
+
+def _decision_matches_actual(
+    decision: SourceFieldDecision,
+    *,
+    audit_field: str,
+    actual_value: Any,
+) -> bool:
+    row = decision.source_row
+    if audit_field == "title":
+        return _clean(row.title) == actual_value
+    if audit_field == "year":
+        return row.year == actual_value
+    if audit_field == "runtime":
+        return row.runtime == actual_value
+    if audit_field == "directors":
+        approved = sorted(parse_directors(row.director), key=str.casefold)
+        current = sorted(actual_value, key=str.casefold)
+        return approved == current
+    return False
+
+
 def _duplicates(db: Session, column) -> list[dict[str, Any]]:
     rows = (
         db.query(column, func.count(Movie.id))
@@ -200,9 +241,11 @@ def audit(
     content_review_issue_count = sum(len(items) for items in content_review.values())
 
     drift: list[dict[str, Any]] = []
+    approved_deviations: list[dict[str, Any]] = []
     missing_source_ids: list[dict[str, Any]] = []
     source_unmatched: list[str] = []
     source = _load_source(source_path) if source_path is not None else {}
+    approved_decisions = _approved_source_decisions(db)
     matched_source_ids: set[str] = set()
     for movie in movies:
         provenance = provenance_by_movie.get(movie.id)
@@ -217,11 +260,28 @@ def audit(
             continue
         matched_source_ids.add(vault_id)
         actual = _movie_record(movie)
-        differences = {
+        raw_differences = {
             field: {"source": expected[field], "database": actual[field]}
             for field in expected
             if expected[field] != actual[field]
         }
+        differences: dict[str, Any] = {}
+        approved: dict[str, Any] = {}
+        for field, values in raw_differences.items():
+            decision_field = "director" if field == "directors" else field
+            decision = approved_decisions.get((movie.id, decision_field))
+            if decision is not None and _decision_matches_actual(
+                decision,
+                audit_field=field,
+                actual_value=actual[field],
+            ):
+                approved[field] = {
+                    **values,
+                    "decision_id": decision.id,
+                    "source_snapshot_id": decision.source_row.snapshot_id,
+                }
+            else:
+                differences[field] = values
         if differences:
             drift.append(
                 {
@@ -229,6 +289,15 @@ def audit(
                     "vault_id": vault_id,
                     "title": movie.title,
                     "differences": differences,
+                }
+            )
+        if approved:
+            approved_deviations.append(
+                {
+                    "movie_id": movie.id,
+                    "vault_id": vault_id,
+                    "title": movie.title,
+                    "differences": approved,
                 }
             )
     if source:
@@ -263,13 +332,14 @@ def audit(
         )
     }
     return {
-        "schema_version": 1,
+        "schema_version": 2,
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "summary": {
             "movie_count": len(movies),
             "structural_issue_count": structural_issue_count,
             "content_review_issue_count": content_review_issue_count,
             "source_drift_count": len(drift),
+            "approved_source_deviation_count": len(approved_deviations),
             "missing_source_id_count": len(missing_source_ids),
             "source_unmatched_count": len(source_unmatched),
             "healthy": structural_issue_count == 0 and not drift and not missing_source_ids,
@@ -282,6 +352,7 @@ def audit(
         "source_reconciliation": {
             "source_path": str(source_path) if source_path is not None else None,
             "drift": drift,
+            "approved_deviations": approved_deviations,
             "missing_source_ids": missing_source_ids,
             "source_unmatched_vault_ids": source_unmatched,
         },

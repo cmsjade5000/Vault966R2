@@ -16,7 +16,7 @@ from api.models.source_sync import (
     SourceReconciliationMatch,
     SourceSnapshot,
 )
-from api.services.source_sync import build_research_links, clean_research_title
+from api.services.source_sync import build_research_links, clean_research_title, parse_directors
 
 
 def _csv(*rows: str) -> bytes:
@@ -38,6 +38,14 @@ def _upload_and_confirm(client: TestClient, content: bytes) -> int:
     )
     assert confirm.status_code == 303
     return snapshot_id
+
+
+def test_parse_directors_accepts_comma_and_ampersand_separators() -> None:
+    assert parse_directors("Kelly Asbury, Andrew Adamson & Conrad Vernon") == (
+        "Kelly Asbury",
+        "Andrew Adamson",
+        "Conrad Vernon",
+    )
 
 
 def test_source_sync_upload_preview_and_confirm(client: TestClient, db_session) -> None:

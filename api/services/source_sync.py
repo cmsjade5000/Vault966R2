@@ -39,7 +39,7 @@ FIELD_ALIASES = {
 }
 IDENTITY_FIELDS = ("title", "year", "runtime", "director")
 SPACE_RE = re.compile(r"\s+")
-DIRECTOR_SPLIT_RE = re.compile(r"\s*(?:&|;|\band\b)\s*", re.IGNORECASE)
+DIRECTOR_SPLIT_RE = re.compile(r"\s*(?:,|&|;|\band\b)\s*", re.IGNORECASE)
 IMDB_ID_RE = re.compile(r"^tt[0-9]{7,10}$")
 TRAILING_YEAR_RE = re.compile(r"\s*\((?:18|19|20)\d{2}\)\s*$")
 EDITION_SUFFIX_RE = re.compile(
