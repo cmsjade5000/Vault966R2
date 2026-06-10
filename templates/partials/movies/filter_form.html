@@ -1,170 +1,58 @@
-<form method="get" action="/ui/movies" id="filters-form" data-base-action="/ui/movies">
-  <div class="filter-controls">
-    <div class="filter-bar">
-      <label for="search-q">
-        <span>Search library</span>
-        <input
-          id="search-q"
-          name="q"
-          type="search"
-          inputmode="search"
-          autocomplete="off"
-          value="{{ q or '' }}"
-          placeholder="Search title"
-        />
-      </label>
-      <label class="filter-bar__sort" for="order-by">
-        <span>Sort by</span>
-        <select id="order-by" name="order_by">
-          <option value="id_asc" {% if order_by == 'id_asc' %}selected{% endif %}>Vault ID (low to high)</option>
-          <option value="id_desc" {% if order_by == 'id_desc' %}selected{% endif %}>Vault ID (high to low)</option>
-          <option value="title_asc" {% if order_by == 'title_asc' %}selected{% endif %}>Title A→Z</option>
-          <option value="title_desc" {% if order_by == 'title_desc' %}selected{% endif %}>Title Z→A</option>
-          <option value="year_asc" {% if order_by == 'year_asc' %}selected{% endif %}>Oldest first</option>
-          <option value="year_desc" {% if order_by == 'year_desc' %}selected{% endif %}>Newest first</option>
-          <option value="runtime_asc" {% if order_by == 'runtime_asc' %}selected{% endif %}>Shortest runtime</option>
-          <option value="runtime_desc" {% if order_by == 'runtime_desc' %}selected{% endif %}>Longest runtime</option>
-          <option value="imdb_desc" {% if order_by == 'imdb_desc' %}selected{% endif %}>Highest IMDb</option>
-          <option value="rt_desc" {% if order_by == 'rt_desc' %}selected{% endif %}>Highest Rotten Tomatoes</option>
-        </select>
-      </label>
+<div class="filter-controls">
+  <details class="filter-section" open id="fliclists">
+    <summary class="filter-section__summary"><h3>Fliclists</h3></summary>
+    <div class="filter-section__body">
+      <div class="chip-scroll fliclists">
+        {% for item in built_in_presets %}
+        <button type="button" class="chip chip-preset" data-preset-name="{{ item.name }}" data-filters='{{ item.filters | tojson }}'>{{ item.name }}</button>
+        {% endfor %}
+        {% for item in user_presets %}
+        <button type="button" class="chip chip-preset" data-preset-name="{{ item.name }}" data-filters='{{ item.filters | tojson }}'>{{ item.name }}</button>
+        {% endfor %}
+      </div>
     </div>
-    <div class="filter-bar__actions filter-bar__actions--search">
-      <button type="submit" class="button-primary" id="search-button" aria-label="Search library">
-        Search
-      </button>
-      <button type="button" class="button-tertiary" id="pick-button" aria-label="Let Flic pick a movie">
-        <span data-action-label>Random Pick</span>
-      </button>
+  </details>
+
+  <details class="filter-section" open>
+    <summary class="filter-section__summary"><h3>Genres</h3></summary>
+    <div class="filter-section__body">
+      <div class="chip-scroll" data-filter-group="genres">
+        {% for label in genre_options %}
+        <button type="button" class="chip-select" data-filter-value="{{ label }}">{{ label }}</button>
+        {% endfor %}
+      </div>
     </div>
+  </details>
 
-    {% if semantic_enabled %}
-    <div class="filter-bar__actions filter-bar__actions--semantic">
-      <label class="semantic-toggle">
-        <input
-          type="checkbox"
-          id="semantic-toggle"
-          name="semantic"
-          value="1"
-          {% if semantic_active %}checked{% endif %}
-        />
-        <span>Semantic search</span>
-      </label>
+  <details class="filter-section" open>
+    <summary class="filter-section__summary"><h3>Decade</h3></summary>
+    <div class="filter-section__body">
+      <div class="pills-row" data-year-pills>
+        <button type="button" class="pill-button" data-year-range="">Any year</button>
+        {% for decade in decade_options %}
+        <button type="button" class="pill-button" data-year-range="{{ decade.start }}-{{ decade.end }}" data-year-label="{{ decade.label }}">{{ decade.label }}</button>
+        {% endfor %}
+        <button type="button" class="pill-button pill-button--ghost" data-year-range="custom">Custom</button>
+      </div>
+      <div class="custom-range" id="year-custom" hidden>
+        <label><span>From</span><input id="year-custom-min" type="number" inputmode="numeric" min="1880" max="2200" /></label>
+        <label><span>To</span><input id="year-custom-max" type="number" inputmode="numeric" min="1880" max="2200" /></label>
+      </div>
     </div>
-    {% endif %}
+  </details>
 
-    <details class="filter-section" open id="fliclists">
-      <summary class="filter-section__summary">
-        <h3>Fliclists</h3>
-      </summary>
-      <div class="filter-section__body">
-        <div class="chip-scroll fliclists">
-          {% for preset in built_in_presets %}
-          <button
-            type="button"
-            class="chip chip-preset"
-            data-preset-name="{{ preset.name }}"
-            data-filters='{{ preset.filters | tojson }}'
-          >
-            {{ preset.name }}
-          </button>
-          {% endfor %}
-          {% for preset in user_presets %}
-          <button
-            type="button"
-            class="chip chip-preset"
-            data-preset-name="{{ preset.name }}"
-            data-filters='{{ preset.filters | tojson }}'
-          >
-            {{ preset.name }}
-          </button>
-          {% endfor %}
-        </div>
+  <details class="filter-section" open>
+    <summary class="filter-section__summary"><h3>Runtime</h3></summary>
+    <div class="filter-section__body">
+      <div class="pills-row" data-runtime-pills>
+        {% for runtime in runtime_presets %}
+        <button type="button" class="pill-button" data-runtime-max="{{ runtime.value if runtime.value is not none else '' }}">{{ runtime.label }}</button>
+        {% endfor %}
+        <button type="button" class="pill-button pill-button--ghost" data-runtime-max="custom">Custom</button>
       </div>
-    </details>
-
-    <details class="filter-section" open>
-      <summary class="filter-section__summary">
-        <h3>Genres</h3>
-      </summary>
-      <div class="filter-section__body">
-        <div class="chip-scroll" data-filter-group="genres">
-          {% if genre_options %}
-            {% for label in genre_options %}
-            <button type="button" class="chip-select" data-filter-value="{{ label }}">{{ label }}</button>
-            {% endfor %}
-          {% else %}
-            <p class="memory-placeholder">No genres available yet.</p>
-          {% endif %}
-        </div>
+      <div class="custom-range" id="runtime-custom" hidden>
+        <label><span>Max minutes</span><input id="runtime-custom-input" type="number" inputmode="numeric" min="1" max="600" step="5" /></label>
       </div>
-    </details>
-
-    <details class="filter-section" open>
-      <summary class="filter-section__summary">
-        <h3>Year</h3>
-      </summary>
-      <div class="filter-section__body">
-        <div class="pills-row" data-year-pills>
-          <button type="button" class="pill-button" data-year-range="">Any year</button>
-          {% for decade in decade_options %}
-          <button
-            type="button"
-            class="pill-button"
-            data-year-range="{{ decade.start }}-{{ decade.end }}"
-            data-year-label="{{ decade.label }}"
-          >
-            {{ decade.label }}
-          </button>
-          {% endfor %}
-          <button type="button" class="pill-button pill-button--ghost" data-year-range="custom">Custom…</button>
-        </div>
-        <div class="custom-range" id="year-custom" hidden>
-          <label>
-            <span>From</span>
-            <input id="year-custom-min" type="number" inputmode="numeric" min="0" placeholder="e.g. 1990" />
-          </label>
-          <label>
-            <span>To</span>
-            <input id="year-custom-max" type="number" inputmode="numeric" min="0" placeholder="e.g. 1999" />
-          </label>
-        </div>
-      </div>
-    </details>
-
-    <details class="filter-section" open>
-      <summary class="filter-section__summary">
-        <h3>Runtime</h3>
-      </summary>
-      <div class="filter-section__body">
-        <div class="pills-row" data-runtime-pills>
-          {% for runtime in runtime_presets %}
-          <button
-            type="button"
-            class="pill-button"
-            data-runtime-max="{{ runtime.value if runtime.value is not none else '' }}"
-          >
-            {{ runtime.label }}
-          </button>
-          {% endfor %}
-          <button type="button" class="pill-button pill-button--ghost" data-runtime-max="custom">Custom…</button>
-        </div>
-        <div class="custom-range" id="runtime-custom" hidden>
-          <label>
-            <span>Max minutes</span>
-            <input id="runtime-custom-input" type="number" inputmode="numeric" min="0" step="5" placeholder="e.g. 110" />
-          </label>
-        </div>
-      </div>
-    </details>
-
-  </div>
-
-  <input type="hidden" name="genres" id="genres-input" value="{{ genres or '' }}" />
-  <input type="hidden" name="year_min" id="year-min-input" value="{{ year_min or '' }}" />
-  <input type="hidden" name="year_max" id="year-max-input" value="{{ year_max or '' }}" />
-  <input type="hidden" name="runtime_max" id="runtime-max-input" value="{{ runtime_max or '' }}" />
-  <input type="hidden" name="_filters" value="1" />
-  <input type="hidden" name="page" value="{{ page }}" />
-  <button type="submit" hidden aria-hidden="true">Apply filters</button>
-</form>
+    </div>
+  </details>
+</div>

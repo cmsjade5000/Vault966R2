@@ -49,8 +49,10 @@ def _canonical_label(label: str) -> str:
     return cleaned
 
 
-def split_and_normalize(raw: Iterable[str]) -> List[str]:
+def split_and_normalize(raw: Iterable[str] | str) -> List[str]:
     """Split composite genre strings and return canonical, de-duplicated labels."""
+    if isinstance(raw, str):
+        raw = [raw]
     seen: list[str] = []
     for item in raw:
         if not item:

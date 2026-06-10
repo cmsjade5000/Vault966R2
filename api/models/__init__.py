@@ -17,6 +17,7 @@ from .source_sync import (  # noqa: F401
     SourceReconciliationMatch,
     SourceSnapshot,
 )
+from .usage_event import UsageEvent  # noqa: F401
 
 __all__ = [
     "Movie",
@@ -34,4 +35,5 @@ __all__ = [
     "SourceReconciliationMatch",
     "SourceFieldDecision",
     "OwnedMovieCopy",
+    "UsageEvent",
 ]

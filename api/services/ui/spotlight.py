@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 
 from api.config import settings
 from api.models.movie import Movie
+from api.services.trusted_movies import trusted_movie_query
 from api.utils.sampling import reorder_movies_by_id_sequence, sample_movie_ids
 
 
@@ -18,7 +19,7 @@ def _daily_seed(day: datetime.date | None = None) -> int:
 
 
 def get_daily_spotlight_ids(db: Session, *, limit: int = 4) -> list[int]:
-    query = db.query(Movie).filter(
+    query = trusted_movie_query(db).filter(
         Movie.poster_url.isnot(None),
         Movie.poster_url != "",
         Movie.poster_url != "N/A",

@@ -15,6 +15,7 @@ from api.services.profiles import (
 from api.services.ui.spotlight import build_spotlight_reason, get_daily_spotlight_ids
 from api.services.ui.templates import TEMPLATES
 from api.services.source_sync import source_provenance_for_movie
+from api.services.trusted_movies import get_untrusted_movie_ids
 
 router = APIRouter()
 
@@ -130,7 +131,8 @@ def movie_detail(
 
     profiles = get_profiles(db)
     active_profile_id = get_active_profile_id(request, db)
-    similar_list = list(detail.similar or [])
+    untrusted_ids = get_untrusted_movie_ids(db)
+    similar_list = [item for item in (detail.similar or []) if item.id not in untrusted_ids]
     used_ids: set[int] = set()
     pair_with = _pick_diverse(similar_list, limit=2, used_ids=used_ids)
     more_like = _pick_diverse(similar_list, limit=6, used_ids=used_ids)
@@ -153,7 +155,7 @@ def movie_detail(
         {
             "movie": detail,
             "roles": detail.roles,
-            "similar": detail.similar,
+            "similar": similar_list,
             "spotlight_reason": spotlight_reason,
             "review_mode": review,
             "review_prev_id": review_prev_id,

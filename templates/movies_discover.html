@@ -7,33 +7,23 @@
 {% block content %}
   <header class="app-hero discover-hero">
     <div class="app-hero__inner">
-      <div class="hero-title hero-title--center">
-        <h1>Discover</h1>
-      </div>
-      <p class="tagline app-hero__tagline">
-        Interesting pairings, diverse picks, and the highest rated titles in the vault.
-      </p>
+      <div class="hero-title hero-title--center"><h1>Discover</h1></div>
+      <p class="tagline app-hero__tagline">Trusted picks from the collection, arranged for an easier decision.</p>
     </div>
   </header>
 
   {% if double_feature %}
-  <section class="overview discover-overview" aria-label="Tonight's double feature">
-    <article class="overview-card overview-card--double-feature overview-card--wide">
-      <div class="overview-copy">
-        <span class="overview-label">Tonight's double feature</span>
-        <div class="double-feature__titles">
-          <a href="/ui/movies/{{ double_feature.primary.id }}">{{ double_feature.primary.title }}</a>
-          <span class="double-feature__divider" aria-hidden="true">+</span>
-          <a href="/ui/movies/{{ double_feature.secondary.id }}">{{ double_feature.secondary.title }}</a>
-        </div>
-        <span class="double-feature__meta">
-          {{ double_feature.total_runtime }} total
-        </span>
-        {% if double_feature.theme_label %}
-        <span class="double-feature__theme">{{ double_feature.theme_label }}</span>
-        {% endif %}
-      </div>
-    </article>
+  <section class="discover-feature page-shell" aria-label="Tonight's double feature">
+    <span class="overview-label">Tonight's double feature</span>
+    <div class="discover-feature__titles">
+      <a href="/ui/movies/{{ double_feature.primary.id }}">{{ double_feature.primary.title }}</a>
+      <span aria-hidden="true">+</span>
+      <a href="/ui/movies/{{ double_feature.secondary.id }}">{{ double_feature.secondary.title }}</a>
+    </div>
+    <div class="discover-feature__meta">
+      <span>{{ double_feature.total_runtime }} total</span>
+      {% if double_feature.theme_label %}<span>{{ double_feature.theme_label }}</span>{% endif %}
+    </div>
   </section>
   {% endif %}
 
@@ -43,42 +33,27 @@
       <header class="poster-banner__header">
         <div>
           <h2 class="poster-banner__title">Daily Spotlight</h2>
-          <p class="poster-banner__subtitle">Four standout picks with a fresh angle every day.</p>
+          <p class="poster-banner__subtitle">Four trusted picks with a fresh angle each day.</p>
         </div>
       </header>
       <div class="poster-banner__grid" role="list">
         {% for movie in spotlight_movies %}
-          <div class="poster-banner__tile" role="listitem">
-            <a
-              class="poster-banner__link"
-              href="/ui/movies/{{ movie.id }}?spotlight=1"
-              aria-label="View details for {{ movie.title }}"
-            >
-              <div class="poster-banner__poster">
-                {% if movie.poster_url %}
-                <img
-                  class="poster-banner__image"
-                  src="{{ movie.poster_url }}"
-                  alt="{{ movie.title }} poster"
-                  loading="lazy"
-                  title="{{ movie.title }}"
-                />
-                {% else %}
-                <div class="poster-banner__image poster-banner__image--empty {{ movie.poster_theme or 'poster-theme-default' }}" aria-hidden="true">🍿</div>
-                {% endif %}
-                <span class="poster-banner__shine" aria-hidden="true"></span>
-                <div class="poster-banner__meta" aria-hidden="true">
-                  <span class="poster-banner__meta-title">{{ movie.title }}</span>
-                  {% if movie.year %}
-                  <span class="poster-banner__meta-subtitle">{{ movie.year }}</span>
-                  {% endif %}
-                </div>
+        <div class="poster-banner__tile" role="listitem">
+          <a class="poster-banner__link" href="/ui/movies/{{ movie.id }}?spotlight=1" data-movie-detail-link data-movie-id="{{ movie.id }}" data-event-context="daily_spotlight">
+            <div class="poster-banner__poster">
+              {% if movie.poster_url %}
+              <img class="poster-banner__image" src="{{ movie.poster_url }}" alt="{{ movie.title }} poster" loading="lazy" />
+              {% else %}
+              <div class="poster-banner__image poster-banner__image--empty {{ movie.poster_theme or 'poster-theme-default' }}" aria-hidden="true">966</div>
+              {% endif %}
+              <div class="poster-banner__meta" aria-hidden="true">
+                <span class="poster-banner__meta-title">{{ movie.title }}</span>
+                <span class="poster-banner__meta-subtitle">{{ movie.year or '' }}</span>
               </div>
-            </a>
-            {% if movie.id in spotlight_reasons %}
-            <p class="poster-banner__caption">{{ spotlight_reasons[movie.id] }}</p>
-            {% endif %}
-          </div>
+            </div>
+          </a>
+          {% if movie.id in spotlight_reasons %}<p class="poster-banner__caption">{{ spotlight_reasons[movie.id] }}</p>{% endif %}
+        </div>
         {% endfor %}
       </div>
     </div>
@@ -86,419 +61,95 @@
   {% endif %}
 
   {% if pairings %}
-  <section class="discover-section page-shell" aria-label="Featured pairings">
-    <header class="discover-section__header discover-section__header--action">
-      <div class="discover-section__title">
-        <h2>Perfect Pairings</h2>
-        <p>Complementary doubles built for variety, contrast, and momentum.</p>
-      </div>
-      <button
-        type="button"
-        class="discover-refresh"
-        data-discover-refresh="pairings"
-        aria-label="Shuffle perfect pairings"
-      >
-        Shuffle
-      </button>
-    </header>
-    <div class="discover-pairings" data-discover-pairings>
-      {% for pairing in pairings %}
-      {% set pairing_key = pairing.primary.id ~ '-' ~ pairing.secondary.id %}
-      <article class="discover-pairing">
-        <div class="discover-pairing__posters">
-          <div
-            class="discover-pairing__poster-card"
-            data-movie-card
-            data-movie-id="{{ pairing.primary.id }}"
-            data-liked="{{ 'true' if pairing.primary.liked else 'false' }}"
-            data-watchlist="{{ 'true' if pairing.primary.watchlist else 'false' }}"
-          >
-            <a href="/ui/movies/{{ pairing.primary.id }}" class="discover-pairing__poster-link">
-              {% if pairing.primary.poster_url %}
-              <img src="{{ pairing.primary.poster_url }}" alt="{{ pairing.primary.title }} poster" loading="lazy" />
-              {% else %}
-              <div class="poster poster--empty {{ pairing.primary.poster_theme or 'poster-theme-default' }}" aria-hidden="true">🍿</div>
-              {% endif %}
-            </a>
-            <div class="discover-card-actions">
-              <span class="discover-card-actions__label">{{ pairing.primary.title }}</span>
-              {% set reasons = discover_reasons.get(pairing.primary.id, []) %}
-              {% if reasons %}
-              <div class="discover-card-reasons">
-                {% for reason in reasons %}
-                <span class="chip chip-reason">{{ reason }}</span>
-                {% endfor %}
-              </div>
-              {% endif %}
-              <button
-                type="button"
-                class="preference-button{% if pairing.primary.liked %} is-active{% endif %}"
-                data-preference-button
-                data-preference-type="like"
-                data-movie-id="{{ pairing.primary.id }}"
-                aria-pressed="{{ 'true' if pairing.primary.liked else 'false' }}"
-              >
-                Like
-              </button>
-              <button
-                type="button"
-                class="preference-button{% if pairing.primary.watchlist %} is-active{% endif %}"
-                data-preference-button
-                data-preference-type="watchlist"
-                data-movie-id="{{ pairing.primary.id }}"
-                aria-pressed="{{ 'true' if pairing.primary.watchlist else 'false' }}"
-              >
-                Watchlist
-              </button>
-            </div>
-          </div>
-          <div
-            class="discover-pairing__poster-card"
-            data-movie-card
-            data-movie-id="{{ pairing.secondary.id }}"
-            data-liked="{{ 'true' if pairing.secondary.liked else 'false' }}"
-            data-watchlist="{{ 'true' if pairing.secondary.watchlist else 'false' }}"
-          >
-            <a href="/ui/movies/{{ pairing.secondary.id }}" class="discover-pairing__poster-link">
-              {% if pairing.secondary.poster_url %}
-              <img src="{{ pairing.secondary.poster_url }}" alt="{{ pairing.secondary.title }} poster" loading="lazy" />
-              {% else %}
-              <div class="poster poster--empty {{ pairing.secondary.poster_theme or 'poster-theme-default' }}" aria-hidden="true">🍿</div>
-              {% endif %}
-            </a>
-            <div class="discover-card-actions">
-              <span class="discover-card-actions__label">{{ pairing.secondary.title }}</span>
-              {% set reasons = discover_reasons.get(pairing.secondary.id, []) %}
-              {% if reasons %}
-              <div class="discover-card-reasons">
-                {% for reason in reasons %}
-                <span class="chip chip-reason">{{ reason }}</span>
-                {% endfor %}
-              </div>
-              {% endif %}
-              <button
-                type="button"
-                class="preference-button{% if pairing.secondary.liked %} is-active{% endif %}"
-                data-preference-button
-                data-preference-type="like"
-                data-movie-id="{{ pairing.secondary.id }}"
-                aria-pressed="{{ 'true' if pairing.secondary.liked else 'false' }}"
-              >
-                Like
-              </button>
-              <button
-                type="button"
-                class="preference-button{% if pairing.secondary.watchlist %} is-active{% endif %}"
-                data-preference-button
-                data-preference-type="watchlist"
-                data-movie-id="{{ pairing.secondary.id }}"
-                aria-pressed="{{ 'true' if pairing.secondary.watchlist else 'false' }}"
-              >
-                Watchlist
-              </button>
-            </div>
-          </div>
-        </div>
-        <div class="discover-pairing__meta">
-          <span class="chip chip-flic">Double Feature</span>
-          <h3>{{ pairing.primary.title }} + {{ pairing.secondary.title }}</h3>
-          <p>{{ pairing.theme_label or "Two picks that travel well together." }}</p>
-          {% set pairing_tags = pairing_reasons.get(pairing_key, []) %}
-          {% if pairing_tags %}
-          <div class="discover-pairing__reasons">
-            {% for reason in pairing_tags %}
-            <span class="chip chip-reason">{{ reason }}</span>
-            {% endfor %}
-          </div>
-          {% endif %}
-          <div class="discover-pairing__runtime">{{ pairing.total_runtime }} total</div>
-        </div>
-      </article>
-      {% endfor %}
-    </div>
-  </section>
-  {% endif %}
-
-  {% if selected_for_you %}
-  <section class="discover-section page-shell" aria-label="Selected for you">
+  <section class="discover-section page-shell" aria-label="Perfect pairing">
     <header class="discover-section__header">
-      <div class="discover-section__title">
-        <h2>Selected For You</h2>
-        <p>Recommendations inspired by the titles you have liked.</p>
-      </div>
+      <h2>Perfect Pairing</h2>
+      <p>One complementary double built for variety and momentum.</p>
     </header>
-    <div class="curated-section__row discover-selected__row" role="list">
-      {% for movie in selected_for_you %}
-      <article
-        class="curated-card discover-curated-card"
-        role="listitem"
-        data-movie-card
-        data-movie-id="{{ movie.id }}"
-        data-liked="{{ 'true' if movie.liked else 'false' }}"
-        data-watchlist="{{ 'true' if movie.watchlist else 'false' }}"
-      >
-        <a class="curated-card__link" href="/ui/movies/{{ movie.id }}">
+    {% for pairing in pairings %}
+    <article class="discover-pairing">
+      <div class="discover-pairing__posters">
+        {% for movie in [pairing.primary, pairing.secondary] %}
+        <a href="/ui/movies/{{ movie.id }}" class="discover-pairing__poster-link" data-movie-detail-link data-movie-id="{{ movie.id }}" data-event-context="perfect_pairing">
           {% if movie.poster_url %}
           <img src="{{ movie.poster_url }}" alt="{{ movie.title }} poster" loading="lazy" />
           {% else %}
-          <div class="curated-card__fallback">🍿</div>
+          <div class="poster poster--empty {{ movie.poster_theme or 'poster-theme-default' }}" aria-hidden="true">966</div>
           {% endif %}
-          <div class="curated-card__meta">
-            <h4>{{ movie.title }}</h4>
-            <span class="curated-card__year">{{ movie.year or "—" }}</span>
-          </div>
         </a>
-        <div class="discover-card-actions">
-          {% set reasons = discover_reasons.get(movie.id, []) %}
-          {% if reasons %}
-          <div class="discover-card-reasons">
-            {% for reason in reasons %}
-            <span class="chip chip-reason">{{ reason }}</span>
-            {% endfor %}
-          </div>
-          {% endif %}
-          <button
-            type="button"
-            class="preference-button{% if movie.liked %} is-active{% endif %}"
-            data-preference-button
-            data-preference-type="like"
-            data-movie-id="{{ movie.id }}"
-            aria-pressed="{{ 'true' if movie.liked else 'false' }}"
-          >
-            Like
-          </button>
-          <button
-            type="button"
-            class="preference-button{% if movie.watchlist %} is-active{% endif %}"
-            data-preference-button
-            data-preference-type="watchlist"
-            data-movie-id="{{ movie.id }}"
-            aria-pressed="{{ 'true' if movie.watchlist else 'false' }}"
-          >
-            Watchlist
-          </button>
-        </div>
-      </article>
-      {% endfor %}
-    </div>
+        {% endfor %}
+      </div>
+      <div class="discover-pairing__meta">
+        <span class="chip chip-flic">Double Feature</span>
+        <h3>{{ pairing.primary.title }} + {{ pairing.secondary.title }}</h3>
+        <p>{{ pairing.theme_label or "Two picks that travel well together." }}</p>
+        <div class="discover-pairing__runtime">{{ pairing.total_runtime }} total</div>
+      </div>
+    </article>
+    {% endfor %}
   </section>
   {% endif %}
 
-  {% if genre_spotlights %}
-  <section class="discover-section page-shell" aria-label="Diverse selections">
-    <header class="discover-section__header discover-section__header--action">
-      <div class="discover-section__title">
-        <h2>Genre Balance</h2>
-        <p>One standout per top genre to keep the queue diverse.</p>
+  {% for rail in rails %}
+  <section class="discover-rail page-shell" aria-labelledby="rail-{{ rail.key }}">
+    <header class="discover-rail__header">
+      <div>
+        <h2 id="rail-{{ rail.key }}">{{ rail.title }}</h2>
+        <p>{{ rail.description }}</p>
       </div>
-      <button
-        type="button"
-        class="discover-refresh"
-        data-discover-refresh="genres"
-        aria-label="Shuffle genre balance picks"
-      >
-        Shuffle
-      </button>
+      <a href="{{ rail.href }}" data-discover-rail-link data-rail-key="{{ rail.key }}">See all</a>
     </header>
-    <div class="discover-genre-grid" role="list" data-discover-genres>
-      {% for item in genre_spotlights %}
-      {% set movie = item.movie %}
-      <article
-        class="discover-genre-card"
-        role="listitem"
-        data-movie-card
-        data-movie-id="{{ movie.id }}"
-        data-liked="{{ 'true' if movie.liked else 'false' }}"
-        data-watchlist="{{ 'true' if movie.watchlist else 'false' }}"
-      >
-        <a class="discover-genre-card__link" href="/ui/movies/{{ movie.id }}">
-          <div class="discover-genre-card__poster">
+    <div class="discover-rail__track" role="list">
+      {% for movie in rail.movies %}
+      <article class="discover-rail-card" role="listitem" data-movie-card data-movie-id="{{ movie.id }}">
+        <a href="/ui/movies/{{ movie.id }}" data-movie-detail-link data-event-context="{{ rail.key }}">
+          <div class="discover-rail-card__poster">
             {% if movie.poster_url %}
             <img src="{{ movie.poster_url }}" alt="{{ movie.title }} poster" loading="lazy" />
             {% else %}
-            <div class="poster poster--empty {{ movie.poster_theme or 'poster-theme-default' }}" aria-hidden="true">🍿</div>
+            <div class="poster poster--empty {{ movie.poster_theme or 'poster-theme-default' }}" aria-hidden="true">966</div>
             {% endif %}
-            <span class="discover-genre-card__tag">{{ item.genre }}</span>
           </div>
-          <div class="discover-genre-card__meta">
-            <h3>{{ movie.title }}</h3>
-            <span>{{ movie.year or "—" }}</span>
-          </div>
+          <h3>{{ movie.title }}</h3>
+          <p>
+            <span>{{ movie.year or '—' }}</span>
+            {% if movie.runtime %}<span>{{ movie.runtime }} min</span>{% endif %}
+          </p>
         </a>
-        <div class="discover-card-actions">
-          {% set reasons = discover_reasons.get(movie.id, []) %}
-          {% if reasons %}
-          <div class="discover-card-reasons">
-            {% for reason in reasons %}
-            <span class="chip chip-reason">{{ reason }}</span>
-            {% endfor %}
-          </div>
-          {% endif %}
+        <div class="discover-rail-card__actions">
           <button
             type="button"
-            class="preference-button{% if movie.liked %} is-active{% endif %}"
+            class="preference-icon{% if movie.liked %} is-active{% endif %}"
             data-preference-button
             data-preference-type="like"
             data-movie-id="{{ movie.id }}"
+            data-movie-title="{{ movie.title }}"
+            aria-label="{{ 'Unlike' if movie.liked else 'Like' }} {{ movie.title }}"
+            title="Like"
             aria-pressed="{{ 'true' if movie.liked else 'false' }}"
-          >
-            Like
-          </button>
+          >♡</button>
           <button
             type="button"
-            class="preference-button{% if movie.watchlist %} is-active{% endif %}"
+            class="preference-icon{% if movie.watchlist %} is-active{% endif %}"
             data-preference-button
             data-preference-type="watchlist"
             data-movie-id="{{ movie.id }}"
+            data-movie-title="{{ movie.title }}"
+            aria-label="{{ 'Remove' if movie.watchlist else 'Add' }} {{ movie.title }} {{ 'from' if movie.watchlist else 'to' }} watchlist"
+            title="Watchlist"
             aria-pressed="{{ 'true' if movie.watchlist else 'false' }}"
-          >
-            Watchlist
-          </button>
+          >▯</button>
         </div>
       </article>
+      {% else %}
+      <p class="discover-rail__empty">No trusted titles match this rail yet.</p>
       {% endfor %}
     </div>
   </section>
-  {% endif %}
-
-  <section class="curated discover-curated page-shell" aria-label="Top rated selections">
-    <header class="curated__header">
-      <h2>High Rated</h2>
-      <p>Weighted toward IMDb and Rotten Tomatoes to surface the crowd favorites.</p>
-    </header>
-    <div class="curated__grid">
-      <article class="curated-section">
-        <header class="curated-section__header">
-          <h3>IMDb Standouts</h3>
-          <p>Highest IMDb scoring titles with consistent votes.</p>
-        </header>
-        <div class="curated-section__row" role="list">
-          {% for movie in top_imdb %}
-          <article
-            class="curated-card discover-curated-card"
-            role="listitem"
-            data-movie-card
-            data-movie-id="{{ movie.id }}"
-            data-liked="{{ 'true' if movie.liked else 'false' }}"
-            data-watchlist="{{ 'true' if movie.watchlist else 'false' }}"
-          >
-            <a class="curated-card__link" href="/ui/movies/{{ movie.id }}">
-              {% if movie.poster_url %}
-              <img src="{{ movie.poster_url }}" alt="{{ movie.title }} poster" loading="lazy" />
-              {% else %}
-              <div class="curated-card__fallback">🍿</div>
-              {% endif %}
-              <div class="curated-card__meta">
-                <h4>{{ movie.title }}</h4>
-                <span class="curated-card__year">{{ movie.year or "—" }}</span>
-              </div>
-            </a>
-            <div class="discover-card-actions">
-              {% set reasons = discover_reasons.get(movie.id, []) %}
-              {% if reasons %}
-              <div class="discover-card-reasons">
-                {% for reason in reasons %}
-                <span class="chip chip-reason">{{ reason }}</span>
-                {% endfor %}
-              </div>
-              {% endif %}
-              <button
-                type="button"
-                class="preference-button{% if movie.liked %} is-active{% endif %}"
-                data-preference-button
-                data-preference-type="like"
-                data-movie-id="{{ movie.id }}"
-                aria-pressed="{{ 'true' if movie.liked else 'false' }}"
-              >
-                Like
-              </button>
-              <button
-                type="button"
-                class="preference-button{% if movie.watchlist %} is-active{% endif %}"
-                data-preference-button
-                data-preference-type="watchlist"
-                data-movie-id="{{ movie.id }}"
-                aria-pressed="{{ 'true' if movie.watchlist else 'false' }}"
-              >
-                Watchlist
-              </button>
-            </div>
-          </article>
-          {% else %}
-          <p class="memory-placeholder">No IMDb ratings available yet.</p>
-          {% endfor %}
-        </div>
-      </article>
-
-      <article class="curated-section">
-        <header class="curated-section__header">
-          <h3>Rotten Tomatoes Gems</h3>
-          <p>Top Tomatometer scores for critic-loved picks.</p>
-        </header>
-        <div class="curated-section__row" role="list">
-          {% for movie in top_rt %}
-          <article
-            class="curated-card discover-curated-card"
-            role="listitem"
-            data-movie-card
-            data-movie-id="{{ movie.id }}"
-            data-liked="{{ 'true' if movie.liked else 'false' }}"
-            data-watchlist="{{ 'true' if movie.watchlist else 'false' }}"
-          >
-            <a class="curated-card__link" href="/ui/movies/{{ movie.id }}">
-              {% if movie.poster_url %}
-              <img src="{{ movie.poster_url }}" alt="{{ movie.title }} poster" loading="lazy" />
-              {% else %}
-              <div class="curated-card__fallback">🍿</div>
-              {% endif %}
-              <div class="curated-card__meta">
-                <h4>{{ movie.title }}</h4>
-                <span class="curated-card__year">{{ movie.year or "—" }}</span>
-              </div>
-            </a>
-            <div class="discover-card-actions">
-              {% set reasons = discover_reasons.get(movie.id, []) %}
-              {% if reasons %}
-              <div class="discover-card-reasons">
-                {% for reason in reasons %}
-                <span class="chip chip-reason">{{ reason }}</span>
-                {% endfor %}
-              </div>
-              {% endif %}
-              <button
-                type="button"
-                class="preference-button{% if movie.liked %} is-active{% endif %}"
-                data-preference-button
-                data-preference-type="like"
-                data-movie-id="{{ movie.id }}"
-                aria-pressed="{{ 'true' if movie.liked else 'false' }}"
-              >
-                Like
-              </button>
-              <button
-                type="button"
-                class="preference-button{% if movie.watchlist %} is-active{% endif %}"
-                data-preference-button
-                data-preference-type="watchlist"
-                data-movie-id="{{ movie.id }}"
-                aria-pressed="{{ 'true' if movie.watchlist else 'false' }}"
-              >
-                Watchlist
-              </button>
-            </div>
-          </article>
-          {% else %}
-          <p class="memory-placeholder">No Rotten Tomatoes scores available yet.</p>
-          {% endfor %}
-        </div>
-      </article>
-    </div>
-  </section>
+  {% endfor %}
 {% endblock %}
 
 {% block scripts %}
   {{ super() }}
-  <script type="application/json" id="movies-page-data">{{ {'pageContext': 'discover'} | tojson }}</script>
-  <script src="{{ url_for('static', path='js/movies_page.js') }}" defer></script>
-  <script src="{{ url_for('static', path='js/discover_refresh.js') }}" defer></script>
+  <script src="{{ url_for('static', path='js/discover_page.js') }}" defer></script>
 {% endblock %}

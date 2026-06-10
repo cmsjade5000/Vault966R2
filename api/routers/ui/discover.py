@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import date
 from random import Random
 from typing import Iterable, Optional
 
@@ -21,8 +22,112 @@ from api.services.profiles import (
 from api.services.ui.grid import attach_genre_display, attach_poster_themes
 from api.services.ui.spotlight import build_spotlight_reason, get_daily_spotlight_movies
 from api.services.ui.templates import TEMPLATES
+from api.services.trusted_movies import get_untrusted_movie_ids, trusted_movie_query
 
 router = APIRouter()
+
+RAIL_LABELS = {
+    "recently-added": (
+        "Recently Added",
+        "The newest trusted Vault entries.",
+    ),
+    "under-100": (
+        "Under 100 Minutes",
+        "Shorter picks that still feel like a full movie night.",
+    ),
+    "highly-rated": (
+        "Highly Rated",
+        "Strong audience or critic scores with meaningful support.",
+    ),
+    "hidden-gems": (
+        "Hidden Gems",
+        "Well-liked titles outside the most heavily voted mainstream.",
+    ),
+    "before-2000": (
+        "Before 2000",
+        "Trusted favorites from the earlier shelves.",
+    ),
+    "edition-cuts": (
+        "Edition Cuts",
+        "Unrated, extended, director's cuts, and other named editions.",
+    ),
+}
+
+
+def _daily_rail_seed(key: str) -> int:
+    return int(date.today().strftime("%Y%m%d")) + sum(ord(char) for char in key)
+
+
+def _rail_candidates(db: Session, key: str) -> list[Movie]:
+    query = trusted_movie_query(db).options(selectinload(Movie.genres))
+    if key == "recently-added":
+        return query.order_by(Movie.id.desc()).limit(40).all()
+    if key == "under-100":
+        query = query.filter(Movie.runtime.isnot(None), Movie.runtime <= 100)
+    elif key == "highly-rated":
+        query = query.filter(
+            or_(
+                (Movie.imdb_rating >= 7.5) & (Movie.imdb_votes >= 10_000),
+                Movie.rt_score >= 85,
+            )
+        )
+    elif key == "hidden-gems":
+        query = query.filter(
+            Movie.imdb_rating >= 6.8,
+            Movie.imdb_votes.isnot(None),
+            Movie.imdb_votes < 100_000,
+        )
+    elif key == "before-2000":
+        query = query.filter(Movie.year.isnot(None), Movie.year < 2000)
+    elif key == "edition-cuts":
+        markers = (
+            "%(Unrated)%",
+            "%(Extended%",
+            "%Director's Cut%",
+            "%Special Edition%",
+            "%Anniversary Edition%",
+            "%Final Cut%",
+        )
+        query = query.filter(or_(*(Movie.title.ilike(marker) for marker in markers)))
+    return (
+        query.order_by(
+            Movie.imdb_rating.desc().nullslast(),
+            Movie.rt_score.desc().nullslast(),
+            Movie.title.asc(),
+        )
+        .limit(160)
+        .all()
+    )
+
+
+def _build_discover_rails(
+    db: Session,
+    *,
+    used_ids: set[int],
+    limit: int = 8,
+) -> list[dict[str, object]]:
+    rails: list[dict[str, object]] = []
+    for key, (title, description) in RAIL_LABELS.items():
+        candidates = _rail_candidates(db, key)
+        rng = Random(_daily_rail_seed(key))
+        rng.shuffle(candidates)
+        fresh = [movie for movie in candidates if movie.id is not None and movie.id not in used_ids]
+        selected = fresh[:limit]
+        if len(selected) < limit:
+            selected_ids = {movie.id for movie in selected}
+            selected.extend(movie for movie in candidates if movie.id not in selected_ids)
+            selected = selected[:limit]
+        used_ids.update(movie.id for movie in selected if movie.id is not None)
+        rails.append(
+            {
+                "key": key,
+                "title": title,
+                "description": description,
+                "movies": selected,
+                "href": f"/ui/movies?preset={key}&view=grid&page=1",
+            }
+        )
+    return rails
 
 
 def _top_imdb(
@@ -68,10 +173,12 @@ def _top_rt(
 
 
 def _top_genre_names(db: Session, *, limit: int) -> list[str]:
+    excluded_ids = get_untrusted_movie_ids(db)
     rows = (
         db.query(Genre.name, func.count().label("count"))
         .join(movie_genres, Genre.id == movie_genres.c.genre_id)
         .join(Movie, Movie.id == movie_genres.c.movie_id)
+        .filter(~Movie.id.in_(excluded_ids) if excluded_ids else True)
         .group_by(Genre.name)
         .order_by(func.count().desc())
         .limit(limit)
@@ -176,7 +283,7 @@ def _pick_selected_for_you(
         return [], []
 
     candidates = (
-        db.query(Movie)
+        trusted_movie_query(db)
         .options(selectinload(Movie.genres))
         .filter(Movie.genres.any(Genre.name.in_(top_genres)))
         .filter(or_(Movie.imdb_rating.isnot(None), Movie.rt_score.isnot(None)))
@@ -231,7 +338,7 @@ def _pick_genre_spotlights(
     for genre_name in genre_names:
         genre_rng = Random((seed or 0) + len(spotlights)) if base_rng else None
         query = (
-            db.query(Movie)
+            trusted_movie_query(db)
             .options(selectinload(Movie.genres))
             .filter(Movie.genres.any(Genre.name == genre_name))
             .filter(or_(Movie.imdb_rating.isnot(None), Movie.rt_score.isnot(None)))
@@ -443,7 +550,7 @@ def discover(request: Request, db: Session = Depends(get_db)):
     top_genres = _top_genre_names(db, limit=6)
 
     used_ids = {movie.id for movie in spotlight_movies if movie.id is not None}
-    pairings = _pick_pairings(db, top_genres, used_ids)
+    pairings = _pick_pairings(db, top_genres, used_ids, limit=2)
     double_feature = pairings[0] if pairings else None
     pairings = pairings[1:] if len(pairings) > 1 else []
     if double_feature:
@@ -457,19 +564,8 @@ def discover(request: Request, db: Session = Depends(get_db)):
                 if movie_id is not None
             }
         )
-    selected_for_you, liked_genres = _pick_selected_for_you(
-        db,
-        active_profile_id,
-        limit=6,
-        exclude_ids=used_ids,
-    )
-    used_ids.update({movie.id for movie in selected_for_you if movie.id is not None})
-
-    genre_spotlights = _pick_genre_spotlights(db, top_genres, used_ids)
-    top_imdb = _top_imdb(db, limit=8, exclude_ids=used_ids)
-    used_ids.update({movie.id for movie in top_imdb if movie.id is not None})
-    top_rt = _top_rt(db, limit=8, exclude_ids=used_ids)
-    used_ids.update({movie.id for movie in top_rt if movie.id is not None})
+    pairings = pairings[:1]
+    rails = _build_discover_rails(db, used_ids=used_ids)
 
     pairing_reasons: dict[str, list[str]] = {}
     discover_reasons: dict[int, list[str]] = {}
@@ -487,50 +583,14 @@ def discover(request: Request, db: Session = Depends(get_db)):
             pairing.secondary, include_rating=True
         )
 
-    for item in genre_spotlights:
-        movie = item.get("movie")
-        genre = item.get("genre")
-        if isinstance(movie, Movie) and movie.id is not None and isinstance(genre, str):
-            discover_reasons[movie.id] = _reason_tags_for_movie(
-                movie, forced_tags=[genre], include_rating=True
-            )
-
-    for movie in top_imdb:
-        if movie.id is None or movie.imdb_rating is None:
-            continue
-        discover_reasons[movie.id] = _reason_tags_for_movie(
-            movie, forced_tags=[f"IMDb {movie.imdb_rating:.1f}"]
-        )
-
-    for movie in top_rt:
-        if movie.id is None or movie.rt_score is None:
-            continue
-        discover_reasons[movie.id] = _reason_tags_for_movie(
-            movie, forced_tags=[f"RT {movie.rt_score}%"]
-        )
-
-    liked_genre_set = {genre.lower() for genre in liked_genres if genre}
-    for movie in selected_for_you:
-        if movie.id is None:
-            continue
-        reason = None
-        for genre in _movie_genres(movie):
-            if genre.lower() in liked_genre_set:
-                reason = f"Liked {genre}"
-                break
-        forced_tags = [reason] if reason else ["Picked for you"]
-        discover_reasons[movie.id] = _reason_tags_for_movie(
-            movie, forced_tags=forced_tags, include_rating=True
-        )
-
     all_movies: dict[int, Movie] = {}
-    for movie in spotlight_movies + selected_for_you + top_imdb + top_rt:
+    for movie in spotlight_movies:
         if movie.id is not None:
             all_movies[movie.id] = movie
-    for item in genre_spotlights:
-        movie = item.get("movie")
-        if isinstance(movie, Movie) and movie.id is not None:
-            all_movies[movie.id] = movie
+    for rail in rails:
+        for movie in rail["movies"]:
+            if movie.id is not None:
+                all_movies[movie.id] = movie
     for pairing in pairings:
         for movie in (pairing.primary, pairing.secondary):
             if movie.id is not None:
@@ -555,10 +615,7 @@ def discover(request: Request, db: Session = Depends(get_db)):
         "pairings": pairings,
         "pairing_reasons": pairing_reasons,
         "discover_reasons": discover_reasons,
-        "selected_for_you": selected_for_you,
-        "top_imdb": top_imdb,
-        "top_rt": top_rt,
-        "genre_spotlights": genre_spotlights,
+        "rails": rails,
     }
     response = TEMPLATES.TemplateResponse(request, "movies_discover.html", context)
     ensure_profile_cookie(request, response, db)

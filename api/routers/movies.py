@@ -51,6 +51,7 @@ from api.services.movie_updates import apply_movie_update
 from api.services.double_feature import DEFAULT_DOUBLE_FEATURE_RUNTIME, pick_double_feature
 from api.services.flic_ordering import fetch_movies_in_rank_order, rank_movie_ids_by_flic
 from api.services.profiles import get_active_profile_id, update_movie_preference
+from api.services.trusted_movies import trusted_movie_query
 from core.picker import (
     PickerCandidate,
     PickerFilters,
@@ -126,7 +127,7 @@ def get_pick(
         raise HTTPException(status_code=400, detail="year_min cannot be greater than year_max")
 
     query = (
-        db.query(Movie)
+        trusted_movie_query(db)
         .options(selectinload(Movie.genres), selectinload(Movie.moods))
         .order_by(Movie.title.asc())
     )
