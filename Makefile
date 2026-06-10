@@ -1,7 +1,7 @@
 include Makefile.txt
 
 # ---- README ALIASES ----
-.PHONY: app.up app.down db.up db.down db.migrate db.reset fmt lint test openapi
+.PHONY: app.up app.down db.up db.down db.migrate db.reset fmt lint test openapi vault.audit
 
 app.up: up ## Start API + Postgres (Docker)
 
@@ -35,6 +35,9 @@ lint: ## Lint Python (Ruff) and JS (Prettier)
 
 test: ## Run pytest
 	python3 -m pytest
+
+vault.audit: ## Check structural integrity and imported-source drift
+	python3 scripts/audit_vault_integrity.py
 
 openapi: ## Freeze OpenAPI + regenerate clients
 	python3 scripts/generate_openapi.py

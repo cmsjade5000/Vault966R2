@@ -32,6 +32,8 @@ from core.movie_filters import (
     ordering_clause,
     parse_movie_filters,
 )
+from core.movie_metadata import MovieMetadata
+from core.vault_ids import next_vault_id, normalize_vault_id
 from api.utils.pagination import paginate
 from api.services.movie_lookup import (
     MovieLookupError,
@@ -627,15 +629,30 @@ def create_movie(
             db.add(m)
         moods.append(m)
 
+    metadata = MovieMetadata.from_mapping(payload.model_dump())
     movie = Movie(
-        title=payload.title,
-        year=payload.year,
-        runtime=payload.runtime,
-        plot=payload.plot,
-        imdb_id=payload.imdb_id,
-        tmdb_id=payload.tmdb_id,
-        poster_url=payload.poster_url,
-        backdrop_url=payload.backdrop_url,
+        vault_id=normalize_vault_id(metadata.vault_id) or next_vault_id(db),
+        title=metadata.title,
+        year=metadata.year,
+        runtime=metadata.runtime,
+        plot=metadata.plot,
+        awards=metadata.awards,
+        certificate=metadata.certificate,
+        keywords=metadata.keywords or None,
+        imdb_id=metadata.imdb_id,
+        tmdb_id=metadata.tmdb_id,
+        imdb_rating=metadata.imdb_rating,
+        imdb_votes=metadata.imdb_votes,
+        metascore=metadata.metascore,
+        tomato_meter=metadata.tomato_meter,
+        tomato_audience=metadata.tomato_audience,
+        rt_score=metadata.rt_score,
+        poster_url=metadata.poster_url,
+        backdrop_url=metadata.backdrop_url,
+        where_to_watch=metadata.where_to_watch or None,
+        languages=metadata.languages or None,
+        countries=metadata.countries or None,
+        collection=metadata.collection,
         genres=genres,
         moods=moods,
     )

@@ -46,6 +46,7 @@ class TopBilledEntry(BaseModel):
 
 class MovieDetail(BaseModel):
     id: int
+    vault_id: Optional[str] = None
     title: str
     year: Optional[int] = None
     runtime: Optional[int] = None
@@ -63,6 +64,8 @@ class MovieDetail(BaseModel):
     tomato_audience: Optional[int] = None
     rt_score: Optional[int] = None
     awards: Optional[str] = None
+    certificate: Optional[str] = None
+    keywords: List[str] = Field(default_factory=list)
     where_to_watch: List[str] = Field(default_factory=list)
     languages: Optional[Union[str, List[str]]] = None
     countries: Optional[Union[str, List[str]]] = None

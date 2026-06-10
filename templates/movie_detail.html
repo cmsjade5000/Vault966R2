@@ -39,11 +39,11 @@
           <button
             type="button"
             class="chip chip-id"
-            data-vault-id="{{ movie.id }}"
+            data-vault-id="{{ movie.vault_id or ('V%04d'|format(movie.id)) }}"
             data-copy-vault
             aria-label="Copy Vault ID"
           >
-            V{{ "%04d"|format(movie.id) }}
+            {{ movie.vault_id or ("V%04d"|format(movie.id)) }}
           </button>
           {% if movie.runtime %}
           {% set rounded_runtime = ((movie.runtime + 4) // 5) * 5 %}

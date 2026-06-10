@@ -31,7 +31,7 @@ from api.routers import (
     ui,
 )
 from api.services.session import SESSION_COOKIE_NAME, parse_session_token
-from api.services.profiles import ROLE_REVIEWER, get_active_profile_role
+from api.services.profiles import ROLE_ADMIN, ROLE_REVIEWER
 import api.models  # noqa: F401  # ensure all model mappers are registered
 
 
@@ -329,11 +329,7 @@ class AuthRequiredMiddleware(BaseHTTPMiddleware):
             return await call_next(request)
 
         if settings.disable_auth:
-            db = SessionLocal()
-            try:
-                request.state.session_profile_role = get_active_profile_role(request, db)
-            finally:
-                db.close()
+            request.state.session_profile_role = ROLE_ADMIN
             return await call_next(request)
 
         path = request.url.path

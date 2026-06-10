@@ -1,0 +1,1423 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-06-10T02:42:21.345961+00:00",
+  "summary": {
+    "movie_count": 969,
+    "structural_issue_count": 0,
+    "content_review_issue_count": 90,
+    "source_drift_count": 0,
+    "missing_source_id_count": 0,
+    "source_unmatched_count": 11,
+    "healthy": true,
+    "review_required": true
+  },
+  "collection_fingerprint": "95a8b22faacb443c2851874125a019d1f6c9b99858a3eb308a4b2ae12a294eec",
+  "field_coverage": {
+    "year": 960,
+    "runtime": 823,
+    "plot": 960,
+    "poster_url": 1,
+    "certificate": 813,
+    "keywords": 861,
+    "imdb_id": 833,
+    "tmdb_id": 883,
+    "genres": 958,
+    "directors": 967,
+    "cast": 752
+  },
+  "structural": {
+    "duplicate_imdb_ids": [],
+    "duplicate_tmdb_ids": [],
+    "missing_titles": [],
+    "invalid_years": [],
+    "invalid_runtimes": [],
+    "missing_provenance": [],
+    "duplicate_title_year": []
+  },
+  "content_review": {
+    "title_embedded_year_conflicts": [
+      {
+        "movie_id": 16,
+        "title": "A Christmas Carol (2009)",
+        "database_year": 2011,
+        "embedded_year": 2009
+      },
+      {
+        "movie_id": 27,
+        "title": "A Nightmare On Elm Street (2010)",
+        "database_year": 1984,
+        "embedded_year": 2010
+      },
+      {
+        "movie_id": 105,
+        "title": "Carrie (1976)",
+        "database_year": 1952,
+        "embedded_year": 1976
+      },
+      {
+        "movie_id": 106,
+        "title": "Carrie (2013)",
+        "database_year": 1952,
+        "embedded_year": 2013
+      },
+      {
+        "movie_id": 159,
+        "title": "Dirty Girl (2007)",
+        "database_year": 2010,
+        "embedded_year": 2007
+      },
+      {
+        "movie_id": 224,
+        "title": "Footloose (1984)",
+        "database_year": 2011,
+        "embedded_year": 1984
+      },
+      {
+        "movie_id": 335,
+        "title": "Into the Woods (2014)",
+        "database_year": 2011,
+        "embedded_year": 2014
+      },
+      {
+        "movie_id": 390,
+        "title": "Les Misérables (2012)",
+        "database_year": 1995,
+        "embedded_year": 2012
+      },
+      {
+        "movie_id": 447,
+        "title": "Moana (2016)",
+        "database_year": 2009,
+        "embedded_year": 2016
+      },
+      {
+        "movie_id": 504,
+        "title": "Pet Sematary (2019)",
+        "database_year": 1989,
+        "embedded_year": 2019
+      },
+      {
+        "movie_id": 676,
+        "title": "The Addams Family (2019)",
+        "database_year": 1991,
+        "embedded_year": 2019
+      },
+      {
+        "movie_id": 705,
+        "title": "The Courier (2021)",
+        "database_year": 2012,
+        "embedded_year": 2021
+      },
+      {
+        "movie_id": 735,
+        "title": "The Gift (2015)",
+        "database_year": 2000,
+        "embedded_year": 2015
+      },
+      {
+        "movie_id": 790,
+        "title": "The Little Mermaid (1989)",
+        "database_year": 2018,
+        "embedded_year": 1989
+      },
+      {
+        "movie_id": 893,
+        "title": "Twister (1996)",
+        "database_year": 1989,
+        "embedded_year": 1996
+      },
+      {
+        "movie_id": 938,
+        "title": "Yesterday (2019)",
+        "database_year": 1985,
+        "embedded_year": 2019
+      }
+    ],
+    "missing_year": [
+      {
+        "movie_id": 206,
+        "title": "Fantasy Island (Unrated Edition)"
+      },
+      {
+        "movie_id": 309,
+        "title": "How the Grinch Stole Christmas: The Ultimate Edition"
+      },
+      {
+        "movie_id": 494,
+        "title": "Paranormal Activity: The Ghost Dimension (New Extended Cut)"
+      },
+      {
+        "movie_id": 555,
+        "title": "Riddick (Unrated Director's Cut)"
+      },
+      {
+        "movie_id": 649,
+        "title": "Straight Outta Compton (Unrated Director's Cut)"
+      },
+      {
+        "movie_id": 658,
+        "title": "Taken (Extended Cut)"
+      },
+      {
+        "movie_id": 739,
+        "title": "The Godfather Part III: The Coppola Restoration"
+      },
+      {
+        "movie_id": 782,
+        "title": "The Last of the Mohicans (Director's Definitive Cut)"
+      },
+      {
+        "movie_id": 941,
+        "title": "Zoolander No. 2 (The Magnum Edition)"
+      }
+    ],
+    "missing_external_ids": [
+      {
+        "movie_id": 26,
+        "title": "A Million Ways to Die In the West (Unrated)",
+        "year": 2014
+      },
+      {
+        "movie_id": 89,
+        "title": "Bridesmaids (Unrated)",
+        "year": 2011
+      },
+      {
+        "movie_id": 96,
+        "title": "By the Light of the Silvery Moon (1953)",
+        "year": 1953
+      },
+      {
+        "movie_id": 97,
+        "title": "By the Sea (2015)",
+        "year": 2015
+      },
+      {
+        "movie_id": 105,
+        "title": "Carrie (1976)",
+        "year": 1952
+      },
+      {
+        "movie_id": 118,
+        "title": "Cinderella (2015)",
+        "year": 2015
+      },
+      {
+        "movie_id": 122,
+        "title": "Coco (2017)",
+        "year": 2017
+      },
+      {
+        "movie_id": 148,
+        "title": "Death on the Nile (2022)",
+        "year": 2022
+      },
+      {
+        "movie_id": 159,
+        "title": "Dirty Girl (2007)",
+        "year": 2010
+      },
+      {
+        "movie_id": 160,
+        "title": "Dirty Grandpa (Unrated)",
+        "year": 2016
+      },
+      {
+        "movie_id": 186,
+        "title": "Elemental (2023)",
+        "year": 2023
+      },
+      {
+        "movie_id": 187,
+        "title": "Elf (2003)",
+        "year": 2003
+      },
+      {
+        "movie_id": 198,
+        "title": "Everest (2015)",
+        "year": 2015
+      },
+      {
+        "movie_id": 206,
+        "title": "Fantasy Island (Unrated Edition)",
+        "year": null
+      },
+      {
+        "movie_id": 207,
+        "title": "Fast & Furious 6 (Extended Edition)",
+        "year": 2013
+      },
+      {
+        "movie_id": 238,
+        "title": "Furious 7 (Extended Edition)",
+        "year": 2015
+      },
+      {
+        "movie_id": 241,
+        "title": "Game Night (2018)",
+        "year": 2018
+      },
+      {
+        "movie_id": 242,
+        "title": "Gangs of New York (2002)",
+        "year": 2002
+      },
+      {
+        "movie_id": 306,
+        "title": "Hot Tub Time Machine (Unrated)",
+        "year": 2010
+      },
+      {
+        "movie_id": 309,
+        "title": "How the Grinch Stole Christmas: The Ultimate Edition",
+        "year": null
+      },
+      {
+        "movie_id": 329,
+        "title": "Inside Out (2015)",
+        "year": 2015
+      },
+      {
+        "movie_id": 335,
+        "title": "Into the Woods (2014)",
+        "year": 2011
+      },
+      {
+        "movie_id": 338,
+        "title": "Isn't It Romantic (2019)",
+        "year": 2019
+      },
+      {
+        "movie_id": 390,
+        "title": "Les Misérables (2012)",
+        "year": 1995
+      },
+      {
+        "movie_id": 399,
+        "title": "Little Boy (2015)",
+        "year": 2015
+      },
+      {
+        "movie_id": 493,
+        "title": "Paranormal Activity 4 (Extended Edition)",
+        "year": 2012
+      },
+      {
+        "movie_id": 494,
+        "title": "Paranormal Activity: The Ghost Dimension (New Extended Cut)",
+        "year": null
+      },
+      {
+        "movie_id": 497,
+        "title": "Passengers (2016)",
+        "year": 2016
+      },
+      {
+        "movie_id": 525,
+        "title": "Psycho (1960)",
+        "year": 1960
+      },
+      {
+        "movie_id": 547,
+        "title": "Requiem for a Dream (Director's Cut)",
+        "year": 2000
+      },
+      {
+        "movie_id": 555,
+        "title": "Riddick (Unrated Director's Cut)",
+        "year": null
+      },
+      {
+        "movie_id": 611,
+        "title": "Sisters (Unrated)",
+        "year": 2015
+      },
+      {
+        "movie_id": 620,
+        "title": "Snow White & the Huntsman (Extended Edition)",
+        "year": 2012
+      },
+      {
+        "movie_id": 637,
+        "title": "Split (2017)",
+        "year": 2017
+      },
+      {
+        "movie_id": 649,
+        "title": "Straight Outta Compton (Unrated Director's Cut)",
+        "year": null
+      },
+      {
+        "movie_id": 658,
+        "title": "Taken (Extended Cut)",
+        "year": null
+      },
+      {
+        "movie_id": 665,
+        "title": "Ted 2 (Unrated)",
+        "year": 2015
+      },
+      {
+        "movie_id": 666,
+        "title": "Teenage Mutant Ninja Turtles (2014)",
+        "year": 2014
+      },
+      {
+        "movie_id": 680,
+        "title": "The Amityville Horror (1979)",
+        "year": 1979
+      },
+      {
+        "movie_id": 686,
+        "title": "The Boss (Unrated)",
+        "year": 2016
+      },
+      {
+        "movie_id": 692,
+        "title": "The Boy (2016)",
+        "year": 2016
+      },
+      {
+        "movie_id": 693,
+        "title": "The Boy Next Door (2015)",
+        "year": 2015
+      },
+      {
+        "movie_id": 735,
+        "title": "The Gift (2015)",
+        "year": 2000
+      },
+      {
+        "movie_id": 739,
+        "title": "The Godfather Part III: The Coppola Restoration",
+        "year": null
+      },
+      {
+        "movie_id": 749,
+        "title": "The Gunman (2015)",
+        "year": 2015
+      },
+      {
+        "movie_id": 759,
+        "title": "The Hobbit: An Unexpected Journey (Extended Edition)",
+        "year": 2012
+      },
+      {
+        "movie_id": 761,
+        "title": "The Hobbit: The Battle of the Five Armies (Extended Edition)",
+        "year": 2014
+      },
+      {
+        "movie_id": 765,
+        "title": "The Host (2013)",
+        "year": 2013
+      },
+      {
+        "movie_id": 773,
+        "title": "The Huntsman: Winter's War (Extended Edition)",
+        "year": 2016
+      },
+      {
+        "movie_id": 781,
+        "title": "The Last House on the Left (Unrated) [2009]",
+        "year": 2009
+      },
+      {
+        "movie_id": 782,
+        "title": "The Last of the Mohicans (Director's Definitive Cut)",
+        "year": null
+      },
+      {
+        "movie_id": 790,
+        "title": "The Little Mermaid (1989)",
+        "year": 2018
+      },
+      {
+        "movie_id": 795,
+        "title": "The Lord of the Rings: The Fellowship of the Ring (Extended Edition)",
+        "year": 2001
+      },
+      {
+        "movie_id": 796,
+        "title": "The Lord of the Rings: The Return of the King (Extended Edition)",
+        "year": 2003
+      },
+      {
+        "movie_id": 797,
+        "title": "The Lord of the Rings: The Two Towers (Extended Edition)",
+        "year": 2002
+      },
+      {
+        "movie_id": 839,
+        "title": "The Snowman (2017)",
+        "year": 2017
+      },
+      {
+        "movie_id": 849,
+        "title": "The Town (2010)",
+        "year": 2010
+      },
+      {
+        "movie_id": 852,
+        "title": "The Twilight Saga: Breaking Dawn - Part 1 (Extended Edition)",
+        "year": 2011
+      },
+      {
+        "movie_id": 878,
+        "title": "Total Recall (Newly Remastered)",
+        "year": 1990
+      },
+      {
+        "movie_id": 891,
+        "title": "Tropic Thunder (Director's Cut)",
+        "year": 2008
+      },
+      {
+        "movie_id": 901,
+        "title": "Unfriended (2014)",
+        "year": 2014
+      },
+      {
+        "movie_id": 918,
+        "title": "We're the Millers (2013)",
+        "year": 2013
+      },
+      {
+        "movie_id": 929,
+        "title": "Wrong Turn 2 (Unrated)",
+        "year": 2007
+      },
+      {
+        "movie_id": 938,
+        "title": "Yesterday (2019)",
+        "year": 1985
+      },
+      {
+        "movie_id": 941,
+        "title": "Zoolander No. 2 (The Magnum Edition)",
+        "year": null
+      }
+    ]
+  },
+  "source_reconciliation": {
+    "source_path": "/Users/corystoner/Documents/Codex/2026-06-09/computer-use-plugin-computer-use-openai/data/import/legacy/Vault966_MovieDB_20250724_v03.staged.csv",
+    "drift": [],
+    "missing_source_ids": [],
+    "source_unmatched_vault_ids": [
+      "V0087",
+      "V0135",
+      "V0288",
+      "V0309",
+      "V0539",
+      "V0584",
+      "V0631",
+      "V0637",
+      "V0643",
+      "V0695",
+      "V0942"
+    ]
+  },
+  "spot_check": [
+    {
+      "movie_id": 35,
+      "vault_id": "V0035",
+      "title": "Alien: Covenant",
+      "year": 2017,
+      "runtime": 122,
+      "plot": "The crew of the colony ship Covenant, bound for a remote planet on the far side of the galaxy, discovers what they think is an uncharted paradise but is actually a dark, dangerous world.",
+      "awards": "3 wins & 26 nominations total",
+      "certificate": "R",
+      "imdb_id": "tt2316204",
+      "tmdb_id": 126889,
+      "imdb_rating": 6.4,
+      "imdb_votes": 327823,
+      "rt_score": 65,
+      "poster_url": null,
+      "genres": [
+        "Horror",
+        "Science Fiction",
+        "Thriller"
+      ],
+      "keywords": [
+        "acid",
+        "alien",
+        "alien life-form",
+        "alien technology",
+        "Android",
+        "creation",
+        "creature",
+        "engineer",
+        "experiment",
+        "genetic mutation",
+        "genocide",
+        "infection",
+        "robot",
+        "scientist",
+        "sequel",
+        "space",
+        "space travel",
+        "spacecraft",
+        "xenomorph"
+      ],
+      "directors": [
+        "Ridley Scott"
+      ],
+      "cast": [
+        "Billy Crudup",
+        "Katherine Waterston",
+        "Michael Fassbender"
+      ],
+      "where_to_watch": [
+        "iTunes"
+      ],
+      "collection": "Prometheus Collection"
+    },
+    {
+      "movie_id": 57,
+      "vault_id": "V0057",
+      "title": "Back to the Future",
+      "year": 1985,
+      "runtime": 116,
+      "plot": "Eighties teenager Marty McFly is accidentally sent back in time to 1955, inadvertently disrupting his parents' first meeting and attracting his mother's romantic interest. Marty must repair the damage to history by rekindling his parents' romance and - with the help of his eccentric inventor friend Doc Brown - return to 1985.",
+      "awards": "Won 1 Oscar. 27 wins & 25 nominations total",
+      "certificate": "PG",
+      "imdb_id": "tt0088763",
+      "tmdb_id": 105,
+      "imdb_rating": 8.5,
+      "imdb_votes": 1376002,
+      "rt_score": 93,
+      "poster_url": null,
+      "genres": [
+        "Adventure",
+        "Comedy",
+        "Science Fiction"
+      ],
+      "keywords": [
+        "1950s",
+        "amused",
+        "bullying",
+        "car race",
+        "changing the past or future",
+        "cientifico loco",
+        "clock tower",
+        "destiny",
+        "exhilarated",
+        "fish out of water",
+        "Flying car",
+        "guitar",
+        "hidden identity",
+        "invention",
+        "inventor",
+        "journey in the past",
+        "lightning",
+        "love",
+        "mad scientist",
+        "nostalgic",
+        "optimistic",
+        "plutonium",
+        "race against time",
+        "suspenseful",
+        "teenage life",
+        "teenage love",
+        "terrorism",
+        "time travel"
+      ],
+      "directors": [
+        "Robert Zemeckis"
+      ],
+      "cast": [
+        "Christopher Lloyd",
+        "Crispin Glover",
+        "Michael J. Fox"
+      ],
+      "where_to_watch": [
+        "iTunes"
+      ],
+      "collection": "Back to the Future Collection"
+    },
+    {
+      "movie_id": 69,
+      "vault_id": "V0069",
+      "title": "Behind Enemy Lines",
+      "year": 2001,
+      "runtime": 106,
+      "plot": "While flying a routine reconnaissance mission over Bosnia, fighter pilot Lt. Chris Burnett photographs something he wasn't supposed to see and gets shot down behind enemy lines, where he must outrun an army led by a ruthless Serbian general. With time running out and a deadly tracker on his trail, Burnett's commanding officer, Admiral Reigart, decides to risk his career and launch a renegade rescue mission to save his life.",
+      "awards": "1 win & 2 nominations",
+      "certificate": "PG-13",
+      "imdb_id": "tt0159273",
+      "tmdb_id": 8007,
+      "imdb_rating": 6.4,
+      "imdb_votes": 114765,
+      "rt_score": 36,
+      "poster_url": null,
+      "genres": [
+        "Action",
+        "Drama",
+        "Thriller",
+        "War"
+      ],
+      "keywords": [
+        "aircraft carrier",
+        "atrocity",
+        "based on true story",
+        "behind enemy lines",
+        "bosnia and herzegovina",
+        "bosnian war (1992-95)",
+        "combat",
+        "enemy territory",
+        "hunted",
+        "jet crash",
+        "jet fighter pilot",
+        "marines",
+        "mass grave",
+        "mine field",
+        "naval flight officer",
+        "naval officer",
+        "navy pilot",
+        "no fly zone",
+        "north atlantic treaty organization (nato)",
+        "reconnaissance",
+        "rescue mission",
+        "running for one's life",
+        "serbian",
+        "Sniper",
+        "u.s. navy",
+        "war crimes"
+      ],
+      "directors": [
+        "John Moore"
+      ],
+      "cast": [
+        "Gabriel Macht",
+        "Gene Hackman",
+        "Owen Wilson"
+      ],
+      "where_to_watch": [
+        "iTunes"
+      ],
+      "collection": "Behind Enemy Lines Collection"
+    },
+    {
+      "movie_id": 89,
+      "vault_id": "V0090",
+      "title": "Bridesmaids (Unrated)",
+      "year": 2011,
+      "runtime": null,
+      "plot": "Annie's life is a mess. But when she finds out her lifetime best friend is engaged, she simply must serve as Lillian's maid of honor. Though lovelorn and broke, Annie bluffs her way through the expensive and bizarre rituals. With one chance to get it perfect, she’ll show Lillian and her bridesmaids just how far you’ll go for someone you love.",
+      "awards": null,
+      "certificate": null,
+      "imdb_id": null,
+      "tmdb_id": null,
+      "imdb_rating": null,
+      "imdb_votes": null,
+      "rt_score": null,
+      "poster_url": null,
+      "genres": [
+        "Comedy",
+        "Romance"
+      ],
+      "keywords": [],
+      "directors": [
+        "Not Found"
+      ],
+      "cast": [],
+      "where_to_watch": [
+        "iTunes"
+      ],
+      "collection": null
+    },
+    {
+      "movie_id": 242,
+      "vault_id": "V0244",
+      "title": "Gangs of New York (2002)",
+      "year": 2002,
+      "runtime": null,
+      "plot": "In 1863, Amsterdam Vallon returns to the Five Points of America to seek vengeance against the psychotic gangland kingpin, Bill the Butcher, who murdered his father years earlier. With an eager pickpocket by his side and a whole new army, Vallon fights his way to seek vengeance on the Butcher and restore peace in the area.",
+      "awards": null,
+      "certificate": null,
+      "imdb_id": null,
+      "tmdb_id": null,
+      "imdb_rating": null,
+      "imdb_votes": null,
+      "rt_score": null,
+      "poster_url": null,
+      "genres": [
+        "Crime",
+        "Drama",
+        "History"
+      ],
+      "keywords": [],
+      "directors": [
+        "Not Found"
+      ],
+      "cast": [],
+      "where_to_watch": [
+        "iTunes"
+      ],
+      "collection": null
+    },
+    {
+      "movie_id": 313,
+      "vault_id": "V0317",
+      "title": "I, Frankenstein",
+      "year": 2014,
+      "runtime": 92,
+      "plot": "200 years after his shocking creation, Dr. Frankenstein's creature, Adam, still walks the earth. But when he finds himself in the middle of a war over the fate of humanity, Adam discovers he holds the key that could destroy humankind.",
+      "awards": "4 nominations total",
+      "certificate": "PG-13",
+      "imdb_id": "tt1418377",
+      "tmdb_id": 100241,
+      "imdb_rating": 5.1,
+      "imdb_votes": 84771,
+      "rt_score": 5,
+      "poster_url": null,
+      "genres": [
+        "Horror",
+        "Thriller"
+      ],
+      "keywords": [
+        "Anti hero",
+        "based on comic",
+        "demon",
+        "fighting",
+        "gargoyle",
+        "prince",
+        "queen",
+        "supernatural"
+      ],
+      "directors": [
+        "Stuart Beattie"
+      ],
+      "cast": [
+        "Aaron Eckhart",
+        "Bill Nighy",
+        "Yvonne Strahovski"
+      ],
+      "where_to_watch": [
+        "iTunes"
+      ],
+      "collection": null
+    },
+    {
+      "movie_id": 329,
+      "vault_id": "V0333",
+      "title": "Inside Out (2015)",
+      "year": 2015,
+      "runtime": null,
+      "plot": "When 11-year-old Riley moves to a new city, her Emotions team up to help her through the transition. Joy, Fear, Anger, Disgust and Sadness work together, but when Joy and Sadness get lost, they must journey through unfamiliar places to get back home.",
+      "awards": null,
+      "certificate": null,
+      "imdb_id": null,
+      "tmdb_id": null,
+      "imdb_rating": null,
+      "imdb_votes": null,
+      "rt_score": null,
+      "poster_url": null,
+      "genres": [
+        "Adventure",
+        "Animation",
+        "Comedy",
+        "Drama",
+        "Family"
+      ],
+      "keywords": [],
+      "directors": [
+        "Not Found"
+      ],
+      "cast": [],
+      "where_to_watch": [
+        "iTunes"
+      ],
+      "collection": null
+    },
+    {
+      "movie_id": 341,
+      "vault_id": "V0345",
+      "title": "It Comes at Night",
+      "year": 2017,
+      "runtime": 91,
+      "plot": "Secure within a desolate home as an unnatural threat terrorizes the world, a man has established a tenuous domestic order with his wife and son, but this will soon be put to test when a desperate young family arrives seeking refuge.",
+      "awards": "1 win & 13 nominations total",
+      "certificate": "R",
+      "imdb_id": "tt4695012",
+      "tmdb_id": 418078,
+      "imdb_rating": 6.1,
+      "imdb_votes": 106873,
+      "rt_score": 88,
+      "poster_url": null,
+      "genres": [
+        "Drama",
+        "Horror",
+        "Mystery"
+      ],
+      "keywords": [
+        "cremation",
+        "darkness",
+        "dog",
+        "door",
+        "fear",
+        "Fire",
+        "forest",
+        "homicide",
+        "hopelessness",
+        "infected",
+        "madness",
+        "malevolence",
+        "nightmare",
+        "nihilism",
+        "pandemic",
+        "paranoia",
+        "post-apocalyptic future",
+        "suspenseful"
+      ],
+      "directors": [
+        "Trey Edward Shults"
+      ],
+      "cast": [
+        "Carmen Ejogo",
+        "Christopher Abbott",
+        "Joel Edgerton"
+      ],
+      "where_to_watch": [
+        "Vudu"
+      ],
+      "collection": null
+    },
+    {
+      "movie_id": 354,
+      "vault_id": "V0358",
+      "title": "John Wick: Chapter 3 - Parabellum",
+      "year": 2019,
+      "runtime": 130,
+      "plot": "Super-assassin John Wick returns with a $14 million price tag on his head and an army of bounty-hunting killers on his trail. After killing a member of the shadowy international assassin’s guild, the High Table, John Wick is excommunicado, but the world’s most ruthless hit men and women await his every turn.",
+      "awards": "18 wins & 29 nominations total",
+      "certificate": "R",
+      "imdb_id": "tt6146586",
+      "tmdb_id": 458156,
+      "imdb_rating": 7.4,
+      "imdb_votes": 452207,
+      "rt_score": 89,
+      "poster_url": null,
+      "genres": [
+        "Action",
+        "Crime",
+        "Thriller"
+      ],
+      "keywords": [
+        "baba yaga",
+        "black humor",
+        "bratva (russian mafia)",
+        "casablanca",
+        "consequences",
+        "dog man friendship",
+        "martial arts",
+        "Morocco",
+        "New york city",
+        "one man army",
+        "organized crime",
+        "professional assassin",
+        "sahara desert",
+        "secret organization",
+        "secret society",
+        "sequel"
+      ],
+      "directors": [
+        "Chad Stahelski"
+      ],
+      "cast": [
+        "Halle Berry",
+        "Ian McShane",
+        "Keanu Reeves"
+      ],
+      "where_to_watch": [
+        "iTunes"
+      ],
+      "collection": "John Wick Collection"
+    },
+    {
+      "movie_id": 364,
+      "vault_id": "V0368",
+      "title": "Jurassic Park III",
+      "year": 2001,
+      "runtime": 92,
+      "plot": "A very in depth look at the making of the movie, a look at the special effects and animatronics made for the motion picture, Jurassic Park III (2001). Interviews with the cast and crew give us a sneak peek at the film. The movie used many different new dinosaurs compared to the first two films, here they examine how they'll look in the final product",
+      "awards": "5 wins & 16 nominations total",
+      "certificate": "PG-13",
+      "imdb_id": "tt0163025",
+      "tmdb_id": 1200709,
+      "imdb_rating": 5.9,
+      "imdb_votes": 352096,
+      "rt_score": 49,
+      "poster_url": null,
+      "genres": [
+        "Documentary"
+      ],
+      "keywords": [],
+      "directors": [
+        "Laurent Bouzereau"
+      ],
+      "cast": [],
+      "where_to_watch": [
+        "iTunes"
+      ],
+      "collection": null
+    },
+    {
+      "movie_id": 365,
+      "vault_id": "V0369",
+      "title": "Jurassic World",
+      "year": 2015,
+      "runtime": 124,
+      "plot": "Twenty-two years after the events of Jurassic Park, Isla Nublar now features a fully functioning dinosaur theme park, Jurassic World, as originally envisioned by John Hammond.",
+      "awards": "15 wins & 58 nominations total",
+      "certificate": "PG-13",
+      "imdb_id": "tt0369610",
+      "tmdb_id": 135397,
+      "imdb_rating": 6.9,
+      "imdb_votes": 693345,
+      "rt_score": 72,
+      "poster_url": null,
+      "genres": [
+        "Action",
+        "Adventure",
+        "Science Fiction",
+        "Thriller"
+      ],
+      "keywords": [
+        "amusement park",
+        "animal attack",
+        "animal horror",
+        "creature",
+        "dinosaur",
+        "dna",
+        "escape",
+        "genetic engineering",
+        "Island",
+        "mosasaurus",
+        "park",
+        "primal fear",
+        "raptor",
+        "sequel",
+        "theme park",
+        "tyrannosaurus rex",
+        "velociraptor"
+      ],
+      "directors": [
+        "Colin Trevorrow"
+      ],
+      "cast": [
+        "Bryce Dallas Howard",
+        "Chris Pratt",
+        "Irrfan Khan"
+      ],
+      "where_to_watch": [
+        "iTunes"
+      ],
+      "collection": "Jurassic Park Collection"
+    },
+    {
+      "movie_id": 415,
+      "vault_id": "V0419",
+      "title": "Mad Max: Fury Road",
+      "year": 2015,
+      "runtime": 120,
+      "plot": "An apocalyptic story set in the furthest reaches of our planet, in a stark desert landscape where humanity is broken, and most everyone is crazed fighting for the necessities of life. Within this world exist two rebels on the run who just might be able to restore order.",
+      "awards": "Won 6 Oscars. 245 wins & 233 nominations total",
+      "certificate": "R",
+      "imdb_id": "tt1392190",
+      "tmdb_id": 76341,
+      "imdb_rating": 8.1,
+      "imdb_votes": 1151388,
+      "rt_score": 97,
+      "poster_url": null,
+      "genres": [
+        "Action",
+        "Adventure",
+        "Science Fiction"
+      ],
+      "keywords": [
+        "australia",
+        "awestruck",
+        "car",
+        "chase",
+        "commanding",
+        "convoy",
+        "dark future",
+        "desert",
+        "dystopia",
+        "future",
+        "on the road",
+        "on the run",
+        "peak oil",
+        "post-apocalyptic future",
+        "Rescue",
+        "survival",
+        "suspenseful"
+      ],
+      "directors": [
+        "George Miller"
+      ],
+      "cast": [
+        "Charlize Theron",
+        "Nicholas Hoult",
+        "Tom Hardy"
+      ],
+      "where_to_watch": [
+        "iTunes"
+      ],
+      "collection": "Mad Max Collection"
+    },
+    {
+      "movie_id": 507,
+      "vault_id": "V0511",
+      "title": "Pirates of the Caribbean: On Stranger Tides",
+      "year": 2011,
+      "runtime": 136,
+      "plot": "Captain Jack Sparrow crosses paths with a woman from his past, and he's not sure if it's love — or if she's a ruthless con artist who's using him to find the fabled Fountain of Youth. When she forces him aboard the Queen Anne's Revenge, the ship of the formidable pirate Blackbeard, Jack finds himself on an unexpected adventure in which he doesn't know who to fear more: Blackbeard or the woman from his past.",
+      "awards": "3 wins & 31 nominations total",
+      "certificate": "PG-13",
+      "imdb_id": "tt1298650",
+      "tmdb_id": 1865,
+      "imdb_rating": 6.6,
+      "imdb_votes": 584632,
+      "rt_score": 32,
+      "poster_url": null,
+      "genres": [
+        "Action",
+        "Adventure",
+        "Fantasy"
+      ],
+      "keywords": [
+        "1750s",
+        "18th century",
+        "aftercreditsstinger",
+        "battle",
+        "blackbeard",
+        "captain",
+        "duke",
+        "england",
+        "mermaid",
+        "mutiny",
+        "pirate",
+        "prime minister",
+        "sailing",
+        "Sea",
+        "ship",
+        "silver",
+        "soldier",
+        "spain",
+        "swashbuckler",
+        "sword"
+      ],
+      "directors": [
+        "Rob Marshall"
+      ],
+      "cast": [
+        "Geoffrey Rush",
+        "Johnny Depp",
+        "Penélope Cruz"
+      ],
+      "where_to_watch": [
+        "iTunes"
+      ],
+      "collection": "Pirates of the Caribbean Collection"
+    },
+    {
+      "movie_id": 529,
+      "vault_id": "V0533",
+      "title": "R.I.P.D.",
+      "year": 2013,
+      "runtime": 96,
+      "plot": "A recently slain cop joins a team of undead police officers working for the Rest in Peace Department and tries to find the man who murdered him.",
+      "awards": null,
+      "certificate": "PG-13",
+      "imdb_id": "tt0790736",
+      "tmdb_id": 49524,
+      "imdb_rating": 5.6,
+      "imdb_votes": 147556,
+      "rt_score": 13,
+      "poster_url": null,
+      "genres": [
+        "Action",
+        "Comedy",
+        "Fantasy"
+      ],
+      "keywords": [
+        "absurd",
+        "amused",
+        "based on comic",
+        "death",
+        "detective",
+        "detectives",
+        "ghost",
+        "Gold",
+        "husband",
+        "investigation",
+        "love",
+        "partner",
+        "police department",
+        "police operation",
+        "revenge",
+        "undead",
+        "wife"
+      ],
+      "directors": [
+        "Robert Schwentke"
+      ],
+      "cast": [
+        "Jeff Bridges",
+        "Kevin Bacon",
+        "Ryan Reynolds"
+      ],
+      "where_to_watch": [
+        "iTunes"
+      ],
+      "collection": "R.I.P.D. Collection"
+    },
+    {
+      "movie_id": 549,
+      "vault_id": "V0554",
+      "title": "Resident Evil",
+      "year": 2012,
+      "runtime": 100,
+      "plot": "U.S. federal agent Leon S. Kennedy sneaks into the \"East Slavic Republic\" to verify rumors that Bio-Organic Weapons (BOWs) are being used in the country's civil war, which the U.S. and Russia are making preparations to jointly intervene in. Right after his infiltration, the U.S. government orders him to leave immediately. Determined to uncover the truth, Leon ignores the order and enters the battlefield to end the chain of tragedies caused by the BOWs.",
+      "awards": "2 wins & 6 nominations total",
+      "certificate": "R",
+      "imdb_id": "tt0120804",
+      "tmdb_id": 133121,
+      "imdb_rating": 6.6,
+      "imdb_votes": 297957,
+      "rt_score": 36,
+      "poster_url": null,
+      "genres": [
+        "Action",
+        "Animation",
+        "Horror",
+        "Science Fiction"
+      ],
+      "keywords": [
+        "adult animation",
+        "anime",
+        "based on video game",
+        "biological weapon",
+        "dystopia",
+        "genetic mutation",
+        "gore",
+        "infection",
+        "military operation",
+        "Mind control",
+        "parasite underneath skin",
+        "political instability",
+        "survival horror",
+        "unkillable monster",
+        "zombie"
+      ],
+      "directors": [
+        "Makoto Kamiya"
+      ],
+      "cast": [],
+      "where_to_watch": [
+        "iTunes"
+      ],
+      "collection": "Resident Evil (Animated) Collection"
+    },
+    {
+      "movie_id": 618,
+      "vault_id": "V0624",
+      "title": "Snatched",
+      "year": 2017,
+      "runtime": 90,
+      "plot": "When her boyfriend dumps Emily, a spontaneous woman in her 30s, she persuades her ultra-cautious mom to accompany her on a vacation to Ecuador. When these two very different women are trapped on this wild journey, their bond as mother and daughter is tested and strengthened while they attempt to navigate the jungle and escape.",
+      "awards": "2 wins & 2 nominations total",
+      "certificate": "R",
+      "imdb_id": "tt2334871",
+      "tmdb_id": 373569,
+      "imdb_rating": 4.7,
+      "imdb_votes": 38130,
+      "rt_score": 36,
+      "poster_url": null,
+      "genres": [
+        "Action",
+        "Comedy"
+      ],
+      "keywords": [
+        "ecuador",
+        "kidnapping",
+        "parent child relationship",
+        "Ransom",
+        "tourist",
+        "vacation"
+      ],
+      "directors": [
+        "Jonathan Levine"
+      ],
+      "cast": [
+        "Amy Schumer",
+        "Goldie Hawn",
+        "Tom Bateman"
+      ],
+      "where_to_watch": [
+        "iTunes"
+      ],
+      "collection": null
+    },
+    {
+      "movie_id": 662,
+      "vault_id": "V0671",
+      "title": "Talk To Me",
+      "year": 2023,
+      "runtime": 95,
+      "plot": "When a group of friends discover how to conjure spirits using an embalmed hand, they become hooked on the new thrill, until one of them goes too far and unleashes terrifying supernatural forces.",
+      "awards": null,
+      "certificate": "R",
+      "imdb_id": "tt10638522",
+      "tmdb_id": 1008042,
+      "imdb_rating": 7.1,
+      "imdb_votes": 182686,
+      "rt_score": null,
+      "poster_url": null,
+      "genres": [
+        "Horror"
+      ],
+      "keywords": [
+        "addiction",
+        "adelaide australia",
+        "body horror",
+        "cautionary tale",
+        "dead parent",
+        "death of mother",
+        "disembodied hand",
+        "female friendship",
+        "female protagonist",
+        "generation z",
+        "grief",
+        "mental health",
+        "modern australia",
+        "peer pressure",
+        "possession",
+        "self mutilation",
+        "self-harm",
+        "social media",
+        "Suicide",
+        "supernatural horror",
+        "teenager",
+        "trauma"
+      ],
+      "directors": [
+        "Michael Philippou",
+        "Danny Philippou"
+      ],
+      "cast": [],
+      "where_to_watch": [
+        "iTunes"
+      ],
+      "collection": "Talk to Me Collection"
+    },
+    {
+      "movie_id": 696,
+      "vault_id": "V0706",
+      "title": "The Bye Bye Man",
+      "year": 2017,
+      "runtime": 96,
+      "plot": "When three college students move into an old house off campus, they unwittingly unleash a supernatural entity known as The Bye Bye Man, who comes to prey upon them once they discover his name. The friends must try to save each other, all the while keeping The Bye Bye Man's existence a secret to save others from the same deadly fate.",
+      "awards": null,
+      "certificate": "PG-13",
+      "imdb_id": "tt4030600",
+      "tmdb_id": 292280,
+      "imdb_rating": 4.3,
+      "imdb_votes": 26866,
+      "rt_score": 18,
+      "poster_url": null,
+      "genres": [
+        "Horror",
+        "Thriller"
+      ],
+      "keywords": [
+        "college student",
+        "hooded figure",
+        "supernatural",
+        "urban legend",
+        "Wisconsin",
+        "woman director",
+        "young adult"
+      ],
+      "directors": [
+        "Stacy Title"
+      ],
+      "cast": [],
+      "where_to_watch": [
+        "iTunes"
+      ],
+      "collection": null
+    },
+    {
+      "movie_id": 717,
+      "vault_id": "V0727",
+      "title": "The Divergent Series: Allegiant",
+      "year": 2016,
+      "runtime": null,
+      "plot": "Beatrice Prior and Tobias Eaton venture into the world outside of the fence and are taken into protective custody by a mysterious agency known as the Bureau of Genetic Welfare.",
+      "awards": null,
+      "certificate": null,
+      "imdb_id": null,
+      "tmdb_id": 262504,
+      "imdb_rating": null,
+      "imdb_votes": null,
+      "rt_score": null,
+      "poster_url": null,
+      "genres": [
+        "Action",
+        "Adventure",
+        "Mystery",
+        "Science Fiction"
+      ],
+      "keywords": [
+        "Based on novel or book",
+        "based on young adult novel",
+        "dystopia",
+        "revolution",
+        "sequel"
+      ],
+      "directors": [
+        "Robert Schwentke"
+      ],
+      "cast": [],
+      "where_to_watch": [
+        "iTunes"
+      ],
+      "collection": "Divergent Collection"
+    },
+    {
+      "movie_id": 790,
+      "vault_id": "V0800",
+      "title": "The Little Mermaid (1989)",
+      "year": 2018,
+      "runtime": null,
+      "plot": "A young reporter and his niece discover a beautiful and enchanting creature they believe to be the real little mermaid.",
+      "awards": null,
+      "certificate": null,
+      "imdb_id": null,
+      "tmdb_id": null,
+      "imdb_rating": null,
+      "imdb_votes": null,
+      "rt_score": null,
+      "poster_url": null,
+      "genres": [
+        "Adventure",
+        "Drama",
+        "Family",
+        "Fantasy",
+        "Romance"
+      ],
+      "keywords": [],
+      "directors": [
+        "Not Found"
+      ],
+      "cast": [],
+      "where_to_watch": [
+        "iTunes"
+      ],
+      "collection": null
+    }
+  ]
+}

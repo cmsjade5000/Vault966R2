@@ -99,6 +99,15 @@
                 {% if current_path == '/ui/watchlist' %}aria-current="page"{% endif %}
                 >Watchlist</a
               >
+              {% if request.state.session_profile_role in ['admin', 'reviewer'] %}
+              <a
+                class="nav-link{% if current_path == '/ui/review' %} is-active{% endif %}"
+                href="/ui/review"
+                role="menuitem"
+                {% if current_path == '/ui/review' %}aria-current="page"{% endif %}
+                >Review</a
+              >
+              {% endif %}
               {% if request.state.session_profile_role == 'admin' %}
               <a
                 class="nav-link{% if current_path == '/ui/movies/health' %} is-active{% endif %}"
@@ -182,6 +191,27 @@
           </span>
           <span class="bottom-nav__label">Watchlist</span>
         </a>
+        {% if request.state.session_profile_role in ['admin', 'reviewer'] %}
+        <a
+          class="bottom-nav__link{% if current_path == '/ui/review' %} is-active{% endif %}"
+          href="/ui/review"
+          {% if current_path == '/ui/review' %}aria-current="page"{% endif %}
+        >
+          <span class="bottom-nav__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
+              <path
+                d="M5 12l4 4L19 6"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </span>
+          <span class="bottom-nav__label">Review</span>
+        </a>
+        {% endif %}
       </nav>
       {% endif %}
       <main id="main" class="app-main">

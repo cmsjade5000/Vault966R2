@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% block title %}Human Review · Vault 966{% endblock %}
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', path='css/movies.css') }}" />
+{% endblock %}
+{% block content %}
+  <header class="app-hero page-shell review-hero">
+    <div class="app-hero__inner">
+      <div class="hero-title">
+        <h1>Human Review</h1>
+        <p class="tagline app-hero__tagline">One movie at a time. No automatic changes.</p>
+      </div>
+      {% if queue %}
+        <p class="review-progress">{{ queue|length }} movies left to check</p>
+      {% endif %}
+    </div>
+  </header>
+
+  <div class="page-shell review-page">
+    {% if request.query_params.get('message') %}
+      <p class="review-message" role="status">{{ request.query_params.get('message') }}</p>
+    {% endif %}
+
+    {% if not queue %}
+      <section class="review-empty" role="status">
+        <h2>Review queue is clear</h2>
+        <p>Every currently detected issue has been checked or sent to Flags.</p>
+        <a class="button-primary" href="/ui/movies">Back to Library</a>
+      </section>
+    {% else %}
+      {% set item = queue[0] %}
+      {% set movie = item.movie %}
+      <section class="review-card" aria-labelledby="review-movie-title">
+        <div class="review-card__identity">
+          <span class="review-vault-id">{{ movie.vault_id or 'Vault ID pending' }}</span>
+          <h2 id="review-movie-title">{{ movie.title }}</h2>
+          <p>{{ movie.year or 'Year unknown' }}</p>
+        </div>
+
+        <div class="review-reasons">
+          <h3>Why this needs a check</h3>
+          {% for issue in item.issues %}
+            <div class="review-reason">
+              <strong>{{ issue.label }}</strong>
+              <span>{{ issue.detail }}</span>
+            </div>
+          {% endfor %}
+        </div>
+
+        <dl class="review-metadata">
+          <div>
+            <dt>IMDb</dt>
+            <dd>{{ movie.imdb_id or 'Missing' }}</dd>
+          </div>
+          <div>
+            <dt>TMDB</dt>
+            <dd>{{ movie.tmdb_id or 'Missing' }}</dd>
+          </div>
+        </dl>
+
+        <div class="review-actions">
+          <a class="button-secondary" href="/ui/movies/{{ movie.id }}">Open details</a>
+          <form method="post" action="/ui/review/{{ movie.id }}/checked">
+            <button class="button-primary" type="submit">Looks right</button>
+          </form>
+          <form method="post" action="/ui/review/{{ movie.id }}/needs-fix">
+            <button class="button-secondary review-needs-fix" type="submit">Needs fixing</button>
+          </form>
+        </div>
+      </section>
+
+      {% if queue|length > 1 %}
+        <details class="review-up-next">
+          <summary>Up next</summary>
+          <ol>
+            {% for next_item in queue[1:6] %}
+              <li>
+                <span>{{ next_item.movie.vault_id or 'Vault ID pending' }}</span>
+                <strong>{{ next_item.movie.title }}</strong>
+              </li>
+            {% endfor %}
+          </ol>
+        </details>
+      {% endif %}
+    {% endif %}
+  </div>
+{% endblock %}

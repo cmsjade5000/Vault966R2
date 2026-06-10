@@ -159,8 +159,8 @@ def apply_filters(query: Query, params: MovieFilterParams) -> Query:
 
 def ordering_clause(order_by: str):
     mapping = {
-        "id_asc": (Movie.id.asc(),),
-        "id_desc": (Movie.id.desc(),),
+        "id_asc": (Movie.vault_id.asc().nullslast(), Movie.id.asc()),
+        "id_desc": (Movie.vault_id.desc().nullslast(), Movie.id.desc()),
         "title_asc": (Movie.title.asc(), Movie.id.asc()),
         "title_desc": (Movie.title.desc(), Movie.id.asc()),
         "year_asc": (Movie.year.asc().nullslast(), Movie.id.asc()),

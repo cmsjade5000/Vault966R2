@@ -15,6 +15,7 @@ if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
 
 os.environ.setdefault("ADMIN_TOKEN", "testtoken")
+os.environ.setdefault("DISABLE_AUTH", "true")
 
 from api.db import Base, get_db
 from api.main import app

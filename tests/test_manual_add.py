@@ -50,6 +50,10 @@ def _fetch_movie(client: TestClient, title: str) -> Optional[dict]:
             "imdb_id": movie.imdb_id,
             "tmdb_id": movie.tmdb_id,
             "where_to_watch": movie.where_to_watch,
+            "imdb_rating": movie.imdb_rating,
+            "rt_score": movie.rt_score,
+            "certificate": movie.certificate,
+            "keywords": movie.keywords,
         }
     finally:
         generator.close()
@@ -68,6 +72,11 @@ def test_manual_add_creates_movie_with_vudu_tag(client: TestClient, admin_header
             backdrop_url="https://example.com/backdrop.jpg",
             genres=["Science Fiction"],
             where_to_watch=["Amazon Prime"],
+            imdb_rating=8.8,
+            imdb_votes=2_500_000,
+            rt_score=87,
+            certificate="PG-13",
+            keywords=["dream", "heist"],
         ),
         vudu=True,
     )
@@ -87,7 +96,11 @@ def test_manual_add_creates_movie_with_vudu_tag(client: TestClient, admin_header
     assert db_movie is not None
     assert db_movie["imdb_id"] == "tt1375666"
     assert db_movie["tmdb_id"] == 27205
-    assert "Vudu" in (db_movie["where_to_watch"] or "")
+    assert "Vudu" in (db_movie["where_to_watch"] or [])
+    assert db_movie["imdb_rating"] == 8.8
+    assert db_movie["rt_score"] == 87
+    assert db_movie["certificate"] == "PG-13"
+    assert db_movie["keywords"] == ["dream", "heist"]
 
 
 def test_manual_add_rejects_duplicate_imdb(client: TestClient, admin_headers: dict[str, str]):

@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import hashlib
+import json
+from datetime import datetime, timezone
 from functools import lru_cache
 from typing import Dict, List, Optional, Sequence, Tuple
 
@@ -11,6 +14,7 @@ from api.config import settings
 from api.models.movie import Movie
 from api.utils.omdb import extract_rotten_tomatoes_score, parse_imdb_rating, parse_imdb_votes
 from api.utils.providers import merge_providers
+from core.movie_metadata import MovieMetadata
 
 
 class MovieLookupError(Exception):
@@ -68,6 +72,18 @@ def _extract_keywords(detail: Dict) -> List[str]:
         if label and label not in keywords:
             keywords.append(label)
     return keywords
+
+
+def _extract_us_certificate(detail: Dict) -> Optional[str]:
+    release_dates = detail.get("release_dates", {}) or {}
+    for country in release_dates.get("results", []) or []:
+        if country.get("iso_3166_1") != "US":
+            continue
+        for release in country.get("release_dates", []) or []:
+            certificate = str(release.get("certification") or "").strip()
+            if certificate:
+                return certificate
+    return None
 
 
 def _extract_watch_providers(detail: Dict, region: str = "US") -> List[str]:
@@ -271,6 +287,18 @@ def _enrich_with_omdb(candidate: Dict, omdb_data: Optional[Dict]) -> None:
     if rt_score is not None:
         candidate["rt_score"] = rt_score
 
+    rated = omdb_data.get("Rated")
+    if rated and rated != "N/A":
+        candidate["certificate"] = rated
+
+    candidate["last_omdb_fetch_at"] = datetime.now(timezone.utc)
+    candidate["omdb_payload_sha"] = _payload_sha(omdb_data)
+
+
+def _payload_sha(payload: Dict) -> str:
+    serialized = json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+    return hashlib.sha256(serialized.encode("utf-8")).hexdigest()
+
 
 ROMAN_NUMERALS = {
     "i": "1",
@@ -402,9 +430,12 @@ def lookup_movie_candidates(title: str, year: int | None = None, limit: int = 5)
             "source": "tmdb",
             "where_to_watch": providers,
             "keywords": keywords,
+            "certificate": _extract_us_certificate(detail),
             "matched_tmdb_title": detail.get("title") or detail.get("name") or "",
             "matched_tmdb_year": release_year,
             "match_strategy": match_strategy,
+            "last_tmdb_fetch_at": datetime.now(timezone.utc),
+            "tmdb_payload_sha": _payload_sha(detail),
         }
         candidate["match_confidence"] = _compute_match_confidence(
             title,
@@ -421,7 +452,16 @@ def lookup_movie_candidates(title: str, year: int | None = None, limit: int = 5)
                 omdb_payload = None
             _enrich_with_omdb(candidate, omdb_payload)
 
-        results.append(candidate)
+        normalized = MovieMetadata.from_mapping(candidate).to_lookup_dict()
+        normalized.update(
+            {
+                "matched_tmdb_title": candidate["matched_tmdb_title"],
+                "matched_tmdb_year": candidate["matched_tmdb_year"],
+                "match_strategy": candidate["match_strategy"],
+                "match_confidence": candidate["match_confidence"],
+            }
+        )
+        results.append(normalized)
 
     if not results:
         raise MovieLookupNotFound("No TMDb results found")
@@ -491,6 +531,7 @@ def lookup_local_candidates(
                 "genres": genres,
                 "source": "vault",
                 "vault_id": movie.id,
+                "vault_label": movie.vault_id,
                 "match_confidence": confidence,
             }
         )

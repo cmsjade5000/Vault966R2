@@ -16,6 +16,15 @@ def test_create_movie_with_token(client: TestClient, admin_headers: dict[str, st
         title="Auth Movie",
         year=2020,
         runtime=120,
+        awards="Won an award",
+        certificate="PG-13",
+        keywords=["mystery", "archive"],
+        imdb_rating=7.5,
+        rt_score=88,
+        where_to_watch=["Netflix"],
+        languages=["English"],
+        countries=["United States"],
+        collection="Auth Collection",
         genres=[],
         moods=[],
     )
@@ -25,5 +34,15 @@ def test_create_movie_with_token(client: TestClient, admin_headers: dict[str, st
         headers=admin_headers,
     )
     assert response.status_code == 200
+    body = response.json()
+    assert body["awards"] == "Won an award"
+    assert body["certificate"] == "PG-13"
+    assert body["keywords"] == ["mystery", "archive"]
+    assert body["imdb_rating"] == 7.5
+    assert body["rt_score"] == 88
+    assert body["where_to_watch"] == ["Netflix"]
+    assert body["languages_iso"] == ["en"]
+    assert body["countries_iso"] == ["US"]
+    assert body["collection"] == "Auth Collection"
     body = response.json()
     assert body["title"] == "Auth Movie"

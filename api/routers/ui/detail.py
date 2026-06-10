@@ -5,7 +5,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlalchemy.orm import Session
 
 from api.db import get_db
-from api.services.movies_detail import get_first_movie_id, get_movie_detail, get_review_neighbors
+from api.services.movies_detail import get_movie_detail, get_review_neighbors
 from api.services.profiles import (
     ensure_profile_cookie,
     get_active_profile_id,
@@ -85,10 +85,7 @@ def _build_reason_tags(base_genres: list[str], base_year: int | None, item) -> l
 
 @router.get("/ui/movies/review")
 def start_review(request: Request, db: Session = Depends(get_db)) -> RedirectResponse:
-    first_id = get_first_movie_id(db)
-    if first_id is None:
-        return RedirectResponse(url="/ui/movies", status_code=302)
-    return RedirectResponse(url=f"/ui/movies/{first_id}?review=1", status_code=302)
+    return RedirectResponse(url="/ui/review", status_code=302)
 
 
 @router.get("/ui/movies/{movie_id}", response_class=HTMLResponse)

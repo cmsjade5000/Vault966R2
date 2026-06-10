@@ -75,7 +75,7 @@ def test_update_movie_metadata_resolves_flag(
     body = response.json()
     assert body["runtime"] == 123
     assert body["flagged"] is False
-    assert body["where_to_watch"] == "Blu-ray"
+    assert body["where_to_watch"] == ["Blu-ray"]
 
     detail = client.get("/movies/1/detail").json()
     assert detail["flagged"] is False
@@ -120,7 +120,7 @@ def test_update_movie_metadata_handles_optional_fields(
     assert body["tomato_audience"] == 91
     assert body["poster_url"] == "https://example.com/poster.jpg"
     assert body["backdrop_url"] == "https://example.com/backdrop.jpg"
-    assert body["where_to_watch"] == "Netflix; Vudu"
+    assert body["where_to_watch"] == ["Netflix", "Vudu"]
     assert body["languages"] == "English, Japanese"
     assert body["countries"] == "United States"
     assert body["collection"] == "Blade Runner Collection"

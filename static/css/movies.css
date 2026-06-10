@@ -1532,6 +1532,156 @@
   }
 }
 
+.review-hero .app-hero__inner {
+  align-items: end;
+  display: flex;
+  justify-content: space-between;
+}
+
+.review-progress {
+  color: var(--flic-muted);
+  margin: 0;
+}
+
+.review-page {
+  max-width: 860px;
+  padding-bottom: 4rem;
+}
+
+.review-message {
+  background: rgba(53, 193, 126, 0.12);
+  border: 1px solid rgba(53, 193, 126, 0.35);
+  border-radius: 6px;
+  color: var(--flic-text);
+  margin: 0 0 1rem;
+  padding: 0.8rem 1rem;
+}
+
+.review-card {
+  background: rgba(15, 23, 42, 0.72);
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  border-radius: 8px;
+  padding: clamp(1.25rem, 4vw, 2rem);
+}
+
+.review-card__identity h2 {
+  font-size: clamp(1.6rem, 4vw, 2.4rem);
+  margin: 0.4rem 0 0.2rem;
+}
+
+.review-card__identity p,
+.review-reason span {
+  color: var(--flic-muted);
+}
+
+.review-vault-id {
+  color: var(--flic-accent);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.review-reasons {
+  border-bottom: 1px solid rgba(148, 163, 184, 0.22);
+  border-top: 1px solid rgba(148, 163, 184, 0.22);
+  margin: 1.5rem 0;
+  padding: 1.25rem 0;
+}
+
+.review-reasons h3 {
+  font-size: 0.9rem;
+  margin: 0 0 0.9rem;
+}
+
+.review-reason {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.review-reason + .review-reason {
+  margin-top: 1rem;
+}
+
+.review-metadata {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin: 0;
+}
+
+.review-metadata div {
+  min-width: 0;
+}
+
+.review-metadata dt {
+  color: var(--flic-muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.review-metadata dd {
+  margin: 0.25rem 0 0;
+  overflow-wrap: anywhere;
+}
+
+.review-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1.75rem;
+}
+
+.review-actions form {
+  margin: 0;
+}
+
+.review-needs-fix {
+  border-color: rgba(244, 168, 75, 0.55);
+}
+
+.review-up-next {
+  margin-top: 1.25rem;
+}
+
+.review-up-next summary {
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.review-up-next ol {
+  display: grid;
+  gap: 0.65rem;
+  margin: 1rem 0 0;
+  padding-left: 1.5rem;
+}
+
+.review-up-next li span {
+  color: var(--flic-muted);
+  display: inline-block;
+  min-width: 5.5rem;
+}
+
+.review-empty {
+  padding: 2rem 0;
+}
+
+@media (max-width: 640px) {
+  .review-hero .app-hero__inner {
+    align-items: start;
+    display: grid;
+    gap: 0.75rem;
+  }
+
+  .review-actions,
+  .review-actions form,
+  .review-actions a,
+  .review-actions button {
+    width: 100%;
+  }
+}
+
 .collection-health,
 .curated {
   padding: 0 clamp(1rem, 4vw, 3rem);

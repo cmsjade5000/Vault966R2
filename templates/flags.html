@@ -39,7 +39,7 @@
               <tr>
                 <td data-label="Movie">
                   {% if flag.movie %}
-                    <a href="/ui/movies/{{ flag.movie.id }}">#{{ flag.movie.id }} · {{ flag.movie.title }}</a>
+                    <a href="/ui/movies/{{ flag.movie.id }}">{{ flag.movie.vault_id or ('V%04d'|format(flag.movie.id)) }} · {{ flag.movie.title }}</a>
                   {% else %}
                     <span>Movie {{ flag.movie_id }}</span>
                   {% endif %}

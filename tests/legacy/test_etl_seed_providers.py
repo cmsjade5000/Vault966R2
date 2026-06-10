@@ -25,4 +25,4 @@ def test_merge_where_to_watch_with_dict_payloads():
 
     merged = merge_where_to_watch(existing_payload, new_payload)
 
-    assert merged == "Netflix; Hulu; Disney+; Apple TV; HBO Max"
+    assert merged == ["Netflix", "Hulu", "Disney+", "Apple TV", "HBO Max"]

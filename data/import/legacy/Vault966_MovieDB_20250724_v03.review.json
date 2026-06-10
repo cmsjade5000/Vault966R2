@@ -1,0 +1,997 @@
+{
+  "schema_version": 1,
+  "source": {
+    "path": "data/import/legacy/Vault966_MovieDB_20250724_v03.csv",
+    "row_count": 980,
+    "column_count": 21
+  },
+  "staged": {
+    "path": "data/import/legacy/Vault966_MovieDB_20250724_v03.staged.csv",
+    "row_count": 980,
+    "columns": [
+      "vault_id",
+      "title",
+      "year",
+      "verified_year",
+      "runtime_min",
+      "imdb_rating",
+      "imdb_votes",
+      "rt_score",
+      "imdb_id",
+      "tmdb_id",
+      "certificate",
+      "franchise",
+      "keywords",
+      "genres",
+      "director",
+      "top_billed_actor",
+      "top_3_actors",
+      "awards",
+      "plot",
+      "digital_location",
+      "poster_url"
+    ]
+  },
+  "summary": {
+    "issue_count": 55,
+    "issue_counts": {
+      "duplicate_imdb_id": 5,
+      "duplicate_tmdb_id": 11,
+      "missing_year": 9,
+      "title_embedded_year_conflict": 16,
+      "verified_year_conflict": 14
+    },
+    "requires_review": true
+  },
+  "issues": [
+    {
+      "type": "duplicate_imdb_id",
+      "field": "imdb_id",
+      "value": "tt0089880",
+      "rows": [
+        539,
+        540
+      ],
+      "conflicting_title_year": true,
+      "records": [
+        {
+          "row": 539,
+          "vault_id": "V0538",
+          "title": "Rambo: First Blood",
+          "year": 1985,
+          "imdb_id": "tt0089880",
+          "tmdb_id": 1369
+        },
+        {
+          "row": 540,
+          "vault_id": "V0539",
+          "title": "Rambo: First Blood Part II",
+          "year": 1985,
+          "imdb_id": "tt0089880",
+          "tmdb_id": 1369
+        }
+      ]
+    },
+    {
+      "type": "duplicate_imdb_id",
+      "field": "imdb_id",
+      "value": "tt0926084",
+      "rows": [
+        288,
+        289
+      ],
+      "conflicting_title_year": true,
+      "records": [
+        {
+          "row": 288,
+          "vault_id": "V0287",
+          "title": "Harry Potter and the Deathly Hallows – Part 1",
+          "year": 2010,
+          "imdb_id": "tt0926084",
+          "tmdb_id": 12444
+        },
+        {
+          "row": 289,
+          "vault_id": "V0288",
+          "title": "Harry Potter and the Deathly Hallows, Part 1",
+          "year": 2010,
+          "imdb_id": "tt0926084",
+          "tmdb_id": 12444
+        }
+      ]
+    },
+    {
+      "type": "duplicate_imdb_id",
+      "field": "imdb_id",
+      "value": "tt10736580",
+      "rows": [
+        637,
+        638
+      ],
+      "conflicting_title_year": false,
+      "records": [
+        {
+          "row": 637,
+          "vault_id": "V0636",
+          "title": "Spell",
+          "year": 2020,
+          "imdb_id": "tt10736580",
+          "tmdb_id": 621151
+        },
+        {
+          "row": 638,
+          "vault_id": "V0637",
+          "title": "Spell",
+          "year": 2020,
+          "imdb_id": "tt10736580",
+          "tmdb_id": 621151
+        }
+      ]
+    },
+    {
+      "type": "duplicate_imdb_id",
+      "field": "imdb_id",
+      "value": "tt8364368",
+      "rows": [
+        135,
+        136
+      ],
+      "conflicting_title_year": false,
+      "records": [
+        {
+          "row": 135,
+          "vault_id": "V0134",
+          "title": "Crawl",
+          "year": 2019,
+          "imdb_id": "tt8364368",
+          "tmdb_id": 511987
+        },
+        {
+          "row": 136,
+          "vault_id": "V0135",
+          "title": "Crawl",
+          "year": 2019,
+          "imdb_id": "tt8364368",
+          "tmdb_id": 511987
+        }
+      ]
+    },
+    {
+      "type": "duplicate_imdb_id",
+      "field": "imdb_id",
+      "value": "tt9173418",
+      "rows": [
+        87,
+        88
+      ],
+      "conflicting_title_year": false,
+      "records": [
+        {
+          "row": 87,
+          "vault_id": "V0086",
+          "title": "Brahms: The Boy II",
+          "year": 2020,
+          "imdb_id": "tt9173418",
+          "tmdb_id": 555974
+        },
+        {
+          "row": 88,
+          "vault_id": "V0087",
+          "title": "Brahms: The Boy II",
+          "year": 2020,
+          "imdb_id": "tt9173418",
+          "tmdb_id": 555974
+        }
+      ]
+    },
+    {
+      "type": "duplicate_tmdb_id",
+      "field": "tmdb_id",
+      "value": 12222,
+      "rows": [
+        171,
+        310
+      ],
+      "conflicting_title_year": true,
+      "records": [
+        {
+          "row": 171,
+          "vault_id": "V0170",
+          "title": "Dr. Seuss' Horton Hears a Who!",
+          "year": 2008,
+          "imdb_id": null,
+          "tmdb_id": 12222
+        },
+        {
+          "row": 310,
+          "vault_id": "V0309",
+          "title": "Horton Hears a Who!",
+          "year": 2008,
+          "imdb_id": "tt0451079",
+          "tmdb_id": 12222
+        }
+      ]
+    },
+    {
+      "type": "duplicate_tmdb_id",
+      "field": "tmdb_id",
+      "value": 12444,
+      "rows": [
+        288,
+        289
+      ],
+      "conflicting_title_year": true,
+      "records": [
+        {
+          "row": 288,
+          "vault_id": "V0287",
+          "title": "Harry Potter and the Deathly Hallows – Part 1",
+          "year": 2010,
+          "imdb_id": "tt0926084",
+          "tmdb_id": 12444
+        },
+        {
+          "row": 289,
+          "vault_id": "V0288",
+          "title": "Harry Potter and the Deathly Hallows, Part 1",
+          "year": 2010,
+          "imdb_id": "tt0926084",
+          "tmdb_id": 12444
+        }
+      ]
+    },
+    {
+      "type": "duplicate_tmdb_id",
+      "field": "tmdb_id",
+      "value": 1369,
+      "rows": [
+        539,
+        540
+      ],
+      "conflicting_title_year": true,
+      "records": [
+        {
+          "row": 539,
+          "vault_id": "V0538",
+          "title": "Rambo: First Blood",
+          "year": 1985,
+          "imdb_id": "tt0089880",
+          "tmdb_id": 1369
+        },
+        {
+          "row": 540,
+          "vault_id": "V0539",
+          "title": "Rambo: First Blood Part II",
+          "year": 1985,
+          "imdb_id": "tt0089880",
+          "tmdb_id": 1369
+        }
+      ]
+    },
+    {
+      "type": "duplicate_tmdb_id",
+      "field": "tmdb_id",
+      "value": 246655,
+      "rows": [
+        941,
+        943
+      ],
+      "conflicting_title_year": true,
+      "records": [
+        {
+          "row": 941,
+          "vault_id": "V0940",
+          "title": "X-Men",
+          "year": 2016,
+          "imdb_id": "tt0120903",
+          "tmdb_id": 246655
+        },
+        {
+          "row": 943,
+          "vault_id": "V0942",
+          "title": "X-Men: Apocalypse",
+          "year": 2016,
+          "imdb_id": "tt3385516",
+          "tmdb_id": 246655
+        }
+      ]
+    },
+    {
+      "type": "duplicate_tmdb_id",
+      "field": "tmdb_id",
+      "value": 2667,
+      "rows": [
+        80,
+        696
+      ],
+      "conflicting_title_year": true,
+      "records": [
+        {
+          "row": 80,
+          "vault_id": "V0079",
+          "title": "Blair Witch",
+          "year": 1999,
+          "imdb_id": "tt1540011",
+          "tmdb_id": 2667
+        },
+        {
+          "row": 696,
+          "vault_id": "V0695",
+          "title": "The Blair Witch Project",
+          "year": 1999,
+          "imdb_id": "tt0185937",
+          "tmdb_id": 2667
+        }
+      ]
+    },
+    {
+      "type": "duplicate_tmdb_id",
+      "field": "tmdb_id",
+      "value": 315635,
+      "rows": [
+        639,
+        644
+      ],
+      "conflicting_title_year": true,
+      "records": [
+        {
+          "row": 639,
+          "vault_id": "V0638",
+          "title": "Spider-Man",
+          "year": 2017,
+          "imdb_id": "tt0145487",
+          "tmdb_id": 315635
+        },
+        {
+          "row": 644,
+          "vault_id": "V0643",
+          "title": "Spider-Man: Homecoming",
+          "year": 2017,
+          "imdb_id": "tt2250912",
+          "tmdb_id": 315635
+        }
+      ]
+    },
+    {
+      "type": "duplicate_tmdb_id",
+      "field": "tmdb_id",
+      "value": 41439,
+      "rows": [
+        581,
+        585
+      ],
+      "conflicting_title_year": true,
+      "records": [
+        {
+          "row": 581,
+          "vault_id": "V0580",
+          "title": "Saw 3D",
+          "year": 2010,
+          "imdb_id": "tt1477076",
+          "tmdb_id": 41439
+        },
+        {
+          "row": 585,
+          "vault_id": "V0584",
+          "title": "Saw The Final Chapter",
+          "year": 2010,
+          "imdb_id": null,
+          "tmdb_id": 41439
+        }
+      ]
+    },
+    {
+      "type": "duplicate_tmdb_id",
+      "field": "tmdb_id",
+      "value": 511987,
+      "rows": [
+        135,
+        136
+      ],
+      "conflicting_title_year": false,
+      "records": [
+        {
+          "row": 135,
+          "vault_id": "V0134",
+          "title": "Crawl",
+          "year": 2019,
+          "imdb_id": "tt8364368",
+          "tmdb_id": 511987
+        },
+        {
+          "row": 136,
+          "vault_id": "V0135",
+          "title": "Crawl",
+          "year": 2019,
+          "imdb_id": "tt8364368",
+          "tmdb_id": 511987
+        }
+      ]
+    },
+    {
+      "type": "duplicate_tmdb_id",
+      "field": "tmdb_id",
+      "value": 555974,
+      "rows": [
+        87,
+        88
+      ],
+      "conflicting_title_year": false,
+      "records": [
+        {
+          "row": 87,
+          "vault_id": "V0086",
+          "title": "Brahms: The Boy II",
+          "year": 2020,
+          "imdb_id": "tt9173418",
+          "tmdb_id": 555974
+        },
+        {
+          "row": 88,
+          "vault_id": "V0087",
+          "title": "Brahms: The Boy II",
+          "year": 2020,
+          "imdb_id": "tt9173418",
+          "tmdb_id": 555974
+        }
+      ]
+    },
+    {
+      "type": "duplicate_tmdb_id",
+      "field": "tmdb_id",
+      "value": 621151,
+      "rows": [
+        637,
+        638
+      ],
+      "conflicting_title_year": false,
+      "records": [
+        {
+          "row": 637,
+          "vault_id": "V0636",
+          "title": "Spell",
+          "year": 2020,
+          "imdb_id": "tt10736580",
+          "tmdb_id": 621151
+        },
+        {
+          "row": 638,
+          "vault_id": "V0637",
+          "title": "Spell",
+          "year": 2020,
+          "imdb_id": "tt10736580",
+          "tmdb_id": 621151
+        }
+      ]
+    },
+    {
+      "type": "duplicate_tmdb_id",
+      "field": "tmdb_id",
+      "value": 939243,
+      "rows": [
+        630,
+        632
+      ],
+      "conflicting_title_year": true,
+      "records": [
+        {
+          "row": 630,
+          "vault_id": "V0629",
+          "title": "Sonic The Hedgehog",
+          "year": 2024,
+          "imdb_id": "tt3794354",
+          "tmdb_id": 939243
+        },
+        {
+          "row": 632,
+          "vault_id": "V0631",
+          "title": "Sonic The Hedgehog 3",
+          "year": 2024,
+          "imdb_id": "tt18259086",
+          "tmdb_id": 939243
+        }
+      ]
+    },
+    {
+      "type": "title_embedded_year_conflict",
+      "row": 17,
+      "embedded_year": 2009,
+      "release_year": 2011,
+      "record": {
+        "row": 17,
+        "vault_id": "V0016",
+        "title": "A Christmas Carol (2009)",
+        "year": 2011,
+        "imdb_id": "tt25222838",
+        "tmdb_id": null
+      }
+    },
+    {
+      "type": "title_embedded_year_conflict",
+      "row": 28,
+      "embedded_year": 2010,
+      "release_year": 1984,
+      "record": {
+        "row": 28,
+        "vault_id": "V0027",
+        "title": "A Nightmare On Elm Street (2010)",
+        "year": 1984,
+        "imdb_id": "tt25681546",
+        "tmdb_id": null
+      }
+    },
+    {
+      "type": "verified_year_conflict",
+      "row": 31,
+      "release_year": 2018,
+      "verified_year": 1937,
+      "record": {
+        "row": 31,
+        "vault_id": "V0030",
+        "title": "A Star Is Born (2018)",
+        "year": 2018,
+        "imdb_id": "tt15087152",
+        "tmdb_id": 332562
+      }
+    },
+    {
+      "type": "verified_year_conflict",
+      "row": 48,
+      "release_year": 2018,
+      "verified_year": 2006,
+      "record": {
+        "row": 48,
+        "vault_id": "V0047",
+        "title": "Aquaman (2018)",
+        "year": 2018,
+        "imdb_id": null,
+        "tmdb_id": 513736
+      }
+    },
+    {
+      "type": "verified_year_conflict",
+      "row": 69,
+      "release_year": 2017,
+      "verified_year": 2010,
+      "record": {
+        "row": 69,
+        "vault_id": "V0068",
+        "title": "Beauty and the Beast (2017)",
+        "year": 2017,
+        "imdb_id": null,
+        "tmdb_id": 321612
+      }
+    },
+    {
+      "type": "title_embedded_year_conflict",
+      "row": 107,
+      "embedded_year": 1976,
+      "release_year": 1952,
+      "record": {
+        "row": 107,
+        "vault_id": "V0106",
+        "title": "Carrie (1976)",
+        "year": 1952,
+        "imdb_id": null,
+        "tmdb_id": null
+      }
+    },
+    {
+      "type": "title_embedded_year_conflict",
+      "row": 108,
+      "embedded_year": 2013,
+      "release_year": 1952,
+      "record": {
+        "row": 108,
+        "vault_id": "V0107",
+        "title": "Carrie (2013)",
+        "year": 1952,
+        "imdb_id": "tt4207012",
+        "tmdb_id": null
+      }
+    },
+    {
+      "type": "title_embedded_year_conflict",
+      "row": 162,
+      "embedded_year": 2007,
+      "release_year": 2010,
+      "record": {
+        "row": 162,
+        "vault_id": "V0161",
+        "title": "Dirty Girl (2007)",
+        "year": 2010,
+        "imdb_id": null,
+        "tmdb_id": null
+      }
+    },
+    {
+      "type": "verified_year_conflict",
+      "row": 195,
+      "release_year": 2014,
+      "verified_year": 1981,
+      "record": {
+        "row": 195,
+        "vault_id": "V0194",
+        "title": "Endless Love (2014)",
+        "year": 2014,
+        "imdb_id": null,
+        "tmdb_id": 483488
+      }
+    },
+    {
+      "type": "missing_year",
+      "row": 209,
+      "vault_id": "V0208",
+      "title": "Fantasy Island (Unrated Edition)",
+      "year": null,
+      "imdb_id": null,
+      "tmdb_id": null
+    },
+    {
+      "type": "title_embedded_year_conflict",
+      "row": 227,
+      "embedded_year": 1984,
+      "release_year": 2011,
+      "record": {
+        "row": 227,
+        "vault_id": "V0226",
+        "title": "Footloose (1984)",
+        "year": 2011,
+        "imdb_id": "tt17304912",
+        "tmdb_id": null
+      }
+    },
+    {
+      "type": "verified_year_conflict",
+      "row": 254,
+      "release_year": 2016,
+      "verified_year": 1984,
+      "record": {
+        "row": 254,
+        "vault_id": "V0253",
+        "title": "Ghostbusters (2016)",
+        "year": 2016,
+        "imdb_id": "tt17977322",
+        "tmdb_id": 43074
+      }
+    },
+    {
+      "type": "verified_year_conflict",
+      "row": 261,
+      "release_year": 2014,
+      "verified_year": 1977,
+      "record": {
+        "row": 261,
+        "vault_id": "V0260",
+        "title": "Godzilla (2014)",
+        "year": 2014,
+        "imdb_id": "tt24798746",
+        "tmdb_id": 124905
+      }
+    },
+    {
+      "type": "verified_year_conflict",
+      "row": 278,
+      "release_year": 2018,
+      "verified_year": 1978,
+      "record": {
+        "row": 278,
+        "vault_id": "V0277",
+        "title": "Halloween (2018)",
+        "year": 2018,
+        "imdb_id": null,
+        "tmdb_id": 1400676
+      }
+    },
+    {
+      "type": "verified_year_conflict",
+      "row": 288,
+      "release_year": 2010,
+      "verified_year": 2011,
+      "record": {
+        "row": 288,
+        "vault_id": "V0287",
+        "title": "Harry Potter and the Deathly Hallows – Part 1",
+        "year": 2010,
+        "imdb_id": "tt0926084",
+        "tmdb_id": 12444
+      }
+    },
+    {
+      "type": "verified_year_conflict",
+      "row": 299,
+      "release_year": 2014,
+      "verified_year": 1983,
+      "record": {
+        "row": 299,
+        "vault_id": "V0298",
+        "title": "Hercules (2014)",
+        "year": 2014,
+        "imdb_id": "tt19058686",
+        "tmdb_id": 184315
+      }
+    },
+    {
+      "type": "missing_year",
+      "row": 314,
+      "vault_id": "V0313",
+      "title": "How the Grinch Stole Christmas: The Ultimate Edition",
+      "year": null,
+      "imdb_id": null,
+      "tmdb_id": null
+    },
+    {
+      "type": "title_embedded_year_conflict",
+      "row": 340,
+      "embedded_year": 2014,
+      "release_year": 2011,
+      "record": {
+        "row": 340,
+        "vault_id": "V0339",
+        "title": "Into the Woods (2014)",
+        "year": 2011,
+        "imdb_id": null,
+        "tmdb_id": null
+      }
+    },
+    {
+      "type": "title_embedded_year_conflict",
+      "row": 395,
+      "embedded_year": 2012,
+      "release_year": 1995,
+      "record": {
+        "row": 395,
+        "vault_id": "V0394",
+        "title": "Les Misérables (2012)",
+        "year": 1995,
+        "imdb_id": null,
+        "tmdb_id": null
+      }
+    },
+    {
+      "type": "title_embedded_year_conflict",
+      "row": 452,
+      "embedded_year": 2016,
+      "release_year": 2009,
+      "record": {
+        "row": 452,
+        "vault_id": "V0451",
+        "title": "Moana (2016)",
+        "year": 2009,
+        "imdb_id": "tt17977212",
+        "tmdb_id": null
+      }
+    },
+    {
+      "type": "missing_year",
+      "row": 499,
+      "vault_id": "V0498",
+      "title": "Paranormal Activity: The Ghost Dimension (New Extended Cut)",
+      "year": null,
+      "imdb_id": null,
+      "tmdb_id": null
+    },
+    {
+      "type": "title_embedded_year_conflict",
+      "row": 509,
+      "embedded_year": 2019,
+      "release_year": 1989,
+      "record": {
+        "row": 509,
+        "vault_id": "V0508",
+        "title": "Pet Sematary (2019)",
+        "year": 1989,
+        "imdb_id": "tt15433746",
+        "tmdb_id": null
+      }
+    },
+    {
+      "type": "verified_year_conflict",
+      "row": 542,
+      "release_year": 1985,
+      "verified_year": 2018,
+      "record": {
+        "row": 542,
+        "vault_id": "V0541",
+        "title": "Ran (1985)",
+        "year": 1985,
+        "imdb_id": "tt22087412",
+        "tmdb_id": 11645
+      }
+    },
+    {
+      "type": "missing_year",
+      "row": 561,
+      "vault_id": "V0560",
+      "title": "Riddick (Unrated Director's Cut)",
+      "year": null,
+      "imdb_id": null,
+      "tmdb_id": null
+    },
+    {
+      "type": "missing_year",
+      "row": 659,
+      "vault_id": "V0658",
+      "title": "Straight Outta Compton (Unrated Director's Cut)",
+      "year": null,
+      "imdb_id": null,
+      "tmdb_id": null
+    },
+    {
+      "type": "missing_year",
+      "row": 668,
+      "vault_id": "V0667",
+      "title": "Taken (Extended Cut)",
+      "year": null,
+      "imdb_id": null,
+      "tmdb_id": null
+    },
+    {
+      "type": "title_embedded_year_conflict",
+      "row": 686,
+      "embedded_year": 2019,
+      "release_year": 1991,
+      "record": {
+        "row": 686,
+        "vault_id": "V0685",
+        "title": "The Addams Family (2019)",
+        "year": 1991,
+        "imdb_id": "tt12930394",
+        "tmdb_id": null
+      }
+    },
+    {
+      "type": "title_embedded_year_conflict",
+      "row": 716,
+      "embedded_year": 2021,
+      "release_year": 2012,
+      "record": {
+        "row": 716,
+        "vault_id": "V0715",
+        "title": "The Courier (2021)",
+        "year": 2012,
+        "imdb_id": "tt25552594",
+        "tmdb_id": null
+      }
+    },
+    {
+      "type": "title_embedded_year_conflict",
+      "row": 746,
+      "embedded_year": 2015,
+      "release_year": 2000,
+      "record": {
+        "row": 746,
+        "vault_id": "V0745",
+        "title": "The Gift (2015)",
+        "year": 2000,
+        "imdb_id": null,
+        "tmdb_id": null
+      }
+    },
+    {
+      "type": "missing_year",
+      "row": 750,
+      "vault_id": "V0749",
+      "title": "The Godfather Part III: The Coppola Restoration",
+      "year": null,
+      "imdb_id": null,
+      "tmdb_id": null
+    },
+    {
+      "type": "verified_year_conflict",
+      "row": 753,
+      "release_year": 2013,
+      "verified_year": 1974,
+      "record": {
+        "row": 753,
+        "vault_id": "V0752",
+        "title": "The Great Gatsby (2013)",
+        "year": 2013,
+        "imdb_id": "tt17977860",
+        "tmdb_id": 64682
+      }
+    },
+    {
+      "type": "missing_year",
+      "row": 793,
+      "vault_id": "V0792",
+      "title": "The Last of the Mohicans (Director's Definitive Cut)",
+      "year": null,
+      "imdb_id": null,
+      "tmdb_id": null
+    },
+    {
+      "type": "verified_year_conflict",
+      "row": 800,
+      "release_year": 2019,
+      "verified_year": 1994,
+      "record": {
+        "row": 800,
+        "vault_id": "V0799",
+        "title": "The Lion King (2019)",
+        "year": 2019,
+        "imdb_id": "tt12930254",
+        "tmdb_id": 420818
+      }
+    },
+    {
+      "type": "title_embedded_year_conflict",
+      "row": 801,
+      "embedded_year": 1989,
+      "release_year": 2018,
+      "record": {
+        "row": 801,
+        "vault_id": "V0800",
+        "title": "The Little Mermaid (1989)",
+        "year": 2018,
+        "imdb_id": null,
+        "tmdb_id": null
+      }
+    },
+    {
+      "type": "verified_year_conflict",
+      "row": 820,
+      "release_year": 2017,
+      "verified_year": 1999,
+      "record": {
+        "row": 820,
+        "vault_id": "V0819",
+        "title": "The Mummy (2017)",
+        "year": 2017,
+        "imdb_id": null,
+        "tmdb_id": 282035
+      }
+    },
+    {
+      "type": "verified_year_conflict",
+      "row": 862,
+      "release_year": 2020,
+      "verified_year": 1992,
+      "record": {
+        "row": 862,
+        "vault_id": "V0861",
+        "title": "The Turning (2020)",
+        "year": 2020,
+        "imdb_id": null,
+        "tmdb_id": 725582
+      }
+    },
+    {
+      "type": "title_embedded_year_conflict",
+      "row": 904,
+      "embedded_year": 1996,
+      "release_year": 1989,
+      "record": {
+        "row": 904,
+        "vault_id": "V0903",
+        "title": "Twister (1996)",
+        "year": 1989,
+        "imdb_id": "tt28426494",
+        "tmdb_id": null
+      }
+    },
+    {
+      "type": "title_embedded_year_conflict",
+      "row": 950,
+      "embedded_year": 2019,
+      "release_year": 1985,
+      "record": {
+        "row": 950,
+        "vault_id": "V0949",
+        "title": "Yesterday (2019)",
+        "year": 1985,
+        "imdb_id": null,
+        "tmdb_id": null
+      }
+    },
+    {
+      "type": "missing_year",
+      "row": 953,
+      "vault_id": "V0952",
+      "title": "Zoolander No. 2 (The Magnum Edition)",
+      "year": null,
+      "imdb_id": null,
+      "tmdb_id": null
+    }
+  ]
+}

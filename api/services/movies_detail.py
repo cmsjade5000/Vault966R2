@@ -431,6 +431,7 @@ def get_movie_detail(db: Session, movie_id: int) -> Optional[MovieDetail]:
 
     detail = MovieDetail(
         id=movie.id,
+        vault_id=movie.vault_id,
         title=movie.title,
         year=movie.year,
         runtime=movie.runtime,
@@ -448,6 +449,8 @@ def get_movie_detail(db: Session, movie_id: int) -> Optional[MovieDetail]:
         tomato_audience=movie.tomato_audience,
         rt_score=movie.rt_score,
         awards=movie.awards,
+        certificate=movie.certificate,
+        keywords=list(movie.keywords or []),
         where_to_watch=where_to_watch,
         languages=_coerce_text_or_list(movie.languages),
         countries=_coerce_text_or_list(movie.countries),

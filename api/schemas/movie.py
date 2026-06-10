@@ -32,10 +32,13 @@ class MoodRead(BaseModel):
 
 class MovieBase(BaseModel):
     title: str
+    vault_id: Optional[str] = None
     year: Optional[int] = None
     runtime: Optional[int] = None
     plot: Optional[str] = None
     awards: Optional[str] = None
+    certificate: Optional[str] = None
+    keywords: Optional[List[str]] = None
     imdb_id: Optional[str] = None
     tmdb_id: Optional[int] = None
     imdb_rating: Optional[float] = None
@@ -43,6 +46,7 @@ class MovieBase(BaseModel):
     metascore: Optional[int] = None
     tomato_meter: Optional[int] = None
     tomato_audience: Optional[int] = None
+    rt_score: Optional[int] = None
     poster_url: Optional[str] = None
     backdrop_url: Optional[str] = None
     where_to_watch: Optional[Union[str, List[str]]] = None
@@ -136,6 +140,8 @@ class MovieUpdate(BaseModel):
     runtime: Optional[int] = None
     plot: Optional[str] = None
     awards: Optional[str] = None
+    certificate: Optional[str] = None
+    keywords: Optional[List[str]] = None
     imdb_id: Optional[str] = None
     tmdb_id: Optional[int] = None
     imdb_rating: Optional[float] = None
@@ -178,9 +184,11 @@ class MovieLookupCandidate(BaseModel):
     genres: List[str] = Field(default_factory=list)
     source: str = "tmdb"
     vault_id: Optional[int] = None
+    vault_label: Optional[str] = None
     match_confidence: Optional[float] = None
     where_to_watch: List[str] = Field(default_factory=list)
     keywords: List[str] = Field(default_factory=list)
+    certificate: Optional[str] = None
 
 
 class MovieLookupResponse(BaseModel):

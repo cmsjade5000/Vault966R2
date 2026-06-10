@@ -1,5 +1,6 @@
 from fastapi.testclient import TestClient
 
+from api.models.movie import Movie
 from api.services.ui.grid import FILTER_COOKIE_NAME
 
 
@@ -42,10 +43,52 @@ def test_flags_page_lists_flagged_movies(client: TestClient, admin_headers: dict
     assert "Metadata cleanup" in html
 
 
-def test_review_route_redirects_to_first_movie(client: TestClient) -> None:
+def test_review_route_redirects_to_human_review_queue(client: TestClient) -> None:
     resp = client.get("/ui/movies/review", follow_redirects=False)
     assert resp.status_code == 302
-    assert resp.headers["location"] == "/ui/movies/1?review=1"
+    assert resp.headers["location"] == "/ui/review"
+
+
+def test_review_queue_shows_detected_issue_and_vault_id(client: TestClient, db_session) -> None:
+    movie = db_session.get(Movie, 1)
+    movie.title = "Blade Runner (1981)"
+    movie.vault_id = "V0001"
+    db_session.commit()
+
+    response = client.get("/ui/review")
+
+    assert response.status_code == 200
+    assert "Human Review" in response.text
+    assert "Title and year disagree" in response.text
+    assert "V0001" in response.text
+
+
+def test_review_checked_removes_movie_from_queue(client: TestClient, db_session) -> None:
+    movie = db_session.get(Movie, 1)
+    movie.year = None
+    movie.vault_id = "V0001"
+    db_session.commit()
+
+    response = client.post("/ui/review/1/checked", follow_redirects=True)
+
+    assert response.status_code == 200
+    assert "V0001 marked as checked." in response.text
+    assert "Year is missing" not in response.text
+
+
+def test_review_needs_fix_creates_flag_with_vault_id(client: TestClient, db_session) -> None:
+    movie = db_session.get(Movie, 1)
+    movie.year = None
+    movie.vault_id = "V0001"
+    db_session.commit()
+
+    response = client.post("/ui/review/1/needs-fix", follow_redirects=True)
+    flags = client.get("/ui/flags")
+
+    assert response.status_code == 200
+    assert "V0001 added to Flags." in response.text
+    assert "V0001" in flags.text
+    assert "Human review" in flags.text
 
 
 def test_movie_detail_shows_review_bar(client: TestClient) -> None:

@@ -71,7 +71,12 @@ def test_movies_lookup_candidates_success(client, movie_id, monkeypatch):
                         "results": [
                             {
                                 "iso_3166_1": "US",
-                                "release_dates": [{"release_date": "1999-04-01T00:00:00.000Z"}],
+                                "release_dates": [
+                                    {
+                                        "release_date": "1999-04-01T00:00:00.000Z",
+                                        "certification": "R",
+                                    }
+                                ],
                             }
                         ]
                     },
@@ -117,6 +122,7 @@ def test_movies_lookup_candidates_success(client, movie_id, monkeypatch):
                     "Plot": f"OMDb plot {imdb_id}",
                     "Runtime": "142 min",
                     "Poster": f"https://images.example/{imdb_id}.jpg",
+                    "Rated": "R",
                 }
             )
         raise AssertionError(f"Unexpected URL: {url}")
@@ -133,9 +139,10 @@ def test_movies_lookup_candidates_success(client, movie_id, monkeypatch):
     assert first["runtime"] == 142  # OMDb runtime overrides TMDb
     assert first["poster_url"].endswith("tt0133093.jpg")
     assert first["synopsis"] == "OMDb plot tt0133093"
-    assert first["genres"] == ["Action", "Sci-Fi"]
+    assert first["genres"] == ["Action", "Science Fiction"]
     assert first["release_date"] == "1999-04-01"
     assert first["keywords"] == ["simulation", "hacker"]
+    assert first["certificate"] == "R"
     assert first["where_to_watch"] == [
         "HBO Max",
         "Apple TV (rent)",

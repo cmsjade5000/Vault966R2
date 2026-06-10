@@ -418,7 +418,7 @@
       const flagged = Boolean(movie.flagged);
 
       row.dataset.title = lowerTitle;
-      row.dataset.vaultId = String(movie.id);
+      row.dataset.vaultId = String(movie.vault_id || movie.id).replace(/^V/i, "");
       row.dataset.year = movie.year ?? "";
       row.dataset.runtime = movie.runtime ?? "";
       row.dataset.rating = movie.imdb_rating ?? "";
@@ -438,8 +438,8 @@
 
       const vaultCell = document.createElement("td");
       vaultCell.setAttribute("data-label", "Vault ID");
-      const paddedId = String(movie.id).padStart(4, "0");
-      vaultCell.textContent = `V${paddedId}`;
+      vaultCell.textContent =
+        movie.vault_id || `V${String(movie.id).padStart(4, "0")}`;
 
       const detailCell = document.createElement("td");
       detailCell.setAttribute("data-label", "Details");
@@ -1024,7 +1024,8 @@
 
         const idsCell = document.createElement("td");
         const ids = [];
-        const vaultLabel = formatVaultId(candidate.vault_id);
+        const vaultLabel =
+          candidate.vault_label || formatVaultId(candidate.vault_id);
         if (vaultLabel) ids.push(`Vault ${vaultLabel}`);
         if (candidate.tmdb_id) ids.push(`TMDb ${candidate.tmdb_id}`);
         if (candidate.imdb_id) ids.push(`IMDb ${candidate.imdb_id}`);
@@ -2850,7 +2851,9 @@
         const row = document.createElement("tr");
         const lowerTitle = (moviePayload.title || "").toString().toLowerCase();
         row.dataset.title = lowerTitle;
-        row.dataset.vaultId = String(moviePayload.id);
+        row.dataset.vaultId = String(
+          moviePayload.vault_id || moviePayload.id,
+        ).replace(/^V/i, "");
         row.dataset.year = moviePayload.year ?? "";
         row.dataset.runtime = moviePayload.runtime ?? "";
         row.dataset.rating = "";
@@ -2867,8 +2870,9 @@
 
         const vaultCell = document.createElement("td");
         vaultCell.setAttribute("data-label", "Vault ID");
-        const paddedId = String(moviePayload.id).padStart(4, "0");
-        vaultCell.textContent = `V${paddedId}`;
+        vaultCell.textContent =
+          moviePayload.vault_id ||
+          `V${String(moviePayload.id).padStart(4, "0")}`;
 
         const yearCell = document.createElement("td");
         yearCell.setAttribute("data-label", "Year");
@@ -3179,7 +3183,9 @@
       copyVaultButton.addEventListener("click", async () => {
         const vaultId = copyVaultButton.dataset.vaultId;
         if (!vaultId) return;
-        const formatted = `V${String(vaultId).padStart(4, "0")}`;
+        const formatted = String(vaultId).startsWith("V")
+          ? String(vaultId)
+          : `V${String(vaultId).padStart(4, "0")}`;
         const copied = await copyToClipboard(formatted);
         if (copied) {
           showToastMessage(`Copied ${formatted}`);

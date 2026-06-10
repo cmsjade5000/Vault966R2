@@ -46,7 +46,7 @@
         {% set rating_text = imdb_text ~ ' • ' ~ rt_text %}
         <tr
           data-title="{{ movie.title | lower }}"
-          data-vault-id="{{ movie.id }}"
+          data-vault-id="{{ (movie.vault_id or ('V%04d'|format(movie.id)))[1:] }}"
           data-year="{{ movie.year or '' }}"
           data-runtime="{{ movie.runtime or '' }}"
           data-rating="{{ movie.imdb_rating or '' }}"
@@ -64,7 +64,7 @@
             </span>
             {% endif %}
           </td>
-          <td data-label="Vault ID">V{{ "%04d"|format(movie.id) }}</td>
+          <td data-label="Vault ID">{{ movie.vault_id or ("V%04d"|format(movie.id)) }}</td>
           <td data-label="Details" class="data-table__cell-details">
             <div class="table-detail-line">{{ year_runtime_text }}</div>
             <div class="table-detail-line table-detail-line--muted">{{ rating_text }}</div>

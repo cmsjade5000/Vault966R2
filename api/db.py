@@ -47,6 +47,7 @@ def _ensure_sqlite_movie_columns() -> None:
         columns = {row[1] for row in connection.execute(text("PRAGMA table_info(movies)"))}
 
         migrations = {
+            "vault_id": "ALTER TABLE movies ADD COLUMN vault_id TEXT",
             "imdb_rating": "ALTER TABLE movies ADD COLUMN imdb_rating FLOAT",
             "imdb_votes": "ALTER TABLE movies ADD COLUMN imdb_votes INTEGER",
             "rt_score": "ALTER TABLE movies ADD COLUMN rt_score INTEGER",
@@ -58,6 +59,8 @@ def _ensure_sqlite_movie_columns() -> None:
             "countries": "ALTER TABLE movies ADD COLUMN countries TEXT",
             "collection": "ALTER TABLE movies ADD COLUMN collection TEXT",
             "awards": "ALTER TABLE movies ADD COLUMN awards TEXT",
+            "certificate": "ALTER TABLE movies ADD COLUMN certificate TEXT",
+            "keywords": "ALTER TABLE movies ADD COLUMN keywords JSON",
             "last_tmdb_fetch_at": "ALTER TABLE movies ADD COLUMN last_tmdb_fetch_at TIMESTAMP",
             "last_omdb_fetch_at": "ALTER TABLE movies ADD COLUMN last_omdb_fetch_at TIMESTAMP",
             "tmdb_etag": "ALTER TABLE movies ADD COLUMN tmdb_etag TEXT",
@@ -142,6 +145,39 @@ def _ensure_sqlite_movie_columns() -> None:
                         created_at TIMESTAMP NOT NULL,
                         updated_at TIMESTAMP NOT NULL
                     )
+                    """
+                )
+            )
+
+        review_checks_exists = connection.execute(
+            text(
+                "SELECT name FROM sqlite_master "
+                "WHERE type='table' AND name='movie_review_checks'"
+            )
+        ).first()
+        if not review_checks_exists:
+            connection.execute(
+                text(
+                    """
+                    CREATE TABLE movie_review_checks (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        movie_id INTEGER NOT NULL REFERENCES movies(id) ON DELETE CASCADE,
+                        issue_type TEXT NOT NULL,
+                        issue_fingerprint TEXT NOT NULL,
+                        decision TEXT NOT NULL,
+                        checked_by_profile_id INTEGER REFERENCES profiles(id)
+                            ON DELETE SET NULL,
+                        checked_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                        UNIQUE(movie_id, issue_type, issue_fingerprint)
+                    )
+                    """
+                )
+            )
+            connection.execute(
+                text(
+                    """
+                    CREATE INDEX IF NOT EXISTS ix_movie_review_checks_movie_id
+                    ON movie_review_checks (movie_id)
                     """
                 )
             )
