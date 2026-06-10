@@ -14,6 +14,7 @@ from api.services.profiles import (
 )
 from api.services.ui.spotlight import build_spotlight_reason, get_daily_spotlight_ids
 from api.services.ui.templates import TEMPLATES
+from api.services.source_sync import source_provenance_for_movie
 
 router = APIRouter()
 
@@ -112,6 +113,7 @@ def movie_detail(
                 "review_next_id": None,
                 "profiles": get_profiles(db),
                 "active_profile_id": get_active_profile_id(request, db),
+                "source_provenance": None,
             },
             status_code=404,
         )
@@ -164,6 +166,7 @@ def movie_detail(
             "similar_reasons": similar_reasons,
             "pair_with": pair_with,
             "more_like": more_like,
+            "source_provenance": source_provenance_for_movie(db, detail.id),
         },
     )
     ensure_profile_cookie(request, response, db)

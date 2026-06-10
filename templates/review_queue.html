@@ -8,10 +8,11 @@
     <div class="app-hero__inner">
       <div class="hero-title">
         <h1>Human Review</h1>
-        <p class="tagline app-hero__tagline">One movie at a time. No automatic changes.</p>
+        <p class="tagline app-hero__tagline">One decision at a time. Vault IDs stay fixed.</p>
       </div>
-      {% if queue %}
-        <p class="review-progress">{{ queue|length }} movies left to check</p>
+      {% set total_review = source_queue|length + queue|length %}
+      {% if total_review %}
+        <p class="review-progress">{{ total_review }} movies left to check</p>
       {% endif %}
     </div>
   </header>
@@ -21,13 +22,141 @@
       <p class="review-message" role="status">{{ request.query_params.get('message') }}</p>
     {% endif %}
 
-    {% if not queue %}
-      <section class="review-empty" role="status">
-        <h2>Review queue is clear</h2>
-        <p>Every currently detected issue has been checked or sent to Flags.</p>
-        <a class="button-primary" href="/ui/movies">Back to Library</a>
+    {% if source_queue %}
+      {% set item = source_queue[0] %}
+      {% set row = item.source_row %}
+      {% set movie = item.movie %}
+      <section class="review-card review-card--source" aria-labelledby="review-movie-title">
+        <div class="review-card__identity">
+          <span class="review-vault-id">
+            {% if movie %}{{ movie.vault_id }}{% else %}Source row {{ row.row_number }}{% endif %}
+          </span>
+          <h2 id="review-movie-title">{{ row.title }}</h2>
+          <p>
+            Collection source snapshot #{{ source_snapshot.id }}
+            {% if item.match.match_type not in ['exact', 'likely', 'manual'] %}
+              · {{ item.match.match_type|replace('_', ' ')|title }}
+            {% endif %}
+          </p>
+        </div>
+
+        {% if item.conflicts %}
+          <div class="source-compare">
+            <div class="source-compare__header" aria-hidden="true">
+              <span>Field</span><span>Collection source</span><span>Current Vault</span><span>Decision</span>
+            </div>
+            {% for conflict in item.conflicts %}
+              <div class="source-compare__row{% if conflict.research %} is-research{% endif %}">
+                <strong>{{ conflict.label }}</strong>
+                <span data-label="Collection source">{{ conflict.source_value }}</span>
+                <span data-label="Current Vault">{{ conflict.vault_value }}</span>
+                <div class="source-compare__actions" data-label="Decision">
+                  {% if conflict.research %}
+                    <span class="source-research-status">Needs research</span>
+                    {% if movie.imdb_id %}
+                      <a href="https://www.imdb.com/title/{{ movie.imdb_id }}/" target="_blank" rel="noreferrer">IMDb</a>
+                    {% endif %}
+                    {% if movie.tmdb_id %}
+                      <a href="https://www.themoviedb.org/movie/{{ movie.tmdb_id }}" target="_blank" rel="noreferrer">TMDB</a>
+                    {% endif %}
+                    <form method="post" action="/ui/review/source-row/{{ row.id }}/field/{{ conflict.field_name }}/use_source">
+                      <button class="button-primary" type="submit">Use source</button>
+                    </form>
+                    <form method="post" action="/ui/review/source-row/{{ row.id }}/field/{{ conflict.field_name }}/keep_vault">
+                      <button class="button-secondary" type="submit">Keep Vault</button>
+                    </form>
+                  {% else %}
+                    <form method="post" action="/ui/review/source-row/{{ row.id }}/field/{{ conflict.field_name }}/use_source">
+                      <button class="button-primary" type="submit">Use source</button>
+                    </form>
+                    <form method="post" action="/ui/review/source-row/{{ row.id }}/field/{{ conflict.field_name }}/keep_vault">
+                      <button class="button-secondary" type="submit">Keep Vault</button>
+                    </form>
+                    <form method="post" action="/ui/review/source-row/{{ row.id }}/field/{{ conflict.field_name }}/needs_research">
+                      <button class="button-secondary review-needs-fix" type="submit">Research</button>
+                    </form>
+                  {% endif %}
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+          <div class="review-actions">
+            <a class="button-secondary" href="/ui/movies/{{ movie.id }}">Open details</a>
+          </div>
+        {% elif item.match.match_type == 'ambiguous' %}
+          <div class="review-reasons">
+            <h3>Choose the matching Vault entry</h3>
+            <p>The title was found, but year, runtime, or director did not provide a confident match.</p>
+          </div>
+          <div class="source-candidates">
+            {% for candidate in item.candidate_movies %}
+              <article>
+                <div>
+                  <span class="review-vault-id">{{ candidate.vault_id }}</span>
+                  <strong>{{ candidate.title }}</strong>
+                  <span>{{ candidate.year or 'Year unknown' }} · {{ candidate.runtime or 'Runtime unknown' }} min</span>
+                </div>
+                <form method="post" action="/ui/review/source-row/{{ row.id }}/match/{{ candidate.id }}">
+                  <button class="button-primary" type="submit">Match this entry</button>
+                </form>
+              </article>
+            {% endfor %}
+          </div>
+          <form method="post" action="/ui/review/source-row/{{ row.id }}/create">
+            <button class="button-secondary" type="submit">Add as new movie</button>
+          </form>
+        {% elif item.match.match_type == 'duplicate' %}
+          <div class="review-reasons">
+            <h3>Possible duplicate or another owned copy</h3>
+            <p>This source row repeats the same title, year, runtime, and director.</p>
+          </div>
+          <div class="review-actions">
+            {% if item.candidate_movies|length == 1 %}
+              {% set candidate = item.candidate_movies[0] %}
+              <form method="post" action="/ui/review/source-row/{{ row.id }}/match/{{ candidate.id }}">
+                <button class="button-primary" type="submit">Same movie, another copy</button>
+              </form>
+            {% endif %}
+            <form method="post" action="/ui/review/source-row/{{ row.id }}/create">
+              <button class="button-secondary" type="submit">Create separate Vault entry</button>
+            </form>
+            <form method="post" action="/ui/review/source-row/{{ row.id }}/dismiss-duplicate">
+              <button class="button-secondary review-needs-fix" type="submit">Ignore duplicate row</button>
+            </form>
+          </div>
+        {% elif item.match.match_type == 'source_only' %}
+          <div class="review-reasons">
+            <h3>New movie candidate</h3>
+            <p>No confident Vault match was found.</p>
+          </div>
+          <dl class="review-metadata">
+            <div><dt>Year</dt><dd>{{ row.year or 'Missing' }}</dd></div>
+            <div><dt>Runtime</dt><dd>{{ row.runtime or 'Missing' }}{% if row.runtime %} min{% endif %}</dd></div>
+            <div><dt>Director</dt><dd>{{ row.director or 'Missing' }}</dd></div>
+            <div><dt>Owned copy</dt><dd>{% if row.hd is sameas true %}HD{% elif row.hd is sameas false %}SD{% else %}Unknown{% endif %}</dd></div>
+          </dl>
+          <div class="review-actions">
+            <form method="post" action="/ui/review/source-row/{{ row.id }}/create">
+              <button class="button-primary" type="submit">Add to Vault</button>
+            </form>
+          </div>
+        {% endif %}
       </section>
-    {% else %}
+
+      {% if source_queue|length > 1 %}
+        <details class="review-up-next">
+          <summary>Up next from source sync</summary>
+          <ol>
+            {% for next_item in source_queue[1:6] %}
+              <li>
+                <span>{{ next_item.movie.vault_id if next_item.movie else 'New' }}</span>
+                <strong>{{ next_item.source_row.title }}</strong>
+              </li>
+            {% endfor %}
+          </ol>
+        </details>
+      {% endif %}
+    {% elif queue %}
       {% set item = queue[0] %}
       {% set movie = item.movie %}
       <section class="review-card" aria-labelledby="review-movie-title">
@@ -36,9 +165,8 @@
           <h2 id="review-movie-title">{{ movie.title }}</h2>
           <p>{{ movie.year or 'Year unknown' }}</p>
         </div>
-
         <div class="review-reasons">
-          <h3>Why this needs a check</h3>
+          <h3>Vault-only check</h3>
           {% for issue in item.issues %}
             <div class="review-reason">
               <strong>{{ issue.label }}</strong>
@@ -46,18 +174,10 @@
             </div>
           {% endfor %}
         </div>
-
         <dl class="review-metadata">
-          <div>
-            <dt>IMDb</dt>
-            <dd>{{ movie.imdb_id or 'Missing' }}</dd>
-          </div>
-          <div>
-            <dt>TMDB</dt>
-            <dd>{{ movie.tmdb_id or 'Missing' }}</dd>
-          </div>
+          <div><dt>IMDb</dt><dd>{{ movie.imdb_id or 'Missing' }}</dd></div>
+          <div><dt>TMDB</dt><dd>{{ movie.tmdb_id or 'Missing' }}</dd></div>
         </dl>
-
         <div class="review-actions">
           <a class="button-secondary" href="/ui/movies/{{ movie.id }}">Open details</a>
           <form method="post" action="/ui/review/{{ movie.id }}/checked">
@@ -68,20 +188,12 @@
           </form>
         </div>
       </section>
-
-      {% if queue|length > 1 %}
-        <details class="review-up-next">
-          <summary>Up next</summary>
-          <ol>
-            {% for next_item in queue[1:6] %}
-              <li>
-                <span>{{ next_item.movie.vault_id or 'Vault ID pending' }}</span>
-                <strong>{{ next_item.movie.title }}</strong>
-              </li>
-            {% endfor %}
-          </ol>
-        </details>
-      {% endif %}
+    {% else %}
+      <section class="review-empty" role="status">
+        <h2>Review queue is clear</h2>
+        <p>Every current source conflict and Vault-only issue has been checked.</p>
+        <a class="button-primary" href="/ui/movies">Back to Library</a>
+      </section>
     {% endif %}
   </div>
 {% endblock %}

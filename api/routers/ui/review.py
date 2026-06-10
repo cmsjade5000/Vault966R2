@@ -15,6 +15,15 @@ from api.services.movie_review import (
     get_review_queue,
     record_review_decision,
 )
+from api.services.source_sync import (
+    SourceSyncError,
+    assign_source_row_match,
+    create_movie_from_source_row,
+    decide_source_field,
+    dismiss_duplicate,
+    get_source_review_queue,
+    latest_active_snapshot,
+)
 from api.services.profiles import (
     ROLE_ADMIN,
     ROLE_REVIEWER,
@@ -34,11 +43,15 @@ def review_queue_ui(
     _: str = Depends(require_profile_role(ROLE_ADMIN, ROLE_REVIEWER)),
 ):
     queue, finding_count = get_review_queue(db)
+    source_queue = get_source_review_queue(db)
+    source_snapshot = latest_active_snapshot(db)
     response = TEMPLATES.TemplateResponse(
         request,
         "review_queue.html",
         {
             "queue": queue,
+            "source_queue": source_queue,
+            "source_snapshot": source_snapshot,
             "finding_count": finding_count,
             "profiles": get_profiles(db),
             "active_profile_id": get_active_profile_id(request, db),
@@ -46,6 +59,90 @@ def review_queue_ui(
     )
     ensure_profile_cookie(request, response, db)
     return response
+
+
+def _source_action_redirect(message: str) -> RedirectResponse:
+    return RedirectResponse(url=f"/ui/review?message={quote(message)}", status_code=303)
+
+
+@router.post("/ui/review/source-row/{row_id}/field/{field_name}/{decision}")
+def decide_source_review_field(
+    row_id: int,
+    field_name: str,
+    decision: str,
+    request: Request,
+    db: Session = Depends(get_db),
+    _: str = Depends(require_profile_role(ROLE_ADMIN, ROLE_REVIEWER)),
+) -> RedirectResponse:
+    try:
+        result = decide_source_field(
+            db,
+            row_id=row_id,
+            field_name=field_name,
+            decision=decision,
+            profile_id=get_active_profile_id(request, db),
+        )
+    except SourceSyncError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    labels = {
+        "use_source": "Source value applied",
+        "keep_vault": "Vault value kept",
+        "needs_research": "Sent to verification",
+    }
+    return _source_action_redirect(
+        f"{labels[decision]} for {result.movie.vault_id or result.movie.title}."
+    )
+
+
+@router.post("/ui/review/source-row/{row_id}/match/{movie_id}")
+def confirm_source_row_match(
+    row_id: int,
+    movie_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    _: str = Depends(require_profile_role(ROLE_ADMIN, ROLE_REVIEWER)),
+) -> RedirectResponse:
+    try:
+        assign_source_row_match(
+            db,
+            row_id=row_id,
+            movie_id=movie_id,
+            profile_id=get_active_profile_id(request, db),
+        )
+    except SourceSyncError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return _source_action_redirect("Source row matched to the selected Vault entry.")
+
+
+@router.post("/ui/review/source-row/{row_id}/create")
+def create_source_row_movie(
+    row_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    _: str = Depends(require_profile_role(ROLE_ADMIN, ROLE_REVIEWER)),
+) -> RedirectResponse:
+    try:
+        movie = create_movie_from_source_row(
+            db,
+            row_id=row_id,
+            profile_id=get_active_profile_id(request, db),
+        )
+    except SourceSyncError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return _source_action_redirect(f"{movie.vault_id} added to the Vault.")
+
+
+@router.post("/ui/review/source-row/{row_id}/dismiss-duplicate")
+def dismiss_source_duplicate(
+    row_id: int,
+    db: Session = Depends(get_db),
+    _: str = Depends(require_profile_role(ROLE_ADMIN, ROLE_REVIEWER)),
+) -> RedirectResponse:
+    try:
+        dismiss_duplicate(db, row_id=row_id)
+    except SourceSyncError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return _source_action_redirect("Duplicate source row dismissed.")
 
 
 def _load_movie(db: Session, movie_id: int) -> Movie:

@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}Preview Source Snapshot · Vault 966{% endblock %}
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', path='css/movies.css') }}" />
+{% endblock %}
+{% block content %}
+  <header class="app-hero page-shell">
+    <div class="app-hero__inner">
+      <div class="hero-title">
+        <h1>Preview Source Snapshot</h1>
+        <p class="tagline app-hero__tagline">{{ snapshot.filename }}</p>
+      </div>
+    </div>
+  </header>
+  <div class="page-shell source-sync-page">
+    {% if request.query_params.get('error') %}
+      <p class="source-sync-error" role="alert">{{ request.query_params.get('error') }}</p>
+    {% endif %}
+    <section class="source-sync-summary">
+      <h2>{{ snapshot.row_count }} movie rows ready</h2>
+      <p>{{ duplicate_rows }} rows belong to duplicate groups. Confirming performs comparison only; it does not overwrite movie data.</p>
+      {% if snapshot.status == 'draft' %}
+        <form method="post" action="/ui/source-sync/{{ snapshot.id }}/confirm">
+          <button class="button-primary" type="submit">Confirm and compare</button>
+          <a class="button-secondary" href="/ui/source-sync">Cancel</a>
+        </form>
+      {% else %}
+        <a class="button-primary" href="/ui/review">Open Human Review</a>
+      {% endif %}
+    </section>
+    <section class="source-sync-history">
+      <h2>Sample rows</h2>
+      <div class="table-wrapper">
+        <table class="data-table data-table--compact">
+          <thead><tr><th>Row</th><th>Title</th><th>Year</th><th>Time</th><th>Director</th><th>HD</th></tr></thead>
+          <tbody>
+            {% for row in snapshot.rows[:20] %}
+              <tr>
+                <td>{{ row.row_number }}</td>
+                <td>{{ row.title }}</td>
+                <td>{{ row.year or '—' }}</td>
+                <td>{{ row.runtime or '—' }}</td>
+                <td>{{ row.director or '—' }}</td>
+                <td>{% if row.hd is sameas true %}HD{% elif row.hd is sameas false %}SD{% else %}—{% endif %}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+{% endblock %}

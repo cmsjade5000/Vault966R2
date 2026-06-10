@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block title %}Source Sync · Vault 966{% endblock %}
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', path='css/movies.css') }}" />
+{% endblock %}
+{% block content %}
+  <header class="app-hero page-shell">
+    <div class="app-hero__inner">
+      <div class="hero-title">
+        <h1>Source Sync</h1>
+        <p class="tagline app-hero__tagline">Compare a fresh collection export without overwriting the Vault.</p>
+      </div>
+    </div>
+  </header>
+
+  <div class="page-shell source-sync-page">
+    {% if request.query_params.get('message') %}
+      <p class="review-message" role="status">{{ request.query_params.get('message') }}</p>
+    {% endif %}
+    {% if request.query_params.get('error') %}
+      <p class="source-sync-error" role="alert">{{ request.query_params.get('error') }}</p>
+    {% endif %}
+
+    <section class="source-sync-upload">
+      <h2>Upload collection CSV</h2>
+      <form method="post" action="/ui/source-sync/upload" enctype="multipart/form-data">
+        <label for="source-file">CSV file</label>
+        <input id="source-file" name="source_file" type="file" accept=".csv,text/csv" required />
+        <button class="button-primary" type="submit">Preview snapshot</button>
+      </form>
+      <p>Required: Title, Time, Director, Year. Numbers exports using Name, Total Time, and Artist are accepted.</p>
+    </section>
+
+    {% if latest_snapshot %}
+      <section class="source-sync-summary">
+        <header>
+          <div>
+            <span class="review-vault-id">Latest confirmed snapshot</span>
+            <h2>{{ latest_snapshot.filename }}</h2>
+          </div>
+          <span>{{ latest_snapshot.confirmed_at.strftime('%Y-%m-%d %H:%M') if latest_snapshot.confirmed_at else 'Pending' }}</span>
+        </header>
+        <div class="source-sync-metrics">
+          <div><strong>{{ latest_summary.rows }}</strong><span>Source rows</span></div>
+          <div><strong>{{ latest_summary.matched }}</strong><span>Matched</span></div>
+          <div><strong>{{ latest_summary.conflicts }}</strong><span>Conflicts</span></div>
+          <div><strong>{{ latest_summary.ambiguous }}</strong><span>Ambiguous</span></div>
+          <div><strong>{{ latest_summary.duplicates }}</strong><span>Duplicates</span></div>
+          <div><strong>{{ latest_summary.source_only }}</strong><span>New candidates</span></div>
+        </div>
+        <a class="button-secondary" href="/ui/review">Open Human Review</a>
+      </section>
+    {% endif %}
+
+    <section class="source-sync-history">
+      <h2>Snapshot history</h2>
+      {% if snapshots %}
+        <div class="table-wrapper">
+          <table class="data-table data-table--compact">
+            <thead><tr><th>File</th><th>Rows</th><th>Status</th><th>Uploaded</th></tr></thead>
+            <tbody>
+              {% for snapshot in snapshots %}
+                <tr>
+                  <td><a href="/ui/source-sync/{{ snapshot.id }}/preview">{{ snapshot.filename }}</a></td>
+                  <td>{{ snapshot.row_count }}</td>
+                  <td>{{ snapshot.status }}</td>
+                  <td>{{ snapshot.uploaded_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <p>No source snapshots uploaded yet.</p>
+      {% endif %}
+    </section>
+  </div>
+{% endblock %}

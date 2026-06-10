@@ -232,6 +232,50 @@
       </section>
       {% endif %}
 
+      {% if source_provenance and (source_provenance.latest_copy or source_provenance.decisions) %}
+      <section class="section-card section-card--wide">
+        <h2>Vault provenance</h2>
+        <div class="glance-grid">
+          {% if source_provenance.latest_copy %}
+          <div class="glance-item">
+            <span class="glance-label">Collection confirmed</span>
+            <span>{{ source_provenance.latest_copy.confirmed_at.strftime('%Y-%m-%d') }}</span>
+          </div>
+          <div class="glance-item">
+            <span class="glance-label">Owned copy</span>
+            <span>
+              {% if source_provenance.latest_copy.hd is sameas true %}HD
+              {% elif source_provenance.latest_copy.hd is sameas false %}SD
+              {% else %}Quality unknown{% endif %}
+            </span>
+          </div>
+          {% endif %}
+          {% if movie.last_tmdb_fetch_at or movie.last_omdb_fetch_at %}
+          <div class="glance-item">
+            <span class="glance-label">Metadata refreshed</span>
+            <span>
+              {{ (movie.last_tmdb_fetch_at or movie.last_omdb_fetch_at).strftime('%Y-%m-%d') }}
+            </span>
+          </div>
+          {% endif %}
+        </div>
+        {% if source_provenance.decisions %}
+        <div class="provenance-history">
+          <h3>Recent source decisions</h3>
+          <ul>
+            {% for decision in source_provenance.decisions %}
+              <li>
+                <strong>{{ decision.field_name|title }}</strong>
+                <span>{{ decision.previous_value or 'Missing' }} → {{ decision.selected_value or 'Missing' }}</span>
+                <small>{{ decision.decision|replace('_', ' ')|title }} · {{ decision.decided_at.strftime('%Y-%m-%d') }}</small>
+              </li>
+            {% endfor %}
+          </ul>
+        </div>
+        {% endif %}
+      </section>
+      {% endif %}
+
     </div>
     {% if pair_with %}
     <section class="section-card section-card--wide detail-recs">

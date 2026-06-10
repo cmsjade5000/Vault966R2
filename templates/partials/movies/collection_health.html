@@ -107,6 +107,38 @@
   </details>
   <div class="collection-health__grid">
     <article class="health-card">
+      <h3>Structural health</h3>
+      <p class="health-card__value">
+        {% if collection_health.structural_issues == 0 %}Clear{% else %}{{ collection_health.structural_issues }} issues{% endif %}
+      </p>
+      <p class="health-card__hint">Stable IDs and required record structure.</p>
+    </article>
+    <article class="health-card">
+      <h3>Source synchronization</h3>
+      <p class="health-card__value">
+        {% if collection_health.source_snapshot_at %}{{ collection_health.source_rows }} rows{% else %}Not synced{% endif %}
+      </p>
+      <p class="health-card__hint">
+        {% if collection_health.source_snapshot_at %}
+          Last confirmed {{ collection_health.source_snapshot_at.strftime('%Y-%m-%d') }}.
+        {% endif %}
+        <a href="/ui/source-sync" class="hero-health-link">Open Source Sync →</a>
+      </p>
+    </article>
+    <article class="health-card">
+      <h3>Identity confidence</h3>
+      <p class="health-card__value">{{ collection_health.identity_review_open }}</p>
+      <p class="health-card__hint">
+        Open source conflicts and Vault-only checks.
+        <a href="/ui/review" class="hero-health-link">Review now →</a>
+      </p>
+    </article>
+    <article class="health-card">
+      <h3>Metadata completeness</h3>
+      <p class="health-card__value">{{ collection_health.missing_runtime + collection_health.missing_plot + collection_health.missing_poster }}</p>
+      <p class="health-card__hint">Combined runtime, synopsis, and artwork gaps.</p>
+    </article>
+    <article class="health-card">
       <h3>Missing runtime</h3>
       <p class="health-card__value">{{ collection_health.missing_runtime }}</p>
       <p class="health-card__hint">
