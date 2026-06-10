@@ -34,20 +34,12 @@ def _snapshot_or_404(db: Session, snapshot_id: int) -> SourceSnapshot:
 
 @router.get("/ui/source-sync", response_class=HTMLResponse)
 def source_sync_ui(
-    request: Request,
-    db: Session = Depends(get_db),
     _: str = Depends(require_profile_role(ROLE_ADMIN)),
 ):
-    response = TEMPLATES.TemplateResponse(
-        request,
-        "source_sync.html",
-        {
-            "profiles": get_profiles(db),
-            "active_profile_id": get_active_profile_id(request, db),
-        },
+    return RedirectResponse(
+        url="/ui/movies/health#source-synchronization",
+        status_code=302,
     )
-    ensure_profile_cookie(request, response, db)
-    return response
 
 
 @router.post("/ui/source-sync/upload")
@@ -60,7 +52,8 @@ async def upload_source_snapshot(
     filename = source_file.filename or "collection.csv"
     if len(filename) > 255:
         return RedirectResponse(
-            url="/ui/source-sync?error=Filename%20is%20too%20long.",
+            url="/ui/movies/health?error=Filename%20is%20too%20long."
+            "#source-synchronization",
             status_code=303,
         )
     content = await source_file.read(5 * 1024 * 1024 + 1)
@@ -73,7 +66,10 @@ async def upload_source_snapshot(
         )
     except SourceSyncError as exc:
         message = quote(str(exc))
-        return RedirectResponse(url=f"/ui/source-sync?error={message}", status_code=303)
+        return RedirectResponse(
+            url=f"/ui/movies/health?error={message}#source-synchronization",
+            status_code=303,
+        )
     return RedirectResponse(
         url=f"/ui/source-sync/{snapshot.id}/preview",
         status_code=303,

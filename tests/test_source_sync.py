@@ -75,16 +75,30 @@ def test_source_sync_status_and_history_live_on_collection_health(client: TestCl
         _csv("Blade Runner,1:57:00,Ridley Scott,1982,Sci-Fi,PG,6/25/82,1"),
     )
 
-    source_sync = client.get("/ui/source-sync")
+    source_sync = client.get("/ui/source-sync", follow_redirects=False)
     health = client.get("/ui/movies/health")
 
-    assert "Latest confirmed snapshot" not in source_sync.text
-    assert "Snapshot history" not in source_sync.text
-    assert "View sync health and history" in source_sync.text
+    assert source_sync.status_code == 302
+    assert source_sync.headers["location"] == (
+        "/ui/movies/health#source-synchronization"
+    )
+    assert "Upload collection CSV" in health.text
     assert "Latest confirmed snapshot" in health.text
     assert "Snapshot history" in health.text
     assert "Auto-matched" in health.text
     assert "Manually matched" in health.text
+
+
+def test_source_upload_errors_return_to_collection_health(client: TestClient) -> None:
+    response = client.post(
+        "/ui/source-sync/upload",
+        files={"source_file": ("bad.csv", b"Title,Year\nMovie,2020\n", "text/csv")},
+        follow_redirects=False,
+    )
+
+    assert response.status_code == 303
+    assert response.headers["location"].startswith("/ui/movies/health?error=")
+    assert response.headers["location"].endswith("#source-synchronization")
 
 
 def test_source_sync_accepts_minute_second_runtime(client: TestClient, db_session) -> None:

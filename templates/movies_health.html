@@ -22,6 +22,11 @@
       <p class="review-message" role="status">{{ request.query_params.get('message') }}</p>
     </div>
   {% endif %}
+  {% if request.query_params.get('error') %}
+    <div class="page-shell">
+      <p class="source-sync-error" role="alert">{{ request.query_params.get('error') }}</p>
+    </div>
+  {% endif %}
 
   {% include "partials/movies/collection_health.html" %}
 
@@ -32,8 +37,18 @@
         <h2 id="source-health-title">Source synchronization</h2>
         <p>Confirmed collection exports, reconciliation results, and import history.</p>
       </div>
-      <a class="button-primary" href="/ui/source-sync">Upload new source</a>
+      <a class="button-primary" href="#source-upload">Upload new source</a>
     </header>
+
+    <section class="source-sync-upload" id="source-upload">
+      <h3>Upload collection CSV</h3>
+      <form method="post" action="/ui/source-sync/upload" enctype="multipart/form-data">
+        <label for="source-file">CSV file</label>
+        <input id="source-file" name="source_file" type="file" accept=".csv,text/csv" required />
+        <button class="button-primary" type="submit">Preview snapshot</button>
+      </form>
+      <p>Required: Title, Time, Director, Year. Numbers exports using Name, Total Time, and Artist are accepted.</p>
+    </section>
 
     {% if latest_source_snapshot %}
       <section class="source-sync-summary">
@@ -59,7 +74,7 @@
     {% else %}
       <div class="source-health__empty">
         <p>No collection source has been confirmed yet.</p>
-        <a class="button-primary" href="/ui/source-sync">Upload first source</a>
+        <a class="button-primary" href="#source-upload">Upload first source</a>
       </div>
     {% endif %}
 

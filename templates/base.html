@@ -110,17 +110,10 @@
               {% endif %}
               {% if request.state.session_profile_role == 'admin' %}
               <a
-                class="nav-link{% if current_path.startswith('/ui/source-sync') %} is-active{% endif %}"
-                href="/ui/source-sync"
-                role="menuitem"
-                {% if current_path.startswith('/ui/source-sync') %}aria-current="page"{% endif %}
-                >Source Sync</a
-              >
-              <a
-                class="nav-link{% if current_path == '/ui/movies/health' %} is-active{% endif %}"
+                class="nav-link{% if current_path == '/ui/movies/health' or current_path.startswith('/ui/source-sync/') %} is-active{% endif %}"
                 href="/ui/movies/health"
                 role="menuitem"
-                {% if current_path == '/ui/movies/health' %}aria-current="page"{% endif %}
+                {% if current_path == '/ui/movies/health' or current_path.startswith('/ui/source-sync/') %}aria-current="page"{% endif %}
                 >Collection Health</a
               >
               {% endif %}

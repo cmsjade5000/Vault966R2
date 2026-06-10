@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Preview Source Snapshot · Vault 966{% endblock %}
+{% block title %}Collection Health · Source Preview · Vault 966{% endblock %}
 {% block head %}
 <link rel="stylesheet" href="{{ url_for('static', path='css/movies.css') }}" />
 {% endblock %}
@@ -7,7 +7,7 @@
   <header class="app-hero page-shell">
     <div class="app-hero__inner">
       <div class="hero-title">
-        <h1>Preview Source Snapshot</h1>
+        <h1>Source Snapshot Preview</h1>
         <p class="tagline app-hero__tagline">{{ snapshot.filename }}</p>
       </div>
     </div>
@@ -22,10 +22,11 @@
       {% if snapshot.status == 'draft' %}
         <form method="post" action="/ui/source-sync/{{ snapshot.id }}/confirm">
           <button class="button-primary" type="submit">Confirm and compare</button>
-          <a class="button-secondary" href="/ui/source-sync">Cancel</a>
+          <a class="button-secondary" href="/ui/movies/health#source-synchronization">Cancel</a>
         </form>
       {% else %}
-        <a class="button-primary" href="/ui/review">Open Human Review</a>
+        <a class="button-primary" href="/ui/movies/health#source-synchronization">Back to Collection Health</a>
+        <a class="button-secondary" href="/ui/review">Open Human Review</a>
       {% endif %}
     </section>
     <section class="source-sync-history">
