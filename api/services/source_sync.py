@@ -6,7 +6,8 @@ import io
 import re
 from collections import Counter, defaultdict
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
+from urllib.parse import urlencode
 
 from sqlalchemy import func
 from sqlalchemy.orm import Session, selectinload
@@ -39,6 +40,19 @@ FIELD_ALIASES = {
 IDENTITY_FIELDS = ("title", "year", "runtime", "director")
 SPACE_RE = re.compile(r"\s+")
 DIRECTOR_SPLIT_RE = re.compile(r"\s*(?:&|;|\band\b)\s*", re.IGNORECASE)
+IMDB_ID_RE = re.compile(r"^tt[0-9]{7,10}$")
+TRAILING_YEAR_RE = re.compile(r"\s*\((?:18|19|20)\d{2}\)\s*$")
+EDITION_SUFFIX_RE = re.compile(
+    r"\s*(?:\(|[-:])\s*(?:unrated|extended(?: edition| cut)?|director'?s cut|"
+    r"special edition|theatrical cut|restored edition)\)?\s*$",
+    re.IGNORECASE,
+)
+EDITION_PAREN_RE = re.compile(
+    r"\s*\((?=[^)]*(?:unrated|extended|director'?s cut|special edition|"
+    r"theatrical cut|restored edition))[^)]*\)\s*$",
+    re.IGNORECASE,
+)
+UNDO_WINDOW = timedelta(minutes=10)
 
 
 class SourceSyncError(ValueError):
@@ -72,12 +86,29 @@ class SourceFieldConflict:
 
 
 @dataclass(frozen=True)
+class ResearchLink:
+    label: str
+    url: str
+    provider: str
+    link_type: str
+
+
+@dataclass(frozen=True)
+class ResearchLinkSet:
+    current: tuple[ResearchLink, ...]
+    searches: tuple[ResearchLink, ...]
+    search_title: str
+
+
+@dataclass(frozen=True)
 class SourceReviewItem:
     source_row: SourceMovieRow
     match: SourceReconciliationMatch
     movie: Movie | None
     conflicts: tuple[SourceFieldConflict, ...]
     candidate_movies: tuple[Movie, ...] = ()
+    research_links: ResearchLinkSet | None = None
+    candidate_research_links: dict[int, ResearchLinkSet] | None = None
 
 
 def clean_text(value: object) -> str | None:
@@ -102,6 +133,92 @@ def normalize_title(value: object) -> str:
     text = str(value or "").casefold()
     text = re.sub(r"[^a-z0-9]+", " ", text)
     return SPACE_RE.sub(" ", text).strip()
+
+
+def clean_research_title(value: object) -> str:
+    title = clean_text(value) or ""
+    title = TRAILING_YEAR_RE.sub("", title)
+    title = EDITION_PAREN_RE.sub("", title)
+    title = EDITION_SUFFIX_RE.sub("", title)
+    return SPACE_RE.sub(" ", title).strip()[:200]
+
+
+def _valid_imdb_id(value: object) -> str | None:
+    text = clean_text(value)
+    if text and IMDB_ID_RE.fullmatch(text):
+        return text
+    return None
+
+
+def _valid_tmdb_id(value: object) -> int | None:
+    if isinstance(value, bool):
+        return None
+    try:
+        number = int(value)
+    except (TypeError, ValueError):
+        return None
+    if 0 < number <= 2_147_483_647:
+        return number
+    return None
+
+
+def build_research_links(
+    *,
+    source_title: str,
+    source_year: int | None,
+    source_director: str | None = None,
+    movie: Movie | None = None,
+) -> ResearchLinkSet:
+    search_title = clean_research_title(source_title) or source_title[:200]
+    query_parts = [search_title]
+    if source_year:
+        query_parts.append(str(source_year))
+    director_names = parse_directors(source_director)
+    if director_names:
+        query_parts.append(" and ".join(director_names)[:100])
+    query = " ".join(query_parts)[:320]
+
+    current: list[ResearchLink] = []
+    tmdb_id = _valid_tmdb_id(movie.tmdb_id if movie else None)
+    if tmdb_id is not None:
+        current.append(
+            ResearchLink(
+                label="Open current TMDB",
+                url=f"https://www.themoviedb.org/movie/{tmdb_id}",
+                provider="tmdb",
+                link_type="current",
+            )
+        )
+    imdb_id = _valid_imdb_id(movie.imdb_id if movie else None)
+    if imdb_id is not None:
+        current.append(
+            ResearchLink(
+                label="Open current IMDb",
+                url=f"https://www.imdb.com/title/{imdb_id}/",
+                provider="imdb",
+                link_type="current",
+            )
+        )
+
+    searches = (
+        ResearchLink(
+            label="Search TMDB",
+            url="https://www.themoviedb.org/search/movie?" + urlencode({"query": query}),
+            provider="tmdb",
+            link_type="search",
+        ),
+        ResearchLink(
+            label="Search IMDb",
+            url="https://www.imdb.com/find/?" + urlencode({"q": query, "s": "tt", "ttype": "ft"}),
+            provider="imdb",
+            link_type="search",
+        ),
+    )
+    return ResearchLinkSet(
+        current=tuple(current),
+        searches=searches,
+        search_title=search_title,
+    )
 
 
 def parse_directors(value: object) -> tuple[str, ...]:
@@ -574,6 +691,7 @@ def source_row_conflicts(
     for decision in (
         db.query(SourceFieldDecision)
         .filter(SourceFieldDecision.source_row_id == row.id)
+        .filter(SourceFieldDecision.undone_at.is_(None))
         .order_by(SourceFieldDecision.decided_at.desc(), SourceFieldDecision.id.desc())
         .all()
     ):
@@ -640,6 +758,21 @@ def get_source_review_queue(
             for movie_id in (match.candidate_movie_ids or [])
             if movie_id in movie_by_id
         )
+        research_links = build_research_links(
+            source_title=row.title,
+            source_year=row.year,
+            source_director=row.director,
+            movie=match.movie,
+        )
+        candidate_research_links = {
+            candidate.id: build_research_links(
+                source_title=row.title,
+                source_year=row.year,
+                source_director=row.director,
+                movie=candidate,
+            )
+            for candidate in candidate_movies
+        }
         if match.match_type in {"exact", "likely", "manual"} and match.movie is not None:
             conflicts = source_row_conflicts(db, row, match.movie)
             if conflicts:
@@ -649,6 +782,7 @@ def get_source_review_queue(
                         match=match,
                         movie=match.movie,
                         conflicts=conflicts,
+                        research_links=research_links,
                     )
                 )
         elif include_unmatched and match.match_type in {
@@ -663,6 +797,8 @@ def get_source_review_queue(
                     movie=match.movie,
                     conflicts=(),
                     candidate_movies=candidate_movies,
+                    research_links=research_links,
+                    candidate_research_links=candidate_research_links,
                 )
             )
     priority = {"ambiguous": 0, "duplicate": 1, "source_only": 2}
@@ -676,11 +812,58 @@ def get_source_review_queue(
     return items
 
 
-def _set_directors(db: Session, movie: Movie, director_value: str | None) -> None:
+def partition_source_review_queue(
+    items: list[SourceReviewItem],
+) -> dict[str, list[SourceReviewItem]]:
+    groups: dict[str, list[SourceReviewItem]] = {
+        "differences": [],
+        "research": [],
+        "ambiguous": [],
+        "new": [],
+        "duplicates": [],
+    }
+    for item in items:
+        if item.conflicts:
+            normal = tuple(conflict for conflict in item.conflicts if not conflict.research)
+            research = tuple(conflict for conflict in item.conflicts if conflict.research)
+            if normal:
+                groups["differences"].append(
+                    SourceReviewItem(
+                        source_row=item.source_row,
+                        match=item.match,
+                        movie=item.movie,
+                        conflicts=normal,
+                        candidate_movies=item.candidate_movies,
+                        research_links=item.research_links,
+                        candidate_research_links=item.candidate_research_links,
+                    )
+                )
+            if research:
+                groups["research"].append(
+                    SourceReviewItem(
+                        source_row=item.source_row,
+                        match=item.match,
+                        movie=item.movie,
+                        conflicts=research,
+                        candidate_movies=item.candidate_movies,
+                        research_links=item.research_links,
+                        candidate_research_links=item.candidate_research_links,
+                    )
+                )
+        elif item.match.match_type == "ambiguous":
+            groups["ambiguous"].append(item)
+        elif item.match.match_type == "source_only":
+            groups["new"].append(item)
+        elif item.match.match_type == "duplicate":
+            groups["duplicates"].append(item)
+    return groups
+
+
+def _set_director_names(db: Session, movie: Movie, names: tuple[str, ...]) -> None:
     db.query(Role).filter(Role.movie_id == movie.id).filter(
         Role.role_type == RoleType.DIRECTOR
     ).delete(synchronize_session=False)
-    for index, name in enumerate(parse_directors(director_value)):
+    for index, name in enumerate(names):
         person = (
             db.query(Person)
             .filter(func.lower(Person.name) == name.casefold())
@@ -699,6 +882,10 @@ def _set_directors(db: Session, movie: Movie, director_value: str | None) -> Non
                 billing_order=index,
             )
         )
+
+
+def _set_directors(db: Session, movie: Movie, director_value: str | None) -> None:
+    _set_director_names(db, movie, parse_directors(director_value))
 
 
 def decide_source_field(
@@ -746,6 +933,97 @@ def decide_source_field(
     record.decided_by_profile_id = profile_id
     record.decided_at = datetime.now(timezone.utc)
     record.resolved_at = None if decision == "needs_research" else datetime.now(timezone.utc)
+    db.commit()
+    db.refresh(record)
+    return record
+
+
+def defer_source_row_for_research(
+    db: Session,
+    *,
+    row_id: int,
+    profile_id: int | None,
+) -> list[SourceFieldDecision]:
+    row = db.get(SourceMovieRow, row_id)
+    if row is None or row.match is None or row.match.movie_id is None:
+        raise SourceSyncError("Source row is not matched to a Vault entry")
+    movie = db.get(Movie, row.match.movie_id)
+    if movie is None:
+        raise SourceSyncError("Matched Vault entry no longer exists")
+    conflicts = source_row_conflicts(db, row, movie)
+    open_conflicts = [conflict for conflict in conflicts if not conflict.research]
+    if not open_conflicts:
+        raise SourceSyncError("This movie is already deferred for research")
+
+    now = datetime.now(timezone.utc)
+    records: list[SourceFieldDecision] = []
+    field_values = _field_values(row, movie)
+    for conflict in open_conflicts:
+        source_value, vault_value = field_values[conflict.field_name]
+        record = SourceFieldDecision(
+            source_row_id=row.id,
+            movie_id=movie.id,
+            field_name=conflict.field_name,
+            previous_value=_display_value(vault_value),
+            source_value=_display_value(source_value),
+            selected_value=_display_value(vault_value),
+            decision="needs_research",
+            decided_by_profile_id=profile_id,
+            decided_at=now,
+            resolved_at=None,
+        )
+        db.add(record)
+        records.append(record)
+    db.commit()
+    for record in records:
+        db.refresh(record)
+    return records
+
+
+def undo_source_field_decision(
+    db: Session,
+    *,
+    decision_id: int,
+    profile_id: int | None,
+) -> SourceFieldDecision:
+    record = db.get(SourceFieldDecision, decision_id)
+    if record is None or record.undone_at is not None:
+        raise SourceSyncError("Review decision is no longer available to undo")
+    latest = (
+        db.query(SourceFieldDecision)
+        .filter(SourceFieldDecision.source_row_id == record.source_row_id)
+        .filter(SourceFieldDecision.field_name == record.field_name)
+        .filter(SourceFieldDecision.undone_at.is_(None))
+        .order_by(SourceFieldDecision.decided_at.desc(), SourceFieldDecision.id.desc())
+        .first()
+    )
+    if latest is None or latest.id != record.id:
+        raise SourceSyncError("Only the latest decision for this field can be undone")
+    decided_at = record.decided_at
+    if decided_at.tzinfo is None:
+        decided_at = decided_at.replace(tzinfo=timezone.utc)
+    if datetime.now(timezone.utc) - decided_at > UNDO_WINDOW:
+        raise SourceSyncError("The undo window for this decision has expired")
+
+    movie = db.get(Movie, record.movie_id)
+    if movie is None:
+        raise SourceSyncError("The Vault entry no longer exists")
+    if record.decision == "use_source":
+        previous = None if record.previous_value in {None, "Missing"} else record.previous_value
+        if record.field_name == "title":
+            if previous is None:
+                raise SourceSyncError("The previous title cannot be restored")
+            movie.title = previous
+        elif record.field_name == "year":
+            movie.year = int(previous) if previous is not None else None
+        elif record.field_name == "runtime":
+            movie.runtime = int(previous) if previous is not None else None
+        elif record.field_name == "director":
+            names = tuple(name.strip() for name in (previous or "").split(",") if name.strip())
+            _set_director_names(db, movie, names)
+
+    record.undone_at = datetime.now(timezone.utc)
+    record.undone_by_profile_id = profile_id
     db.commit()
     db.refresh(record)
     return record
@@ -844,17 +1122,24 @@ def source_provenance_for_movie(db: Session, movie_id: int) -> dict:
 
 __all__ = [
     "SourceFieldConflict",
+    "ResearchLink",
+    "ResearchLinkSet",
     "SourceReviewItem",
     "SourceSyncError",
     "assign_source_row_match",
+    "build_research_links",
+    "clean_research_title",
     "create_draft_snapshot",
     "create_movie_from_source_row",
     "decide_source_field",
+    "defer_source_row_for_research",
     "dismiss_duplicate",
     "get_source_review_queue",
     "latest_active_snapshot",
     "parse_source_csv",
+    "partition_source_review_queue",
     "reconcile_snapshot",
     "snapshot_summary",
     "source_provenance_for_movie",
+    "undo_source_field_decision",
 ]

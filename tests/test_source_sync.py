@@ -1,7 +1,13 @@
 from __future__ import annotations
 
+from urllib.parse import parse_qs, urlparse
+
+import pytest
+from fastapi import HTTPException, Request
 from fastapi.testclient import TestClient
 
+from api.config import settings
+from api.deps.auth import require_same_origin
 from api.models.movie import Movie
 from api.models.person import RoleType
 from api.models.source_sync import (
@@ -10,6 +16,7 @@ from api.models.source_sync import (
     SourceReconciliationMatch,
     SourceSnapshot,
 )
+from api.services.source_sync import build_research_links, clean_research_title
 
 
 def _csv(*rows: str) -> bytes:
@@ -190,6 +197,156 @@ def test_field_decisions_preserve_full_history(client: TestClient, db_session) -
     ]
     assert decisions[0].resolved_at is None
     assert decisions[1].resolved_at is not None
+
+
+def test_review_page_always_shows_direct_and_search_links(client: TestClient, db_session) -> None:
+    movie = db_session.get(Movie, 1)
+    movie.vault_id = "V0001"
+    db_session.commit()
+    _upload_and_confirm(
+        client,
+        _csv("Blade Runner,1:57:00,,1983,Sci-Fi,PG,6/25/82,1"),
+    )
+
+    response = client.get("/ui/review?view=differences")
+
+    assert response.status_code == 200
+    assert "Open current TMDB" in response.text
+    assert "https://www.themoviedb.org/movie/78" in response.text
+    assert "Open current IMDb" in response.text
+    assert "https://www.imdb.com/title/tt0083658/" in response.text
+    assert "Search TMDB" in response.text
+    assert "Search IMDb" in response.text
+    assert 'rel="noopener noreferrer"' in response.text
+
+
+def test_research_links_clean_editions_and_reject_invalid_direct_ids() -> None:
+    movie = Movie(
+        title="The Boss",
+        year=2016,
+        imdb_id="javascript:bad",
+        tmdb_id=0,
+    )
+
+    links = build_research_links(
+        source_title="The Boss (Unrated)",
+        source_year=2016,
+        source_director=None,
+        movie=movie,
+    )
+
+    assert clean_research_title("The Boss (Unrated)") == "The Boss"
+    assert (
+        clean_research_title("American Gangster (Unrated Extended Edition)") == "American Gangster"
+    )
+    assert links.current == ()
+    assert links.search_title == "The Boss"
+    assert "The+Boss+2016" in links.searches[0].url
+
+
+def test_defer_movie_moves_all_conflicts_and_shows_next(client: TestClient, db_session) -> None:
+    snapshot_id = _upload_and_confirm(
+        client,
+        _csv(
+            "Blade Runner,1:57:00,Someone Else,1983,Sci-Fi,PG,6/25/82,1",
+            "The Matrix,2:16:00,Someone Else,2000,Action,R,3/31/99,1",
+        ),
+    )
+    match = (
+        db_session.query(SourceReconciliationMatch)
+        .join(SourceReconciliationMatch.source_row)
+        .filter_by(snapshot_id=snapshot_id)
+        .order_by(SourceReconciliationMatch.id)
+        .first()
+    )
+
+    response = client.post(
+        f"/ui/review/source-row/{match.source_row_id}/defer?view=differences",
+        follow_redirects=False,
+    )
+
+    assert response.status_code == 303
+    assert "view=differences" in response.headers["location"]
+    research = client.get("/ui/review?view=research")
+    differences = client.get("/ui/review?view=differences")
+    assert "Blade Runner" in research.text
+    assert "Needs research" in research.text
+    assert "The Matrix" in differences.text
+    assert "Blade Runner" not in differences.text
+    decisions = (
+        db_session.query(SourceFieldDecision)
+        .filter(SourceFieldDecision.source_row_id == match.source_row_id)
+        .all()
+    )
+    assert {decision.field_name for decision in decisions} == {
+        "year",
+        "director",
+    }
+
+
+def test_latest_source_decision_can_be_undone(client: TestClient, db_session) -> None:
+    snapshot_id = _upload_and_confirm(
+        client,
+        _csv("Blade Runner,1:57:00,,1983,Sci-Fi,PG,6/25/82,1"),
+    )
+    match = (
+        db_session.query(SourceReconciliationMatch)
+        .join(SourceReconciliationMatch.source_row)
+        .filter_by(snapshot_id=snapshot_id)
+        .one()
+    )
+    decision = client.post(
+        f"/ui/review/source-row/{match.source_row_id}/field/year/use_source",
+        follow_redirects=False,
+    )
+    query = parse_qs(urlparse(decision.headers["location"]).query)
+    decision_id = int(query["undo_decision"][0])
+    db_session.expire_all()
+    assert db_session.get(Movie, 1).year == 1983
+
+    undo = client.post(
+        f"/ui/review/source-decision/{decision_id}/undo?view=differences",
+        follow_redirects=False,
+    )
+
+    assert undo.status_code == 303
+    db_session.expire_all()
+    assert db_session.get(Movie, 1).year == 1982
+    assert db_session.get(SourceFieldDecision, decision_id).undone_at is not None
+
+
+def test_review_routes_require_profile_auth_when_enabled(client: TestClient, monkeypatch) -> None:
+    monkeypatch.setattr(settings, "disable_auth", False)
+
+    response = client.get("/ui/review", follow_redirects=False)
+
+    assert response.status_code == 302
+    assert response.headers["location"] == "/login"
+
+
+def test_same_origin_guard_rejects_cross_origin(monkeypatch) -> None:
+    monkeypatch.setattr(settings, "disable_auth", False)
+    base_scope = {
+        "type": "http",
+        "method": "POST",
+        "scheme": "https",
+        "server": ("vault.local", 443),
+        "path": "/ui/review/source-row/1/field/year/keep_vault",
+        "query_string": b"",
+        "headers": [(b"host", b"vault.local")],
+    }
+    with pytest.raises(HTTPException) as exc_info:
+        require_same_origin(Request(base_scope))
+    assert exc_info.value.status_code == 403
+
+    allowed_scope = {
+        **base_scope,
+        "headers": [
+            (b"host", b"vault.local"),
+            (b"origin", b"https://vault.local"),
+        ],
+    }
+    require_same_origin(Request(allowed_scope))
 
 
 def test_director_decision_updates_roles(client: TestClient, db_session) -> None:

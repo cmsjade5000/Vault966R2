@@ -1,3 +1,5 @@
+from urllib.parse import urlsplit
+
 from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
@@ -8,6 +10,26 @@ from api.models.profile import Profile
 from api.services.profiles import ROLE_ADMIN, ROLE_REVIEWER, get_active_profile_role
 
 _bearer_scheme = HTTPBearer(auto_error=False)
+
+
+def require_same_origin(request: Request) -> None:
+    """Reject cross-origin browser mutations while preserving local/test workflows."""
+    if settings.disable_auth:
+        return
+    origin = request.headers.get("origin")
+    if not origin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Same-origin request required",
+        )
+    parsed = urlsplit(origin)
+    expected_scheme = request.url.scheme
+    expected_host = request.headers.get("host", "")
+    if parsed.scheme != expected_scheme or parsed.netloc != expected_host:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Cross-origin request rejected",
+        )
 
 
 def require_admin(

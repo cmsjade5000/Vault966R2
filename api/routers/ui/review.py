@@ -7,9 +7,10 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlalchemy.orm import Session
 
 from api.db import get_db
-from api.deps.auth import require_profile_role
+from api.deps.auth import require_profile_role, require_same_origin
 from api.models.movie import Movie
 from api.models.movie_flag import MovieFlag
+from api.models.source_sync import SourceFieldDecision
 from api.services.movie_review import (
     detect_review_issues,
     get_review_queue,
@@ -20,9 +21,12 @@ from api.services.source_sync import (
     assign_source_row_match,
     create_movie_from_source_row,
     decide_source_field,
+    defer_source_row_for_research,
     dismiss_duplicate,
     get_source_review_queue,
     latest_active_snapshot,
+    partition_source_review_queue,
+    undo_source_field_decision,
 )
 from api.services.profiles import (
     ROLE_ADMIN,
@@ -34,25 +38,63 @@ from api.services.profiles import (
 from api.services.ui.templates import TEMPLATES
 
 router = APIRouter(tags=["ui"])
+REVIEW_VIEWS = {
+    "differences",
+    "research",
+    "ambiguous",
+    "new",
+    "duplicates",
+    "vault",
+}
 
 
 @router.get("/ui/review", response_class=HTMLResponse)
 def review_queue_ui(
     request: Request,
+    view: str = "differences",
+    undo_decision: int | None = None,
     db: Session = Depends(get_db),
     _: str = Depends(require_profile_role(ROLE_ADMIN, ROLE_REVIEWER)),
 ):
+    if view not in REVIEW_VIEWS:
+        raise HTTPException(status_code=404, detail="Review category not found")
     queue, finding_count = get_review_queue(db)
-    source_queue = get_source_review_queue(db)
+    source_groups = partition_source_review_queue(get_source_review_queue(db))
+    review_counts = {
+        **{name: len(items) for name, items in source_groups.items()},
+        "vault": len(queue),
+    }
+    review_tabs = [
+        ("differences", "Differences"),
+        ("research", "Needs research"),
+        ("ambiguous", "Ambiguous"),
+        ("new", "New movies"),
+        ("duplicates", "Duplicates"),
+        ("vault", "Vault checks"),
+    ]
+    if view == "differences" and not any(source_groups.values()) and review_counts["vault"]:
+        view = "vault"
+    review_view_label = dict(review_tabs)[view]
+    selected_queue = queue if view == "vault" else source_groups[view]
     source_snapshot = latest_active_snapshot(db)
+    undo_record = db.get(SourceFieldDecision, undo_decision) if undo_decision else None
+    if undo_record is not None and undo_record.undone_at is not None:
+        undo_record = None
     response = TEMPLATES.TemplateResponse(
         request,
         "review_queue.html",
         {
             "queue": queue,
-            "source_queue": source_queue,
+            "source_queue": selected_queue if view != "vault" else [],
+            "source_groups": source_groups,
             "source_snapshot": source_snapshot,
             "finding_count": finding_count,
+            "review_counts": review_counts,
+            "review_tabs": review_tabs,
+            "total_review_count": sum(review_counts.values()),
+            "review_view": view,
+            "review_view_label": review_view_label,
+            "undo_record": undo_record,
             "profiles": get_profiles(db),
             "active_profile_id": get_active_profile_id(request, db),
         },
@@ -61,8 +103,16 @@ def review_queue_ui(
     return response
 
 
-def _source_action_redirect(message: str) -> RedirectResponse:
-    return RedirectResponse(url=f"/ui/review?message={quote(message)}", status_code=303)
+def _source_action_redirect(
+    message: str,
+    *,
+    view: str = "differences",
+    undo_decision: int | None = None,
+) -> RedirectResponse:
+    params = [f"view={quote(view)}", f"message={quote(message)}"]
+    if undo_decision is not None:
+        params.append(f"undo_decision={undo_decision}")
+    return RedirectResponse(url=f"/ui/review?{'&'.join(params)}", status_code=303)
 
 
 @router.post("/ui/review/source-row/{row_id}/field/{field_name}/{decision}")
@@ -71,8 +121,10 @@ def decide_source_review_field(
     field_name: str,
     decision: str,
     request: Request,
+    view: str = "differences",
     db: Session = Depends(get_db),
     _: str = Depends(require_profile_role(ROLE_ADMIN, ROLE_REVIEWER)),
+    __: None = Depends(require_same_origin),
 ) -> RedirectResponse:
     try:
         result = decide_source_field(
@@ -90,7 +142,56 @@ def decide_source_review_field(
         "needs_research": "Sent to verification",
     }
     return _source_action_redirect(
-        f"{labels[decision]} for {result.movie.vault_id or result.movie.title}."
+        f"{labels[decision]} for {result.movie.vault_id or result.movie.title}.",
+        view=view,
+        undo_decision=result.id,
+    )
+
+
+@router.post("/ui/review/source-row/{row_id}/defer")
+def defer_source_review_movie(
+    row_id: int,
+    request: Request,
+    view: str = "differences",
+    db: Session = Depends(get_db),
+    _: str = Depends(require_profile_role(ROLE_ADMIN, ROLE_REVIEWER)),
+    __: None = Depends(require_same_origin),
+) -> RedirectResponse:
+    try:
+        records = defer_source_row_for_research(
+            db,
+            row_id=row_id,
+            profile_id=get_active_profile_id(request, db),
+        )
+    except SourceSyncError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    movie = records[0].movie
+    return _source_action_redirect(
+        f"{movie.vault_id or movie.title} moved to Needs Research. Showing the next movie.",
+        view=view,
+    )
+
+
+@router.post("/ui/review/source-decision/{decision_id}/undo")
+def undo_source_review_field(
+    decision_id: int,
+    request: Request,
+    view: str = "differences",
+    db: Session = Depends(get_db),
+    _: str = Depends(require_profile_role(ROLE_ADMIN, ROLE_REVIEWER)),
+    __: None = Depends(require_same_origin),
+) -> RedirectResponse:
+    try:
+        result = undo_source_field_decision(
+            db,
+            decision_id=decision_id,
+            profile_id=get_active_profile_id(request, db),
+        )
+    except SourceSyncError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return _source_action_redirect(
+        f"Decision undone for {result.movie.vault_id or result.movie.title}.",
+        view=view,
     )
 
 
@@ -99,8 +200,10 @@ def confirm_source_row_match(
     row_id: int,
     movie_id: int,
     request: Request,
+    view: str = "ambiguous",
     db: Session = Depends(get_db),
     _: str = Depends(require_profile_role(ROLE_ADMIN, ROLE_REVIEWER)),
+    __: None = Depends(require_same_origin),
 ) -> RedirectResponse:
     try:
         assign_source_row_match(
@@ -111,15 +214,20 @@ def confirm_source_row_match(
         )
     except SourceSyncError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
-    return _source_action_redirect("Source row matched to the selected Vault entry.")
+    return _source_action_redirect(
+        "Source row matched to the selected Vault entry.",
+        view=view,
+    )
 
 
 @router.post("/ui/review/source-row/{row_id}/create")
 def create_source_row_movie(
     row_id: int,
     request: Request,
+    view: str = "new",
     db: Session = Depends(get_db),
     _: str = Depends(require_profile_role(ROLE_ADMIN, ROLE_REVIEWER)),
+    __: None = Depends(require_same_origin),
 ) -> RedirectResponse:
     try:
         movie = create_movie_from_source_row(
@@ -129,20 +237,22 @@ def create_source_row_movie(
         )
     except SourceSyncError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
-    return _source_action_redirect(f"{movie.vault_id} added to the Vault.")
+    return _source_action_redirect(f"{movie.vault_id} added to the Vault.", view=view)
 
 
 @router.post("/ui/review/source-row/{row_id}/dismiss-duplicate")
 def dismiss_source_duplicate(
     row_id: int,
+    view: str = "duplicates",
     db: Session = Depends(get_db),
     _: str = Depends(require_profile_role(ROLE_ADMIN, ROLE_REVIEWER)),
+    __: None = Depends(require_same_origin),
 ) -> RedirectResponse:
     try:
         dismiss_duplicate(db, row_id=row_id)
     except SourceSyncError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
-    return _source_action_redirect("Duplicate source row dismissed.")
+    return _source_action_redirect("Duplicate source row dismissed.", view=view)
 
 
 def _load_movie(db: Session, movie_id: int) -> Movie:
@@ -158,6 +268,7 @@ def mark_review_checked(
     request: Request,
     db: Session = Depends(get_db),
     _: str = Depends(require_profile_role(ROLE_ADMIN, ROLE_REVIEWER)),
+    __: None = Depends(require_same_origin),
 ) -> RedirectResponse:
     movie = _load_movie(db, movie_id)
     issues = detect_review_issues(movie)
@@ -178,6 +289,7 @@ def mark_review_needs_fix(
     request: Request,
     db: Session = Depends(get_db),
     _: str = Depends(require_profile_role(ROLE_ADMIN, ROLE_REVIEWER)),
+    __: None = Depends(require_same_origin),
 ) -> RedirectResponse:
     movie = _load_movie(db, movie_id)
     issues = detect_review_issues(movie)

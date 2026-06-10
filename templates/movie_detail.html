@@ -267,7 +267,10 @@
               <li>
                 <strong>{{ decision.field_name|title }}</strong>
                 <span>{{ decision.previous_value or 'Missing' }} → {{ decision.selected_value or 'Missing' }}</span>
-                <small>{{ decision.decision|replace('_', ' ')|title }} · {{ decision.decided_at.strftime('%Y-%m-%d') }}</small>
+                <small>
+                  {{ decision.decision|replace('_', ' ')|title }} · {{ decision.decided_at.strftime('%Y-%m-%d') }}
+                  {% if decision.undone_at %} · Undone{% endif %}
+                </small>
               </li>
             {% endfor %}
           </ul>
