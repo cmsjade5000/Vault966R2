@@ -20,7 +20,7 @@ from api.services.profiles import (
     get_profiles,
 )
 from api.services.ui.grid import attach_genre_display, attach_poster_themes
-from api.services.ui.spotlight import build_spotlight_reason, get_daily_spotlight_movies
+from api.services.ui.spotlight import get_daily_spotlight_movies
 from api.services.ui.templates import TEMPLATES
 from api.services.trusted_movies import get_untrusted_movie_ids, trusted_movie_query
 
@@ -541,11 +541,6 @@ def discover(request: Request, db: Session = Depends(get_db)):
     active_profile_id = get_active_profile_id(request, db)
 
     spotlight_movies = get_daily_spotlight_movies(db, limit=4)
-    spotlight_reasons = {
-        movie.id: build_spotlight_reason(movie)
-        for movie in spotlight_movies
-        if movie.id is not None
-    }
 
     top_genres = _top_genre_names(db, limit=6)
 
@@ -610,7 +605,6 @@ def discover(request: Request, db: Session = Depends(get_db)):
         "profiles": profiles,
         "active_profile_id": active_profile_id,
         "spotlight_movies": spotlight_movies,
-        "spotlight_reasons": spotlight_reasons,
         "double_feature": double_feature,
         "pairings": pairings,
         "pairing_reasons": pairing_reasons,

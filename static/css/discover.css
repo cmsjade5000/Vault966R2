@@ -103,13 +103,6 @@
   touch-action: manipulation;
 }
 
-.poster-banner__caption {
-  margin: 0;
-  font-size: 0.85rem;
-  color: rgba(226, 232, 240, 0.78);
-  text-align: center;
-}
-
 .poster-banner__image--empty {
   display: grid;
   place-items: center;
