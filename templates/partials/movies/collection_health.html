@@ -66,18 +66,6 @@
       </p>
     </article>
     <article class="health-card">
-      <h3>Genre gaps</h3>
-      {% if collection_health.genre_gaps %}
-      <ul>
-        {% for genre in collection_health.genre_gaps %}
-        <li>{{ genre }}</li>
-        {% endfor %}
-      </ul>
-      {% else %}
-      <p class="health-card__value">Solid spread!</p>
-      {% endif %}
-    </article>
-    <article class="health-card">
       <h3>Open flags</h3>
       <p class="health-card__value">{{ collection_health.flags_open or 0 }}</p>
       <p class="health-card__hint">
