@@ -17,7 +17,75 @@
     </div>
   </section>
 
+  {% if request.query_params.get('message') %}
+    <div class="page-shell">
+      <p class="review-message" role="status">{{ request.query_params.get('message') }}</p>
+    </div>
+  {% endif %}
+
   {% include "partials/movies/collection_health.html" %}
+
+  <section class="page-shell source-health" id="source-synchronization" aria-labelledby="source-health-title">
+    <header class="source-health__header">
+      <div>
+        <span class="review-vault-id">Collection source</span>
+        <h2 id="source-health-title">Source synchronization</h2>
+        <p>Confirmed collection exports, reconciliation results, and import history.</p>
+      </div>
+      <a class="button-primary" href="/ui/source-sync">Upload new source</a>
+    </header>
+
+    {% if latest_source_snapshot %}
+      <section class="source-sync-summary">
+        <header>
+          <div>
+            <span class="review-vault-id">Latest confirmed snapshot</span>
+            <h3>{{ latest_source_snapshot.filename }}</h3>
+          </div>
+          <span>{{ latest_source_snapshot.confirmed_at.strftime('%Y-%m-%d %H:%M') if latest_source_snapshot.confirmed_at else 'Pending' }}</span>
+        </header>
+        <div class="source-sync-metrics source-sync-metrics--health">
+          <div><strong>{{ latest_source_summary.rows }}</strong><span>Source rows</span></div>
+          <div><strong>{{ latest_source_summary.auto_matched }}</strong><span>Auto-matched</span></div>
+          <div><strong>{{ latest_source_summary.manually_matched }}</strong><span>Manually matched</span></div>
+          <div><strong>{{ latest_source_summary.accepted }}</strong><span>Accepted rows</span></div>
+          <div><strong>{{ latest_source_summary.conflicts }}</strong><span>Conflicts</span></div>
+          <div><strong>{{ latest_source_summary.ambiguous }}</strong><span>Ambiguous</span></div>
+          <div><strong>{{ latest_source_summary.duplicates }}</strong><span>Duplicates</span></div>
+          <div><strong>{{ latest_source_summary.source_only }}</strong><span>New candidates</span></div>
+        </div>
+        <a class="button-secondary" href="/ui/review">Open Human Review</a>
+      </section>
+    {% else %}
+      <div class="source-health__empty">
+        <p>No collection source has been confirmed yet.</p>
+        <a class="button-primary" href="/ui/source-sync">Upload first source</a>
+      </div>
+    {% endif %}
+
+    <section class="source-sync-history">
+      <h3>Snapshot history</h3>
+      {% if source_snapshots %}
+        <div class="table-wrapper">
+          <table class="data-table data-table--compact">
+            <thead><tr><th>File</th><th>Rows</th><th>Status</th><th>Uploaded</th></tr></thead>
+            <tbody>
+              {% for snapshot in source_snapshots %}
+                <tr>
+                  <td><a href="/ui/source-sync/{{ snapshot.id }}/preview">{{ snapshot.filename }}</a></td>
+                  <td>{{ snapshot.row_count }}</td>
+                  <td>{{ snapshot.status }}</td>
+                  <td>{{ snapshot.uploaded_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <p>No source snapshots uploaded yet.</p>
+      {% endif %}
+    </section>
+  </section>
 {% endblock %}
 {% block scripts %}
   {{ super() }}

@@ -11,7 +11,9 @@ from api.config import settings
 from api.db import get_db
 from api.deps.auth import require_profile_role
 from api.models.movie import Movie
+from api.models.source_sync import SourceSnapshot
 from api.services.movies_curated import get_collection_health
+from api.services.source_sync import latest_active_snapshot, snapshot_summary
 from api.services.ui.grid import (
     FILTER_COOKIE_MAX_AGE,
     FILTER_COOKIE_NAME,
@@ -432,10 +434,20 @@ def movies_health(
     _: str = Depends(require_profile_role(ROLE_ADMIN)),
 ):
     collection_health = get_collection_health(db)
+    source_snapshots = (
+        db.query(SourceSnapshot)
+        .order_by(SourceSnapshot.uploaded_at.desc(), SourceSnapshot.id.desc())
+        .limit(20)
+        .all()
+    )
+    latest_source_snapshot = latest_active_snapshot(db)
     profiles = get_profiles(db)
     active_profile_id = get_active_profile_id(request, db)
     context = {
         "collection_health": collection_health,
+        "source_snapshots": source_snapshots,
+        "latest_source_snapshot": latest_source_snapshot,
+        "latest_source_summary": snapshot_summary(db, latest_source_snapshot),
         "profiles": profiles,
         "active_profile_id": active_profile_id,
     }

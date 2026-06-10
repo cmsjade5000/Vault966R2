@@ -18,9 +18,7 @@ from api.services.profiles import (
 from api.services.source_sync import (
     SourceSyncError,
     create_draft_snapshot,
-    latest_active_snapshot,
     reconcile_snapshot,
-    snapshot_summary,
 )
 from api.services.ui.templates import TEMPLATES
 
@@ -40,20 +38,10 @@ def source_sync_ui(
     db: Session = Depends(get_db),
     _: str = Depends(require_profile_role(ROLE_ADMIN)),
 ):
-    snapshots = (
-        db.query(SourceSnapshot)
-        .order_by(SourceSnapshot.uploaded_at.desc(), SourceSnapshot.id.desc())
-        .limit(20)
-        .all()
-    )
-    latest = latest_active_snapshot(db)
     response = TEMPLATES.TemplateResponse(
         request,
         "source_sync.html",
         {
-            "snapshots": snapshots,
-            "latest_snapshot": latest,
-            "latest_summary": snapshot_summary(db, latest),
             "profiles": get_profiles(db),
             "active_profile_id": get_active_profile_id(request, db),
         },
@@ -135,4 +123,4 @@ def confirm_source_snapshot(
         f"Snapshot #{snapshot.id} confirmed: {summary['matched']} matched, "
         f"{summary['conflicts']} conflicts."
     )
-    return RedirectResponse(url=f"/ui/source-sync?message={message}", status_code=303)
+    return RedirectResponse(url=f"/ui/movies/health?message={message}", status_code=303)

@@ -622,9 +622,14 @@ def snapshot_summary(db: Session, snapshot: SourceSnapshot | None) -> dict[str, 
         .all()
     )
     conflicts = len(get_source_review_queue(db, snapshot=snapshot, include_unmatched=False))
+    auto_matched = counts.get("exact", 0) + counts.get("likely", 0)
+    manually_matched = counts.get("manual", 0)
     return {
         "rows": snapshot.row_count,
-        "matched": counts.get("exact", 0) + counts.get("likely", 0),
+        "matched": auto_matched,
+        "auto_matched": auto_matched,
+        "manually_matched": manually_matched,
+        "accepted": auto_matched + manually_matched,
         "conflicts": conflicts,
         "ambiguous": counts.get("ambiguous", 0),
         "duplicates": counts.get("duplicate", 0),
