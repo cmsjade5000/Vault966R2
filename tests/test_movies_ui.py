@@ -76,6 +76,18 @@ def test_review_checked_removes_movie_from_queue(client: TestClient, db_session)
     assert "Year is missing" not in response.text
 
 
+def test_vault_review_actions_preserve_vault_category(client: TestClient, db_session) -> None:
+    movie = db_session.get(Movie, 1)
+    movie.year = None
+    movie.vault_id = "V0001"
+    db_session.commit()
+
+    response = client.post("/ui/review/1/checked?view=vault", follow_redirects=False)
+
+    assert response.status_code == 303
+    assert "view=vault" in response.headers["location"]
+
+
 def test_review_needs_fix_creates_flag_with_vault_id(client: TestClient, db_session) -> None:
     movie = db_session.get(Movie, 1)
     movie.year = None

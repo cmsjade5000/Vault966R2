@@ -920,6 +920,16 @@ def decide_source_field(
         elif field_name == "director":
             _set_directors(db, movie, row.director)
 
+    now = datetime.now(timezone.utc)
+    (
+        db.query(SourceFieldDecision)
+        .filter(SourceFieldDecision.source_row_id == row.id)
+        .filter(SourceFieldDecision.field_name == field_name)
+        .filter(SourceFieldDecision.decision == "needs_research")
+        .filter(SourceFieldDecision.resolved_at.is_(None))
+        .filter(SourceFieldDecision.undone_at.is_(None))
+        .update({SourceFieldDecision.resolved_at: now}, synchronize_session=False)
+    )
     record = SourceFieldDecision(
         source_row_id=row.id,
         movie_id=movie.id,
@@ -931,8 +941,8 @@ def decide_source_field(
     record.selected_value = _display_value(selected_value)
     record.decision = decision
     record.decided_by_profile_id = profile_id
-    record.decided_at = datetime.now(timezone.utc)
-    record.resolved_at = None if decision == "needs_research" else datetime.now(timezone.utc)
+    record.decided_at = now
+    record.resolved_at = None if decision == "needs_research" else now
     db.commit()
     db.refresh(record)
     return record
@@ -1049,8 +1059,8 @@ def create_movie_from_source_row(db: Session, *, row_id: int, profile_id: int | 
     row = db.get(SourceMovieRow, row_id)
     if row is None or row.match is None:
         raise SourceSyncError("Source row was not found")
-    if row.match.match_type not in {"source_only", "duplicate"}:
-        raise SourceSyncError("Only source-only or duplicate rows can create a movie")
+    if row.match.match_type not in {"ambiguous", "source_only", "duplicate"}:
+        raise SourceSyncError("This source row cannot create a movie")
     movie = Movie(
         vault_id=next_vault_id(db),
         title=row.title,

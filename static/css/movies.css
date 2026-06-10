@@ -2098,6 +2098,24 @@ body.filters-open {
   padding-bottom: 4rem;
 }
 
+.review-queue-nav {
+  align-items: center;
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+  margin: 0 0 0.75rem;
+}
+
+.review-queue-nav > span {
+  color: var(--flic-muted);
+  font-size: 0.85rem;
+}
+
+.review-queue-nav > div {
+  display: flex;
+  gap: 0.5rem;
+}
+
 .review-message {
   background: rgba(53, 193, 126, 0.12);
   border: 1px solid rgba(53, 193, 126, 0.35);
@@ -2326,6 +2344,19 @@ body.filters-open {
   padding-left: 1.5rem;
 }
 
+.review-up-next li a {
+  color: var(--flic-text);
+  display: block;
+  padding: 0.35rem 0;
+  text-decoration: none;
+}
+
+.review-up-next li a:hover,
+.review-up-next li a:focus-visible,
+.review-up-next li a[aria-current="true"] {
+  color: var(--flic-accent);
+}
+
 .review-up-next li span {
   color: var(--flic-muted);
   display: inline-block;
@@ -2348,6 +2379,16 @@ body.filters-open {
   .review-actions a,
   .review-actions button {
     width: 100%;
+  }
+
+  .review-queue-nav {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .review-queue-nav > div,
+  .review-queue-nav a {
+    flex: 1;
   }
 
   .review-message--action {

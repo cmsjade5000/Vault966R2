@@ -145,6 +145,58 @@ def test_unsupported_title_match_remains_ambiguous(client: TestClient, db_sessio
     assert match.movie_id is None
 
 
+def test_review_queue_can_select_and_navigate_source_rows(client: TestClient, db_session) -> None:
+    snapshot_id = _upload_and_confirm(
+        client,
+        _csv(
+            "Blade Runner,1:57:00,,1983,Sci-Fi,PG,6/25/82,1",
+            "The Matrix,2:16:00,,2000,Action,R,3/31/99,1",
+        ),
+    )
+    matches = (
+        db_session.query(SourceReconciliationMatch)
+        .join(SourceReconciliationMatch.source_row)
+        .filter_by(snapshot_id=snapshot_id)
+        .order_by(SourceReconciliationMatch.id)
+        .all()
+    )
+
+    response = client.get(
+        f"/ui/review?view=differences&row={matches[1].source_row_id}"
+    )
+
+    assert response.status_code == 200
+    assert "2 of 2 in Differences" in response.text
+    assert "The Matrix" in response.text
+    assert f"row={matches[0].source_row_id}" in response.text
+
+
+def test_ambiguous_row_can_create_new_vault_entry(client: TestClient, db_session) -> None:
+    for index, movie in enumerate(db_session.query(Movie).order_by(Movie.id), start=1):
+        movie.vault_id = f"V{index:04d}"
+    db_session.commit()
+    snapshot_id = _upload_and_confirm(
+        client,
+        _csv("Blade Runner,3:00:00,Someone Else,1983,Sci-Fi,PG,6/25/82,1"),
+    )
+    match = (
+        db_session.query(SourceReconciliationMatch)
+        .join(SourceReconciliationMatch.source_row)
+        .filter_by(snapshot_id=snapshot_id)
+        .one()
+    )
+
+    response = client.post(
+        f"/ui/review/source-row/{match.source_row_id}/create?view=ambiguous",
+        follow_redirects=False,
+    )
+
+    assert response.status_code == 303
+    created = db_session.query(Movie).filter(Movie.title == "Blade Runner").all()
+    assert len(created) == 2
+    assert created[-1].vault_id == "V0034"
+
+
 def test_field_decision_updates_only_selected_field_and_preserves_vault_id(
     client: TestClient, db_session
 ) -> None:
@@ -203,7 +255,7 @@ def test_field_decisions_preserve_full_history(client: TestClient, db_session) -
         "needs_research",
         "keep_vault",
     ]
-    assert decisions[0].resolved_at is None
+    assert decisions[0].resolved_at is not None
     assert decisions[1].resolved_at is not None
 
 
