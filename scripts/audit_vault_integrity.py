@@ -242,6 +242,7 @@ def audit(
 
     drift: list[dict[str, Any]] = []
     approved_deviations: list[dict[str, Any]] = []
+    artwork_enrichments: list[dict[str, Any]] = []
     newer_source_entries: list[dict[str, Any]] = []
     missing_source_ids: list[dict[str, Any]] = []
     source_unmatched: list[str] = []
@@ -277,7 +278,11 @@ def audit(
         }
         differences: dict[str, Any] = {}
         approved: dict[str, Any] = {}
+        artwork: dict[str, Any] = {}
         for field, values in raw_differences.items():
+            if field == "poster_url" and not values["source"] and values["database"]:
+                artwork[field] = values
+                continue
             decision_field = "director" if field == "directors" else field
             decision = approved_decisions.get((movie.id, decision_field))
             if decision is not None and _decision_matches_actual(
@@ -308,6 +313,15 @@ def audit(
                     "vault_id": vault_id,
                     "title": movie.title,
                     "differences": approved,
+                }
+            )
+        if artwork:
+            artwork_enrichments.append(
+                {
+                    "movie_id": movie.id,
+                    "vault_id": vault_id,
+                    "title": movie.title,
+                    "differences": artwork,
                 }
             )
     if source:
@@ -350,6 +364,7 @@ def audit(
             "content_review_issue_count": content_review_issue_count,
             "source_drift_count": len(drift),
             "approved_source_deviation_count": len(approved_deviations),
+            "artwork_enrichment_count": len(artwork_enrichments),
             "newer_source_entry_count": len(newer_source_entries),
             "missing_source_id_count": len(missing_source_ids),
             "source_unmatched_count": len(source_unmatched),
@@ -364,6 +379,7 @@ def audit(
             "source_path": str(source_path) if source_path is not None else None,
             "drift": drift,
             "approved_deviations": approved_deviations,
+            "artwork_enrichments": artwork_enrichments,
             "newer_source_entries": newer_source_entries,
             "missing_source_ids": missing_source_ids,
             "source_unmatched_vault_ids": source_unmatched,

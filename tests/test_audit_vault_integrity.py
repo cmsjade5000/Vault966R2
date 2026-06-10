@@ -93,3 +93,32 @@ def test_audit_reports_nonlegacy_movies_as_newer_source_entries(db_session, tmp_
     assert report["summary"]["newer_source_entry_count"] >= 1
     newer = report["source_reconciliation"]["newer_source_entries"]
     assert any(item["vault_id"] == "V1000" for item in newer)
+
+
+def test_audit_reports_added_posters_as_artwork_enrichment(db_session, tmp_path):
+    movie = db_session.query(Movie).first()
+    movie.vault_id = "V0001"
+    movie.poster_url = "https://media.themoviedb.org/t/p/w500/poster.jpg"
+    db_session.add(
+        MovieIngestProvenance(
+            movie_id=movie.id,
+            provider="legacy_vault_csv",
+            provider_id=movie.vault_id,
+        )
+    )
+    db_session.commit()
+
+    source_path = tmp_path / "legacy.csv"
+    source_path.write_text(
+        "vault_id,title,year,runtime,poster_url\n" "V0001,Blade Runner,1982,117,\n",
+        encoding="utf-8",
+    )
+
+    report = audit(db_session, source_path=source_path, sample_size=0)
+
+    assert report["summary"]["source_drift_count"] == 1
+    assert report["summary"]["artwork_enrichment_count"] == 1
+    drift = report["source_reconciliation"]["drift"][0]["differences"]
+    assert "poster_url" not in drift
+    artwork = report["source_reconciliation"]["artwork_enrichments"]
+    assert artwork[0]["vault_id"] == "V0001"
