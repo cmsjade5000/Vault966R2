@@ -54,6 +54,8 @@ def test_library_search_is_prominent_and_searches_identity_fields(
 
     assert "Search your Vault" in page.text
     assert "director, actor, genre, or IMDb ID" in page.text
+    assert 'aria-label="Open filters"' in page.text
+    assert 'aria-label="Random trusted movie"' in page.text
 
     by_vault_id = client.get("/ui/movies", params={"q": "V0001"})
     by_year = client.get("/ui/movies", params={"q": "1982"})
@@ -62,6 +64,18 @@ def test_library_search_is_prominent_and_searches_identity_fields(
     assert "Blade Runner" in by_vault_id.text
     assert "Blade Runner" in by_year.text
     assert "Blade Runner" in by_person.text
+
+
+def test_health_page_uses_vault_health_title_and_prioritizes_metrics(
+    client: TestClient,
+) -> None:
+    response = client.get("/ui/movies/health")
+
+    assert response.status_code == 200
+    assert "<h1>Vault Health</h1>" in response.text
+    assert "Vault overview" in response.text
+    assert "Flic Recommendation" not in response.text
+    assert "Add a movie" not in response.text
 
 
 def test_flags_page_lists_flagged_movies(client: TestClient, admin_headers: dict[str, str]) -> None:

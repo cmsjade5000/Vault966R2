@@ -1,7 +1,5 @@
 (() => {
   document.addEventListener("DOMContentLoaded", () => {
-    const refreshButton = document.querySelector("[data-recommendation-refresh]");
-    const recommendationText = document.querySelector("[data-recommendation-text]");
     const updateButton = document.querySelector("[data-update-trigger]");
     const updateStatus = document.querySelector("[data-update-status]");
     const updateSteps = document.querySelector("[data-update-steps]");
@@ -12,10 +10,6 @@
       : {};
 
     const setBusy = (isBusy) => {
-      if (refreshButton) {
-        refreshButton.classList.toggle("is-busy", isBusy);
-        refreshButton.disabled = isBusy;
-      }
       if (updateButton) {
         updateButton.classList.toggle("is-busy", isBusy);
         updateButton.disabled = isBusy;
@@ -91,42 +85,6 @@
         }
       }, 3000);
     };
-
-    if (refreshButton && recommendationText) {
-      refreshButton.addEventListener("click", async () => {
-        setBusy(true);
-        try {
-          const response = await fetch(
-            "/api/collection-health/recommendation/refresh",
-            { method: "POST", headers: adminHeaders },
-          );
-          if (!response.ok) {
-            if (response.status === 401) {
-              throw new Error(
-                "Admin token required. Set localStorage.vaultAdminToken to your ADMIN_TOKEN.",
-              );
-            }
-            throw new Error("Failed to refresh recommendation");
-          }
-          const payload = await response.json();
-          if (typeof payload.recommendation === "string") {
-            recommendationText.textContent = payload.recommendation;
-          }
-        } catch (error) {
-          console.warn(error);
-          if (typeof window.showToast === "function") {
-            window.showToast("Couldn’t refresh—try again soon?");
-          }
-          if (!adminToken) {
-            console.warn(
-              "Set localStorage.vaultAdminToken = '<ADMIN_TOKEN>' to refresh collection health.",
-            );
-          }
-        } finally {
-          setBusy(false);
-        }
-      });
-    }
 
     if (updateButton) {
       updateButton.addEventListener("click", async () => {

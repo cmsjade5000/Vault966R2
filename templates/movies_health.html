@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Vault 966 · Collection Health{% endblock %}
+{% block title %}Vault 966 · Vault Health{% endblock %}
 {% block head %}
 <link rel="stylesheet" href="{{ url_for('static', path='css/movies.css') }}" />
 {% endblock %}
@@ -7,10 +7,9 @@
   <section class="page-hero">
     <div class="hero-header">
       <div class="hero-title">
-        <h1>Collection Health</h1>
-        <span class="chip chip-flic">Library insights</span>
+        <h1>Vault Health</h1>
       </div>
-      <p class="tagline">Quick maintenance snapshot for your vault.</p>
+      <p class="tagline">Integrity, metadata, and source synchronization.</p>
     </div>
     <div class="hero-health-links">
       <a class="hero-health-link" href="/ui/movies">← Back to movies</a>
@@ -105,5 +104,4 @@
 {% block scripts %}
   {{ super() }}
 <script src="{{ url_for('static', path='js/collection_health.js') }}" defer></script>
-<script src="{{ url_for('static', path='js/movies_page.js') }}" defer></script>
 {% endblock %}
