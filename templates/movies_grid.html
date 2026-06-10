@@ -216,7 +216,11 @@
               aria-label="{{ 'Unlike' if movie.liked else 'Like' }} {{ movie.title }}"
               title="Like"
               aria-pressed="{{ 'true' if movie.liked else 'false' }}"
-            >♡</button>
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8l1.1 1.1L12 21.2l7.8-7.7 1.1-1.1a5.5 5.5 0 0 0-.1-7.8z"></path>
+              </svg>
+            </button>
             <button
               type="button"
               class="preference-icon{% if movie.watchlist %} is-active{% endif %}"
@@ -227,7 +231,11 @@
               aria-label="{{ 'Remove' if movie.watchlist else 'Add' }} {{ movie.title }} {{ 'from' if movie.watchlist else 'to' }} watchlist"
               title="Watchlist"
               aria-pressed="{{ 'true' if movie.watchlist else 'false' }}"
-            >▯</button>
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1z"></path>
+              </svg>
+            </button>
           </div>
         </article>
         {% endfor %}

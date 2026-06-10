@@ -71,3 +71,7 @@ def test_discover_contains_all_collection_rails(client) -> None:
         "Edition Cuts",
     ):
         assert title in response.text
+    assert 'data-preference-type="like"' in response.text
+    assert 'data-preference-type="watchlist"' in response.text
+    assert ">♡</button>" not in response.text
+    assert ">▯</button>" not in response.text
