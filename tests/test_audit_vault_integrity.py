@@ -74,3 +74,22 @@ def test_audit_separates_approved_source_changes_from_drift(db_session, tmp_path
     assert approved[0]["differences"]["runtime"]["database"] == 120
     drift = report["source_reconciliation"]["drift"]
     assert "runtime" not in drift[0]["differences"]
+
+
+def test_audit_reports_nonlegacy_movies_as_newer_source_entries(db_session, tmp_path):
+    movie = db_session.query(Movie).first()
+    movie.vault_id = "V1000"
+    db_session.commit()
+
+    source_path = tmp_path / "legacy.csv"
+    source_path.write_text(
+        "vault_id,title,year,runtime\n",
+        encoding="utf-8",
+    )
+
+    report = audit(db_session, source_path=source_path, sample_size=0)
+
+    assert report["summary"]["missing_source_id_count"] == 0
+    assert report["summary"]["newer_source_entry_count"] >= 1
+    newer = report["source_reconciliation"]["newer_source_entries"]
+    assert any(item["vault_id"] == "V1000" for item in newer)

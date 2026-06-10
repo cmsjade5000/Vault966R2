@@ -1,29 +1,30 @@
 {
   "schema_version": 2,
-  "generated_at": "2026-06-10T15:59:11.206347+00:00",
+  "generated_at": "2026-06-10T16:06:47.744256+00:00",
   "summary": {
-    "movie_count": 969,
+    "movie_count": 1012,
     "structural_issue_count": 0,
-    "content_review_issue_count": 90,
+    "content_review_issue_count": 133,
     "source_drift_count": 0,
     "approved_source_deviation_count": 125,
+    "newer_source_entry_count": 43,
     "missing_source_id_count": 0,
     "source_unmatched_count": 11,
     "healthy": true,
     "review_required": true
   },
-  "collection_fingerprint": "52d7d3491922a7b71a5f5812d4b16566744718b5ea220d16c0a5ec26033fb3ac",
+  "collection_fingerprint": "d19cf44c436a8b99526e7d2763cf70d678dbf300e342765d6a1484d4983d1955",
   "field_coverage": {
-    "year": 960,
-    "runtime": 941,
+    "year": 1003,
+    "runtime": 984,
     "plot": 960,
     "poster_url": 1,
     "certificate": 813,
     "keywords": 861,
     "imdb_id": 833,
     "tmdb_id": 883,
-    "genres": 958,
-    "directors": 969,
+    "genres": 1001,
+    "directors": 1007,
     "cast": 752
   },
   "structural": {
@@ -497,6 +498,221 @@
         "movie_id": 941,
         "title": "Zoolander No. 2 (The Magnum Edition)",
         "year": null
+      },
+      {
+        "movie_id": 970,
+        "title": "American Gangster (Unrated Extended Edition)",
+        "year": 2008
+      },
+      {
+        "movie_id": 971,
+        "title": "American Psycho (Uncut Version)",
+        "year": 2000
+      },
+      {
+        "movie_id": 972,
+        "title": "American Sniper",
+        "year": 2014
+      },
+      {
+        "movie_id": 973,
+        "title": "The Angry Birds Movie",
+        "year": 2016
+      },
+      {
+        "movie_id": 974,
+        "title": "Ant-Man",
+        "year": 2015
+      },
+      {
+        "movie_id": 975,
+        "title": "Arthur (2011)",
+        "year": 2011
+      },
+      {
+        "movie_id": 976,
+        "title": "Asteroid City",
+        "year": 2023
+      },
+      {
+        "movie_id": 977,
+        "title": "The Avengers",
+        "year": 2012
+      },
+      {
+        "movie_id": 978,
+        "title": "Ballerina: From the World of John Wick",
+        "year": 2025
+      },
+      {
+        "movie_id": 979,
+        "title": "Bedazzled",
+        "year": 2000
+      },
+      {
+        "movie_id": 980,
+        "title": "The Blair Witch Project",
+        "year": 1999
+      },
+      {
+        "movie_id": 981,
+        "title": "Dirty Harry",
+        "year": 1971
+      },
+      {
+        "movie_id": 982,
+        "title": "The Fall Guy (2024)",
+        "year": 2024
+      },
+      {
+        "movie_id": 983,
+        "title": "Final Destination Bloodlines",
+        "year": 2025
+      },
+      {
+        "movie_id": 984,
+        "title": "Gran Torino",
+        "year": 2009
+      },
+      {
+        "movie_id": 985,
+        "title": "Halloween",
+        "year": 1978
+      },
+      {
+        "movie_id": 986,
+        "title": "Hamnet",
+        "year": 2026
+      },
+      {
+        "movie_id": 987,
+        "title": "Jexi",
+        "year": 2019
+      },
+      {
+        "movie_id": 988,
+        "title": "Kelly's Heroes",
+        "year": 2014
+      },
+      {
+        "movie_id": 989,
+        "title": "Late Night with the Devil",
+        "year": 2024
+      },
+      {
+        "movie_id": 990,
+        "title": "Letters from Iwo Jima",
+        "year": 2019
+      },
+      {
+        "movie_id": 991,
+        "title": "Mickey 17",
+        "year": 2025
+      },
+      {
+        "movie_id": 992,
+        "title": "Million Dollar Baby",
+        "year": 2004
+      },
+      {
+        "movie_id": 993,
+        "title": "Minority Report",
+        "year": 2002
+      },
+      {
+        "movie_id": 994,
+        "title": "No Time to Die",
+        "year": 2021
+      },
+      {
+        "movie_id": 995,
+        "title": "Patriot Games",
+        "year": 1998
+      },
+      {
+        "movie_id": 996,
+        "title": "Project Hail Mary",
+        "year": 2026
+      },
+      {
+        "movie_id": 997,
+        "title": "Santa Clause 2: The Mrs. Claus",
+        "year": 2002
+      },
+      {
+        "movie_id": 998,
+        "title": "Saw The Final Chapter",
+        "year": 2010
+      },
+      {
+        "movie_id": 999,
+        "title": "Scarface (1983)",
+        "year": 1983
+      },
+      {
+        "movie_id": 1000,
+        "title": "Smile 2",
+        "year": 2024
+      },
+      {
+        "movie_id": 1001,
+        "title": "Sonic The Hedgehog 3",
+        "year": 2024
+      },
+      {
+        "movie_id": 1002,
+        "title": "Speak No Evil",
+        "year": 2024
+      },
+      {
+        "movie_id": 1003,
+        "title": "Spider-Man: Homecoming",
+        "year": 2017
+      },
+      {
+        "movie_id": 1004,
+        "title": "Sully",
+        "year": 2016
+      },
+      {
+        "movie_id": 1005,
+        "title": "Trouble with the Curve",
+        "year": 2012
+      },
+      {
+        "movie_id": 1006,
+        "title": "Under the Tuscan Sun",
+        "year": 2003
+      },
+      {
+        "movie_id": 1007,
+        "title": "Unforgiven",
+        "year": 1993
+      },
+      {
+        "movie_id": 1008,
+        "title": "Wicked: For Good",
+        "year": 2025
+      },
+      {
+        "movie_id": 1009,
+        "title": "X-Men: Apocalypse",
+        "year": 2016
+      },
+      {
+        "movie_id": 1010,
+        "title": "Zootopia 2",
+        "year": 2025
+      },
+      {
+        "movie_id": 1011,
+        "title": "9 To 5",
+        "year": 1980
+      },
+      {
+        "movie_id": 1012,
+        "title": "28 Years Later",
+        "year": 2025
       }
     ]
   },
@@ -2693,6 +2909,223 @@
             "source_snapshot_id": 1
           }
         }
+      }
+    ],
+    "newer_source_entries": [
+      {
+        "movie_id": 970,
+        "vault_id": "V0981",
+        "title": "American Gangster (Unrated Extended Edition)"
+      },
+      {
+        "movie_id": 971,
+        "vault_id": "V0982",
+        "title": "American Psycho (Uncut Version)"
+      },
+      {
+        "movie_id": 972,
+        "vault_id": "V0983",
+        "title": "American Sniper"
+      },
+      {
+        "movie_id": 973,
+        "vault_id": "V0984",
+        "title": "The Angry Birds Movie"
+      },
+      {
+        "movie_id": 974,
+        "vault_id": "V0985",
+        "title": "Ant-Man"
+      },
+      {
+        "movie_id": 975,
+        "vault_id": "V0986",
+        "title": "Arthur (2011)"
+      },
+      {
+        "movie_id": 976,
+        "vault_id": "V0987",
+        "title": "Asteroid City"
+      },
+      {
+        "movie_id": 977,
+        "vault_id": "V0988",
+        "title": "The Avengers"
+      },
+      {
+        "movie_id": 978,
+        "vault_id": "V0989",
+        "title": "Ballerina: From the World of John Wick"
+      },
+      {
+        "movie_id": 979,
+        "vault_id": "V0990",
+        "title": "Bedazzled"
+      },
+      {
+        "movie_id": 980,
+        "vault_id": "V0991",
+        "title": "The Blair Witch Project"
+      },
+      {
+        "movie_id": 981,
+        "vault_id": "V0992",
+        "title": "Dirty Harry"
+      },
+      {
+        "movie_id": 982,
+        "vault_id": "V0993",
+        "title": "The Fall Guy (2024)"
+      },
+      {
+        "movie_id": 983,
+        "vault_id": "V0994",
+        "title": "Final Destination Bloodlines"
+      },
+      {
+        "movie_id": 984,
+        "vault_id": "V0995",
+        "title": "Gran Torino"
+      },
+      {
+        "movie_id": 985,
+        "vault_id": "V0996",
+        "title": "Halloween"
+      },
+      {
+        "movie_id": 986,
+        "vault_id": "V0997",
+        "title": "Hamnet"
+      },
+      {
+        "movie_id": 987,
+        "vault_id": "V0998",
+        "title": "Jexi"
+      },
+      {
+        "movie_id": 988,
+        "vault_id": "V0999",
+        "title": "Kelly's Heroes"
+      },
+      {
+        "movie_id": 989,
+        "vault_id": "V1000",
+        "title": "Late Night with the Devil"
+      },
+      {
+        "movie_id": 990,
+        "vault_id": "V1001",
+        "title": "Letters from Iwo Jima"
+      },
+      {
+        "movie_id": 991,
+        "vault_id": "V1002",
+        "title": "Mickey 17"
+      },
+      {
+        "movie_id": 992,
+        "vault_id": "V1003",
+        "title": "Million Dollar Baby"
+      },
+      {
+        "movie_id": 993,
+        "vault_id": "V1004",
+        "title": "Minority Report"
+      },
+      {
+        "movie_id": 994,
+        "vault_id": "V1005",
+        "title": "No Time to Die"
+      },
+      {
+        "movie_id": 995,
+        "vault_id": "V1006",
+        "title": "Patriot Games"
+      },
+      {
+        "movie_id": 996,
+        "vault_id": "V1007",
+        "title": "Project Hail Mary"
+      },
+      {
+        "movie_id": 997,
+        "vault_id": "V1008",
+        "title": "Santa Clause 2: The Mrs. Claus"
+      },
+      {
+        "movie_id": 998,
+        "vault_id": "V1009",
+        "title": "Saw The Final Chapter"
+      },
+      {
+        "movie_id": 999,
+        "vault_id": "V1010",
+        "title": "Scarface (1983)"
+      },
+      {
+        "movie_id": 1000,
+        "vault_id": "V1011",
+        "title": "Smile 2"
+      },
+      {
+        "movie_id": 1001,
+        "vault_id": "V1012",
+        "title": "Sonic The Hedgehog 3"
+      },
+      {
+        "movie_id": 1002,
+        "vault_id": "V1013",
+        "title": "Speak No Evil"
+      },
+      {
+        "movie_id": 1003,
+        "vault_id": "V1014",
+        "title": "Spider-Man: Homecoming"
+      },
+      {
+        "movie_id": 1004,
+        "vault_id": "V1015",
+        "title": "Sully"
+      },
+      {
+        "movie_id": 1005,
+        "vault_id": "V1016",
+        "title": "Trouble with the Curve"
+      },
+      {
+        "movie_id": 1006,
+        "vault_id": "V1017",
+        "title": "Under the Tuscan Sun"
+      },
+      {
+        "movie_id": 1007,
+        "vault_id": "V1018",
+        "title": "Unforgiven"
+      },
+      {
+        "movie_id": 1008,
+        "vault_id": "V1019",
+        "title": "Wicked: For Good"
+      },
+      {
+        "movie_id": 1009,
+        "vault_id": "V1020",
+        "title": "X-Men: Apocalypse"
+      },
+      {
+        "movie_id": 1010,
+        "vault_id": "V1021",
+        "title": "Zootopia 2"
+      },
+      {
+        "movie_id": 1011,
+        "vault_id": "V1022",
+        "title": "9 To 5"
+      },
+      {
+        "movie_id": 1012,
+        "vault_id": "V1023",
+        "title": "28 Years Later"
       }
     ],
     "missing_source_ids": [],

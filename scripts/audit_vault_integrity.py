@@ -242,6 +242,7 @@ def audit(
 
     drift: list[dict[str, Any]] = []
     approved_deviations: list[dict[str, Any]] = []
+    newer_source_entries: list[dict[str, Any]] = []
     missing_source_ids: list[dict[str, Any]] = []
     source_unmatched: list[str] = []
     source = _load_source(source_path) if source_path is not None else {}
@@ -251,6 +252,15 @@ def audit(
         provenance = provenance_by_movie.get(movie.id)
         vault_id = movie.vault_id or (provenance.provider_id if provenance else None)
         if not vault_id:
+            continue
+        if provenance is None:
+            newer_source_entries.append(
+                {
+                    "movie_id": movie.id,
+                    "vault_id": vault_id,
+                    "title": movie.title,
+                }
+            )
             continue
         expected = source.get(vault_id)
         if expected is None:
@@ -340,6 +350,7 @@ def audit(
             "content_review_issue_count": content_review_issue_count,
             "source_drift_count": len(drift),
             "approved_source_deviation_count": len(approved_deviations),
+            "newer_source_entry_count": len(newer_source_entries),
             "missing_source_id_count": len(missing_source_ids),
             "source_unmatched_count": len(source_unmatched),
             "healthy": structural_issue_count == 0 and not drift and not missing_source_ids,
@@ -353,6 +364,7 @@ def audit(
             "source_path": str(source_path) if source_path is not None else None,
             "drift": drift,
             "approved_deviations": approved_deviations,
+            "newer_source_entries": newer_source_entries,
             "missing_source_ids": missing_source_ids,
             "source_unmatched_vault_ids": source_unmatched,
         },
