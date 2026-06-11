@@ -32,14 +32,14 @@
           <a class="card-link" href="/ui/movies/{{ movie.id }}">
             <div class="card-media">
               {% if movie.poster_url %}
-              <img class="poster" src="{{ movie.poster_url }}" alt="{{ movie.title }} poster" loading="lazy" />
+              <img class="poster" src="{{ movie.poster_url }}" alt="{{ movie.title | display_title }} poster" loading="lazy" />
               {% else %}
               <div class="poster poster--empty {{ movie.poster_theme or 'poster-theme-default' }}" aria-hidden="true">🍿</div>
               {% endif %}
             </div>
             <div class="card-body">
               <div class="card-title-row">
-                <h2 class="card-title">{{ movie.title }}</h2>
+                <h2 class="card-title">{{ movie.title | display_title }}</h2>
               </div>
               {% set genre_labels = movie.genre_display if movie.genre_display is defined and movie.genre_display else [] %}
               {% if not genre_labels and movie.genres %}

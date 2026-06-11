@@ -55,7 +55,7 @@
           class="{% if movie.flagged %}is-flagged{% endif %}"
         >
           <td data-label="Title">
-            <a href="/ui/movies/{{ movie.id }}" data-movie-detail-link data-event-context="library_list">{{ movie.title }}</a>
+            <a href="/ui/movies/{{ movie.id }}" data-movie-detail-link data-event-context="library_list">{{ movie.title | display_title }}</a>
             {% if movie.flagged %}<span class="table-tag table-tag--review">Needs review</span>{% endif %}
             {% if order_by == 'flic' %}
             {% set table_rank = flic_rank_offset + loop.index %}

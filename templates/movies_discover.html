@@ -27,12 +27,12 @@
           <a class="poster-banner__link" href="/ui/movies/{{ movie.id }}?spotlight=1" data-movie-detail-link data-movie-id="{{ movie.id }}" data-event-context="daily_spotlight">
             <div class="poster-banner__poster">
               {% if movie.poster_url %}
-              <img class="poster-banner__image" src="{{ movie.poster_url }}" alt="{{ movie.title }} poster" loading="lazy" />
+              <img class="poster-banner__image" src="{{ movie.poster_url }}" alt="{{ movie.title | display_title }} poster" loading="lazy" />
               {% else %}
               <div class="poster-banner__image poster-banner__image--empty {{ movie.poster_theme or 'poster-theme-default' }}" aria-hidden="true">966</div>
               {% endif %}
               <div class="poster-banner__meta" aria-hidden="true">
-                <span class="poster-banner__meta-title">{{ movie.title }}</span>
+                <span class="poster-banner__meta-title">{{ movie.title | display_title }}</span>
                 <span class="poster-banner__meta-subtitle">{{ movie.year or '' }}</span>
               </div>
             </div>
@@ -56,7 +56,7 @@
         {% for movie in [pairing.primary, pairing.secondary] %}
         <a href="/ui/movies/{{ movie.id }}" class="discover-pairing__poster-link" data-movie-detail-link data-movie-id="{{ movie.id }}" data-event-context="perfect_pairing">
           {% if movie.poster_url %}
-          <img src="{{ movie.poster_url }}" alt="{{ movie.title }} poster" loading="lazy" />
+          <img src="{{ movie.poster_url }}" alt="{{ movie.title | display_title }} poster" loading="lazy" />
           {% else %}
           <div class="poster poster--empty {{ movie.poster_theme or 'poster-theme-default' }}" aria-hidden="true">966</div>
           {% endif %}
@@ -65,7 +65,7 @@
       </div>
       <div class="discover-pairing__meta">
         <span class="chip chip-flic">Double Feature</span>
-        <h3>{{ pairing.primary.title }} + {{ pairing.secondary.title }}</h3>
+        <h3>{{ pairing.primary.title | display_title }} + {{ pairing.secondary.title | display_title }}</h3>
         <p>{{ pairing.theme_label or "Two picks that travel well together." }}</p>
         <div class="discover-pairing__runtime">{{ pairing.total_runtime }} total</div>
       </div>
@@ -89,12 +89,12 @@
         <a href="/ui/movies/{{ movie.id }}" data-movie-detail-link data-event-context="{{ rail.key }}">
           <div class="discover-rail-card__poster">
             {% if movie.poster_url %}
-            <img src="{{ movie.poster_url }}" alt="{{ movie.title }} poster" loading="lazy" />
+            <img src="{{ movie.poster_url }}" alt="{{ movie.title | display_title }} poster" loading="lazy" />
             {% else %}
             <div class="poster poster--empty {{ movie.poster_theme or 'poster-theme-default' }}" aria-hidden="true">966</div>
             {% endif %}
           </div>
-          <h3>{{ movie.title }}</h3>
+          <h3>{{ movie.title | display_title }}</h3>
           <p>
             <span>{{ movie.year or '—' }}</span>
             {% if movie.runtime %}<span>{{ movie.runtime }} min</span>{% endif %}
@@ -107,8 +107,8 @@
             data-preference-button
             data-preference-type="like"
             data-movie-id="{{ movie.id }}"
-            data-movie-title="{{ movie.title }}"
-            aria-label="{{ 'Unlike' if movie.liked else 'Like' }} {{ movie.title }}"
+            data-movie-title="{{ movie.title | display_title }}"
+            aria-label="{{ 'Unlike' if movie.liked else 'Like' }} {{ movie.title | display_title }}"
             title="Like"
             aria-pressed="{{ 'true' if movie.liked else 'false' }}"
           >
@@ -122,8 +122,8 @@
             data-preference-button
             data-preference-type="watchlist"
             data-movie-id="{{ movie.id }}"
-            data-movie-title="{{ movie.title }}"
-            aria-label="{{ 'Remove' if movie.watchlist else 'Add' }} {{ movie.title }} {{ 'from' if movie.watchlist else 'to' }} watchlist"
+            data-movie-title="{{ movie.title | display_title }}"
+            aria-label="{{ 'Remove' if movie.watchlist else 'Add' }} {{ movie.title | display_title }} {{ 'from' if movie.watchlist else 'to' }} watchlist"
             title="Watchlist"
             aria-pressed="{{ 'true' if movie.watchlist else 'false' }}"
           >

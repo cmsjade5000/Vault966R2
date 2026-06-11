@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}{{ movie.title if movie else "Movie not found" }} · Vault 966{% endblock %}
+{% block title %}{{ movie.title | display_title if movie else "Movie not found" }} · Vault 966{% endblock %}
 {% block head %}
 <link rel="stylesheet" href="{{ url_for('static', path='css/movies.css') }}" />
 <link rel="stylesheet" href="{{ url_for('static', path='css/movie_detail.css') }}" />
@@ -19,7 +19,7 @@
       <div class="poster-shell">
         <div class="poster-frame{% if spotlight_reason %} poster-frame--spotlight{% endif %}">
           {% if movie.poster_url %}
-          <img class="poster" src="{{ movie.poster_url }}" alt="{{ movie.title }} poster" />
+          <img class="poster" src="{{ movie.poster_url }}" alt="{{ movie.title | display_title }} poster" />
           {% else %}
           <div class="poster poster--empty {{ movie.poster_theme or 'poster-theme-default' }}" aria-hidden="true">🍿</div>
           {% endif %}
@@ -33,7 +33,7 @@
         </div>
         {% endif %}
         <div class="header-meta">
-          <h1>{{ movie.title }}</h1>
+          <h1>{{ movie.title | display_title }}</h1>
         </div>
         <div class="hero-tags">
           <button
@@ -301,13 +301,13 @@
           <a class="detail-rec-card__link" href="/ui/movies/{{ rec.id }}">
             <div class="detail-rec-card__poster">
               {% if rec.poster_url %}
-              <img src="{{ rec.poster_url }}" alt="{{ rec.title }} poster" loading="lazy" />
+              <img src="{{ rec.poster_url }}" alt="{{ rec.title | display_title }} poster" loading="lazy" />
               {% else %}
               <div class="poster poster--empty {{ rec.poster_theme or 'poster-theme-default' }}" aria-hidden="true">🍿</div>
               {% endif %}
             </div>
             <div class="detail-rec-card__meta">
-              <h3>{{ rec.title }}</h3>
+              <h3>{{ rec.title | display_title }}</h3>
               <span>{{ rec.year or "—" }}</span>
             </div>
           </a>
@@ -349,7 +349,7 @@
     <section class="section-card section-card--wide detail-recs detail-recs--more">
       <header class="detail-recs__header">
         <h2>
-          {% if movie_liked %}Because you liked {{ movie.title }}{% else %}More like this{% endif %}
+          {% if movie_liked %}Because you liked {{ movie.title | display_title }}{% else %}More like this{% endif %}
         </h2>
         <p>Similar energy from the vault, ready for the queue.</p>
       </header>
@@ -368,13 +368,13 @@
           <a class="detail-rec-card__link" href="/ui/movies/{{ rec.id }}">
             <div class="detail-rec-card__poster">
               {% if rec.poster_url %}
-              <img src="{{ rec.poster_url }}" alt="{{ rec.title }} poster" loading="lazy" />
+              <img src="{{ rec.poster_url }}" alt="{{ rec.title | display_title }} poster" loading="lazy" />
               {% else %}
               <div class="poster poster--empty {{ rec.poster_theme or 'poster-theme-default' }}" aria-hidden="true">🍿</div>
               {% endif %}
             </div>
             <div class="detail-rec-card__meta">
-              <h3>{{ rec.title }}</h3>
+              <h3>{{ rec.title | display_title }}</h3>
               <span>{{ rec.year or "—" }}</span>
             </div>
           </a>
@@ -418,7 +418,7 @@
         class="edit-toggle"
         data-edit-button
         data-movie-id="{{ movie.id }}"
-        aria-label="Edit {{ movie.title }}"
+        aria-label="Edit {{ movie.title | display_title }}"
       >
         Edit
       </button>
