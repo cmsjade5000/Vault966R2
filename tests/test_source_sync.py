@@ -394,6 +394,9 @@ def test_review_page_always_shows_direct_and_search_links(client: TestClient, db
     response = client.get("/ui/review?view=differences")
 
     assert response.status_code == 200
+    assert '<details class="research-links">' in response.text
+    assert '<details class="research-links" open>' not in response.text
+    assert "External sources" in response.text
     assert "Open current TMDB" in response.text
     assert "https://www.themoviedb.org/movie/78" in response.text
     assert "Open current IMDb" in response.text

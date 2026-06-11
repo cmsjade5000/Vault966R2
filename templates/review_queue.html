@@ -88,34 +88,42 @@
         </div>
 
         {% if item.research_links %}
-          <section class="research-links" aria-labelledby="research-links-title">
-            <div>
-              <h3 id="research-links-title">Check external sources</h3>
-              <p>Attached links show the current Vault identity. Searches use “{{ item.research_links.search_title }}” and the source details.</p>
-            </div>
-            {% if item.research_links.current %}
+          <details class="research-links">
+            <summary>
+              <span>
+                <strong>External sources</strong>
+                <small>TMDB and IMDb links</small>
+              </span>
+            </summary>
+            <div class="research-links__body">
+              <div>
+                <h3>Check external sources</h3>
+                <p>Attached links show the current Vault identity. Searches use “{{ item.research_links.search_title }}” and the source details.</p>
+              </div>
+              {% if item.research_links.current %}
+                <div class="research-link-group">
+                  <span>Current Vault identity</span>
+                  <div>
+                    {% for link in item.research_links.current %}
+                      <a class="research-link research-link--{{ link.provider }}" href="{{ link.url }}" target="_blank" rel="noopener noreferrer">
+                        {{ link.label }} <span class="sr-only">(opens in new tab)</span>
+                      </a>
+                    {% endfor %}
+                  </div>
+                </div>
+              {% endif %}
               <div class="research-link-group">
-                <span>Current Vault identity</span>
+                <span>Fresh source search</span>
                 <div>
-                  {% for link in item.research_links.current %}
+                  {% for link in item.research_links.searches %}
                     <a class="research-link research-link--{{ link.provider }}" href="{{ link.url }}" target="_blank" rel="noopener noreferrer">
                       {{ link.label }} <span class="sr-only">(opens in new tab)</span>
                     </a>
                   {% endfor %}
                 </div>
               </div>
-            {% endif %}
-            <div class="research-link-group">
-              <span>Fresh source search</span>
-              <div>
-                {% for link in item.research_links.searches %}
-                  <a class="research-link research-link--{{ link.provider }}" href="{{ link.url }}" target="_blank" rel="noopener noreferrer">
-                    {{ link.label }} <span class="sr-only">(opens in new tab)</span>
-                  </a>
-                {% endfor %}
-              </div>
             </div>
-          </section>
+          </details>
         {% endif %}
 
         {% if item.conflicts %}

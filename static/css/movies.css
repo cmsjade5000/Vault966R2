@@ -2371,10 +2371,63 @@ body.filters-open {
   background: rgba(2, 6, 23, 0.36);
   border: 1px solid rgba(148, 163, 184, 0.2);
   border-radius: 6px;
+  margin-top: 1.5rem;
+}
+
+.research-links > summary {
+  align-items: center;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  list-style: none;
+  min-height: 3.25rem;
+  padding: 0.75rem 1rem;
+}
+
+.research-links > summary::-webkit-details-marker {
+  display: none;
+}
+
+.research-links > summary::after {
+  border-bottom: 2px solid currentColor;
+  border-right: 2px solid currentColor;
+  color: var(--flic-muted);
+  content: "";
+  height: 0.5rem;
+  margin-right: 0.2rem;
+  transform: rotate(45deg);
+  transition: transform 140ms ease;
+  width: 0.5rem;
+}
+
+.research-links[open] > summary::after {
+  transform: rotate(225deg);
+}
+
+.research-links > summary:hover,
+.research-links > summary:focus-visible {
+  background: rgba(59, 130, 246, 0.08);
+}
+
+.research-links > summary span {
+  display: grid;
+  gap: 0.1rem;
+}
+
+.research-links > summary strong {
+  font-size: 0.9rem;
+}
+
+.research-links > summary small {
+  color: var(--flic-muted);
+  font-size: 0.75rem;
+}
+
+.research-links__body {
+  border-top: 1px solid rgba(148, 163, 184, 0.16);
   display: grid;
   gap: 1rem;
   grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr) minmax(0, 1fr);
-  margin-top: 1.5rem;
   padding: 1rem;
 }
 
@@ -2594,7 +2647,7 @@ body.filters-open {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .research-links {
+  .research-links__body {
     grid-template-columns: 1fr;
   }
 
