@@ -291,6 +291,97 @@ def test_field_decisions_preserve_full_history(client: TestClient, db_session) -
     assert decisions[1].resolved_at is not None
 
 
+def test_bulk_accept_uses_source_for_all_matched_differences(
+    client: TestClient, db_session
+) -> None:
+    for index, movie in enumerate(db_session.query(Movie).order_by(Movie.id), start=1):
+        movie.vault_id = f"V{index:04d}"
+    db_session.commit()
+    snapshot_id = _upload_and_confirm(
+        client,
+        _csv(
+            "Blade Runner,1:57:00,Ridley Scott,1983,Sci-Fi,PG,6/25/82,1",
+            "The Matrix,2:16:00,Lana Wachowski & Lilly Wachowski,2000,Action,R,3/31/99,1",
+            "Unknown Match,3:00:00,Someone Else,2024,Drama,PG,1/1/24,1",
+        ),
+    )
+    blade_match = (
+        db_session.query(SourceReconciliationMatch)
+        .join(SourceReconciliationMatch.source_row)
+        .filter_by(snapshot_id=snapshot_id, title="Blade Runner")
+        .one()
+    )
+    client.post(
+        f"/ui/review/source-row/{blade_match.source_row_id}/field/year/needs_research"
+    )
+
+    response = client.post(
+        "/ui/review/source-accept-all",
+        follow_redirects=False,
+    )
+
+    assert response.status_code == 303
+    assert "Applied%204%20source%20values%20across%202%20Vault%20entries" in response.headers[
+        "location"
+    ]
+    db_session.expire_all()
+    blade = db_session.query(Movie).filter(Movie.title == "Blade Runner").one()
+    matrix = db_session.query(Movie).filter(Movie.title == "The Matrix").one()
+    assert blade.year == 1983
+    assert matrix.year == 2000
+    assert blade.vault_id == "V0001"
+    assert matrix.vault_id == "V0002"
+    decisions = (
+        db_session.query(SourceFieldDecision)
+        .filter(SourceFieldDecision.decision == "use_source")
+        .all()
+    )
+    assert {decision.field_name for decision in decisions} == {"year", "director"}
+    review = client.get("/ui/review?view=differences")
+    assert "Differences queue is clear" in review.text
+    assert "Ambiguous" in review.text
+
+
+def test_bulk_accept_skips_conflicting_rows_for_the_same_movie_field(
+    client: TestClient, db_session
+) -> None:
+    snapshot_id = _upload_and_confirm(
+        client,
+        _csv(
+            "Blade Runner,1:57:00,Ridley Scott,1983,Sci-Fi,PG,6/25/82,1",
+            "Blade Runner,1:57:00,Ridley Scott,1982,Sci-Fi,PG,6/25/82,1",
+        ),
+    )
+
+    response = client.post(
+        "/ui/review/source-accept-all",
+        follow_redirects=False,
+    )
+
+    assert response.status_code == 303
+    assert "Applied%201%20source%20values" in response.headers["location"]
+    assert "Left%201%20conflicting%20source%20value%20in%20review" in response.headers[
+        "location"
+    ]
+    db_session.expire_all()
+    assert db_session.get(Movie, 1).year == 1982
+    decisions = (
+        db_session.query(SourceFieldDecision)
+        .filter(SourceFieldDecision.decision == "use_source")
+        .all()
+    )
+    assert {decision.field_name for decision in decisions} == {"director"}
+    assert (
+        db_session.query(SourceReconciliationMatch)
+        .join(SourceReconciliationMatch.source_row)
+        .filter_by(snapshot_id=snapshot_id)
+        .count()
+        == 2
+    )
+    review = client.get("/ui/review?view=differences")
+    assert "Accept all source values" not in review.text
+
+
 def test_review_page_always_shows_direct_and_search_links(client: TestClient, db_session) -> None:
     movie = db_session.get(Movie, 1)
     movie.vault_id = "V0001"

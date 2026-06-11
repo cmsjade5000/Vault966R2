@@ -2332,6 +2332,34 @@ body.filters-open {
   color: var(--flic-text);
 }
 
+.review-bulk-action {
+  align-items: center;
+  background: rgba(37, 99, 235, 0.1);
+  border: 1px solid rgba(96, 165, 250, 0.35);
+  border-radius: 6px;
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+  margin: 0 0 1rem;
+  padding: 0.9rem 1rem;
+}
+
+.review-bulk-action h2 {
+  font-size: 1rem;
+  margin: 0 0 0.2rem;
+}
+
+.review-bulk-action p {
+  color: var(--flic-muted);
+  font-size: 0.85rem;
+  margin: 0;
+}
+
+.review-bulk-action form {
+  flex: 0 0 auto;
+  margin: 0;
+}
+
 .review-card {
   background: rgba(15, 23, 42, 0.72);
   border: 1px solid rgba(148, 163, 184, 0.22);
@@ -2551,6 +2579,15 @@ body.filters-open {
   .review-message--action {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .review-bulk-action {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .review-bulk-action button {
+    width: 100%;
   }
 
   .review-tabs {

@@ -1,12 +1,12 @@
 {
   "schema_version": 2,
-  "generated_at": "2026-06-10T17:40:44.833461+00:00",
+  "generated_at": "2026-06-11T12:47:10.236360+00:00",
   "summary": {
     "movie_count": 1012,
     "structural_issue_count": 0,
-    "content_review_issue_count": 133,
+    "content_review_issue_count": 134,
     "source_drift_count": 0,
-    "approved_source_deviation_count": 125,
+    "approved_source_deviation_count": 257,
     "artwork_enrichment_count": 744,
     "newer_source_entry_count": 43,
     "missing_source_id_count": 0,
@@ -14,10 +14,10 @@
     "healthy": true,
     "review_required": true
   },
-  "collection_fingerprint": "92c42df029e330551024cb94ee4e4247e7f7049ad253a6b5c3129349877bb9fb",
+  "collection_fingerprint": "b08a7f44e803cb072c79d9228927f6e31795cfe95064e1b3e45400ecf5364bc8",
   "field_coverage": {
     "year": 1003,
-    "runtime": 984,
+    "runtime": 986,
     "plot": 960,
     "poster_url": 745,
     "certificate": 813,
@@ -74,6 +74,12 @@
         "title": "Footloose (1984)",
         "database_year": 2011,
         "embedded_year": 1984
+      },
+      {
+        "movie_id": 294,
+        "title": "Her (2013)",
+        "database_year": 2014,
+        "embedded_year": 2013
       },
       {
         "movie_id": 335,
@@ -735,6 +741,88 @@
         }
       },
       {
+        "movie_id": 13,
+        "vault_id": "V0013",
+        "title": "3:10 to Yuma",
+        "differences": {
+          "year": {
+            "source": 1957,
+            "database": 2007,
+            "decision_id": 385,
+            "source_snapshot_id": 1
+          },
+          "directors": {
+            "source": [
+              "Delmer Daves"
+            ],
+            "database": [
+              "James Mangold"
+            ],
+            "decision_id": 386,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
+        "movie_id": 15,
+        "vault_id": "V0015",
+        "title": "47 Ronin",
+        "differences": {
+          "runtime": {
+            "source": 128,
+            "database": 119,
+            "decision_id": 387,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
+        "movie_id": 17,
+        "vault_id": "V0017",
+        "title": "A Christmas Story",
+        "differences": {
+          "year": {
+            "source": 2019,
+            "database": 1983,
+            "decision_id": 206,
+            "source_snapshot_id": 1
+          },
+          "directors": {
+            "source": [
+              "Michelle Johnston"
+            ],
+            "database": [
+              "Bob Clark"
+            ],
+            "decision_id": 207,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
+        "movie_id": 20,
+        "vault_id": "V0020",
+        "title": "A Ghost Story",
+        "differences": {
+          "year": {
+            "source": 1990,
+            "database": 2017,
+            "decision_id": 244,
+            "source_snapshot_id": 1
+          },
+          "directors": {
+            "source": [
+              "Tony Ching Siu-Tung"
+            ],
+            "database": [
+              "David Lowery"
+            ],
+            "decision_id": 245,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
         "movie_id": 26,
         "vault_id": "V0026",
         "title": "A Million Ways to Die In the West (Unrated)",
@@ -866,6 +954,32 @@
         }
       },
       {
+        "movie_id": 60,
+        "vault_id": "V0060",
+        "title": "Bad Words",
+        "differences": {
+          "year": {
+            "source": 2013,
+            "database": 2014,
+            "decision_id": 186,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
+        "movie_id": 62,
+        "vault_id": "V0062",
+        "title": "Basic Instinct",
+        "differences": {
+          "year": {
+            "source": 1992,
+            "database": 1997,
+            "decision_id": 187,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
         "movie_id": 68,
         "vault_id": "V0068",
         "title": "Beauty and the Beast (2017)",
@@ -874,6 +988,89 @@
             "source": null,
             "database": 131,
             "decision_id": 13,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
+        "movie_id": 79,
+        "vault_id": "V0079",
+        "title": "Blair Witch",
+        "differences": {
+          "year": {
+            "source": 1999,
+            "database": 2016,
+            "decision_id": 188,
+            "source_snapshot_id": 1
+          },
+          "directors": {
+            "source": [
+              "Daniel Myrick",
+              "Eduardo Sánchez"
+            ],
+            "database": [
+              "Adam Wingard"
+            ],
+            "decision_id": 189,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
+        "movie_id": 81,
+        "vault_id": "V0081",
+        "title": "Blow",
+        "differences": {
+          "year": {
+            "source": 2001,
+            "database": 2014,
+            "decision_id": 190,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
+        "movie_id": 83,
+        "vault_id": "V0083",
+        "title": "Bombshell",
+        "differences": {
+          "year": {
+            "source": 1933,
+            "database": 2019,
+            "decision_id": 191,
+            "source_snapshot_id": 1
+          },
+          "directors": {
+            "source": [
+              "Victor Fleming"
+            ],
+            "database": [
+              "Jay Roach"
+            ],
+            "decision_id": 192,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
+        "movie_id": 84,
+        "vault_id": "V0084",
+        "title": "Book Club",
+        "differences": {
+          "year": {
+            "source": 2023,
+            "database": 2018,
+            "decision_id": 193,
+            "source_snapshot_id": 1
+          },
+          "directors": {
+            "source": [
+              "Carlos Alonso-Ojea"
+            ],
+            "database": [
+              "Bill Holderman"
+            ],
+            "decision_id": 194,
             "source_snapshot_id": 1
           }
         }
@@ -897,6 +1094,29 @@
               "Paul Feig"
             ],
             "decision_id": 131,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
+        "movie_id": 93,
+        "vault_id": "V0094",
+        "title": "Bullet Train",
+        "differences": {
+          "year": {
+            "source": 2025,
+            "database": 2022,
+            "decision_id": 195,
+            "source_snapshot_id": 1
+          },
+          "directors": {
+            "source": [
+              "Shinji Higuchi"
+            ],
+            "database": [
+              "David Leitch"
+            ],
+            "decision_id": 196,
             "source_snapshot_id": 1
           }
         }
@@ -948,6 +1168,88 @@
         }
       },
       {
+        "movie_id": 104,
+        "vault_id": "V0105",
+        "title": "Captive",
+        "differences": {
+          "year": {
+            "source": 2020,
+            "database": 2015,
+            "decision_id": 199,
+            "source_snapshot_id": 1
+          },
+          "directors": {
+            "source": [
+              "Savvas Christou"
+            ],
+            "database": [
+              "Jerry Jameson"
+            ],
+            "decision_id": 200,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
+        "movie_id": 112,
+        "vault_id": "V0113",
+        "title": "Charlie's Angels",
+        "differences": {
+          "year": {
+            "source": 2003,
+            "database": 2000,
+            "decision_id": 201,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
+        "movie_id": 115,
+        "vault_id": "V0116",
+        "title": "Child's Play",
+        "differences": {
+          "year": {
+            "source": 1972,
+            "database": 1999,
+            "decision_id": 202,
+            "source_snapshot_id": 1
+          },
+          "directors": {
+            "source": [
+              "Sidney Lumet"
+            ],
+            "database": [
+              "Tom Holland"
+            ],
+            "decision_id": 203,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
+        "movie_id": 116,
+        "vault_id": "V0117",
+        "title": "Christine",
+        "differences": {
+          "year": {
+            "source": 1958,
+            "database": 1983,
+            "decision_id": 204,
+            "source_snapshot_id": 1
+          },
+          "directors": {
+            "source": [
+              "Pierre Gaspard-Huit"
+            ],
+            "database": [
+              "John Carpenter"
+            ],
+            "decision_id": 205,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
         "movie_id": 118,
         "vault_id": "V0119",
         "title": "Cinderella (2015)",
@@ -966,6 +1268,29 @@
               "Kenneth Branagh"
             ],
             "decision_id": 134,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
+        "movie_id": 120,
+        "vault_id": "V0121",
+        "title": "Clue",
+        "differences": {
+          "year": {
+            "source": 2022,
+            "database": 1985,
+            "decision_id": 208,
+            "source_snapshot_id": 1
+          },
+          "directors": {
+            "source": [
+              "Casey Hushion"
+            ],
+            "database": [
+              "Jonathan Lynn"
+            ],
+            "decision_id": 209,
             "source_snapshot_id": 1
           }
         }
@@ -994,6 +1319,37 @@
         }
       },
       {
+        "movie_id": 132,
+        "vault_id": "V0133",
+        "title": "Crash",
+        "differences": {
+          "year": {
+            "source": 1996,
+            "database": 2005,
+            "decision_id": 210,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
+        "movie_id": 137,
+        "vault_id": "V0139",
+        "title": "Crypto",
+        "differences": {
+          "directors": {
+            "source": [
+              "John Stalberg Jr."
+            ],
+            "database": [
+              "John Stalberg",
+              "Jr."
+            ],
+            "decision_id": 211,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
         "movie_id": 148,
         "vault_id": "V0150",
         "title": "Death on the Nile (2022)",
@@ -1017,6 +1373,29 @@
         }
       },
       {
+        "movie_id": 152,
+        "vault_id": "V0154",
+        "title": "Deliver Us from Evil",
+        "differences": {
+          "year": {
+            "source": 1971,
+            "database": 2014,
+            "decision_id": 214,
+            "source_snapshot_id": 1
+          },
+          "directors": {
+            "source": [
+              "Joël Séria"
+            ],
+            "database": [
+              "Scott Derrickson"
+            ],
+            "decision_id": 215,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
         "movie_id": 156,
         "vault_id": "V0158",
         "title": "Die Hard 2: Die Harder",
@@ -1025,6 +1404,29 @@
             "source": null,
             "database": 123,
             "decision_id": 23,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
+        "movie_id": 158,
+        "vault_id": "V0160",
+        "title": "Dirty Dancing",
+        "differences": {
+          "year": {
+            "source": 2017,
+            "database": 1987,
+            "decision_id": 217,
+            "source_snapshot_id": 1
+          },
+          "directors": {
+            "source": [
+              "Wayne Blair"
+            ],
+            "database": [
+              "Emile Ardolino"
+            ],
+            "decision_id": 218,
             "source_snapshot_id": 1
           }
         }
@@ -1048,6 +1450,29 @@
               "Dan Mazer"
             ],
             "decision_id": 137,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
+        "movie_id": 163,
+        "vault_id": "V0165",
+        "title": "Doctor Sleep",
+        "differences": {
+          "year": {
+            "source": 2002,
+            "database": 2019,
+            "decision_id": 220,
+            "source_snapshot_id": 1
+          },
+          "directors": {
+            "source": [
+              "Nick Willing"
+            ],
+            "database": [
+              "Mike Flanagan"
+            ],
+            "decision_id": 221,
             "source_snapshot_id": 1
           }
         }
@@ -1087,6 +1512,45 @@
             "source": null,
             "database": 86,
             "decision_id": 28,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
+        "movie_id": 174,
+        "vault_id": "V0176",
+        "title": "Drugstore Cowboy",
+        "differences": {
+          "year": {
+            "source": 1989,
+            "database": 1999,
+            "decision_id": 222,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
+        "movie_id": 178,
+        "vault_id": "V0180",
+        "title": "Dune",
+        "differences": {
+          "runtime": {
+            "source": 137,
+            "database": 156,
+            "decision_id": 223,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
+        "movie_id": 182,
+        "vault_id": "V0184",
+        "title": "Earth Girls Are Easy",
+        "differences": {
+          "year": {
+            "source": 1988,
+            "database": 1989,
+            "decision_id": 224,
             "source_snapshot_id": 1
           }
         }
@@ -1138,6 +1602,46 @@
         }
       },
       {
+        "movie_id": 188,
+        "vault_id": "V0190",
+        "title": "ELLIS",
+        "differences": {
+          "directors": {
+            "source": [
+              "Nolan Cubero"
+            ],
+            "database": [
+              "JR"
+            ],
+            "decision_id": 225,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
+        "movie_id": 191,
+        "vault_id": "V0193",
+        "title": "Endless Love",
+        "differences": {
+          "runtime": {
+            "source": 104,
+            "database": 115,
+            "decision_id": 227,
+            "source_snapshot_id": 1
+          },
+          "directors": {
+            "source": [
+              "Franco Zeffirelli"
+            ],
+            "database": [
+              "Franco Zefferelli"
+            ],
+            "decision_id": 228,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
         "movie_id": 192,
         "vault_id": "V0194",
         "title": "Endless Love (2014)",
@@ -1154,6 +1658,42 @@
               "Shana Feste"
             ],
             "decision_id": 32,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
+        "movie_id": 195,
+        "vault_id": "V0197",
+        "title": "Escape Room",
+        "differences": {
+          "year": {
+            "source": 2017,
+            "database": 2019,
+            "decision_id": 229,
+            "source_snapshot_id": 1
+          },
+          "directors": {
+            "source": [
+              "Peter Dukes"
+            ],
+            "database": [
+              "Adam Robitel"
+            ],
+            "decision_id": 230,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
+        "movie_id": 196,
+        "vault_id": "V0198",
+        "title": "Escape Room: Tournament of Champions",
+        "differences": {
+          "runtime": {
+            "source": 88,
+            "database": 96,
+            "decision_id": 231,
             "source_snapshot_id": 1
           }
         }
@@ -1182,6 +1722,78 @@
         }
       },
       {
+        "movie_id": 200,
+        "vault_id": "V0202",
+        "title": "Evil Dead 2",
+        "differences": {
+          "year": {
+            "source": 1992,
+            "database": 1987,
+            "decision_id": 232,
+            "source_snapshot_id": 1
+          },
+          "directors": {
+            "source": [
+              "Izo Hashimoto"
+            ],
+            "database": [
+              "Sam Raimi"
+            ],
+            "decision_id": 233,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
+        "movie_id": 201,
+        "vault_id": "V0203",
+        "title": "Ex Machina",
+        "differences": {
+          "year": {
+            "source": 2007,
+            "database": 2015,
+            "decision_id": 234,
+            "source_snapshot_id": 1
+          },
+          "directors": {
+            "source": [
+              "Shinji Aramaki"
+            ],
+            "database": [
+              "Alex Garland"
+            ],
+            "decision_id": 235,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
+        "movie_id": 202,
+        "vault_id": "V0204",
+        "title": "Eye In the Sky",
+        "differences": {
+          "year": {
+            "source": 2015,
+            "database": 2016,
+            "decision_id": 236,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
+        "movie_id": 203,
+        "vault_id": "V0205",
+        "title": "Fantastic Beasts and Where to Find Them",
+        "differences": {
+          "year": {
+            "source": 2016,
+            "database": 2017,
+            "decision_id": 237,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
         "movie_id": 207,
         "vault_id": "V0209",
         "title": "Fast & Furious 6 (Extended Edition)",
@@ -1200,6 +1812,32 @@
               "Justin Lin"
             ],
             "decision_id": 142,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
+        "movie_id": 217,
+        "vault_id": "V0219",
+        "title": "Final Destination 3",
+        "differences": {
+          "year": {
+            "source": 2006,
+            "database": 2021,
+            "decision_id": 238,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
+        "movie_id": 223,
+        "vault_id": "V0225",
+        "title": "Flightplan",
+        "differences": {
+          "year": {
+            "source": 2005,
+            "database": 2006,
+            "decision_id": 239,
             "source_snapshot_id": 1
           }
         }
@@ -1246,6 +1884,30 @@
               "Sean S. Cunningham"
             ],
             "decision_id": 144,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
+        "movie_id": 235,
+        "vault_id": "V0237",
+        "title": "Frozen",
+        "differences": {
+          "year": {
+            "source": 2010,
+            "database": 2013,
+            "decision_id": 240,
+            "source_snapshot_id": 1
+          },
+          "directors": {
+            "source": [
+              "Adam Green"
+            ],
+            "database": [
+              "Chris Buck",
+              "Jennifer Lee"
+            ],
+            "decision_id": 241,
             "source_snapshot_id": 1
           }
         }
@@ -1321,6 +1983,29 @@
         }
       },
       {
+        "movie_id": 249,
+        "vault_id": "V0251",
+        "title": "Ghost in the Shell",
+        "differences": {
+          "year": {
+            "source": 1995,
+            "database": 2017,
+            "decision_id": 242,
+            "source_snapshot_id": 1
+          },
+          "directors": {
+            "source": [
+              "Mamoru Oshii"
+            ],
+            "database": [
+              "Rupert Sanders"
+            ],
+            "decision_id": 243,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
         "movie_id": 251,
         "vault_id": "V0253",
         "title": "Ghostbusters (2016)",
@@ -1334,6 +2019,29 @@
         }
       },
       {
+        "movie_id": 254,
+        "vault_id": "V0256",
+        "title": "Gladiator",
+        "differences": {
+          "year": {
+            "source": 1992,
+            "database": 2000,
+            "decision_id": 246,
+            "source_snapshot_id": 1
+          },
+          "directors": {
+            "source": [
+              "Rowdy Herrington"
+            ],
+            "database": [
+              "Ridley Scott"
+            ],
+            "decision_id": 247,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
         "movie_id": 258,
         "vault_id": "V0260",
         "title": "Godzilla (2014)",
@@ -1342,6 +2050,19 @@
             "source": null,
             "database": 123,
             "decision_id": 44,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
+        "movie_id": 261,
+        "vault_id": "V0263",
+        "title": "Good Will Hunting",
+        "differences": {
+          "year": {
+            "source": 1997,
+            "database": 1998,
+            "decision_id": 248,
             "source_snapshot_id": 1
           }
         }
@@ -1368,6 +2089,17 @@
             "source": null,
             "database": 106,
             "decision_id": 48,
+            "source_snapshot_id": 1
+          },
+          "directors": {
+            "source": [
+              "Sabrina Harfouche",
+              "Olivier Didier"
+            ],
+            "database": [
+              "David Gordon Green"
+            ],
+            "decision_id": 252,
             "source_snapshot_id": 1
           }
         }
@@ -1399,6 +2131,61 @@
         }
       },
       {
+        "movie_id": 282,
+        "vault_id": "V0284",
+        "title": "Hardcore Henry",
+        "differences": {
+          "year": {
+            "source": 2015,
+            "database": 2016,
+            "decision_id": 253,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
+        "movie_id": 293,
+        "vault_id": "V0296",
+        "title": "Hellboy",
+        "differences": {
+          "year": {
+            "source": 2004,
+            "database": 2019,
+            "decision_id": 254,
+            "source_snapshot_id": 1
+          },
+          "directors": {
+            "source": [
+              "Guillermo del Toro"
+            ],
+            "database": [
+              "Neil Marshall"
+            ],
+            "decision_id": 255,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
+        "movie_id": 294,
+        "vault_id": "V0297",
+        "title": "Her (2013)",
+        "differences": {
+          "year": {
+            "source": 2013,
+            "database": 2014,
+            "decision_id": 256,
+            "source_snapshot_id": 1
+          },
+          "runtime": {
+            "source": null,
+            "database": 126,
+            "decision_id": 257,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
         "movie_id": 295,
         "vault_id": "V0298",
         "title": "Hercules (2014)",
@@ -1407,6 +2194,75 @@
             "source": null,
             "database": 98,
             "decision_id": 51,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
+        "movie_id": 298,
+        "vault_id": "V0301",
+        "title": "High Life",
+        "differences": {
+          "year": {
+            "source": 2009,
+            "database": 2019,
+            "decision_id": 258,
+            "source_snapshot_id": 1
+          },
+          "directors": {
+            "source": [
+              "Gary Yates"
+            ],
+            "database": [
+              "Claire Denis"
+            ],
+            "decision_id": 259,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
+        "movie_id": 299,
+        "vault_id": "V0302",
+        "title": "Hocus Pocus",
+        "differences": {
+          "year": {
+            "source": 2022,
+            "database": 1993,
+            "decision_id": 260,
+            "source_snapshot_id": 1
+          },
+          "directors": {
+            "source": [
+              "Anne Fletcher"
+            ],
+            "database": [
+              "Kenny Ortega"
+            ],
+            "decision_id": 261,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
+        "movie_id": 301,
+        "vault_id": "V0304",
+        "title": "Holmes & Watson",
+        "differences": {
+          "year": {
+            "source": 2012,
+            "database": 2018,
+            "decision_id": 262,
+            "source_snapshot_id": 1
+          },
+          "directors": {
+            "source": [
+              "José Luis Garci"
+            ],
+            "database": [
+              "Etan Cohen"
+            ],
+            "decision_id": 263,
             "source_snapshot_id": 1
           }
         }
@@ -1443,6 +2299,32 @@
               "Steve Pink"
             ],
             "decision_id": 153,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
+        "movie_id": 308,
+        "vault_id": "V0312",
+        "title": "House Party",
+        "differences": {
+          "runtime": {
+            "source": 100,
+            "database": 104,
+            "decision_id": 264,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
+        "movie_id": 313,
+        "vault_id": "V0317",
+        "title": "I, Frankenstein",
+        "differences": {
+          "year": {
+            "source": 2014,
+            "database": 2017,
+            "decision_id": 266,
             "source_snapshot_id": 1
           }
         }
@@ -1529,6 +2411,99 @@
             "database": 135,
             "decision_id": 66,
             "source_snapshot_id": 1
+          },
+          "directors": {
+            "source": [
+              "Osman Moustafa"
+            ],
+            "database": [
+              "Andy Muschietti"
+            ],
+            "decision_id": 270,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
+        "movie_id": 343,
+        "vault_id": "V0347",
+        "title": "It's a Wonderful Life",
+        "differences": {
+          "year": {
+            "source": 1946,
+            "database": 1947,
+            "decision_id": 271,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
+        "movie_id": 351,
+        "vault_id": "V0355",
+        "title": "Jigsaw",
+        "differences": {
+          "year": {
+            "source": 1962,
+            "database": 2017,
+            "decision_id": 272,
+            "source_snapshot_id": 1
+          },
+          "directors": {
+            "source": [
+              "Val Guest"
+            ],
+            "database": [
+              "The Spierig Brothers"
+            ],
+            "decision_id": 273,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
+        "movie_id": 358,
+        "vault_id": "V0362",
+        "title": "Joyeux Noel",
+        "differences": {
+          "year": {
+            "source": 2005,
+            "database": 2006,
+            "decision_id": 274,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
+        "movie_id": 364,
+        "vault_id": "V0368",
+        "title": "Jurassic Park III",
+        "differences": {
+          "directors": {
+            "source": [
+              "Laurent Bouzereau"
+            ],
+            "database": [
+              "Joe Johnston"
+            ],
+            "decision_id": 275,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
+        "movie_id": 367,
+        "vault_id": "V0371",
+        "title": "Jurassic World: Fallen Kingdom",
+        "differences": {
+          "directors": {
+            "source": [
+              "J.A. Bayona"
+            ],
+            "database": [
+              "Juan Antonio Bayona"
+            ],
+            "decision_id": 276,
+            "source_snapshot_id": 1
           }
         }
       },
@@ -1559,6 +2534,29 @@
         }
       },
       {
+        "movie_id": 384,
+        "vault_id": "V0388",
+        "title": "Labyrinth",
+        "differences": {
+          "year": {
+            "source": 2024,
+            "database": 1986,
+            "decision_id": 279,
+            "source_snapshot_id": 1
+          },
+          "directors": {
+            "source": [
+              "Ella Crane"
+            ],
+            "database": [
+              "Jim Henson"
+            ],
+            "decision_id": 280,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
         "movie_id": 389,
         "vault_id": "V0393",
         "title": "Legally Blonde 2: Red, White and Blonde",
@@ -1567,6 +2565,19 @@
             "source": null,
             "database": 95,
             "decision_id": 69,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
+        "movie_id": 396,
+        "vault_id": "V0400",
+        "title": "Lights Out",
+        "differences": {
+          "year": {
+            "source": 2013,
+            "database": 2016,
+            "decision_id": 281,
             "source_snapshot_id": 1
           }
         }
@@ -1608,6 +2619,42 @@
         }
       },
       {
+        "movie_id": 407,
+        "vault_id": "V0411",
+        "title": "Long Shot",
+        "differences": {
+          "year": {
+            "source": 2017,
+            "database": 2019,
+            "decision_id": 286,
+            "source_snapshot_id": 1
+          },
+          "directors": {
+            "source": [
+              "Jacob LaMendola"
+            ],
+            "database": [
+              "Jonathan Levine"
+            ],
+            "decision_id": 287,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
+        "movie_id": 412,
+        "vault_id": "V0416",
+        "title": "M3GAN",
+        "differences": {
+          "year": {
+            "source": 2022,
+            "database": 2023,
+            "decision_id": 291,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
         "movie_id": 413,
         "vault_id": "V0417",
         "title": "Ma (2019)",
@@ -1624,6 +2671,48 @@
               "Tate Taylor"
             ],
             "decision_id": 77,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
+        "movie_id": 414,
+        "vault_id": "V0418",
+        "title": "Mad Max",
+        "differences": {
+          "year": {
+            "source": 1979,
+            "database": 1980,
+            "decision_id": 292,
+            "source_snapshot_id": 1
+          },
+          "runtime": {
+            "source": 88,
+            "database": 93,
+            "decision_id": 293,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
+        "movie_id": 420,
+        "vault_id": "V0424",
+        "title": "Mama",
+        "differences": {
+          "year": {
+            "source": 2025,
+            "database": 2013,
+            "decision_id": 294,
+            "source_snapshot_id": 1
+          },
+          "directors": {
+            "source": [
+              "Adi Garin"
+            ],
+            "database": [
+              "Andy Muschietti"
+            ],
+            "decision_id": 295,
             "source_snapshot_id": 1
           }
         }
@@ -1665,6 +2754,55 @@
         }
       },
       {
+        "movie_id": 424,
+        "vault_id": "V0428",
+        "title": "Manhunter",
+        "differences": {
+          "year": {
+            "source": 1974,
+            "database": 1986,
+            "decision_id": 296,
+            "source_snapshot_id": 1
+          },
+          "directors": {
+            "source": [
+              "Walter Grauman"
+            ],
+            "database": [
+              "Michael Mann"
+            ],
+            "decision_id": 297,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
+        "movie_id": 425,
+        "vault_id": "V0429",
+        "title": "Maps to the Stars",
+        "differences": {
+          "year": {
+            "source": 2014,
+            "database": 2015,
+            "decision_id": 298,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
+        "movie_id": 432,
+        "vault_id": "V0436",
+        "title": "Memento",
+        "differences": {
+          "year": {
+            "source": 2000,
+            "database": 2001,
+            "decision_id": 299,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
         "movie_id": 434,
         "vault_id": "V0438",
         "title": "Men In Black 3",
@@ -1691,6 +2829,36 @@
         }
       },
       {
+        "movie_id": 440,
+        "vault_id": "V0444",
+        "title": "Misery",
+        "differences": {
+          "directors": {
+            "source": [
+              "Rob Reiner"
+            ],
+            "database": [
+              "Stephen King"
+            ],
+            "decision_id": 300,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
+        "movie_id": 441,
+        "vault_id": "V0445",
+        "title": "Miss Congeniality",
+        "differences": {
+          "year": {
+            "source": 2000,
+            "database": 2001,
+            "decision_id": 301,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
         "movie_id": 442,
         "vault_id": "V0446",
         "title": "Miss Congeniality 2: Armed and Fabulous",
@@ -1704,6 +2872,46 @@
         }
       },
       {
+        "movie_id": 449,
+        "vault_id": "V0453",
+        "title": "Monsters, Inc.",
+        "differences": {
+          "directors": {
+            "source": [
+              "Pete Docter"
+            ],
+            "database": [
+              "Pixar"
+            ],
+            "decision_id": 302,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
+        "movie_id": 451,
+        "vault_id": "V0455",
+        "title": "mother!",
+        "differences": {
+          "year": {
+            "source": 2018,
+            "database": 2017,
+            "decision_id": 303,
+            "source_snapshot_id": 1
+          },
+          "directors": {
+            "source": [
+              "Jo Tae-ho"
+            ],
+            "database": [
+              "Darren Aronofsky"
+            ],
+            "decision_id": 304,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
         "movie_id": 452,
         "vault_id": "V0456",
         "title": "Mr. & Mrs. Smith (2005)",
@@ -1712,6 +2920,47 @@
             "source": null,
             "database": 120,
             "decision_id": 84,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
+        "movie_id": 461,
+        "vault_id": "V0465",
+        "title": "Needful Things",
+        "differences": {
+          "directors": {
+            "source": [
+              "Fraser Clarke Heston"
+            ],
+            "database": [
+              "Stephen King"
+            ],
+            "decision_id": 305,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
+        "movie_id": 462,
+        "vault_id": "V0466",
+        "title": "Neighbors",
+        "differences": {
+          "year": {
+            "source": 1920,
+            "database": 2014,
+            "decision_id": 306,
+            "source_snapshot_id": 1
+          },
+          "directors": {
+            "source": [
+              "Edward F. Cline",
+              "Buster Keaton"
+            ],
+            "database": [
+              "Nicholas Stoller"
+            ],
+            "decision_id": 307,
             "source_snapshot_id": 1
           }
         }
@@ -1735,6 +2984,52 @@
               "Guillermo del Toro"
             ],
             "decision_id": 166,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
+        "movie_id": 471,
+        "vault_id": "V0475",
+        "title": "Non-Stop",
+        "differences": {
+          "year": {
+            "source": 2015,
+            "database": 2014,
+            "decision_id": 309,
+            "source_snapshot_id": 1
+          },
+          "directors": {
+            "source": [
+              "Dan Chișu"
+            ],
+            "database": [
+              "Jaume Collet-Serra"
+            ],
+            "decision_id": 310,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
+        "movie_id": 473,
+        "vault_id": "V0477",
+        "title": "Norm of the North",
+        "differences": {
+          "year": {
+            "source": 2018,
+            "database": 2016,
+            "decision_id": 311,
+            "source_snapshot_id": 1
+          },
+          "directors": {
+            "source": [
+              "Tim Maltby"
+            ],
+            "database": [
+              "Trevor Wall"
+            ],
+            "decision_id": 312,
             "source_snapshot_id": 1
           }
         }
@@ -1779,6 +3074,29 @@
         }
       },
       {
+        "movie_id": 496,
+        "vault_id": "V0500",
+        "title": "Parasite",
+        "differences": {
+          "year": {
+            "source": 1982,
+            "database": 2019,
+            "decision_id": 316,
+            "source_snapshot_id": 1
+          },
+          "directors": {
+            "source": [
+              "Charles Band"
+            ],
+            "database": [
+              "Bong Joon Ho"
+            ],
+            "decision_id": 317,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
         "movie_id": 497,
         "vault_id": "V0501",
         "title": "Passengers (2016)",
@@ -1797,6 +3115,19 @@
               "Morten Tyldum"
             ],
             "decision_id": 168,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
+        "movie_id": 500,
+        "vault_id": "V0504",
+        "title": "Pay It Forward",
+        "differences": {
+          "year": {
+            "source": 2000,
+            "database": 2001,
+            "decision_id": 318,
             "source_snapshot_id": 1
           }
         }
@@ -1864,6 +3195,69 @@
         }
       },
       {
+        "movie_id": 528,
+        "vault_id": "V0532",
+        "title": "Puss In Boots",
+        "differences": {
+          "year": {
+            "source": 2012,
+            "database": 2011,
+            "decision_id": 319,
+            "source_snapshot_id": 1
+          },
+          "directors": {
+            "source": [
+              "Raman Hui Shing-Ngai"
+            ],
+            "database": [
+              "Chris Miller"
+            ],
+            "decision_id": 320,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
+        "movie_id": 530,
+        "vault_id": "V0534",
+        "title": "Radio",
+        "differences": {
+          "directors": {
+            "source": [
+              "Michael Tollin"
+            ],
+            "database": [
+              "Mike Tollin"
+            ],
+            "decision_id": 321,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
+        "movie_id": 534,
+        "vault_id": "V0538",
+        "title": "Rambo: First Blood",
+        "differences": {
+          "year": {
+            "source": 1985,
+            "database": 1982,
+            "decision_id": 322,
+            "source_snapshot_id": 1
+          },
+          "directors": {
+            "source": [
+              "George P. Cosmatos"
+            ],
+            "database": [
+              "Ted Kotcheff"
+            ],
+            "decision_id": 323,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
         "movie_id": 536,
         "vault_id": "V0541",
         "title": "Ran (1985)",
@@ -1872,6 +3266,24 @@
             "source": null,
             "database": 161,
             "decision_id": 95,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
+        "movie_id": 538,
+        "vault_id": "V0543",
+        "title": "Ratatouille",
+        "differences": {
+          "directors": {
+            "source": [
+              "Brad Bird"
+            ],
+            "database": [
+              "Pixar",
+              "Brad Lewis"
+            ],
+            "decision_id": 324,
             "source_snapshot_id": 1
           }
         }
@@ -1895,6 +3307,157 @@
               "Darren Aronofsky"
             ],
             "decision_id": 171,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
+        "movie_id": 549,
+        "vault_id": "V0554",
+        "title": "Resident Evil",
+        "differences": {
+          "year": {
+            "source": 2012,
+            "database": 2002,
+            "decision_id": 325,
+            "source_snapshot_id": 1
+          },
+          "directors": {
+            "source": [
+              "Makoto Kamiya"
+            ],
+            "database": [
+              "Paul W.S. Anderson"
+            ],
+            "decision_id": 326,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
+        "movie_id": 554,
+        "vault_id": "V0559",
+        "title": "Resident Evil: The Final Chapter",
+        "differences": {
+          "year": {
+            "source": 2016,
+            "database": 2017,
+            "decision_id": 327,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
+        "movie_id": 558,
+        "vault_id": "V0563",
+        "title": "Rings",
+        "differences": {
+          "year": {
+            "source": 2005,
+            "database": 2017,
+            "decision_id": 328,
+            "source_snapshot_id": 1
+          },
+          "directors": {
+            "source": [
+              "Jonathan Liebesman"
+            ],
+            "database": [
+              "F. Javier Gutiérrez"
+            ],
+            "decision_id": 329,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
+        "movie_id": 567,
+        "vault_id": "V0572",
+        "title": "Sabotage",
+        "differences": {
+          "year": {
+            "source": 1937,
+            "database": 2014,
+            "decision_id": 333,
+            "source_snapshot_id": 1
+          },
+          "directors": {
+            "source": [
+              "Alfred Hitchcock"
+            ],
+            "database": [
+              "David Ayer"
+            ],
+            "decision_id": 334,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
+        "movie_id": 585,
+        "vault_id": "V0591",
+        "title": "Scream",
+        "differences": {
+          "year": {
+            "source": 2022,
+            "database": 1996,
+            "decision_id": 335,
+            "source_snapshot_id": 1
+          },
+          "directors": {
+            "source": [
+              "Tyler Gillett",
+              "Matt Bettinelli-Olpin"
+            ],
+            "database": [
+              "Wes Craven"
+            ],
+            "decision_id": 336,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
+        "movie_id": 588,
+        "vault_id": "V0594",
+        "title": "Selma",
+        "differences": {
+          "year": {
+            "source": 2014,
+            "database": 2015,
+            "decision_id": 337,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
+        "movie_id": 590,
+        "vault_id": "V0596",
+        "title": "Seventh Son",
+        "differences": {
+          "year": {
+            "source": 2014,
+            "database": 2015,
+            "decision_id": 338,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
+        "movie_id": 591,
+        "vault_id": "V0597",
+        "title": "Sex and the City: The Movie",
+        "differences": {
+          "year": {
+            "source": 2008,
+            "database": 2013,
+            "decision_id": 339,
+            "source_snapshot_id": 1
+          },
+          "runtime": {
+            "source": null,
+            "database": 145,
+            "decision_id": 340,
             "source_snapshot_id": 1
           }
         }
@@ -1931,6 +3494,42 @@
         }
       },
       {
+        "movie_id": 604,
+        "vault_id": "V0610",
+        "title": "Silent Hill: Revelation",
+        "differences": {
+          "year": {
+            "source": 2012,
+            "database": 2014,
+            "decision_id": 342,
+            "source_snapshot_id": 1
+          },
+          "directors": {
+            "source": [
+              "M.J. Bassett"
+            ],
+            "database": [
+              "Michael J. Bassett"
+            ],
+            "decision_id": 343,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
+        "movie_id": 605,
+        "vault_id": "V0611",
+        "title": "Silent House",
+        "differences": {
+          "year": {
+            "source": 2011,
+            "database": 2012,
+            "decision_id": 344,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
         "movie_id": 607,
         "vault_id": "V0613",
         "title": "Sin City: Recut, Extended, Unrated",
@@ -1939,6 +3538,19 @@
             "source": null,
             "database": 129,
             "decision_id": 98,
+            "source_snapshot_id": 1
+          },
+          "directors": {
+            "source": [
+              "Robert Rodriguez",
+              "Frank Miller"
+            ],
+            "database": [
+              "Robert Rodriguez",
+              "Frank Miller",
+              "Quentin Tarantino"
+            ],
+            "decision_id": 345,
             "source_snapshot_id": 1
           }
         }
@@ -1967,6 +3579,29 @@
         }
       },
       {
+        "movie_id": 617,
+        "vault_id": "V0623",
+        "title": "Smile",
+        "differences": {
+          "year": {
+            "source": 1975,
+            "database": 2022,
+            "decision_id": 346,
+            "source_snapshot_id": 1
+          },
+          "directors": {
+            "source": [
+              "Michael Ritchie"
+            ],
+            "database": [
+              "Parker Finn"
+            ],
+            "decision_id": 347,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
         "movie_id": 620,
         "vault_id": "V0626",
         "title": "Snow White & the Huntsman (Extended Edition)",
@@ -1985,6 +3620,78 @@
               "Rupert Sanders"
             ],
             "decision_id": 174,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
+        "movie_id": 622,
+        "vault_id": "V0628",
+        "title": "Snowpiercer",
+        "differences": {
+          "year": {
+            "source": 2013,
+            "database": 2014,
+            "decision_id": 348,
+            "source_snapshot_id": 1
+          },
+          "directors": {
+            "source": [
+              "Bong Joon Ho"
+            ],
+            "database": [
+              "Joon-ho Bong"
+            ],
+            "decision_id": 349,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
+        "movie_id": 623,
+        "vault_id": "V0629",
+        "title": "Sonic The Hedgehog",
+        "differences": {
+          "year": {
+            "source": 2024,
+            "database": 2020,
+            "decision_id": 350,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
+        "movie_id": 625,
+        "vault_id": "V0632",
+        "title": "Space Jam",
+        "differences": {
+          "year": {
+            "source": 1996,
+            "database": 1997,
+            "decision_id": 352,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
+        "movie_id": 630,
+        "vault_id": "V0638",
+        "title": "Spider-Man",
+        "differences": {
+          "year": {
+            "source": 2017,
+            "database": 2002,
+            "decision_id": 353,
+            "source_snapshot_id": 1
+          },
+          "directors": {
+            "source": [
+              "Jon Watts"
+            ],
+            "database": [
+              "Sam Raimi"
+            ],
+            "decision_id": 354,
             "source_snapshot_id": 1
           }
         }
@@ -2052,6 +3759,42 @@
         }
       },
       {
+        "movie_id": 643,
+        "vault_id": "V0652",
+        "title": "Stardust",
+        "differences": {
+          "year": {
+            "source": 2020,
+            "database": 2007,
+            "decision_id": 355,
+            "source_snapshot_id": 1
+          },
+          "directors": {
+            "source": [
+              "Gabriel Range"
+            ],
+            "database": [
+              "Matthew Vaughn"
+            ],
+            "decision_id": 356,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
+        "movie_id": 644,
+        "vault_id": "V0653",
+        "title": "Stargate",
+        "differences": {
+          "runtime": {
+            "source": 116,
+            "database": 121,
+            "decision_id": 357,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
         "movie_id": 646,
         "vault_id": "V0655",
         "title": "Stephen King's Graveyard Shift",
@@ -2060,6 +3803,16 @@
             "source": null,
             "database": 86,
             "decision_id": 107,
+            "source_snapshot_id": 1
+          },
+          "directors": {
+            "source": [
+              "Ralph S. Singleton"
+            ],
+            "database": [
+              "Stephen King"
+            ],
+            "decision_id": 358,
             "source_snapshot_id": 1
           }
         }
@@ -2086,6 +3839,23 @@
             "source": null,
             "database": 92,
             "decision_id": 109,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
+        "movie_id": 650,
+        "vault_id": "V0659",
+        "title": "Subservience",
+        "differences": {
+          "directors": {
+            "source": [
+              "SK Dale"
+            ],
+            "database": [
+              "S.K. Dale"
+            ],
+            "decision_id": 359,
             "source_snapshot_id": 1
           }
         }
@@ -2118,6 +3888,12 @@
         "vault_id": "V0661",
         "title": "Supergirl (1984)",
         "differences": {
+          "runtime": {
+            "source": 134,
+            "database": 125,
+            "decision_id": 360,
+            "source_snapshot_id": 1
+          },
           "directors": {
             "source": [
               "Not Found"
@@ -2126,6 +3902,112 @@
               "Jeannot Szwarc"
             ],
             "decision_id": 179,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
+        "movie_id": 655,
+        "vault_id": "V0664",
+        "title": "Sweeney Todd: The Demon Barber of Fleet Street",
+        "differences": {
+          "year": {
+            "source": 2008,
+            "database": 2007,
+            "decision_id": 361,
+            "source_snapshot_id": 1
+          },
+          "directors": {
+            "source": [
+              "Mario Gas"
+            ],
+            "database": [
+              "Tim Burton"
+            ],
+            "decision_id": 362,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
+        "movie_id": 656,
+        "vault_id": "V0665",
+        "title": "Swingers",
+        "differences": {
+          "year": {
+            "source": 2002,
+            "database": 1996,
+            "decision_id": 363,
+            "source_snapshot_id": 1
+          },
+          "directors": {
+            "source": [
+              "Stephan Brenninkmeijer"
+            ],
+            "database": [
+              "Doug Liman"
+            ],
+            "decision_id": 364,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
+        "movie_id": 657,
+        "vault_id": "V0666",
+        "title": "Taken",
+        "differences": {
+          "year": {
+            "source": 2008,
+            "database": 2009,
+            "decision_id": 365,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
+        "movie_id": 659,
+        "vault_id": "V0668",
+        "title": "Taken 2",
+        "differences": {
+          "directors": {
+            "source": [
+              "Olivier Megaton"
+            ],
+            "database": [
+              "Oliver Megaton"
+            ],
+            "decision_id": 366,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
+        "movie_id": 660,
+        "vault_id": "V0669",
+        "title": "Taken 3",
+        "differences": {
+          "year": {
+            "source": 2014,
+            "database": 2015,
+            "decision_id": 367,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
+        "movie_id": 661,
+        "vault_id": "V0670",
+        "title": "Tales from the Darkside: The Movie",
+        "differences": {
+          "directors": {
+            "source": [
+              "John Harrison"
+            ],
+            "database": [
+              "Stephen King"
+            ],
+            "decision_id": 368,
             "source_snapshot_id": 1
           }
         }
@@ -2185,6 +4067,42 @@
               "Jonathan Liebesman"
             ],
             "decision_id": 181,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
+        "movie_id": 670,
+        "vault_id": "V0679",
+        "title": "Terminator 2: Judgment Day",
+        "differences": {
+          "year": {
+            "source": 1991,
+            "database": 1997,
+            "decision_id": 369,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
+        "movie_id": 674,
+        "vault_id": "V0683",
+        "title": "Texas Chainsaw",
+        "differences": {
+          "year": {
+            "source": 2003,
+            "database": 2013,
+            "decision_id": 370,
+            "source_snapshot_id": 1
+          },
+          "directors": {
+            "source": [
+              "Marcus Nispel"
+            ],
+            "database": [
+              "John Luessenhop"
+            ],
+            "decision_id": 371,
             "source_snapshot_id": 1
           }
         }
@@ -2295,6 +4213,72 @@
         }
       },
       {
+        "movie_id": 696,
+        "vault_id": "V0706",
+        "title": "The Bye Bye Man",
+        "differences": {
+          "runtime": {
+            "source": 96,
+            "database": 100,
+            "decision_id": 197,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
+        "movie_id": 699,
+        "vault_id": "V0709",
+        "title": "The Call of the Wild",
+        "differences": {
+          "directors": {
+            "source": [
+              "Chris Sanders"
+            ],
+            "database": [
+              "Christopher Michael Sanders"
+            ],
+            "decision_id": 198,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
+        "movie_id": 713,
+        "vault_id": "V0723",
+        "title": "The Dead Zone",
+        "differences": {
+          "year": {
+            "source": 2002,
+            "database": 1983,
+            "decision_id": 212,
+            "source_snapshot_id": 1
+          },
+          "directors": {
+            "source": [
+              "Rob Lieberman"
+            ],
+            "database": [
+              "David Cronenberg"
+            ],
+            "decision_id": 213,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
+        "movie_id": 714,
+        "vault_id": "V0724",
+        "title": "The Descent",
+        "differences": {
+          "year": {
+            "source": 2005,
+            "database": 2006,
+            "decision_id": 216,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
         "movie_id": 717,
         "vault_id": "V0727",
         "title": "The Divergent Series: Allegiant",
@@ -2303,6 +4287,29 @@
             "source": null,
             "database": 121,
             "decision_id": 25,
+            "source_snapshot_id": 1
+          },
+          "directors": {
+            "source": [
+              "Robert Schwentke"
+            ],
+            "database": [
+              "Robert Schwente"
+            ],
+            "decision_id": 219,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
+        "movie_id": 720,
+        "vault_id": "V0730",
+        "title": "The Endless",
+        "differences": {
+          "year": {
+            "source": 2017,
+            "database": 2018,
+            "decision_id": 226,
             "source_snapshot_id": 1
           }
         }
@@ -2355,6 +4362,42 @@
             "source": null,
             "database": 142,
             "decision_id": 46,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
+        "movie_id": 744,
+        "vault_id": "V0754",
+        "title": "The Green Inferno",
+        "differences": {
+          "year": {
+            "source": 2013,
+            "database": 2015,
+            "decision_id": 249,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
+        "movie_id": 746,
+        "vault_id": "V0756",
+        "title": "The Grudge",
+        "differences": {
+          "year": {
+            "source": 2004,
+            "database": 2020,
+            "decision_id": 250,
+            "source_snapshot_id": 1
+          },
+          "directors": {
+            "source": [
+              "Takashi Shimizu"
+            ],
+            "database": [
+              "Nicolas Pesce"
+            ],
+            "decision_id": 251,
             "source_snapshot_id": 1
           }
         }
@@ -2482,6 +4525,19 @@
         }
       },
       {
+        "movie_id": 770,
+        "vault_id": "V0780",
+        "title": "The Hunger Games: Mockingjay - Part 2",
+        "differences": {
+          "year": {
+            "source": 2015,
+            "database": 2016,
+            "decision_id": 265,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
         "movie_id": 771,
         "vault_id": "V0781",
         "title": "The Hunger Games: The Ballad of Songbirds and Snakes",
@@ -2531,6 +4587,46 @@
         }
       },
       {
+        "movie_id": 774,
+        "vault_id": "V0784",
+        "title": "The Incredibles",
+        "differences": {
+          "directors": {
+            "source": [
+              "Brad Bird"
+            ],
+            "database": [
+              "Pixar"
+            ],
+            "decision_id": 267,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
+        "movie_id": 775,
+        "vault_id": "V0785",
+        "title": "The Internship",
+        "differences": {
+          "year": {
+            "source": 2019,
+            "database": 2013,
+            "decision_id": 268,
+            "source_snapshot_id": 1
+          },
+          "directors": {
+            "source": [
+              "Aaron Christian"
+            ],
+            "database": [
+              "Shawn Levy"
+            ],
+            "decision_id": 269,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
         "movie_id": 776,
         "vault_id": "V0786",
         "title": "The Invisible Man (2020)",
@@ -2539,6 +4635,29 @@
             "source": null,
             "database": 124,
             "decision_id": 64,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
+        "movie_id": 779,
+        "vault_id": "V0789",
+        "title": "The Karate Kid",
+        "differences": {
+          "year": {
+            "source": 2010,
+            "database": 1984,
+            "decision_id": 277,
+            "source_snapshot_id": 1
+          },
+          "directors": {
+            "source": [
+              "Harald Zwart"
+            ],
+            "database": [
+              "John G. Avildsen"
+            ],
+            "decision_id": 278,
             "source_snapshot_id": 1
           }
         }
@@ -2565,6 +4684,63 @@
             "source": null,
             "database": 119,
             "decision_id": 70,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
+        "movie_id": 791,
+        "vault_id": "V0801",
+        "title": "The Lodge",
+        "differences": {
+          "year": {
+            "source": 2008,
+            "database": 2020,
+            "decision_id": 282,
+            "source_snapshot_id": 1
+          },
+          "directors": {
+            "source": [
+              "Brad Helmink",
+              "John Rauschelbach"
+            ],
+            "database": [
+              "Veronika Franz",
+              "Severin Fiala"
+            ],
+            "decision_id": 283,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
+        "movie_id": 792,
+        "vault_id": "V0802",
+        "title": "The Loft",
+        "differences": {
+          "year": {
+            "source": 2014,
+            "database": 2015,
+            "decision_id": 284,
+            "source_snapshot_id": 1
+          },
+          "runtime": {
+            "source": 108,
+            "database": 103,
+            "decision_id": 285,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
+        "movie_id": 793,
+        "vault_id": "V0803",
+        "title": "The Longest Ride",
+        "differences": {
+          "runtime": {
+            "source": 123,
+            "database": 129,
+            "decision_id": 288,
             "source_snapshot_id": 1
           }
         }
@@ -2639,6 +4815,29 @@
         }
       },
       {
+        "movie_id": 798,
+        "vault_id": "V0808",
+        "title": "The Lost Boys",
+        "differences": {
+          "year": {
+            "source": 2025,
+            "database": 1987,
+            "decision_id": 289,
+            "source_snapshot_id": 1
+          },
+          "directors": {
+            "source": [
+              "Bryan Young"
+            ],
+            "database": [
+              "Joel Schumacher"
+            ],
+            "decision_id": 290,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
         "movie_id": 809,
         "vault_id": "V0819",
         "title": "The Mummy (2017)",
@@ -2652,6 +4851,19 @@
         }
       },
       {
+        "movie_id": 811,
+        "vault_id": "V0821",
+        "title": "The Neverending Story",
+        "differences": {
+          "runtime": {
+            "source": 102,
+            "database": 94,
+            "decision_id": 308,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
         "movie_id": 815,
         "vault_id": "V0825",
         "title": "The Nun (2018)",
@@ -2660,6 +4872,65 @@
             "source": null,
             "database": 97,
             "decision_id": 87,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
+        "movie_id": 817,
+        "vault_id": "V0827",
+        "title": "The Other Woman",
+        "differences": {
+          "year": {
+            "source": 2010,
+            "database": 2014,
+            "decision_id": 313,
+            "source_snapshot_id": 1
+          },
+          "directors": {
+            "source": [
+              "Don Roos"
+            ],
+            "database": [
+              "Nick Cassavetes"
+            ],
+            "decision_id": 314,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
+        "movie_id": 830,
+        "vault_id": "V0840",
+        "title": "The Running Man",
+        "differences": {
+          "year": {
+            "source": 1963,
+            "database": 1987,
+            "decision_id": 331,
+            "source_snapshot_id": 1
+          },
+          "directors": {
+            "source": [
+              "Carol Reed"
+            ],
+            "database": [
+              "Stephen King"
+            ],
+            "decision_id": 332,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
+        "movie_id": 837,
+        "vault_id": "V0847",
+        "title": "The Shawshank Redemption",
+        "differences": {
+          "year": {
+            "source": 1994,
+            "database": 1995,
+            "decision_id": 341,
             "source_snapshot_id": 1
           }
         }
@@ -2688,6 +4959,19 @@
         }
       },
       {
+        "movie_id": 841,
+        "vault_id": "V0851",
+        "title": "The Space Between Us",
+        "differences": {
+          "year": {
+            "source": 2017,
+            "database": 2016,
+            "decision_id": 351,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
         "movie_id": 843,
         "vault_id": "V0853",
         "title": "The Suicide Squad (2021)",
@@ -2711,6 +4995,19 @@
         }
       },
       {
+        "movie_id": 848,
+        "vault_id": "V0858",
+        "title": "The Three Musketeers Part II: Milady",
+        "differences": {
+          "year": {
+            "source": 2023,
+            "database": 2024,
+            "decision_id": 373,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
         "movie_id": 849,
         "vault_id": "V0859",
         "title": "The Town (2010)",
@@ -2724,6 +5021,19 @@
         }
       },
       {
+        "movie_id": 850,
+        "vault_id": "V0860",
+        "title": "The Truman Show",
+        "differences": {
+          "year": {
+            "source": 1998,
+            "database": 1999,
+            "decision_id": 375,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
         "movie_id": 851,
         "vault_id": "V0861",
         "title": "The Turning (2020)",
@@ -2732,6 +5042,16 @@
             "source": null,
             "database": 94,
             "decision_id": 118,
+            "source_snapshot_id": 1
+          },
+          "directors": {
+            "source": [
+              "Danya Taymor"
+            ],
+            "database": [
+              "Floria Sigismondi"
+            ],
+            "decision_id": 376,
             "source_snapshot_id": 1
           }
         }
@@ -2755,6 +5075,62 @@
               "Bill Condon"
             ],
             "decision_id": 183,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
+        "movie_id": 857,
+        "vault_id": "V0867",
+        "title": "The Way Back",
+        "differences": {
+          "runtime": {
+            "source": 133,
+            "database": 108,
+            "decision_id": 379,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
+        "movie_id": 860,
+        "vault_id": "V0870",
+        "title": "The Wolf's Call",
+        "differences": {
+          "year": {
+            "source": 2019,
+            "database": 2020,
+            "decision_id": 381,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
+        "movie_id": 868,
+        "vault_id": "V0878",
+        "title": "This Is 40",
+        "differences": {
+          "year": {
+            "source": 2012,
+            "database": 2013,
+            "decision_id": 372,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
+        "movie_id": 880,
+        "vault_id": "V0890",
+        "title": "Toy Story 3",
+        "differences": {
+          "directors": {
+            "source": [
+              "Lee Unkrich"
+            ],
+            "database": [
+              "Pixar"
+            ],
+            "decision_id": 374,
             "source_snapshot_id": 1
           }
         }
@@ -2822,6 +5198,19 @@
         }
       },
       {
+        "movie_id": 902,
+        "vault_id": "V0912",
+        "title": "Up In Smoke",
+        "differences": {
+          "year": {
+            "source": 2023,
+            "database": 2000,
+            "decision_id": 377,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
         "movie_id": 905,
         "vault_id": "V0915",
         "title": "Us (2019)",
@@ -2830,6 +5219,19 @@
             "source": null,
             "database": 116,
             "decision_id": 122,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
+        "movie_id": 911,
+        "vault_id": "V0921",
+        "title": "Vivarium",
+        "differences": {
+          "year": {
+            "source": 2019,
+            "database": 2020,
+            "decision_id": 378,
             "source_snapshot_id": 1
           }
         }
@@ -2853,6 +5255,23 @@
               "Rawson Marshall Thurber"
             ],
             "decision_id": 184,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
+        "movie_id": 921,
+        "vault_id": "V0931",
+        "title": "Wicked",
+        "differences": {
+          "directors": {
+            "source": [
+              "Jon M. Chu"
+            ],
+            "database": [
+              "Jon Chu"
+            ],
+            "decision_id": 380,
             "source_snapshot_id": 1
           }
         }
@@ -2889,6 +5308,55 @@
               "Joe Lynch"
             ],
             "decision_id": 185,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
+        "movie_id": 930,
+        "vault_id": "V0940",
+        "title": "X-Men",
+        "differences": {
+          "year": {
+            "source": 2016,
+            "database": 2000,
+            "decision_id": 382,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
+        "movie_id": 934,
+        "vault_id": "V0945",
+        "title": "X-Men: First Class",
+        "differences": {
+          "year": {
+            "source": 2012,
+            "database": 2011,
+            "decision_id": 383,
+            "source_snapshot_id": 1
+          },
+          "directors": {
+            "source": [
+              "Tim Postins"
+            ],
+            "database": [
+              "Matthew Vaughn"
+            ],
+            "decision_id": 384,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
+        "movie_id": 946,
+        "vault_id": "V0957",
+        "title": "Paddington",
+        "differences": {
+          "year": {
+            "source": 2014,
+            "database": 2015,
+            "decision_id": 315,
             "source_snapshot_id": 1
           }
         }
@@ -11573,7 +14041,7 @@
       "movie_id": 313,
       "vault_id": "V0317",
       "title": "I, Frankenstein",
-      "year": 2014,
+      "year": 2017,
       "runtime": 92,
       "plot": "200 years after his shocking creation, Dr. Frankenstein's creature, Adam, still walks the earth. But when he finds himself in the middle of a war over the fate of humanity, Adam discovers he holds the key that could destroy humankind.",
       "awards": "4 nominations total",
@@ -11767,7 +14235,7 @@
       ],
       "keywords": [],
       "directors": [
-        "Laurent Bouzereau"
+        "Joe Johnston"
       ],
       "cast": [],
       "where_to_watch": [
@@ -11991,7 +14459,7 @@
       "movie_id": 549,
       "vault_id": "V0554",
       "title": "Resident Evil",
-      "year": 2012,
+      "year": 2002,
       "runtime": 100,
       "plot": "U.S. federal agent Leon S. Kennedy sneaks into the \"East Slavic Republic\" to verify rumors that Bio-Organic Weapons (BOWs) are being used in the country's civil war, which the U.S. and Russia are making preparations to jointly intervene in. Right after his infiltration, the U.S. government orders him to leave immediately. Determined to uncover the truth, Leon ignores the order and enters the battlefield to end the chain of tragedies caused by the BOWs.",
       "awards": "2 wins & 6 nominations total",
@@ -12026,7 +14494,7 @@
         "zombie"
       ],
       "directors": [
-        "Makoto Kamiya"
+        "Paul W.S. Anderson"
       ],
       "cast": [],
       "where_to_watch": [
@@ -12131,7 +14599,7 @@
       "vault_id": "V0706",
       "title": "The Bye Bye Man",
       "year": 2017,
-      "runtime": 96,
+      "runtime": 100,
       "plot": "When three college students move into an old house off campus, they unwittingly unleash a supernatural entity known as The Bye Bye Man, who comes to prey upon them once they discover his name. The friends must try to save each other, all the while keeping The Bye Bye Man's existence a secret to save others from the same deadly fate.",
       "awards": null,
       "certificate": "PG-13",
@@ -12192,7 +14660,7 @@
         "sequel"
       ],
       "directors": [
-        "Robert Schwentke"
+        "Robert Schwente"
       ],
       "cast": [],
       "where_to_watch": [

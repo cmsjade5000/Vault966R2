@@ -42,6 +42,22 @@
       {% endfor %}
     </nav>
 
+    {% if can_bulk_accept_source and bulk_source_field_count %}
+      <section class="review-bulk-action" aria-labelledby="review-bulk-title">
+        <div>
+          <h2 id="review-bulk-title">Use the newest source for all open differences</h2>
+          <p>Apply open title, year, runtime, or director values. Ambiguous matches, new movies, and contradictions within the source file stay in review.</p>
+        </div>
+        <form method="post" action="/ui/review/source-accept-all">
+          <button
+            class="button-primary"
+            type="submit"
+            data-confirm="Apply all {{ bulk_source_field_count }} open source differences to the Vault? Vault IDs will remain unchanged."
+          >Accept all source values</button>
+        </form>
+      </section>
+    {% endif %}
+
     {% if review_item and review_view != 'vault' %}
       {% set item = review_item %}
       {% set row = item.source_row %}

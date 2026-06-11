@@ -18,6 +18,7 @@ from api.services.movie_review import (
 )
 from api.services.source_sync import (
     SourceSyncError,
+    accept_all_source_differences,
     assign_source_row_match,
     create_movie_from_source_row,
     decide_source_field,
@@ -26,12 +27,14 @@ from api.services.source_sync import (
     get_source_review_queue,
     latest_active_snapshot,
     partition_source_review_queue,
+    source_bulk_decision_counts,
     undo_source_field_decision,
 )
 from api.services.profiles import (
     ROLE_ADMIN,
     ROLE_REVIEWER,
     ensure_profile_cookie,
+    get_active_profile_role,
     get_active_profile_id,
     get_profiles,
 )
@@ -123,6 +126,10 @@ def review_queue_ui(
         None,
     )
     source_snapshot = latest_active_snapshot(db)
+    bulk_source_field_count, bulk_source_skipped_count = source_bulk_decision_counts(
+        db,
+        snapshot=source_snapshot,
+    )
     undo_record = db.get(SourceFieldDecision, undo_decision) if undo_decision else None
     if undo_record is not None and undo_record.undone_at is not None:
         undo_record = None
@@ -156,6 +163,9 @@ def review_queue_ui(
             "undo_record": undo_record,
             "profiles": get_profiles(db),
             "active_profile_id": get_active_profile_id(request, db),
+            "can_bulk_accept_source": get_active_profile_role(request, db) == ROLE_ADMIN,
+            "bulk_source_field_count": bulk_source_field_count,
+            "bulk_source_skipped_count": bulk_source_skipped_count,
         },
     )
     ensure_profile_cookie(request, response, db)
@@ -206,6 +216,34 @@ def decide_source_review_field(
         f"{labels[decision]} for {result.movie.vault_id or result.movie.title}.",
         view=view,
         undo_decision=result.id,
+    )
+
+
+@router.post("/ui/review/source-accept-all")
+def accept_all_source_review_differences(
+    request: Request,
+    db: Session = Depends(get_db),
+    _: str = Depends(require_profile_role(ROLE_ADMIN)),
+    __: None = Depends(require_same_origin),
+) -> RedirectResponse:
+    try:
+        result = accept_all_source_differences(
+            db,
+            profile_id=get_active_profile_id(request, db),
+        )
+    except SourceSyncError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return _source_action_redirect(
+        (
+            f"Applied {result.field_count} source values across "
+            f"{result.movie_count} Vault entries from snapshot #{result.snapshot_id}."
+            + (
+                f" Left {result.skipped_field_count} conflicting source value in review."
+                if result.skipped_field_count
+                else ""
+            )
+        ),
+        view="differences",
     )
 
 

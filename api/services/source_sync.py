@@ -111,6 +111,14 @@ class SourceReviewItem:
     candidate_research_links: dict[int, ResearchLinkSet] | None = None
 
 
+@dataclass(frozen=True)
+class BulkSourceDecisionResult:
+    snapshot_id: int
+    movie_count: int
+    field_count: int
+    skipped_field_count: int
+
+
 def clean_text(value: object) -> str | None:
     text = str(value or "").strip()
     return text or None
@@ -893,7 +901,7 @@ def _set_directors(db: Session, movie: Movie, director_value: str | None) -> Non
     _set_director_names(db, movie, parse_directors(director_value))
 
 
-def decide_source_field(
+def _decide_source_field(
     db: Session,
     *,
     row_id: int,
@@ -948,9 +956,130 @@ def decide_source_field(
     record.decided_by_profile_id = profile_id
     record.decided_at = now
     record.resolved_at = None if decision == "needs_research" else now
+    db.flush()
+    return record
+
+
+def decide_source_field(
+    db: Session,
+    *,
+    row_id: int,
+    field_name: str,
+    decision: str,
+    profile_id: int | None,
+) -> SourceFieldDecision:
+    record = _decide_source_field(
+        db,
+        row_id=row_id,
+        field_name=field_name,
+        decision=decision,
+        profile_id=profile_id,
+    )
     db.commit()
     db.refresh(record)
     return record
+
+
+def _bulk_source_fields(
+    db: Session,
+    *,
+    snapshot: SourceSnapshot,
+) -> tuple[list[tuple[int, int, str]], int]:
+    review_items = get_source_review_queue(
+        db,
+        snapshot=snapshot,
+        include_unmatched=False,
+    )
+    candidate_by_movie_field: dict[tuple[int, str], tuple[int, int, str]] = {}
+    for item in review_items:
+        if item.movie is None:
+            continue
+        for conflict in item.conflicts:
+            key = (item.movie.id, conflict.field_name)
+            candidate_by_movie_field.setdefault(
+                key,
+                (item.source_row.id, item.movie.id, conflict.field_name),
+            )
+    candidate_fields = list(candidate_by_movie_field.values())
+
+    source_values: dict[tuple[int, str], set[object]] = defaultdict(set)
+    matched_rows = (
+        db.query(SourceMovieRow, SourceReconciliationMatch)
+        .join(
+            SourceReconciliationMatch,
+            SourceReconciliationMatch.source_row_id == SourceMovieRow.id,
+        )
+        .filter(SourceMovieRow.snapshot_id == snapshot.id)
+        .filter(SourceReconciliationMatch.movie_id.is_not(None))
+        .filter(SourceReconciliationMatch.match_type.in_(("exact", "likely", "manual")))
+        .all()
+    )
+    for row, match in matched_rows:
+        values = {
+            "title": normalize_title(row.title),
+            "year": row.year,
+            "runtime": row.runtime,
+            "director": tuple(
+                sorted(name.casefold() for name in parse_directors(row.director))
+            ),
+        }
+        for field_name, value in values.items():
+            if value not in {None, "", ()}:
+                source_values[(match.movie_id, field_name)].add(value)
+
+    open_fields = [
+        field
+        for field in candidate_fields
+        if len(source_values[(field[1], field[2])]) <= 1
+    ]
+    return open_fields, len(candidate_fields) - len(open_fields)
+
+
+def source_bulk_decision_counts(
+    db: Session,
+    *,
+    snapshot: SourceSnapshot | None = None,
+) -> tuple[int, int]:
+    snapshot = snapshot or latest_active_snapshot(db)
+    if snapshot is None:
+        return 0, 0
+    open_fields, skipped_field_count = _bulk_source_fields(db, snapshot=snapshot)
+    return len(open_fields), skipped_field_count
+
+
+def accept_all_source_differences(
+    db: Session,
+    *,
+    profile_id: int | None,
+    snapshot: SourceSnapshot | None = None,
+) -> BulkSourceDecisionResult:
+    snapshot = snapshot or latest_active_snapshot(db)
+    if snapshot is None:
+        raise SourceSyncError("No confirmed source snapshot is available")
+
+    open_fields, skipped_field_count = _bulk_source_fields(db, snapshot=snapshot)
+    movie_ids = {movie_id for _, movie_id, _ in open_fields}
+
+    try:
+        for row_id, _, field_name in open_fields:
+            _decide_source_field(
+                db,
+                row_id=row_id,
+                field_name=field_name,
+                decision="use_source",
+                profile_id=profile_id,
+            )
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise
+
+    return BulkSourceDecisionResult(
+        snapshot_id=snapshot.id,
+        movie_count=len(movie_ids),
+        field_count=len(open_fields),
+        skipped_field_count=skipped_field_count,
+    )
 
 
 def defer_source_row_for_research(
@@ -1136,12 +1265,14 @@ def source_provenance_for_movie(db: Session, movie_id: int) -> dict:
 
 
 __all__ = [
+    "BulkSourceDecisionResult",
     "SourceFieldConflict",
     "ResearchLink",
     "ResearchLinkSet",
     "SourceReviewItem",
     "SourceSyncError",
     "assign_source_row_match",
+    "accept_all_source_differences",
     "build_research_links",
     "clean_research_title",
     "create_draft_snapshot",
@@ -1155,6 +1286,7 @@ __all__ = [
     "partition_source_review_queue",
     "reconcile_snapshot",
     "snapshot_summary",
+    "source_bulk_decision_counts",
     "source_provenance_for_movie",
     "undo_source_field_decision",
 ]

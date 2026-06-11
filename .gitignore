@@ -6,6 +6,7 @@ __pycache__/
 venv/
 vault.db
 vault.db-journal
+vault.db.*.bak
 dist/
 node_modules/
 # data/report artifacts
