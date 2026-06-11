@@ -1,6 +1,7 @@
 from api.models.usage_event import UsageEvent
 from api.models.movie import Movie
 from api.models.movie_flag import MovieFlag
+from api.routers.ui.discover import _rail_candidates
 from api.services.trusted_movies import get_untrusted_movie_ids, trusted_movie_query
 from core.genres import split_and_normalize
 
@@ -59,7 +60,11 @@ def test_trusted_query_excludes_open_flags(db_session) -> None:
     assert 1 not in trusted_ids
 
 
-def test_discover_contains_all_collection_rails(client) -> None:
+def test_discover_contains_all_collection_rails(client, db_session) -> None:
+    for movie in db_session.query(Movie).all():
+        movie.poster_url = f"https://example.com/posters/{movie.id}.jpg"
+    db_session.commit()
+
     response = client.get("/ui/discover")
     assert response.status_code == 200
     for title in (
@@ -75,3 +80,15 @@ def test_discover_contains_all_collection_rails(client) -> None:
     assert 'data-preference-type="watchlist"' in response.text
     assert ">♡</button>" not in response.text
     assert ">▯</button>" not in response.text
+
+
+def test_discover_rails_only_surface_movies_with_posters(db_session) -> None:
+    for key in (
+        "recently-added",
+        "under-100",
+        "highly-rated",
+        "hidden-gems",
+        "before-2000",
+        "edition-cuts",
+    ):
+        assert all(movie.poster_url for movie in _rail_candidates(db_session, key))

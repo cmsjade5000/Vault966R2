@@ -298,6 +298,7 @@ def pick_double_feature(
     year_min: Optional[int] = None,
     year_max: Optional[int] = None,
     seed: Optional[int] = None,
+    require_poster: bool = False,
 ) -> Optional[DoubleFeatureSelection]:
     base_query = (
         trusted_movie_query(db)
@@ -305,6 +306,12 @@ def pick_double_feature(
         .filter(Movie.runtime.isnot(None))
         .filter(Movie.runtime <= runtime_cap)
     )
+    if require_poster:
+        base_query = base_query.filter(
+            Movie.poster_url.isnot(None),
+            Movie.poster_url != "",
+            Movie.poster_url != "N/A",
+        )
 
     if genre:
         base_query = base_query.filter(Movie.genres.any(Genre.name == genre))

@@ -51,13 +51,17 @@ class _OpenGraphImageParser(HTMLParser):
     def __init__(self) -> None:
         super().__init__()
         self.images: list[str] = []
+        self.titles: list[str] = []
 
     def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
         if tag.casefold() != "meta":
             return
         values = {key.casefold(): value for key, value in attrs if value is not None}
-        if values.get("property", "").casefold() == "og:image" and values.get("content"):
+        property_name = values.get("property", "").casefold()
+        if property_name == "og:image" and values.get("content"):
             self.images.append(values["content"])
+        elif property_name == "og:title" and values.get("content"):
+            self.titles.append(values["content"])
 
 
 def parse_args() -> argparse.Namespace:
@@ -122,6 +126,15 @@ def parse_args() -> argparse.Namespace:
 def normalize_title(title: str) -> str:
     cleaned = title.strip().lower()
     cleaned = cleaned.replace("&", "and")
+    cleaned = re.sub(r"\s*\((?:18|19|20)\d{2}\)\s*$", "", cleaned)
+    cleaned = re.sub(
+        r"\s*\((?:unrated|extended(?: edition| cut)?|director'?s cut|"
+        r"special edition|theatrical cut|final cut|restored edition)\)\s*$",
+        "",
+        cleaned,
+        flags=re.I,
+    )
+    cleaned = re.sub(r"[^a-z0-9]+", " ", cleaned)
     return " ".join(cleaned.split())
 
 
@@ -220,7 +233,7 @@ def valid_tmdb_poster_url(value: object) -> Optional[str]:
     return value.strip()
 
 
-def fetch_tmdb_page_poster(client: httpx.Client, tmdb_id: int) -> Optional[str]:
+def fetch_tmdb_page_match(client: httpx.Client, tmdb_id: int) -> Dict[str, Optional[str]]:
     response = client.get(
         f"https://www.themoviedb.org/movie/{tmdb_id}",
         headers={"User-Agent": "Vault966/1.0"},
@@ -230,16 +243,21 @@ def fetch_tmdb_page_poster(client: httpx.Client, tmdb_id: int) -> Optional[str]:
     response.raise_for_status()
     parser = _OpenGraphImageParser()
     parser.feed(response.text)
+    title = parser.titles[0].strip() if parser.titles else None
     for image in parser.images:
         poster_url = valid_tmdb_poster_url(image)
         if poster_url:
-            return poster_url
-    return None
+            return {"title": title, "poster_url": poster_url}
+    return {"title": title, "poster_url": None}
 
 
-def fetch_tmdb_page_poster_isolated(tmdb_id: int) -> Optional[str]:
+def fetch_tmdb_page_poster(client: httpx.Client, tmdb_id: int) -> Optional[str]:
+    return fetch_tmdb_page_match(client, tmdb_id)["poster_url"]
+
+
+def fetch_tmdb_page_match_isolated(tmdb_id: int) -> Dict[str, Optional[str]]:
     with httpx.Client() as client:
-        return fetch_tmdb_page_poster(client, tmdb_id)
+        return fetch_tmdb_page_match(client, tmdb_id)
 
 
 def fetch_omdb_detail(client: httpx.Client, api_key: str, imdb_id: str) -> Optional[Dict[str, Any]]:
@@ -299,20 +317,20 @@ def main() -> int:
         if args.limit:
             missing = missing[: args.limit]
 
-        page_posters: dict[int, Optional[str]] = {}
+        page_matches: dict[int, Dict[str, Optional[str]]] = {}
         if not tmdb_key:
             page_candidates = [movie for movie in missing if movie.tmdb_id]
             with ThreadPoolExecutor(max_workers=args.workers) as executor:
                 futures = {
-                    executor.submit(fetch_tmdb_page_poster_isolated, movie.tmdb_id): movie.id
+                    executor.submit(fetch_tmdb_page_match_isolated, movie.tmdb_id): movie.id
                     for movie in page_candidates
                 }
                 for future in as_completed(futures):
                     movie_id = futures[future]
                     try:
-                        page_posters[movie_id] = future.result()
+                        page_matches[movie_id] = future.result()
                     except httpx.HTTPError:
-                        page_posters[movie_id] = None
+                        page_matches[movie_id] = {"title": None, "poster_url": None}
 
         for movie in missing:
             attempted += 1
@@ -338,12 +356,18 @@ def main() -> int:
                 match_confidence = 1.0
             elif movie.tmdb_id:
                 match_source = "tmdb_page_id"
-                poster_url = page_posters.get(movie.id)
+                page_match = page_matches.get(movie.id) or {}
                 matched_tmdb_id = movie.tmdb_id
-                matched_title = movie.title
+                matched_title = page_match.get("title")
                 matched_year = movie.year
                 match_strategy = "tmdb_page_id"
-                match_confidence = 1.0
+                title_matches = bool(
+                    matched_title
+                    and normalize_title(matched_title) == normalize_title(movie.title)
+                )
+                match_confidence = 1.0 if title_matches else 0.0
+                if title_matches:
+                    poster_url = page_match.get("poster_url")
             elif tmdb_key:
                 match_source = "tmdb_search"
                 try:

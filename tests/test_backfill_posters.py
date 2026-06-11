@@ -1,6 +1,7 @@
 import httpx
 
 from scripts.backfill_posters import (
+    fetch_tmdb_page_match,
     fetch_tmdb_page_poster,
     normalize_title,
     select_poster_candidate,
@@ -59,6 +60,8 @@ def test_select_poster_candidate_requires_poster_and_confidence() -> None:
 
 def test_normalize_title_handles_ampersand() -> None:
     assert normalize_title("Fish & Chips") == normalize_title("Fish and   Chips")
+    assert normalize_title("The Boss (Unrated)") == normalize_title("The Boss")
+    assert normalize_title("Her (2013)") == normalize_title("Her")
 
 
 def test_valid_tmdb_poster_url_restricts_host_and_image_path() -> None:
@@ -78,6 +81,7 @@ def test_fetch_tmdb_page_poster_uses_first_valid_open_graph_image() -> None:
         return httpx.Response(
             200,
             text=(
+                '<meta property="og:title" content="The Matrix">'
                 '<meta property="og:image" content="https://example.com/bad.jpg">'
                 '<meta property="og:image" '
                 'content="https://media.themoviedb.org/t/p/w500/poster.jpg">'
@@ -88,3 +92,21 @@ def test_fetch_tmdb_page_poster_uses_first_valid_open_graph_image() -> None:
         assert fetch_tmdb_page_poster(client, 603) == (
             "https://media.themoviedb.org/t/p/w500/poster.jpg"
         )
+
+
+def test_fetch_tmdb_page_match_returns_title_and_poster() -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(
+            200,
+            text=(
+                '<meta property="og:title" content="The Matrix">'
+                '<meta property="og:image" '
+                'content="https://media.themoviedb.org/t/p/w500/poster.jpg">'
+            ),
+        )
+
+    with httpx.Client(transport=httpx.MockTransport(handler)) as client:
+        assert fetch_tmdb_page_match(client, 603) == {
+            "title": "The Matrix",
+            "poster_url": "https://media.themoviedb.org/t/p/w500/poster.jpg",
+        }

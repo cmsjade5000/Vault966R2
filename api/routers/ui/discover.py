@@ -54,12 +54,20 @@ RAIL_LABELS = {
 }
 
 
+def _with_poster(query):
+    return query.filter(
+        Movie.poster_url.isnot(None),
+        Movie.poster_url != "",
+        Movie.poster_url != "N/A",
+    )
+
+
 def _daily_rail_seed(key: str) -> int:
     return int(date.today().strftime("%Y%m%d")) + sum(ord(char) for char in key)
 
 
 def _rail_candidates(db: Session, key: str) -> list[Movie]:
-    query = trusted_movie_query(db).options(selectinload(Movie.genres))
+    query = _with_poster(trusted_movie_query(db)).options(selectinload(Movie.genres))
     if key == "recently-added":
         return query.order_by(Movie.id.desc()).limit(40).all()
     if key == "under-100":
@@ -283,7 +291,7 @@ def _pick_selected_for_you(
         return [], []
 
     candidates = (
-        trusted_movie_query(db)
+        _with_poster(trusted_movie_query(db))
         .options(selectinload(Movie.genres))
         .filter(Movie.genres.any(Genre.name.in_(top_genres)))
         .filter(or_(Movie.imdb_rating.isnot(None), Movie.rt_score.isnot(None)))
@@ -338,7 +346,7 @@ def _pick_genre_spotlights(
     for genre_name in genre_names:
         genre_rng = Random((seed or 0) + len(spotlights)) if base_rng else None
         query = (
-            trusted_movie_query(db)
+            _with_poster(trusted_movie_query(db))
             .options(selectinload(Movie.genres))
             .filter(Movie.genres.any(Genre.name == genre_name))
             .filter(or_(Movie.imdb_rating.isnot(None), Movie.rt_score.isnot(None)))
@@ -399,6 +407,7 @@ def _pick_pairings(
             runtime_cap=DEFAULT_DOUBLE_FEATURE_RUNTIME,
             genre=genre_name,
             seed=seeds[idx % len(seeds)],
+            require_poster=True,
         )
         if selection:
             register(selection)
@@ -410,6 +419,7 @@ def _pick_pairings(
             db,
             runtime_cap=DEFAULT_DOUBLE_FEATURE_RUNTIME,
             seed=seeds[-1],
+            require_poster=True,
         )
         if selection:
             register(selection)
