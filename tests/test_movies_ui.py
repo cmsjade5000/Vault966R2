@@ -1,7 +1,9 @@
 from fastapi.testclient import TestClient
 
 from api.models.movie import Movie
+from api.models.movie_flag import MovieFlag
 from api.models.person import Person, Role, RoleType
+from api.services.movie_review import get_review_queue
 from api.services.ui.grid import FILTER_COOKIE_NAME
 
 
@@ -147,6 +149,29 @@ def test_review_needs_fix_creates_flag_with_vault_id(client: TestClient, db_sess
     assert "V0001 added to Flags." in response.text
     assert "V0001" in flags.text
     assert "Human review" in flags.text
+
+
+def test_bulk_review_needs_fix_moves_all_open_checks_to_flags(
+    client: TestClient, db_session
+) -> None:
+    movies = db_session.query(Movie).order_by(Movie.id).limit(2).all()
+    for index, movie in enumerate(movies, start=1):
+        movie.year = None
+        movie.vault_id = f"V{index:04d}"
+    db_session.commit()
+
+    response = client.post(
+        "/ui/review/vault/needs-fix-all",
+        follow_redirects=False,
+    )
+
+    assert response.status_code == 303
+    assert "Moved%202%20Vault%20checks%20to%20Flags" in response.headers["location"]
+    assert get_review_queue(db_session)[0] == []
+    flags = db_session.query(MovieFlag).order_by(MovieFlag.movie_id).all()
+    assert [flag.movie_id for flag in flags] == [movie.id for movie in movies]
+    assert all(flag.reason == "Human review" for flag in flags)
+    assert all(flag.notes == "Year is missing" for flag in flags)
 
 
 def test_movie_detail_shows_review_bar(client: TestClient) -> None:

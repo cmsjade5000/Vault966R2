@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from sqlalchemy.orm import Session
 
 from api.models.movie import Movie
+from api.models.movie_flag import MovieFlag
 from api.models.movie_review import MovieReviewCheck
 
 TITLE_YEAR_RE = re.compile(r"\((\d{4})\)\s*$")
@@ -25,6 +26,13 @@ class ReviewIssue:
 class MovieReviewItem:
     movie: Movie
     issues: tuple[ReviewIssue, ...]
+
+
+@dataclass(frozen=True)
+class BulkReviewDecisionResult:
+    movie_count: int
+    finding_count: int
+    flag_count: int
 
 
 def _fingerprint(*values: object) -> str:
@@ -147,3 +155,47 @@ def record_review_decision(
                 )
             )
     db.commit()
+
+
+def mark_all_review_items_needs_fix(
+    db: Session,
+    *,
+    profile_id: int | None,
+) -> BulkReviewDecisionResult:
+    queue, _ = get_review_queue(db)
+    finding_count = 0
+    flag_count = 0
+
+    try:
+        for item in queue:
+            movie = item.movie
+            finding_count += len(item.issues)
+            if movie.flag is None:
+                db.add(
+                    MovieFlag(
+                        movie_id=movie.id,
+                        reason="Human review",
+                        notes="; ".join(issue.label for issue in item.issues),
+                    )
+                )
+                flag_count += 1
+            for issue in item.issues:
+                db.add(
+                    MovieReviewCheck(
+                        movie_id=movie.id,
+                        issue_type=issue.issue_type,
+                        issue_fingerprint=issue.fingerprint,
+                        decision="needs_fix",
+                        checked_by_profile_id=profile_id,
+                    )
+                )
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise
+
+    return BulkReviewDecisionResult(
+        movie_count=len(queue),
+        finding_count=finding_count,
+        flag_count=flag_count,
+    )

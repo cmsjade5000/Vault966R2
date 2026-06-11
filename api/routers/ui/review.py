@@ -14,6 +14,7 @@ from api.models.source_sync import SourceFieldDecision
 from api.services.movie_review import (
     detect_review_issues,
     get_review_queue,
+    mark_all_review_items_needs_fix,
     record_review_decision,
 )
 from api.services.source_sync import (
@@ -415,4 +416,24 @@ def mark_review_needs_fix(
     return _source_action_redirect(
         f"{movie.vault_id or movie.title} added to Flags.",
         view=view,
+    )
+
+
+@router.post("/ui/review/vault/needs-fix-all")
+def mark_all_vault_reviews_needs_fix(
+    request: Request,
+    db: Session = Depends(get_db),
+    _: str = Depends(require_profile_role(ROLE_ADMIN)),
+    __: None = Depends(require_same_origin),
+) -> RedirectResponse:
+    result = mark_all_review_items_needs_fix(
+        db,
+        profile_id=get_active_profile_id(request, db),
+    )
+    return _source_action_redirect(
+        (
+            f"Moved {result.movie_count} Vault checks to Flags "
+            f"with {result.finding_count} review findings."
+        ),
+        view="vault",
     )
