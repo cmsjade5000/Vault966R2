@@ -41,97 +41,115 @@
   {% include "partials/movies/review_workbench.html" %}
 
   {% if can_manage_health %}
-  <section class="page-shell source-health" id="source-synchronization" aria-labelledby="source-health-title">
-    <header class="source-health__header">
+  <details class="page-shell source-health" id="source-synchronization">
+    <summary class="source-health__summary">
       <div>
         <span class="review-vault-id">Collection source</span>
-        <h2 id="source-health-title">Source synchronization</h2>
+        <h2>Source synchronization</h2>
+        <p>
+          {% if latest_source_snapshot %}
+            {{ latest_source_summary.rows }} rows ·
+            {{ latest_source_summary.conflicts + latest_source_summary.ambiguous + latest_source_summary.duplicates + latest_source_summary.source_only }} items need attention
+          {% else %}
+            No confirmed collection source
+          {% endif %}
+        </p>
+      </div>
+      <span class="source-health__toggle" aria-hidden="true"></span>
+    </summary>
+
+    <div class="source-health__body">
+      <header class="source-health__header">
         <p>Confirmed collection exports, reconciliation results, and import history.</p>
-      </div>
-      <a class="button-primary" href="#source-upload">Upload new source</a>
-    </header>
+        <a class="button-primary" href="#source-upload">Upload new source</a>
+      </header>
 
-    <section class="source-sync-upload" id="source-upload">
-      <h3>Upload collection CSV</h3>
-      <form method="post" action="/ui/source-sync/upload" enctype="multipart/form-data">
-        <label for="source-file">CSV file</label>
-        <input id="source-file" name="source_file" type="file" accept=".csv,text/csv" required />
-        <button class="button-primary" type="submit">Preview snapshot</button>
-      </form>
-      <p>Required: Title, Time, Director, Year. Numbers exports using Name, Total Time, and Artist are accepted.</p>
-    </section>
-
-    {% if latest_source_snapshot %}
-      <section class="source-sync-summary">
-        <header>
-          <div>
-            <span class="review-vault-id">Latest confirmed snapshot</span>
-            <h3>{{ latest_source_snapshot.filename }}</h3>
-          </div>
-          <span>{{ latest_source_snapshot.confirmed_at.strftime('%Y-%m-%d %H:%M') if latest_source_snapshot.confirmed_at else 'Pending' }}</span>
-        </header>
-        <div class="source-sync-metrics source-sync-metrics--health">
-          <div><strong>{{ latest_source_summary.rows }}</strong><span>Source rows</span></div>
-          <div><strong>{{ latest_source_summary.auto_matched }}</strong><span>Auto-matched</span></div>
-          <div><strong>{{ latest_source_summary.manually_matched }}</strong><span>Manually matched</span></div>
-          <div><strong>{{ latest_source_summary.accepted }}</strong><span>Accepted rows</span></div>
-          <div><strong>{{ latest_source_summary.conflicts }}</strong><span>Conflicts</span></div>
-          <div><strong>{{ latest_source_summary.ambiguous }}</strong><span>Ambiguous</span></div>
-          <div><strong>{{ latest_source_summary.duplicates }}</strong><span>Duplicates</span></div>
-          <div><strong>{{ latest_source_summary.source_only }}</strong><span>New candidates</span></div>
-        </div>
-        <a class="button-secondary" href="#review-workbench">Open review workbench</a>
+      <section class="source-sync-upload" id="source-upload">
+        <h3>Upload collection CSV</h3>
+        <form method="post" action="/ui/source-sync/upload" enctype="multipart/form-data">
+          <label for="source-file">CSV file</label>
+          <input id="source-file" name="source_file" type="file" accept=".csv,text/csv" required />
+          <button class="button-primary" type="submit">Preview snapshot</button>
+        </form>
+        <p>Required: Title, Time, Director, Year. Numbers exports using Name, Total Time, and Artist are accepted.</p>
       </section>
-    {% else %}
-      <div class="source-health__empty">
-        <p>No collection source has been confirmed yet.</p>
-        <a class="button-primary" href="#source-upload">Upload first source</a>
-      </div>
-    {% endif %}
 
-    <section class="source-sync-history">
-      <h3>Snapshot history</h3>
-      {% if source_snapshots %}
-        <div class="table-wrapper">
-          <table class="data-table data-table--compact">
-            <thead><tr><th>File</th><th>Rows</th><th>Status</th><th>Uploaded</th></tr></thead>
-            <tbody>
-              {% for snapshot in source_snapshots %}
-                <tr>
-                  <td><a href="/ui/source-sync/{{ snapshot.id }}/preview">{{ snapshot.filename }}</a></td>
-                  <td>{{ snapshot.row_count }}</td>
-                  <td>{{ snapshot.status }}</td>
-                  <td>{{ snapshot.uploaded_at.strftime('%Y-%m-%d %H:%M') }}</td>
-                </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
+      {% if latest_source_snapshot %}
+        <section class="source-sync-summary">
+          <header>
+            <div>
+              <span class="review-vault-id">Latest confirmed snapshot</span>
+              <h3>{{ latest_source_snapshot.filename }}</h3>
+            </div>
+            <span>{{ latest_source_snapshot.confirmed_at.strftime('%Y-%m-%d %H:%M') if latest_source_snapshot.confirmed_at else 'Pending' }}</span>
+          </header>
+          <div class="source-sync-metrics source-sync-metrics--health">
+            <div><strong>{{ latest_source_summary.rows }}</strong><span>Source rows</span></div>
+            <div><strong>{{ latest_source_summary.auto_matched }}</strong><span>Auto-matched</span></div>
+            <div><strong>{{ latest_source_summary.manually_matched }}</strong><span>Manually matched</span></div>
+            <div><strong>{{ latest_source_summary.accepted }}</strong><span>Accepted rows</span></div>
+            <div><strong>{{ latest_source_summary.conflicts }}</strong><span>Conflicts</span></div>
+            <div><strong>{{ latest_source_summary.ambiguous }}</strong><span>Ambiguous</span></div>
+            <div><strong>{{ latest_source_summary.duplicates }}</strong><span>Duplicates</span></div>
+            <div><strong>{{ latest_source_summary.source_only }}</strong><span>New candidates</span></div>
+          </div>
+          <a class="button-secondary" href="#review-workbench">Open review workbench</a>
+        </section>
       {% else %}
-        <p>No source snapshots uploaded yet.</p>
+        <div class="source-health__empty">
+          <p>No collection source has been confirmed yet.</p>
+          <a class="button-primary" href="#source-upload">Upload first source</a>
+        </div>
       {% endif %}
-    </section>
-  </section>
+
+      <section class="source-sync-history">
+        <h3>Snapshot history</h3>
+        {% if source_snapshots %}
+          <div class="table-wrapper">
+            <table class="data-table data-table--compact">
+              <thead><tr><th>File</th><th>Rows</th><th>Status</th><th>Uploaded</th></tr></thead>
+              <tbody>
+                {% for snapshot in source_snapshots %}
+                  <tr>
+                    <td><a href="/ui/source-sync/{{ snapshot.id }}/preview">{{ snapshot.filename }}</a></td>
+                    <td>{{ snapshot.row_count }}</td>
+                    <td>{{ snapshot.status }}</td>
+                    <td>{{ snapshot.uploaded_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <p>No source snapshots uploaded yet.</p>
+        {% endif %}
+      </section>
+    </div>
+  </details>
   {% else %}
-    <section class="page-shell health-section" id="source-synchronization" aria-labelledby="source-health-title">
-      <header class="health-section__header">
+    <details class="page-shell source-health" id="source-synchronization">
+      <summary class="source-health__summary">
         <div>
           <span class="review-vault-id">Collection source</span>
-          <h2 id="source-health-title">Source synchronization</h2>
-          <p>Latest confirmed source and reconciliation status.</p>
+          <h2>Source synchronization</h2>
+          <p>{% if latest_source_snapshot %}{{ latest_source_summary.rows }} rows{% else %}No confirmed collection source{% endif %}</p>
         </div>
-      </header>
-      {% if latest_source_snapshot %}
-        <div class="source-sync-metrics source-sync-metrics--health">
-          <div><strong>{{ latest_source_summary.rows }}</strong><span>Source rows</span></div>
-          <div><strong>{{ latest_source_summary.conflicts }}</strong><span>Conflicts</span></div>
-          <div><strong>{{ latest_source_summary.ambiguous }}</strong><span>Ambiguous</span></div>
-          <div><strong>{{ latest_source_summary.source_only }}</strong><span>New candidates</span></div>
-        </div>
-      {% else %}
-        <p>No collection source has been confirmed yet.</p>
-      {% endif %}
-    </section>
+        <span class="source-health__toggle" aria-hidden="true"></span>
+      </summary>
+      <div class="source-health__body">
+        <p>Latest confirmed source and reconciliation status.</p>
+        {% if latest_source_snapshot %}
+          <div class="source-sync-metrics source-sync-metrics--health">
+            <div><strong>{{ latest_source_summary.rows }}</strong><span>Source rows</span></div>
+            <div><strong>{{ latest_source_summary.conflicts }}</strong><span>Conflicts</span></div>
+            <div><strong>{{ latest_source_summary.ambiguous }}</strong><span>Ambiguous</span></div>
+            <div><strong>{{ latest_source_summary.source_only }}</strong><span>New candidates</span></div>
+          </div>
+        {% else %}
+          <p>No collection source has been confirmed yet.</p>
+        {% endif %}
+      </div>
+    </details>
   {% endif %}
 
   <section class="page-shell health-section" id="metadata-gaps" aria-labelledby="metadata-gaps-title">

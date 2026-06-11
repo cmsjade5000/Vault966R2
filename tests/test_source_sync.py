@@ -87,6 +87,8 @@ def test_source_sync_status_and_history_live_on_collection_health(client: TestCl
     assert "Snapshot history" in health.text
     assert "Auto-matched" in health.text
     assert "Manually matched" in health.text
+    assert '<details class="page-shell source-health" id="source-synchronization">' in health.text
+    assert '<details class="page-shell source-health" id="source-synchronization" open>' not in health.text
 
 
 def test_source_upload_errors_return_to_collection_health(client: TestClient) -> None:
