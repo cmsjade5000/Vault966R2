@@ -1,6 +1,7 @@
 from datetime import datetime, timezone
 
 from api.models.movie import Movie, MovieIngestProvenance
+from api.models.movie_review import MovieReviewCheck
 from api.models.source_sync import SourceFieldDecision, SourceMovieRow, SourceSnapshot
 from scripts.audit_vault_integrity import _fingerprint, audit
 
@@ -74,6 +75,43 @@ def test_audit_separates_approved_source_changes_from_drift(db_session, tmp_path
     assert approved[0]["differences"]["runtime"]["database"] == 120
     drift = report["source_reconciliation"]["drift"]
     assert "runtime" not in drift[0]["differences"]
+
+
+def test_audit_accepts_recorded_title_year_authority(db_session, tmp_path):
+    movie = db_session.query(Movie).first()
+    movie.vault_id = "V0001"
+    movie.title = "Blade Runner (1981)"
+    movie.year = 1981
+    db_session.add(
+        MovieIngestProvenance(
+            movie_id=movie.id,
+            provider="legacy_vault_csv",
+            provider_id=movie.vault_id,
+        )
+    )
+    db_session.add(
+        MovieReviewCheck(
+            movie_id=movie.id,
+            issue_type="title_year_conflict",
+            issue_fingerprint="a" * 64,
+            decision="title_year_applied",
+        )
+    )
+    db_session.commit()
+
+    source_path = tmp_path / "legacy.csv"
+    source_path.write_text(
+        "vault_id,title,year,runtime\nV0001,Blade Runner (1981),1982,117\n",
+        encoding="utf-8",
+    )
+
+    report = audit(db_session, source_path=source_path, sample_size=0)
+
+    approved = report["source_reconciliation"]["approved_deviations"]
+    assert approved[0]["differences"]["year"]["database"] == 1981
+    assert approved[0]["differences"]["year"]["policy"] == "title_year_authority"
+    drift = report["source_reconciliation"]["drift"]
+    assert "year" not in drift[0]["differences"]
 
 
 def test_audit_reports_nonlegacy_movies_as_newer_source_entries(db_session, tmp_path):

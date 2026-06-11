@@ -1,12 +1,12 @@
 {
   "schema_version": 2,
-  "generated_at": "2026-06-11T12:58:49.061922+00:00",
+  "generated_at": "2026-06-11T13:20:31.614851+00:00",
   "summary": {
     "movie_count": 1012,
     "structural_issue_count": 0,
-    "content_review_issue_count": 134,
+    "content_review_issue_count": 117,
     "source_drift_count": 0,
-    "approved_source_deviation_count": 257,
+    "approved_source_deviation_count": 273,
     "artwork_enrichment_count": 838,
     "newer_source_entry_count": 43,
     "missing_source_id_count": 0,
@@ -14,7 +14,7 @@
     "healthy": true,
     "review_required": true
   },
-  "collection_fingerprint": "090407874f81a600f495e97d109fc2e7dfbb3510146dba3f6918ec844c1b6cb9",
+  "collection_fingerprint": "baa7984dcbf2758397927c8452e53dec655368dc147e95ad7e9a6b5d87f1bf95",
   "field_coverage": {
     "year": 1003,
     "runtime": 986,
@@ -38,110 +38,7 @@
     "duplicate_title_year": []
   },
   "content_review": {
-    "title_embedded_year_conflicts": [
-      {
-        "movie_id": 16,
-        "title": "A Christmas Carol (2009)",
-        "database_year": 2011,
-        "embedded_year": 2009
-      },
-      {
-        "movie_id": 27,
-        "title": "A Nightmare On Elm Street (2010)",
-        "database_year": 1984,
-        "embedded_year": 2010
-      },
-      {
-        "movie_id": 105,
-        "title": "Carrie (1976)",
-        "database_year": 1952,
-        "embedded_year": 1976
-      },
-      {
-        "movie_id": 106,
-        "title": "Carrie (2013)",
-        "database_year": 1952,
-        "embedded_year": 2013
-      },
-      {
-        "movie_id": 159,
-        "title": "Dirty Girl (2007)",
-        "database_year": 2010,
-        "embedded_year": 2007
-      },
-      {
-        "movie_id": 224,
-        "title": "Footloose (1984)",
-        "database_year": 2011,
-        "embedded_year": 1984
-      },
-      {
-        "movie_id": 294,
-        "title": "Her (2013)",
-        "database_year": 2014,
-        "embedded_year": 2013
-      },
-      {
-        "movie_id": 335,
-        "title": "Into the Woods (2014)",
-        "database_year": 2011,
-        "embedded_year": 2014
-      },
-      {
-        "movie_id": 390,
-        "title": "Les Misérables (2012)",
-        "database_year": 1995,
-        "embedded_year": 2012
-      },
-      {
-        "movie_id": 447,
-        "title": "Moana (2016)",
-        "database_year": 2009,
-        "embedded_year": 2016
-      },
-      {
-        "movie_id": 504,
-        "title": "Pet Sematary (2019)",
-        "database_year": 1989,
-        "embedded_year": 2019
-      },
-      {
-        "movie_id": 676,
-        "title": "The Addams Family (2019)",
-        "database_year": 1991,
-        "embedded_year": 2019
-      },
-      {
-        "movie_id": 705,
-        "title": "The Courier (2021)",
-        "database_year": 2012,
-        "embedded_year": 2021
-      },
-      {
-        "movie_id": 735,
-        "title": "The Gift (2015)",
-        "database_year": 2000,
-        "embedded_year": 2015
-      },
-      {
-        "movie_id": 790,
-        "title": "The Little Mermaid (1989)",
-        "database_year": 2018,
-        "embedded_year": 1989
-      },
-      {
-        "movie_id": 893,
-        "title": "Twister (1996)",
-        "database_year": 1989,
-        "embedded_year": 1996
-      },
-      {
-        "movie_id": 938,
-        "title": "Yesterday (2019)",
-        "database_year": 1985,
-        "embedded_year": 2019
-      }
-    ],
+    "title_embedded_year_conflicts": [],
     "missing_year": [
       {
         "movie_id": 206,
@@ -204,7 +101,7 @@
       {
         "movie_id": 105,
         "title": "Carrie (1976)",
-        "year": 1952
+        "year": 1976
       },
       {
         "movie_id": 118,
@@ -224,7 +121,7 @@
       {
         "movie_id": 159,
         "title": "Dirty Girl (2007)",
-        "year": 2010
+        "year": 2007
       },
       {
         "movie_id": 160,
@@ -289,7 +186,7 @@
       {
         "movie_id": 335,
         "title": "Into the Woods (2014)",
-        "year": 2011
+        "year": 2014
       },
       {
         "movie_id": 338,
@@ -299,7 +196,7 @@
       {
         "movie_id": 390,
         "title": "Les Misérables (2012)",
-        "year": 1995
+        "year": 2012
       },
       {
         "movie_id": 399,
@@ -394,7 +291,7 @@
       {
         "movie_id": 735,
         "title": "The Gift (2015)",
-        "year": 2000
+        "year": 2015
       },
       {
         "movie_id": 739,
@@ -439,7 +336,7 @@
       {
         "movie_id": 790,
         "title": "The Little Mermaid (1989)",
-        "year": 2018
+        "year": 1989
       },
       {
         "movie_id": 795,
@@ -499,7 +396,7 @@
       {
         "movie_id": 938,
         "title": "Yesterday (2019)",
-        "year": 1985
+        "year": 2019
       },
       {
         "movie_id": 941,
@@ -777,6 +674,19 @@
         }
       },
       {
+        "movie_id": 16,
+        "vault_id": "V0016",
+        "title": "A Christmas Carol (2009)",
+        "differences": {
+          "year": {
+            "source": 2011,
+            "database": 2009,
+            "review_decision_id": 1,
+            "policy": "title_year_authority"
+          }
+        }
+      },
+      {
         "movie_id": 17,
         "vault_id": "V0017",
         "title": "A Christmas Story",
@@ -842,6 +752,19 @@
             ],
             "decision_id": 165,
             "source_snapshot_id": 1
+          }
+        }
+      },
+      {
+        "movie_id": 27,
+        "vault_id": "V0027",
+        "title": "A Nightmare On Elm Street (2010)",
+        "differences": {
+          "year": {
+            "source": 1984,
+            "database": 2010,
+            "review_decision_id": 2,
+            "policy": "title_year_authority"
           }
         }
       },
@@ -1191,6 +1114,32 @@
         }
       },
       {
+        "movie_id": 105,
+        "vault_id": "V0106",
+        "title": "Carrie (1976)",
+        "differences": {
+          "year": {
+            "source": 1952,
+            "database": 1976,
+            "review_decision_id": 3,
+            "policy": "title_year_authority"
+          }
+        }
+      },
+      {
+        "movie_id": 106,
+        "vault_id": "V0107",
+        "title": "Carrie (2013)",
+        "differences": {
+          "year": {
+            "source": 1952,
+            "database": 2013,
+            "review_decision_id": 5,
+            "policy": "title_year_authority"
+          }
+        }
+      },
+      {
         "movie_id": 112,
         "vault_id": "V0113",
         "title": "Charlie's Angels",
@@ -1428,6 +1377,19 @@
             ],
             "decision_id": 218,
             "source_snapshot_id": 1
+          }
+        }
+      },
+      {
+        "movie_id": 159,
+        "vault_id": "V0161",
+        "title": "Dirty Girl (2007)",
+        "differences": {
+          "year": {
+            "source": 2010,
+            "database": 2007,
+            "review_decision_id": 6,
+            "policy": "title_year_authority"
           }
         }
       },
@@ -1843,6 +1805,19 @@
         }
       },
       {
+        "movie_id": 224,
+        "vault_id": "V0226",
+        "title": "Footloose (1984)",
+        "differences": {
+          "year": {
+            "source": 2011,
+            "database": 1984,
+            "review_decision_id": 8,
+            "policy": "title_year_authority"
+          }
+        }
+      },
+      {
         "movie_id": 229,
         "vault_id": "V0231",
         "title": "Friday (1995)",
@@ -2171,12 +2146,6 @@
         "vault_id": "V0297",
         "title": "Her (2013)",
         "differences": {
-          "year": {
-            "source": 2013,
-            "database": 2014,
-            "decision_id": 256,
-            "source_snapshot_id": 1
-          },
           "runtime": {
             "source": null,
             "database": 126,
@@ -2379,6 +2348,19 @@
         }
       },
       {
+        "movie_id": 335,
+        "vault_id": "V0339",
+        "title": "Into the Woods (2014)",
+        "differences": {
+          "year": {
+            "source": 2011,
+            "database": 2014,
+            "review_decision_id": 10,
+            "policy": "title_year_authority"
+          }
+        }
+      },
+      {
         "movie_id": 338,
         "vault_id": "V0342",
         "title": "Isn't It Romantic (2019)",
@@ -2566,6 +2548,19 @@
             "database": 95,
             "decision_id": 69,
             "source_snapshot_id": 1
+          }
+        }
+      },
+      {
+        "movie_id": 390,
+        "vault_id": "V0394",
+        "title": "Les Misérables (2012)",
+        "differences": {
+          "year": {
+            "source": 1995,
+            "database": 2012,
+            "review_decision_id": 12,
+            "policy": "title_year_authority"
           }
         }
       },
@@ -2872,6 +2867,19 @@
         }
       },
       {
+        "movie_id": 447,
+        "vault_id": "V0451",
+        "title": "Moana (2016)",
+        "differences": {
+          "year": {
+            "source": 2009,
+            "database": 2016,
+            "review_decision_id": 14,
+            "policy": "title_year_authority"
+          }
+        }
+      },
+      {
         "movie_id": 449,
         "vault_id": "V0453",
         "title": "Monsters, Inc.",
@@ -3129,6 +3137,19 @@
             "database": 2001,
             "decision_id": 318,
             "source_snapshot_id": 1
+          }
+        }
+      },
+      {
+        "movie_id": 504,
+        "vault_id": "V0508",
+        "title": "Pet Sematary (2019)",
+        "differences": {
+          "year": {
+            "source": 1989,
+            "database": 2019,
+            "review_decision_id": 15,
+            "policy": "title_year_authority"
           }
         }
       },
@@ -4121,6 +4142,19 @@
         }
       },
       {
+        "movie_id": 676,
+        "vault_id": "V0685",
+        "title": "The Addams Family (2019)",
+        "differences": {
+          "year": {
+            "source": 1991,
+            "database": 2019,
+            "review_decision_id": 16,
+            "policy": "title_year_authority"
+          }
+        }
+      },
+      {
         "movie_id": 680,
         "vault_id": "V0689",
         "title": "The Amityville Horror (1979)",
@@ -4243,6 +4277,19 @@
         }
       },
       {
+        "movie_id": 705,
+        "vault_id": "V0715",
+        "title": "The Courier (2021)",
+        "differences": {
+          "year": {
+            "source": 2012,
+            "database": 2021,
+            "review_decision_id": 17,
+            "policy": "title_year_authority"
+          }
+        }
+      },
+      {
         "movie_id": 713,
         "vault_id": "V0723",
         "title": "The Dead Zone",
@@ -4337,6 +4384,19 @@
             "database": 82,
             "decision_id": 36,
             "source_snapshot_id": 1
+          }
+        }
+      },
+      {
+        "movie_id": 735,
+        "vault_id": "V0745",
+        "title": "The Gift (2015)",
+        "differences": {
+          "year": {
+            "source": 2000,
+            "database": 2015,
+            "review_decision_id": 18,
+            "policy": "title_year_authority"
           }
         }
       },
@@ -4685,6 +4745,19 @@
             "database": 119,
             "decision_id": 70,
             "source_snapshot_id": 1
+          }
+        }
+      },
+      {
+        "movie_id": 790,
+        "vault_id": "V0800",
+        "title": "The Little Mermaid (1989)",
+        "differences": {
+          "year": {
+            "source": 2018,
+            "database": 1989,
+            "review_decision_id": 20,
+            "policy": "title_year_authority"
           }
         }
       },
@@ -5172,6 +5245,19 @@
         }
       },
       {
+        "movie_id": 893,
+        "vault_id": "V0903",
+        "title": "Twister (1996)",
+        "differences": {
+          "year": {
+            "source": 1989,
+            "database": 1996,
+            "review_decision_id": 22,
+            "policy": "title_year_authority"
+          }
+        }
+      },
+      {
         "movie_id": 895,
         "vault_id": "V0905",
         "title": "Tyler Perry's Boo 2! - A Madea Halloween",
@@ -5345,6 +5431,19 @@
             ],
             "decision_id": 384,
             "source_snapshot_id": 1
+          }
+        }
+      },
+      {
+        "movie_id": 938,
+        "vault_id": "V0949",
+        "title": "Yesterday (2019)",
+        "differences": {
+          "year": {
+            "source": 1985,
+            "database": 2019,
+            "review_decision_id": 23,
+            "policy": "title_year_authority"
           }
         }
       },
@@ -15706,7 +15805,7 @@
       "movie_id": 790,
       "vault_id": "V0800",
       "title": "The Little Mermaid (1989)",
-      "year": 2018,
+      "year": 1989,
       "runtime": null,
       "plot": "A young reporter and his niece discover a beautiful and enchanting creature they believe to be the real little mermaid.",
       "awards": null,

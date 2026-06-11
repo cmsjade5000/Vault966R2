@@ -134,6 +134,19 @@ def test_update_movie_metadata_handles_optional_fields(
     assert detail["rt_score"] == 95
 
 
+def test_update_movie_uses_terminal_title_year_as_authority(
+    client: TestClient, admin_headers: dict[str, str]
+) -> None:
+    response = client.patch(
+        "/movies/1",
+        json={"title": "Blade Runner (1981)", "year": 1982},
+        headers=admin_headers,
+    )
+
+    assert response.status_code == 200
+    assert response.json()["year"] == 1981
+
+
 @pytest.mark.parametrize(
     ("payload", "message"),
     [

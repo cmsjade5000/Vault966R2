@@ -35,6 +35,12 @@ class BulkReviewDecisionResult:
     flag_count: int
 
 
+@dataclass(frozen=True)
+class TitleYearCorrectionResult:
+    movie_count: int
+    cleared_flag_count: int
+
+
 def _fingerprint(*values: object) -> str:
     serialized = "\x1f".join("" if value is None else str(value) for value in values)
     return hashlib.sha256(serialized.encode("utf-8")).hexdigest()
@@ -97,6 +103,91 @@ def detect_review_issues(movie: Movie) -> tuple[ReviewIssue, ...]:
         )
 
     return tuple(sorted(issues, key=lambda issue: issue.priority))
+
+
+def title_year_from_title(title: str | None) -> int | None:
+    match = TITLE_YEAR_RE.search(title or "")
+    return int(match.group(1)) if match else None
+
+
+def apply_title_year_authority(
+    db: Session,
+    *,
+    movie: Movie,
+    profile_id: int | None,
+) -> bool:
+    title_year = title_year_from_title(movie.title)
+    if title_year is None or movie.year == title_year:
+        return False
+
+    conflict = next(
+        (
+            issue
+            for issue in detect_review_issues(movie)
+            if issue.issue_type == "title_year_conflict"
+        ),
+        None,
+    )
+    if conflict is not None:
+        existing = (
+            db.query(MovieReviewCheck)
+            .filter(MovieReviewCheck.movie_id == movie.id)
+            .filter(MovieReviewCheck.issue_type == conflict.issue_type)
+            .filter(MovieReviewCheck.issue_fingerprint == conflict.fingerprint)
+            .one_or_none()
+        )
+        if existing is None:
+            db.add(
+                MovieReviewCheck(
+                    movie_id=movie.id,
+                    issue_type=conflict.issue_type,
+                    issue_fingerprint=conflict.fingerprint,
+                    decision="title_year_applied",
+                    checked_by_profile_id=profile_id,
+                )
+            )
+        else:
+            existing.decision = "title_year_applied"
+            existing.checked_by_profile_id = profile_id
+
+    movie.year = title_year
+    if movie.flag is not None and movie.flag.reason == "Human review":
+        remaining_notes = [
+            note.strip()
+            for note in (movie.flag.notes or "").split(";")
+            if note.strip() and note.strip() != "Title and year disagree"
+        ]
+        if remaining_notes:
+            movie.flag.notes = "; ".join(remaining_notes)
+        else:
+            db.delete(movie.flag)
+    return True
+
+
+def apply_all_title_year_corrections(
+    db: Session,
+    *,
+    profile_id: int | None,
+) -> TitleYearCorrectionResult:
+    corrected = 0
+    flags_before = db.query(MovieFlag).count()
+    try:
+        for movie in db.query(Movie).order_by(Movie.id).all():
+            corrected += int(
+                apply_title_year_authority(
+                    db,
+                    movie=movie,
+                    profile_id=profile_id,
+                )
+            )
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise
+    return TitleYearCorrectionResult(
+        movie_count=corrected,
+        cleared_flag_count=flags_before - db.query(MovieFlag).count(),
+    )
 
 
 def get_review_queue(db: Session) -> tuple[list[MovieReviewItem], int]:

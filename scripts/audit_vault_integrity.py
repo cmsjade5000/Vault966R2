@@ -22,6 +22,7 @@ if str(ROOT) not in sys.path:
 
 import api.models  # noqa: E402,F401
 from api.models.movie import Movie, MovieIngestProvenance  # noqa: E402
+from api.models.movie_review import MovieReviewCheck  # noqa: E402
 from api.models.person import Role, RoleType  # noqa: E402
 from api.models.source_sync import SourceFieldDecision  # noqa: E402
 from api.services.source_sync import parse_directors  # noqa: E402
@@ -136,6 +137,20 @@ def _approved_source_decisions(
     return {key: decision for key, decision in latest.items() if decision.decision == "use_source"}
 
 
+def _approved_title_year_decisions(db: Session) -> dict[int, MovieReviewCheck]:
+    decisions = (
+        db.query(MovieReviewCheck)
+        .filter(MovieReviewCheck.issue_type == "title_year_conflict")
+        .filter(MovieReviewCheck.decision == "title_year_applied")
+        .order_by(MovieReviewCheck.checked_at.desc(), MovieReviewCheck.id.desc())
+        .all()
+    )
+    latest: dict[int, MovieReviewCheck] = {}
+    for decision in decisions:
+        latest.setdefault(decision.movie_id, decision)
+    return latest
+
+
 def _decision_matches_actual(
     decision: SourceFieldDecision,
     *,
@@ -248,6 +263,7 @@ def audit(
     source_unmatched: list[str] = []
     source = _load_source(source_path) if source_path is not None else {}
     approved_decisions = _approved_source_decisions(db)
+    approved_title_year_decisions = _approved_title_year_decisions(db)
     matched_source_ids: set[str] = set()
     for movie in movies:
         provenance = provenance_by_movie.get(movie.id)
@@ -294,6 +310,19 @@ def audit(
                     **values,
                     "decision_id": decision.id,
                     "source_snapshot_id": decision.source_row.snapshot_id,
+                }
+            elif (
+                field == "year"
+                and (title_year_decision := approved_title_year_decisions.get(movie.id))
+                is not None
+                and (title_year_match := TITLE_YEAR_RE.search(movie.title or ""))
+                is not None
+                and int(title_year_match.group(1)) == actual[field]
+            ):
+                approved[field] = {
+                    **values,
+                    "review_decision_id": title_year_decision.id,
+                    "policy": "title_year_authority",
                 }
             else:
                 differences[field] = values

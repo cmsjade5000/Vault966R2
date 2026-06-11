@@ -2,8 +2,13 @@ from fastapi.testclient import TestClient
 
 from api.models.movie import Movie
 from api.models.movie_flag import MovieFlag
+from api.models.movie_review import MovieReviewCheck
 from api.models.person import Person, Role, RoleType
-from api.services.movie_review import get_review_queue
+from api.services.movie_review import (
+    apply_all_title_year_corrections,
+    detect_review_issues,
+    get_review_queue,
+)
 from api.services.ui.grid import FILTER_COOKIE_NAME
 
 
@@ -109,6 +114,51 @@ def test_review_queue_shows_detected_issue_and_vault_id(client: TestClient, db_s
     assert "Human Review" in response.text
     assert "Title and year disagree" in response.text
     assert "V0001" in response.text
+
+
+def test_title_year_authority_updates_year_and_preserves_other_flag_issues(
+    db_session,
+) -> None:
+    first = db_session.get(Movie, 1)
+    first.title = "Blade Runner (1981)"
+    first.year = 1982
+    first.flag = MovieFlag(
+        reason="Human review",
+        notes="Title and year disagree",
+    )
+    second = db_session.get(Movie, 2)
+    second.title = "The Matrix (2001)"
+    second.year = 1999
+    second.flag = MovieFlag(
+        reason="Human review",
+        notes="Title and year disagree; No source IDs",
+    )
+    db_session.add(
+        MovieReviewCheck(
+            movie_id=first.id,
+            issue_type="title_year_conflict",
+            issue_fingerprint=detect_review_issues(first)[0].fingerprint,
+            decision="needs_fix",
+        )
+    )
+    db_session.commit()
+
+    result = apply_all_title_year_corrections(db_session, profile_id=1)
+
+    db_session.expire_all()
+    assert result.movie_count == 2
+    assert result.cleared_flag_count == 1
+    assert db_session.get(Movie, 1).year == 1981
+    assert db_session.get(Movie, 1).flag is None
+    assert db_session.get(Movie, 2).year == 2001
+    assert db_session.get(Movie, 2).flag.notes == "No source IDs"
+    assert (
+        db_session.query(MovieReviewCheck)
+        .filter(MovieReviewCheck.movie_id == first.id)
+        .one()
+        .decision
+        == "title_year_applied"
+    )
 
 
 def test_review_checked_removes_movie_from_queue(client: TestClient, db_session) -> None:

@@ -21,6 +21,7 @@ from api.models.source_sync import (
     SourceReconciliationMatch,
     SourceSnapshot,
 )
+from api.services.movie_review import apply_title_year_authority
 from core.genres import split_and_normalize
 from core.vault_ids import next_vault_id
 
@@ -932,6 +933,12 @@ def _decide_source_field(
             movie.runtime = row.runtime
         elif field_name == "director":
             _set_directors(db, movie, row.director)
+        apply_title_year_authority(
+            db,
+            movie=movie,
+            profile_id=profile_id,
+        )
+        selected_value = _field_values(row, movie)[field_name][1]
 
     now = datetime.now(timezone.utc)
     (

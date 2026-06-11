@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 
 from api.models.movie import Genre, Movie
 from api.schemas.movie import MovieUpdate
+from api.services.movie_review import apply_title_year_authority
 from api.utils.providers import merge_providers
 from core.enriched_csv import normalize_countries, normalize_languages
 from core.genres import split_and_normalize
@@ -189,6 +190,10 @@ def apply_movie_update(db: Session, movie: Movie, payload: MovieUpdate) -> Movie
 
     if payload.resolve_flag and movie.flag is not None:
         db.delete(movie.flag)
+
+    if payload.title is not None:
+        if apply_title_year_authority(db, movie=movie, profile_id=None):
+            has_changes = True
 
     if has_changes and hasattr(movie, "updated_at"):
         movie.updated_at = datetime.now(timezone.utc)
