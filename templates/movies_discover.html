@@ -12,21 +12,6 @@
     </div>
   </header>
 
-  {% if double_feature %}
-  <section class="discover-feature page-shell" aria-label="Tonight's double feature">
-    <span class="overview-label">Tonight's double feature</span>
-    <div class="discover-feature__titles">
-      <a href="/ui/movies/{{ double_feature.primary.id }}">{{ double_feature.primary.title }}</a>
-      <span aria-hidden="true">+</span>
-      <a href="/ui/movies/{{ double_feature.secondary.id }}">{{ double_feature.secondary.title }}</a>
-    </div>
-    <div class="discover-feature__meta">
-      <span>{{ double_feature.total_runtime }} total</span>
-      {% if double_feature.theme_label %}<span>{{ double_feature.theme_label }}</span>{% endif %}
-    </div>
-  </section>
-  {% endif %}
-
   {% if spotlight_movies %}
   <section class="poster-banner discover-spotlight">
     <div class="poster-banner__inner" aria-label="Daily spotlight">
