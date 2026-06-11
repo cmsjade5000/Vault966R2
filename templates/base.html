@@ -101,15 +101,6 @@
               >
               {% if request.state.session_profile_role in ['admin', 'reviewer'] %}
               <a
-                class="nav-link{% if current_path == '/ui/review' %} is-active{% endif %}"
-                href="/ui/review"
-                role="menuitem"
-                {% if current_path == '/ui/review' %}aria-current="page"{% endif %}
-                >Review</a
-              >
-              {% endif %}
-              {% if request.state.session_profile_role == 'admin' %}
-              <a
                 class="nav-link{% if current_path == '/ui/movies/health' or current_path.startswith('/ui/source-sync/') %} is-active{% endif %}"
                 href="/ui/movies/health"
                 role="menuitem"
@@ -193,9 +184,9 @@
         </a>
         {% if request.state.session_profile_role in ['admin', 'reviewer'] %}
         <a
-          class="bottom-nav__link{% if current_path == '/ui/review' %} is-active{% endif %}"
-          href="/ui/review"
-          {% if current_path == '/ui/review' %}aria-current="page"{% endif %}
+          class="bottom-nav__link{% if current_path == '/ui/movies/health' or current_path.startswith('/ui/source-sync/') %} is-active{% endif %}"
+          href="/ui/movies/health"
+          {% if current_path == '/ui/movies/health' or current_path.startswith('/ui/source-sync/') %}aria-current="page"{% endif %}
         >
           <span class="bottom-nav__icon" aria-hidden="true">
             <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
@@ -209,7 +200,7 @@
               />
             </svg>
           </span>
-          <span class="bottom-nav__label">Review</span>
+          <span class="bottom-nav__label">Health</span>
         </a>
         {% endif %}
       </nav>

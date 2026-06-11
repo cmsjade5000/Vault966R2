@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Collection Health · Source Preview · Vault 966{% endblock %}
+{% block title %}Vault Health · Source Preview · Vault 966{% endblock %}
 {% block head %}
 <link rel="stylesheet" href="{{ url_for('static', path='css/movies.css') }}" />
 {% endblock %}
@@ -25,8 +25,8 @@
           <a class="button-secondary" href="/ui/movies/health#source-synchronization">Cancel</a>
         </form>
       {% else %}
-        <a class="button-primary" href="/ui/movies/health#source-synchronization">Back to Collection Health</a>
-        <a class="button-secondary" href="/ui/review">Open Human Review</a>
+        <a class="button-primary" href="/ui/movies/health#source-synchronization">Back to Vault Health</a>
+        <a class="button-secondary" href="/ui/movies/health#review-workbench">Open review workbench</a>
       {% endif %}
     </section>
     <section class="source-sync-history">

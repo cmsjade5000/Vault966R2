@@ -194,7 +194,7 @@ def test_review_queue_can_select_and_navigate_source_rows(client: TestClient, db
     )
 
     response = client.get(
-        f"/ui/review?view=differences&row={matches[1].source_row_id}"
+        f"/ui/movies/health?view=differences&row={matches[1].source_row_id}"
     )
 
     assert response.status_code == 200
@@ -219,7 +219,7 @@ def test_ambiguous_row_can_create_new_vault_entry(client: TestClient, db_session
     )
 
     response = client.post(
-        f"/ui/review/source-row/{match.source_row_id}/create?view=ambiguous",
+        f"/ui/movies/health/review/source-row/{match.source_row_id}/create?view=ambiguous",
         follow_redirects=False,
     )
 
@@ -247,7 +247,7 @@ def test_field_decision_updates_only_selected_field_and_preserves_vault_id(
     )
 
     response = client.post(
-        f"/ui/review/source-row/{match.source_row_id}/field/year/use_source",
+        f"/ui/movies/health/review/source-row/{match.source_row_id}/field/year/use_source",
         follow_redirects=False,
     )
 
@@ -274,8 +274,12 @@ def test_field_decisions_preserve_full_history(client: TestClient, db_session) -
         .filter_by(snapshot_id=snapshot_id)
         .one()
     )
-    client.post(f"/ui/review/source-row/{match.source_row_id}/field/year/needs_research")
-    client.post(f"/ui/review/source-row/{match.source_row_id}/field/year/keep_vault")
+    client.post(
+        f"/ui/movies/health/review/source-row/{match.source_row_id}/field/year/needs_research"
+    )
+    client.post(
+        f"/ui/movies/health/review/source-row/{match.source_row_id}/field/year/keep_vault"
+    )
 
     decisions = (
         db_session.query(SourceFieldDecision)
@@ -312,11 +316,11 @@ def test_bulk_accept_uses_source_for_all_matched_differences(
         .one()
     )
     client.post(
-        f"/ui/review/source-row/{blade_match.source_row_id}/field/year/needs_research"
+        f"/ui/movies/health/review/source-row/{blade_match.source_row_id}/field/year/needs_research"
     )
 
     response = client.post(
-        "/ui/review/source-accept-all",
+        "/ui/movies/health/review/source-accept-all",
         follow_redirects=False,
     )
 
@@ -337,7 +341,7 @@ def test_bulk_accept_uses_source_for_all_matched_differences(
         .all()
     )
     assert {decision.field_name for decision in decisions} == {"year", "director"}
-    review = client.get("/ui/review?view=differences")
+    review = client.get("/ui/movies/health?view=differences")
     assert "Differences queue is clear" in review.text
     assert "Ambiguous" in review.text
 
@@ -354,7 +358,7 @@ def test_bulk_accept_skips_conflicting_rows_for_the_same_movie_field(
     )
 
     response = client.post(
-        "/ui/review/source-accept-all",
+        "/ui/movies/health/review/source-accept-all",
         follow_redirects=False,
     )
 
@@ -378,7 +382,7 @@ def test_bulk_accept_skips_conflicting_rows_for_the_same_movie_field(
         .count()
         == 2
     )
-    review = client.get("/ui/review?view=differences")
+    review = client.get("/ui/movies/health?view=differences")
     assert "Accept all source values" not in review.text
 
 
@@ -391,7 +395,7 @@ def test_review_page_always_shows_direct_and_search_links(client: TestClient, db
         _csv("Blade Runner,1:57:00,,1983,Sci-Fi,PG,6/25/82,1"),
     )
 
-    response = client.get("/ui/review?view=differences")
+    response = client.get("/ui/movies/health?view=differences")
 
     assert response.status_code == 200
     assert '<details class="research-links">' in response.text
@@ -447,14 +451,14 @@ def test_defer_movie_moves_all_conflicts_and_shows_next(client: TestClient, db_s
     )
 
     response = client.post(
-        f"/ui/review/source-row/{match.source_row_id}/defer?view=differences",
+        f"/ui/movies/health/review/source-row/{match.source_row_id}/defer?view=differences",
         follow_redirects=False,
     )
 
     assert response.status_code == 303
     assert "view=differences" in response.headers["location"]
-    research = client.get("/ui/review?view=research")
-    differences = client.get("/ui/review?view=differences")
+    research = client.get("/ui/movies/health?view=research")
+    differences = client.get("/ui/movies/health?view=differences")
     assert "Blade Runner" in research.text
     assert "Needs research" in research.text
     assert "The Matrix" in differences.text
@@ -482,7 +486,7 @@ def test_latest_source_decision_can_be_undone(client: TestClient, db_session) ->
         .one()
     )
     decision = client.post(
-        f"/ui/review/source-row/{match.source_row_id}/field/year/use_source",
+        f"/ui/movies/health/review/source-row/{match.source_row_id}/field/year/use_source",
         follow_redirects=False,
     )
     query = parse_qs(urlparse(decision.headers["location"]).query)
@@ -491,7 +495,7 @@ def test_latest_source_decision_can_be_undone(client: TestClient, db_session) ->
     assert db_session.get(Movie, 1).year == 1983
 
     undo = client.post(
-        f"/ui/review/source-decision/{decision_id}/undo?view=differences",
+        f"/ui/movies/health/review/source-decision/{decision_id}/undo?view=differences",
         follow_redirects=False,
     )
 
@@ -504,7 +508,7 @@ def test_latest_source_decision_can_be_undone(client: TestClient, db_session) ->
 def test_review_routes_require_profile_auth_when_enabled(client: TestClient, monkeypatch) -> None:
     monkeypatch.setattr(settings, "disable_auth", False)
 
-    response = client.get("/ui/review", follow_redirects=False)
+    response = client.get("/ui/movies/health", follow_redirects=False)
 
     assert response.status_code == 302
     assert response.headers["location"] == "/login"
@@ -517,7 +521,7 @@ def test_same_origin_guard_rejects_cross_origin(monkeypatch) -> None:
         "method": "POST",
         "scheme": "https",
         "server": ("vault.local", 443),
-        "path": "/ui/review/source-row/1/field/year/keep_vault",
+        "path": "/ui/movies/health/review/source-row/1/field/year/keep_vault",
         "query_string": b"",
         "headers": [(b"host", b"vault.local")],
     }
@@ -548,7 +552,7 @@ def test_director_decision_updates_roles(client: TestClient, db_session) -> None
     )
 
     response = client.post(
-        f"/ui/review/source-row/{match.source_row_id}/field/director/use_source",
+        f"/ui/movies/health/review/source-row/{match.source_row_id}/field/director/use_source",
         follow_redirects=False,
     )
 
@@ -587,7 +591,7 @@ def test_source_only_row_can_create_next_vault_entry(client: TestClient, db_sess
     )
 
     response = client.post(
-        f"/ui/review/source-row/{match.source_row_id}/create",
+        f"/ui/movies/health/review/source-row/{match.source_row_id}/create",
         follow_redirects=False,
     )
 
@@ -616,7 +620,7 @@ def test_duplicate_rows_require_disposition(client: TestClient, db_session) -> N
     assert [match.match_type for match in matches] == ["exact", "duplicate"]
 
     response = client.post(
-        f"/ui/review/source-row/{matches[1].source_row_id}/dismiss-duplicate",
+        f"/ui/movies/health/review/source-row/{matches[1].source_row_id}/dismiss-duplicate",
         follow_redirects=False,
     )
     assert response.status_code == 303

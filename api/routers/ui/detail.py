@@ -87,7 +87,10 @@ def _build_reason_tags(base_genres: list[str], base_year: int | None, item) -> l
 
 @router.get("/ui/movies/review")
 def start_review(request: Request, db: Session = Depends(get_db)) -> RedirectResponse:
-    return RedirectResponse(url="/ui/review", status_code=302)
+    return RedirectResponse(
+        url="/ui/movies/health?view=vault#review-workbench",
+        status_code=302,
+    )
 
 
 @router.get("/ui/movies/{movie_id}", response_class=HTMLResponse)

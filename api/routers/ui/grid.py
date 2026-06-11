@@ -34,12 +34,15 @@ from api.services.ui.templates import TEMPLATES
 from api.services.flic_ordering import fetch_movies_in_rank_order, rank_movie_ids_by_flic
 from api.services.profiles import (
     ROLE_ADMIN,
+    ROLE_REVIEWER,
     ensure_profile_cookie,
+    get_active_profile_role,
     get_active_profile_id,
     get_preferences_for_movies,
     get_profiles,
     get_watchlist_movies,
 )
+from api.routers.ui.review import build_review_context
 from api.services.semantic_search import (
     SemanticSearchError,
     SemanticSearchUnavailable,
@@ -430,8 +433,12 @@ def movies_grid(
 @router.get("/ui/movies/health", response_class=HTMLResponse)
 def movies_health(
     request: Request,
+    view: str | None = None,
+    row: int | None = Query(default=None, ge=1),
+    movie: int | None = Query(default=None, ge=1),
+    undo_decision: int | None = Query(default=None, ge=1),
     db: Session = Depends(get_db),
-    _: str = Depends(require_profile_role(ROLE_ADMIN)),
+    _: str = Depends(require_profile_role(ROLE_ADMIN, ROLE_REVIEWER)),
 ):
     collection_health = get_collection_health(db)
     source_snapshots = (
@@ -443,6 +450,7 @@ def movies_health(
     latest_source_snapshot = latest_active_snapshot(db)
     profiles = get_profiles(db)
     active_profile_id = get_active_profile_id(request, db)
+    active_role = get_active_profile_role(request, db)
     context = {
         "collection_health": collection_health,
         "source_snapshots": source_snapshots,
@@ -450,6 +458,15 @@ def movies_health(
         "latest_source_summary": snapshot_summary(db, latest_source_snapshot),
         "profiles": profiles,
         "active_profile_id": active_profile_id,
+        "can_manage_health": active_role == ROLE_ADMIN,
+        **build_review_context(
+            request,
+            db,
+            view=view,
+            row=row,
+            movie=movie,
+            undo_decision=undo_decision,
+        ),
     }
     response = TEMPLATES.TemplateResponse(request, "movies_health.html", context)
     ensure_profile_cookie(request, response, db)

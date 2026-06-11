@@ -9,7 +9,7 @@
       <div class="hero-title">
         <h1>Vault Health</h1>
       </div>
-      <p class="tagline">Integrity, metadata, and source synchronization.</p>
+      <p class="tagline">Review, integrity, metadata, and source synchronization in one place.</p>
     </div>
     <div class="hero-health-links">
       <a class="hero-health-link" href="/ui/movies">← Back to movies</a>
@@ -27,8 +27,20 @@
     </div>
   {% endif %}
 
-  {% include "partials/movies/collection_health.html" %}
+  <nav class="health-section-nav page-shell" aria-label="Vault Health sections">
+    <a href="#overview">Overview</a>
+    <a href="#review-workbench">Review workbench <span>{{ total_review_count }}</span></a>
+    <a href="#source-synchronization">Source sync</a>
+    <a href="#metadata-gaps">Metadata gaps</a>
+  </nav>
 
+  <div id="overview">
+    {% include "partials/movies/collection_health.html" %}
+  </div>
+
+  {% include "partials/movies/review_workbench.html" %}
+
+  {% if can_manage_health %}
   <section class="page-shell source-health" id="source-synchronization" aria-labelledby="source-health-title">
     <header class="source-health__header">
       <div>
@@ -68,7 +80,7 @@
           <div><strong>{{ latest_source_summary.duplicates }}</strong><span>Duplicates</span></div>
           <div><strong>{{ latest_source_summary.source_only }}</strong><span>New candidates</span></div>
         </div>
-        <a class="button-secondary" href="/ui/review">Open Human Review</a>
+        <a class="button-secondary" href="#review-workbench">Open review workbench</a>
       </section>
     {% else %}
       <div class="source-health__empty">
@@ -100,8 +112,46 @@
       {% endif %}
     </section>
   </section>
+  {% else %}
+    <section class="page-shell health-section" id="source-synchronization" aria-labelledby="source-health-title">
+      <header class="health-section__header">
+        <div>
+          <span class="review-vault-id">Collection source</span>
+          <h2 id="source-health-title">Source synchronization</h2>
+          <p>Latest confirmed source and reconciliation status.</p>
+        </div>
+      </header>
+      {% if latest_source_snapshot %}
+        <div class="source-sync-metrics source-sync-metrics--health">
+          <div><strong>{{ latest_source_summary.rows }}</strong><span>Source rows</span></div>
+          <div><strong>{{ latest_source_summary.conflicts }}</strong><span>Conflicts</span></div>
+          <div><strong>{{ latest_source_summary.ambiguous }}</strong><span>Ambiguous</span></div>
+          <div><strong>{{ latest_source_summary.source_only }}</strong><span>New candidates</span></div>
+        </div>
+      {% else %}
+        <p>No collection source has been confirmed yet.</p>
+      {% endif %}
+    </section>
+  {% endif %}
+
+  <section class="page-shell health-section" id="metadata-gaps" aria-labelledby="metadata-gaps-title">
+    <header class="health-section__header">
+      <div>
+        <span class="review-vault-id">Completeness</span>
+        <h2 id="metadata-gaps-title">Metadata gaps</h2>
+        <p>Missing fields that affect browsing and recommendations.</p>
+      </div>
+      <a class="button-secondary" href="/ui/movies/health/missing">Open gap lists</a>
+    </header>
+    <div class="metadata-gap-grid">
+      <a href="/ui/movies/health/missing#runtime"><strong>{{ collection_health.missing_runtime }}</strong><span>Missing runtime</span></a>
+      <a href="/ui/movies/health/missing#synopsis"><strong>{{ collection_health.missing_plot }}</strong><span>Missing synopsis</span></a>
+      <a href="/ui/movies/health/missing#artwork"><strong>{{ collection_health.missing_poster }}</strong><span>Missing artwork</span></a>
+    </div>
+  </section>
 {% endblock %}
 {% block scripts %}
   {{ super() }}
 <script src="{{ url_for('static', path='js/collection_health.js') }}" defer></script>
+<script src="{{ url_for('static', path='js/review_page.js') }}" defer></script>
 {% endblock %}

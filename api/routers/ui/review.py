@@ -2,8 +2,10 @@ from __future__ import annotations
 
 from urllib.parse import quote
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi.responses import RedirectResponse
+from sqlalchemy import desc
+from sqlalchemy.orm import joinedload
 from sqlalchemy.orm import Session
 
 from api.db import get_db
@@ -34,13 +36,10 @@ from api.services.source_sync import (
 from api.services.profiles import (
     ROLE_ADMIN,
     ROLE_REVIEWER,
-    ensure_profile_cookie,
     get_active_profile_role,
     get_active_profile_id,
     get_profiles,
 )
-from api.services.ui.templates import TEMPLATES
-
 router = APIRouter(tags=["ui"])
 REVIEW_VIEWS = {
     "differences",
@@ -49,28 +48,35 @@ REVIEW_VIEWS = {
     "new",
     "duplicates",
     "vault",
+    "flags",
 }
 
 
-@router.get("/ui/review", response_class=HTMLResponse)
-def review_queue_ui(
+def build_review_context(
     request: Request,
-    view: str | None = None,
-    row: int | None = Query(default=None, ge=1),
-    movie: int | None = Query(default=None, ge=1),
-    undo_decision: int | None = Query(default=None, ge=1),
-    db: Session = Depends(get_db),
-    _: str = Depends(require_profile_role(ROLE_ADMIN, ROLE_REVIEWER)),
-):
+    db: Session,
+    *,
+    view: str | None,
+    row: int | None,
+    movie: int | None,
+    undo_decision: int | None,
+) -> dict:
     requested_view = view
     view = view or "differences"
     if view not in REVIEW_VIEWS:
         raise HTTPException(status_code=404, detail="Review category not found")
     queue, finding_count = get_review_queue(db)
+    flags = (
+        db.query(MovieFlag)
+        .options(joinedload(MovieFlag.movie))
+        .order_by(desc(MovieFlag.updated_at))
+        .all()
+    )
     source_groups = partition_source_review_queue(get_source_review_queue(db))
     review_counts = {
         **{name: len(items) for name, items in source_groups.items()},
         "vault": len(queue),
+        "flags": len(flags),
     }
     review_tabs = [
         ("differences", "Differences"),
@@ -79,6 +85,7 @@ def review_queue_ui(
         ("new", "New movies"),
         ("duplicates", "Duplicates"),
         ("vault", "Vault checks"),
+        ("flags", "Flags"),
     ]
     if requested_view is None and review_counts[view] == 0:
         view = next(
@@ -86,25 +93,30 @@ def review_queue_ui(
             view,
         )
     review_view_label = dict(review_tabs)[view]
-    selected_queue = queue if view == "vault" else source_groups[view]
+    if view == "vault":
+        selected_queue = queue
+    elif view == "flags":
+        selected_queue = flags
+    else:
+        selected_queue = source_groups[view]
     selected_index = 0
-    requested_item_id = movie if view == "vault" else row
+    requested_item_id = movie if view in {"vault", "flags"} else row
     if requested_item_id is not None:
         selected_index = next(
             (
                 index
                 for index, item in enumerate(selected_queue)
                 if (
-                    item.movie.id
-                    if view == "vault"
-                    else item.source_row.id
+                    item.movie.id if view == "vault" else
+                    item.movie_id if view == "flags" else
+                    item.source_row.id
                 )
                 == requested_item_id
             ),
             0,
         )
     review_item = selected_queue[selected_index] if selected_queue else None
-    item_param = "movie" if view == "vault" else "row"
+    item_param = "movie" if view in {"vault", "flags"} else "row"
     previous_item = selected_queue[selected_index - 1] if selected_index > 0 else None
     next_item = (
         selected_queue[selected_index + 1]
@@ -115,8 +127,15 @@ def review_queue_ui(
     def item_url(item) -> str | None:
         if item is None:
             return None
-        item_id = item.movie.id if view == "vault" else item.source_row.id
-        return f"/ui/review?view={quote(view)}&{item_param}={item_id}"
+        item_id = (
+            item.movie.id if view == "vault" else
+            item.movie_id if view == "flags" else
+            item.source_row.id
+        )
+        return (
+            f"/ui/movies/health?view={quote(view)}&{item_param}={item_id}"
+            "#review-workbench"
+        )
 
     next_nonempty_view = next(
         (
@@ -134,12 +153,10 @@ def review_queue_ui(
     undo_record = db.get(SourceFieldDecision, undo_decision) if undo_decision else None
     if undo_record is not None and undo_record.undone_at is not None:
         undo_record = None
-    response = TEMPLATES.TemplateResponse(
-        request,
-        "review_queue.html",
-        {
+    return {
             "queue": queue,
-            "source_queue": selected_queue if view != "vault" else [],
+            "flags": flags,
+            "source_queue": selected_queue if view not in {"vault", "flags"} else [],
             "source_groups": source_groups,
             "source_snapshot": source_snapshot,
             "finding_count": finding_count,
@@ -152,7 +169,8 @@ def review_queue_ui(
                     for item in items
                 }
             )
-            + len(queue),
+            + len(queue)
+            + len(flags),
             "review_view": view,
             "review_view_label": review_view_label,
             "review_item": review_item,
@@ -167,10 +185,19 @@ def review_queue_ui(
             "can_bulk_accept_source": get_active_profile_role(request, db) == ROLE_ADMIN,
             "bulk_source_field_count": bulk_source_field_count,
             "bulk_source_skipped_count": bulk_source_skipped_count,
-        },
+        }
+
+
+@router.get("/ui/review")
+def review_queue_ui(
+    request: Request,
+    _: str = Depends(require_profile_role(ROLE_ADMIN, ROLE_REVIEWER)),
+) -> RedirectResponse:
+    query = f"?{request.url.query}" if request.url.query else ""
+    return RedirectResponse(
+        url=f"/ui/movies/health{query}#review-workbench",
+        status_code=302,
     )
-    ensure_profile_cookie(request, response, db)
-    return response
 
 
 def _source_action_redirect(
@@ -184,10 +211,13 @@ def _source_action_redirect(
     params = [f"view={quote(view)}", f"message={quote(message)}"]
     if undo_decision is not None:
         params.append(f"undo_decision={undo_decision}")
-    return RedirectResponse(url=f"/ui/review?{'&'.join(params)}", status_code=303)
+    return RedirectResponse(
+        url=f"/ui/movies/health?{'&'.join(params)}#review-workbench",
+        status_code=303,
+    )
 
 
-@router.post("/ui/review/source-row/{row_id}/field/{field_name}/{decision}")
+@router.post("/ui/movies/health/review/source-row/{row_id}/field/{field_name}/{decision}")
 def decide_source_review_field(
     row_id: int,
     field_name: str,
@@ -220,7 +250,7 @@ def decide_source_review_field(
     )
 
 
-@router.post("/ui/review/source-accept-all")
+@router.post("/ui/movies/health/review/source-accept-all")
 def accept_all_source_review_differences(
     request: Request,
     db: Session = Depends(get_db),
@@ -248,7 +278,7 @@ def accept_all_source_review_differences(
     )
 
 
-@router.post("/ui/review/source-row/{row_id}/defer")
+@router.post("/ui/movies/health/review/source-row/{row_id}/defer")
 def defer_source_review_movie(
     row_id: int,
     request: Request,
@@ -272,7 +302,7 @@ def defer_source_review_movie(
     )
 
 
-@router.post("/ui/review/source-decision/{decision_id}/undo")
+@router.post("/ui/movies/health/review/source-decision/{decision_id}/undo")
 def undo_source_review_field(
     decision_id: int,
     request: Request,
@@ -295,7 +325,7 @@ def undo_source_review_field(
     )
 
 
-@router.post("/ui/review/source-row/{row_id}/match/{movie_id}")
+@router.post("/ui/movies/health/review/source-row/{row_id}/match/{movie_id}")
 def confirm_source_row_match(
     row_id: int,
     movie_id: int,
@@ -320,7 +350,7 @@ def confirm_source_row_match(
     )
 
 
-@router.post("/ui/review/source-row/{row_id}/create")
+@router.post("/ui/movies/health/review/source-row/{row_id}/create")
 def create_source_row_movie(
     row_id: int,
     request: Request,
@@ -340,7 +370,7 @@ def create_source_row_movie(
     return _source_action_redirect(f"{movie.vault_id} added to the Vault.", view=view)
 
 
-@router.post("/ui/review/source-row/{row_id}/dismiss-duplicate")
+@router.post("/ui/movies/health/review/source-row/{row_id}/dismiss-duplicate")
 def dismiss_source_duplicate(
     row_id: int,
     view: str = "duplicates",
@@ -362,7 +392,7 @@ def _load_movie(db: Session, movie_id: int) -> Movie:
     return movie
 
 
-@router.post("/ui/review/{movie_id}/checked")
+@router.post("/ui/movies/health/review/{movie_id}/checked")
 def mark_review_checked(
     movie_id: int,
     request: Request,
@@ -386,7 +416,7 @@ def mark_review_checked(
     )
 
 
-@router.post("/ui/review/{movie_id}/needs-fix")
+@router.post("/ui/movies/health/review/{movie_id}/needs-fix")
 def mark_review_needs_fix(
     movie_id: int,
     request: Request,
@@ -419,7 +449,7 @@ def mark_review_needs_fix(
     )
 
 
-@router.post("/ui/review/vault/needs-fix-all")
+@router.post("/ui/movies/health/review/vault/needs-fix-all")
 def mark_all_vault_reviews_needs_fix(
     request: Request,
     db: Session = Depends(get_db),

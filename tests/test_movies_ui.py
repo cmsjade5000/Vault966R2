@@ -81,6 +81,11 @@ def test_health_page_uses_vault_health_title_and_prioritizes_metrics(
     assert response.status_code == 200
     assert "<h1>Vault Health</h1>" in response.text
     assert "Vault overview" in response.text
+    assert "Review workbench" in response.text
+    assert "Source synchronization" in response.text
+    assert "Metadata gaps" in response.text
+    assert 'href="/ui/review"' not in response.text
+    assert ">Review</a" not in response.text
     assert "Flic Recommendation" not in response.text
     assert "Add a movie" not in response.text
 
@@ -89,17 +94,17 @@ def test_flags_page_lists_flagged_movies(client: TestClient, admin_headers: dict
     resp = client.post("/movies/1/flag", json={"reason": "Metadata cleanup"}, headers=admin_headers)
     assert resp.status_code == 200
 
-    page = client.get("/ui/flags")
+    page = client.get("/ui/movies/health?view=flags")
     assert page.status_code == 200
     html = page.text
     assert "Flags" in html
     assert "Metadata cleanup" in html
 
 
-def test_review_route_redirects_to_human_review_queue(client: TestClient) -> None:
+def test_review_route_redirects_to_vault_health_workbench(client: TestClient) -> None:
     resp = client.get("/ui/movies/review", follow_redirects=False)
     assert resp.status_code == 302
-    assert resp.headers["location"] == "/ui/review"
+    assert resp.headers["location"] == "/ui/movies/health?view=vault#review-workbench"
 
 
 def test_review_queue_shows_detected_issue_and_vault_id(client: TestClient, db_session) -> None:
@@ -108,10 +113,10 @@ def test_review_queue_shows_detected_issue_and_vault_id(client: TestClient, db_s
     movie.vault_id = "V0001"
     db_session.commit()
 
-    response = client.get("/ui/review")
+    response = client.get("/ui/movies/health")
 
     assert response.status_code == 200
-    assert "Human Review" in response.text
+    assert "Review workbench" in response.text
     assert "Title and year disagree" in response.text
     assert "V0001" in response.text
 
@@ -167,7 +172,7 @@ def test_review_checked_removes_movie_from_queue(client: TestClient, db_session)
     movie.vault_id = "V0001"
     db_session.commit()
 
-    response = client.post("/ui/review/1/checked", follow_redirects=True)
+    response = client.post("/ui/movies/health/review/1/checked", follow_redirects=True)
 
     assert response.status_code == 200
     assert "V0001 marked as checked." in response.text
@@ -180,7 +185,10 @@ def test_vault_review_actions_preserve_vault_category(client: TestClient, db_ses
     movie.vault_id = "V0001"
     db_session.commit()
 
-    response = client.post("/ui/review/1/checked?view=vault", follow_redirects=False)
+    response = client.post(
+        "/ui/movies/health/review/1/checked?view=vault",
+        follow_redirects=False,
+    )
 
     assert response.status_code == 303
     assert "view=vault" in response.headers["location"]
@@ -192,8 +200,11 @@ def test_review_needs_fix_creates_flag_with_vault_id(client: TestClient, db_sess
     movie.vault_id = "V0001"
     db_session.commit()
 
-    response = client.post("/ui/review/1/needs-fix", follow_redirects=True)
-    flags = client.get("/ui/flags")
+    response = client.post(
+        "/ui/movies/health/review/1/needs-fix",
+        follow_redirects=True,
+    )
+    flags = client.get("/ui/movies/health?view=flags")
 
     assert response.status_code == 200
     assert "V0001 added to Flags." in response.text
@@ -211,7 +222,7 @@ def test_bulk_review_needs_fix_moves_all_open_checks_to_flags(
     db_session.commit()
 
     response = client.post(
-        "/ui/review/vault/needs-fix-all",
+        "/ui/movies/health/review/vault/needs-fix-all",
         follow_redirects=False,
     )
 
