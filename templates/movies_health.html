@@ -31,7 +31,6 @@
     <a href="#overview">Overview</a>
     <a href="#review-workbench">Review workbench <span>{{ total_review_count }}</span></a>
     <a href="#source-synchronization">Source sync</a>
-    <a href="#metadata-gaps">Metadata gaps</a>
   </nav>
 
   <div id="overview">
@@ -152,21 +151,6 @@
     </details>
   {% endif %}
 
-  <section class="page-shell health-section" id="metadata-gaps" aria-labelledby="metadata-gaps-title">
-    <header class="health-section__header">
-      <div>
-        <span class="review-vault-id">Completeness</span>
-        <h2 id="metadata-gaps-title">Metadata gaps</h2>
-        <p>Missing fields that affect browsing and recommendations.</p>
-      </div>
-      <a class="button-secondary" href="/ui/movies/health/missing">Open gap lists</a>
-    </header>
-    <div class="metadata-gap-grid">
-      <a href="/ui/movies/health/missing#runtime"><strong>{{ collection_health.missing_runtime }}</strong><span>Missing runtime</span></a>
-      <a href="/ui/movies/health/missing#synopsis"><strong>{{ collection_health.missing_plot }}</strong><span>Missing synopsis</span></a>
-      <a href="/ui/movies/health/missing#artwork"><strong>{{ collection_health.missing_poster }}</strong><span>Missing artwork</span></a>
-    </div>
-  </section>
 {% endblock %}
 {% block scripts %}
   {{ super() }}

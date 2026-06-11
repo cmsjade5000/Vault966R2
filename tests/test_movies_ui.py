@@ -83,7 +83,7 @@ def test_health_page_uses_vault_health_title_and_prioritizes_metrics(
     assert "Vault overview" in response.text
     assert "Review workbench" in response.text
     assert "Source synchronization" in response.text
-    assert "Metadata gaps" in response.text
+    assert 'href="#metadata-gaps"' not in response.text
     assert 'href="/ui/review"' not in response.text
     assert ">Review</a" not in response.text
     assert "Flic Recommendation" not in response.text
