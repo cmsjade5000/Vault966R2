@@ -160,3 +160,48 @@ def test_audit_reports_added_posters_as_artwork_enrichment(db_session, tmp_path)
     assert "poster_url" not in drift
     artwork = report["source_reconciliation"]["artwork_enrichments"]
     assert artwork[0]["vault_id"] == "V0001"
+
+
+def test_audit_accepts_exact_external_id_enrichment(db_session, tmp_path):
+    movie = db_session.query(Movie).first()
+    movie.vault_id = "V0001"
+    movie.imdb_id = "tt0083658"
+    movie.tmdb_id = 78
+    db_session.add_all(
+        [
+            MovieIngestProvenance(
+                movie_id=movie.id,
+                provider="legacy_vault_csv",
+                provider_id=movie.vault_id,
+            ),
+            MovieIngestProvenance(
+                movie_id=movie.id,
+                provider="omdb",
+                provider_id=movie.imdb_id,
+                notes="Exact normalized title and exact year; external IDs cross-checked.",
+            ),
+            MovieIngestProvenance(
+                movie_id=movie.id,
+                provider="tmdb",
+                provider_id=str(movie.tmdb_id),
+                notes="Exact normalized title and exact year; external IDs cross-checked.",
+            ),
+        ]
+    )
+    db_session.commit()
+
+    source_path = tmp_path / "legacy.csv"
+    source_path.write_text(
+        "vault_id,title,year,runtime,imdb_id,tmdb_id\n"
+        "V0001,Blade Runner,1982,117,,\n",
+        encoding="utf-8",
+    )
+
+    report = audit(db_session, source_path=source_path, sample_size=0)
+
+    approved = report["source_reconciliation"]["approved_deviations"][0]["differences"]
+    assert approved["imdb_id"]["policy"] == "exact_external_match"
+    assert approved["tmdb_id"]["policy"] == "exact_external_match"
+    drift = report["source_reconciliation"]["drift"][0]["differences"]
+    assert "imdb_id" not in drift
+    assert "tmdb_id" not in drift

@@ -1,29 +1,29 @@
 {
   "schema_version": 2,
-  "generated_at": "2026-06-11T13:20:31.614851+00:00",
+  "generated_at": "2026-06-11T13:44:17.294548+00:00",
   "summary": {
     "movie_count": 1012,
     "structural_issue_count": 0,
-    "content_review_issue_count": 117,
+    "content_review_issue_count": 97,
     "source_drift_count": 0,
-    "approved_source_deviation_count": 273,
-    "artwork_enrichment_count": 838,
+    "approved_source_deviation_count": 299,
+    "artwork_enrichment_count": 842,
     "newer_source_entry_count": 43,
     "missing_source_id_count": 0,
     "source_unmatched_count": 11,
     "healthy": true,
     "review_required": true
   },
-  "collection_fingerprint": "baa7984dcbf2758397927c8452e53dec655368dc147e95ad7e9a6b5d87f1bf95",
+  "collection_fingerprint": "c45258b777b4f814c8cb2021a79e46ccfeb5cdf72e83cf8703debb209037e23c",
   "field_coverage": {
     "year": 1003,
     "runtime": 986,
     "plot": 960,
-    "poster_url": 839,
+    "poster_url": 863,
     "certificate": 813,
     "keywords": 861,
-    "imdb_id": 833,
-    "tmdb_id": 883,
+    "imdb_id": 879,
+    "tmdb_id": 904,
     "genres": 1001,
     "directors": 1007,
     "cast": 752
@@ -419,29 +419,9 @@
         "year": 2014
       },
       {
-        "movie_id": 973,
-        "title": "The Angry Birds Movie",
-        "year": 2016
-      },
-      {
-        "movie_id": 974,
-        "title": "Ant-Man",
-        "year": 2015
-      },
-      {
         "movie_id": 975,
         "title": "Arthur (2011)",
         "year": 2011
-      },
-      {
-        "movie_id": 976,
-        "title": "Asteroid City",
-        "year": 2023
-      },
-      {
-        "movie_id": 977,
-        "title": "The Avengers",
-        "year": 2012
       },
       {
         "movie_id": 978,
@@ -449,19 +429,9 @@
         "year": 2025
       },
       {
-        "movie_id": 979,
-        "title": "Bedazzled",
-        "year": 2000
-      },
-      {
         "movie_id": 980,
         "title": "The Blair Witch Project",
         "year": 1999
-      },
-      {
-        "movie_id": 981,
-        "title": "Dirty Harry",
-        "year": 1971
       },
       {
         "movie_id": 982,
@@ -469,29 +439,14 @@
         "year": 2024
       },
       {
-        "movie_id": 983,
-        "title": "Final Destination Bloodlines",
-        "year": 2025
-      },
-      {
         "movie_id": 984,
         "title": "Gran Torino",
         "year": 2009
       },
       {
-        "movie_id": 985,
-        "title": "Halloween",
-        "year": 1978
-      },
-      {
         "movie_id": 986,
         "title": "Hamnet",
         "year": 2026
-      },
-      {
-        "movie_id": 987,
-        "title": "Jexi",
-        "year": 2019
       },
       {
         "movie_id": 988,
@@ -509,34 +464,14 @@
         "year": 2019
       },
       {
-        "movie_id": 991,
-        "title": "Mickey 17",
-        "year": 2025
-      },
-      {
         "movie_id": 992,
         "title": "Million Dollar Baby",
         "year": 2004
       },
       {
-        "movie_id": 993,
-        "title": "Minority Report",
-        "year": 2002
-      },
-      {
-        "movie_id": 994,
-        "title": "No Time to Die",
-        "year": 2021
-      },
-      {
         "movie_id": 995,
         "title": "Patriot Games",
         "year": 1998
-      },
-      {
-        "movie_id": 996,
-        "title": "Project Hail Mary",
-        "year": 2026
       },
       {
         "movie_id": 997,
@@ -554,11 +489,6 @@
         "year": 1983
       },
       {
-        "movie_id": 1000,
-        "title": "Smile 2",
-        "year": 2024
-      },
-      {
         "movie_id": 1001,
         "title": "Sonic The Hedgehog 3",
         "year": 2024
@@ -574,29 +504,9 @@
         "year": 2017
       },
       {
-        "movie_id": 1004,
-        "title": "Sully",
-        "year": 2016
-      },
-      {
-        "movie_id": 1005,
-        "title": "Trouble with the Curve",
-        "year": 2012
-      },
-      {
-        "movie_id": 1006,
-        "title": "Under the Tuscan Sun",
-        "year": 2003
-      },
-      {
         "movie_id": 1007,
         "title": "Unforgiven",
         "year": 1993
-      },
-      {
-        "movie_id": 1008,
-        "title": "Wicked: For Good",
-        "year": 2025
       },
       {
         "movie_id": 1009,
@@ -604,19 +514,9 @@
         "year": 2016
       },
       {
-        "movie_id": 1010,
-        "title": "Zootopia 2",
-        "year": 2025
-      },
-      {
         "movie_id": 1011,
         "title": "9 To 5",
         "year": 1980
-      },
-      {
-        "movie_id": 1012,
-        "title": "28 Years Later",
-        "year": 2025
       }
     ]
   },
@@ -5448,6 +5348,62 @@
         }
       },
       {
+        "movie_id": 942,
+        "vault_id": "V0953",
+        "title": "Sunshine",
+        "differences": {
+          "imdb_id": {
+            "source": null,
+            "database": "tt0145503",
+            "provenance_id": 1022,
+            "provider": "omdb",
+            "policy": "exact_external_match"
+          }
+        }
+      },
+      {
+        "movie_id": 943,
+        "vault_id": "V0954",
+        "title": "The Fugitive",
+        "differences": {
+          "imdb_id": {
+            "source": null,
+            "database": "tt0039402",
+            "provenance_id": 1024,
+            "provider": "omdb",
+            "policy": "exact_external_match"
+          }
+        }
+      },
+      {
+        "movie_id": 944,
+        "vault_id": "V0955",
+        "title": "Close Encounters of the Third Kind",
+        "differences": {
+          "imdb_id": {
+            "source": null,
+            "database": "tt0075860",
+            "provenance_id": 1026,
+            "provider": "omdb",
+            "policy": "exact_external_match"
+          }
+        }
+      },
+      {
+        "movie_id": 945,
+        "vault_id": "V0956",
+        "title": "The Green Mile",
+        "differences": {
+          "imdb_id": {
+            "source": null,
+            "database": "tt0120689",
+            "provenance_id": 1028,
+            "provider": "omdb",
+            "policy": "exact_external_match"
+          }
+        }
+      },
+      {
         "movie_id": 946,
         "vault_id": "V0957",
         "title": "Paddington",
@@ -5461,10 +5417,311 @@
         }
       },
       {
+        "movie_id": 947,
+        "vault_id": "V0958",
+        "title": "Knock at the Cabin",
+        "differences": {
+          "imdb_id": {
+            "source": null,
+            "database": "tt15679400",
+            "provenance_id": 1030,
+            "provider": "omdb",
+            "policy": "exact_external_match"
+          }
+        }
+      },
+      {
+        "movie_id": 948,
+        "vault_id": "V0959",
+        "title": "Scarface",
+        "differences": {
+          "imdb_id": {
+            "source": null,
+            "database": "tt0086250",
+            "provenance_id": 1032,
+            "provider": "omdb",
+            "policy": "exact_external_match"
+          }
+        }
+      },
+      {
+        "movie_id": 949,
+        "vault_id": "V0960",
+        "title": "Gladiator II",
+        "differences": {
+          "imdb_id": {
+            "source": null,
+            "database": "tt9218128",
+            "provenance_id": 1034,
+            "provider": "omdb",
+            "policy": "exact_external_match"
+          }
+        }
+      },
+      {
+        "movie_id": 950,
+        "vault_id": "V0961",
+        "title": "Oppenheimer",
+        "differences": {
+          "imdb_id": {
+            "source": null,
+            "database": "tt15398776",
+            "provenance_id": 1036,
+            "provider": "omdb",
+            "policy": "exact_external_match"
+          }
+        }
+      },
+      {
+        "movie_id": 951,
+        "vault_id": "V0962",
+        "title": "American Gangster",
+        "differences": {
+          "imdb_id": {
+            "source": null,
+            "database": "tt0765429",
+            "provenance_id": 1038,
+            "provider": "omdb",
+            "policy": "exact_external_match"
+          }
+        }
+      },
+      {
+        "movie_id": 952,
+        "vault_id": "V0963",
+        "title": "Fall",
+        "differences": {
+          "imdb_id": {
+            "source": null,
+            "database": "tt15325794",
+            "provenance_id": 1040,
+            "provider": "omdb",
+            "policy": "exact_external_match"
+          }
+        }
+      },
+      {
+        "movie_id": 953,
+        "vault_id": "V0964",
+        "title": "The Ministry of Ungentlemanly Warfare",
+        "differences": {
+          "imdb_id": {
+            "source": null,
+            "database": "tt5177120",
+            "provenance_id": 1042,
+            "provider": "omdb",
+            "policy": "exact_external_match"
+          }
+        }
+      },
+      {
+        "movie_id": 954,
+        "vault_id": "V0965",
+        "title": "Ford v Ferrari",
+        "differences": {
+          "imdb_id": {
+            "source": null,
+            "database": "tt1950186",
+            "provenance_id": 1044,
+            "provider": "omdb",
+            "policy": "exact_external_match"
+          }
+        }
+      },
+      {
+        "movie_id": 955,
+        "vault_id": "V0966",
+        "title": "Clear and Present Danger",
+        "differences": {
+          "imdb_id": {
+            "source": null,
+            "database": "tt0109444",
+            "provenance_id": 1046,
+            "provider": "omdb",
+            "policy": "exact_external_match"
+          }
+        }
+      },
+      {
+        "movie_id": 956,
+        "vault_id": "V0967",
+        "title": "The Sum of All Fears",
+        "differences": {
+          "imdb_id": {
+            "source": null,
+            "database": "tt0164184",
+            "provenance_id": 1048,
+            "provider": "omdb",
+            "policy": "exact_external_match"
+          }
+        }
+      },
+      {
+        "movie_id": 957,
+        "vault_id": "V0968",
+        "title": "The Hunt for Red October",
+        "differences": {
+          "imdb_id": {
+            "source": null,
+            "database": "tt0099810",
+            "provenance_id": 1050,
+            "provider": "omdb",
+            "policy": "exact_external_match"
+          }
+        }
+      },
+      {
+        "movie_id": 958,
+        "vault_id": "V0969",
+        "title": "Abduction",
+        "differences": {
+          "imdb_id": {
+            "source": null,
+            "database": "tt1600195",
+            "provenance_id": 1052,
+            "provider": "omdb",
+            "policy": "exact_external_match"
+          }
+        }
+      },
+      {
+        "movie_id": 959,
+        "vault_id": "V0970",
+        "title": "Alice in Wonderland",
+        "differences": {
+          "imdb_id": {
+            "source": null,
+            "database": "tt1014759",
+            "provenance_id": 1054,
+            "provider": "omdb",
+            "policy": "exact_external_match"
+          }
+        }
+      },
+      {
+        "movie_id": 960,
+        "vault_id": "V0971",
+        "title": "Alien",
+        "differences": {
+          "imdb_id": {
+            "source": null,
+            "database": "tt0078748",
+            "provenance_id": 1056,
+            "provider": "omdb",
+            "policy": "exact_external_match"
+          }
+        }
+      },
+      {
+        "movie_id": 961,
+        "vault_id": "V0972",
+        "title": "All the Money in the World",
+        "differences": {
+          "imdb_id": {
+            "source": null,
+            "database": "tt5294550",
+            "provenance_id": 1058,
+            "provider": "omdb",
+            "policy": "exact_external_match"
+          }
+        }
+      },
+      {
+        "movie_id": 962,
+        "vault_id": "V0973",
+        "title": "American Psycho",
+        "differences": {
+          "imdb_id": {
+            "source": null,
+            "database": "tt0144084",
+            "provenance_id": 1060,
+            "provider": "omdb",
+            "policy": "exact_external_match"
+          }
+        }
+      },
+      {
+        "movie_id": 963,
+        "vault_id": "V0974",
+        "title": "Annabelle Comes Home",
+        "differences": {
+          "imdb_id": {
+            "source": null,
+            "database": "tt8350360",
+            "provenance_id": 1062,
+            "provider": "omdb",
+            "policy": "exact_external_match"
+          }
+        }
+      },
+      {
+        "movie_id": 964,
+        "vault_id": "V0975",
+        "title": "Apollo 13",
+        "differences": {
+          "imdb_id": {
+            "source": null,
+            "database": "tt0112384",
+            "provenance_id": 1064,
+            "provider": "omdb",
+            "policy": "exact_external_match"
+          }
+        }
+      },
+      {
+        "movie_id": 965,
+        "vault_id": "V0976",
+        "title": "Arthur",
+        "differences": {
+          "imdb_id": {
+            "source": null,
+            "database": "tt1334512",
+            "provenance_id": 1066,
+            "provider": "omdb",
+            "policy": "exact_external_match"
+          }
+        }
+      },
+      {
+        "movie_id": 966,
+        "vault_id": "V0977",
+        "title": "Atomic Blonde",
+        "differences": {
+          "imdb_id": {
+            "source": null,
+            "database": "tt2406566",
+            "provenance_id": 1068,
+            "provider": "omdb",
+            "policy": "exact_external_match"
+          }
+        }
+      },
+      {
+        "movie_id": 967,
+        "vault_id": "V0978",
+        "title": "Back to Black",
+        "differences": {
+          "imdb_id": {
+            "source": null,
+            "database": "tt21261712",
+            "provenance_id": 1070,
+            "provider": "omdb",
+            "policy": "exact_external_match"
+          }
+        }
+      },
+      {
         "movie_id": 968,
         "vault_id": "V0979",
         "title": "A Bad Moms Christmas",
         "differences": {
+          "imdb_id": {
+            "source": null,
+            "database": "tt6359956",
+            "provenance_id": 1072,
+            "provider": "omdb",
+            "policy": "exact_external_match"
+          },
           "directors": {
             "source": [
               "Scott Moore"
@@ -5475,6 +5732,20 @@
             ],
             "decision_id": 11,
             "source_snapshot_id": 1
+          }
+        }
+      },
+      {
+        "movie_id": 969,
+        "vault_id": "V0980",
+        "title": "Mystic River",
+        "differences": {
+          "tmdb_id": {
+            "source": null,
+            "database": 322,
+            "provenance_id": 1073,
+            "provider": "tmdb",
+            "policy": "exact_external_match"
           }
         }
       }
@@ -8968,6 +9239,17 @@
         }
       },
       {
+        "movie_id": 367,
+        "vault_id": "V0371",
+        "title": "Jurassic World: Fallen Kingdom",
+        "differences": {
+          "poster_url": {
+            "source": null,
+            "database": "https://image.tmdb.org/t/p/w500/270MrJNqJovumHXGE6SSt0zwUIF.jpg"
+          }
+        }
+      },
+      {
         "movie_id": 368,
         "vault_id": "V0372",
         "title": "Justice League",
@@ -9804,6 +10086,17 @@
         }
       },
       {
+        "movie_id": 449,
+        "vault_id": "V0453",
+        "title": "Monsters, Inc.",
+        "differences": {
+          "poster_url": {
+            "source": null,
+            "database": "https://image.tmdb.org/t/p/w500/wFSpyMsp7H0ttERbxY7Trlv8xry.jpg"
+          }
+        }
+      },
+      {
         "movie_id": 450,
         "vault_id": "V0454",
         "title": "Moon",
@@ -10559,6 +10852,17 @@
           "poster_url": {
             "source": null,
             "database": "https://media.themoviedb.org/t/p/w500/rS0kByPD4YF8pQ85KjzMdGiu7Xf.jpg"
+          }
+        }
+      },
+      {
+        "movie_id": 530,
+        "vault_id": "V0534",
+        "title": "Radio",
+        "differences": {
+          "poster_url": {
+            "source": null,
+            "database": "https://image.tmdb.org/t/p/w500/uQ6ci4iFHhB6TWB2f4wftR7AEly.jpg"
           }
         }
       },
@@ -13166,6 +13470,17 @@
           "poster_url": {
             "source": null,
             "database": "https://media.themoviedb.org/t/p/w500/A3acM1lX5PNWQa6r5qeMAJOxbnT.jpg"
+          }
+        }
+      },
+      {
+        "movie_id": 811,
+        "vault_id": "V0821",
+        "title": "The Neverending Story",
+        "differences": {
+          "poster_url": {
+            "source": null,
+            "database": "https://image.tmdb.org/t/p/w500/lWJC8om086h01f0CMGR9ombdpnI.jpg"
           }
         }
       },

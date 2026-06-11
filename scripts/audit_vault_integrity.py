@@ -206,6 +206,12 @@ def audit(
         .filter(MovieIngestProvenance.provider == "legacy_vault_csv")
         .all()
     }
+    external_provenance = {
+        (provenance.movie_id, provenance.provider): provenance
+        for provenance in db.query(MovieIngestProvenance)
+        .filter(MovieIngestProvenance.provider.in_(("imdb", "omdb", "tmdb")))
+        .all()
+    }
 
     structural = {
         "duplicate_imdb_ids": _duplicates(db, Movie.imdb_id),
@@ -324,6 +330,18 @@ def audit(
                     "review_decision_id": title_year_decision.id,
                     "policy": "title_year_authority",
                 }
+            elif field in {"imdb_id", "tmdb_id"} and not values["source"]:
+                provider = "omdb" if field == "imdb_id" else "tmdb"
+                external = external_provenance.get((movie.id, provider))
+                if external is not None and str(external.provider_id) == str(actual[field]):
+                    approved[field] = {
+                        **values,
+                        "provenance_id": external.id,
+                        "provider": provider,
+                        "policy": "exact_external_match",
+                    }
+                else:
+                    differences[field] = values
             else:
                 differences[field] = values
         if differences:
