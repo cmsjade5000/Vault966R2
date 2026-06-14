@@ -329,6 +329,52 @@
             <span>{{ flag.notes or 'No notes were added.' }}</span>
           </div>
         </div>
+        <dl class="review-metadata">
+          <div><dt>IMDb</dt><dd>{{ movie.imdb_id or 'Missing' }}</dd></div>
+          <div><dt>TMDB</dt><dd>{{ movie.tmdb_id or 'Missing' }}</dd></div>
+        </dl>
+        <section
+          class="flag-match"
+          aria-labelledby="flag-match-title"
+          data-flag-match
+          data-movie-id="{{ movie.id }}"
+        >
+          <header class="flag-match__header">
+            <div>
+              <h3 id="flag-match-title">Find an external match</h3>
+              <p>Search TMDB, compare the OMDb-enriched options, and choose only when one is correct.</p>
+            </div>
+          </header>
+          <form class="flag-match__search" data-flag-match-search>
+            <label>
+              Search title
+              <input
+                type="search"
+                name="title"
+                value="{{ movie.title }}"
+                maxlength="300"
+                required
+                autocomplete="off"
+              />
+            </label>
+            <label>
+              Year <span>(optional)</span>
+              <input
+                type="number"
+                name="year"
+                value="{{ movie.year or '' }}"
+                min="1870"
+                max="2100"
+                inputmode="numeric"
+              />
+            </label>
+            <button class="button-primary" type="submit">Find matches</button>
+          </form>
+          <p class="flag-match__status" role="status" aria-live="polite" data-flag-match-status>
+            Nothing changes until you confirm a specific match.
+          </p>
+          <div class="flag-match__results" data-flag-match-results hidden></div>
+        </section>
         <div class="review-actions">
           <a class="button-primary" href="/ui/movies/{{ movie.id }}">Open details</a>
         </div>

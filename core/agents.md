@@ -21,14 +21,14 @@ This file is a quick orientation for maintaining context when the CLI session re
   - `schemas/` (Pydantic DTOs returned/accepted by the API)
   - `utils/` (shared helpers e.g. pagination, provider merging)
 - **templates/** – Jinja HTML templates. `movies_grid.html` drives `/ui/movies` and includes partials for cards, tables, edit dialog, etc.
-- **static/** – Front-end assets. `css/movies.css` and `js/movies_page.js` hold the styling/behavior for the movie grid, filters, flags, and edit drawer.
+- **static/** – Front-end assets. `css/movies.css` holds shared movie styling; focused modules such as `js/library_page.js`, `js/movie_preferences.js`, `js/movie_detail.js`, and `js/movie_detail_edit.js` own page behavior.
 - **core/** – Domain utilities (genre normalization, poster theme selection, picker scoring) plus this guide.
 - **tests/** – Pytest suite covering API endpoints and service helpers (`test_movie_search`, `test_movie_flags`, etc.).
 - **scripts/** – One-off or legacy ETL utilities (manual importers, TMDb enrichment, asset generation).
 - **data/** – CSV exports/imports for the library (enriched metadata, skips, etc.).
 - **docs/** – Markdown documents (feature matrix, samples) used for project notes.
 
-- Editing metadata flows touch `api/routers/movies.py`, `api/schemas/movie.py`, `templates/movies_grid.html`, and `static/js/movies_page.js`.
+- Editing metadata flows touch `api/routers/movies.py`, `api/schemas/movie.py`, `templates/movie_detail.html`, and `static/js/movie_detail_edit.js`.
 - Flagging lives in `api/models/movie_flag.py`, the `PATCH /movies/{id}` + flag endpoints, and the card/table controls in the templates/JS.
 - Filter parsing and DB filtering live in `core/movie_filters.py`; both REST and UI routes reuse it.
 - `MovieFlag` cascades on delete; `MovieUpdate.where_to_watch` expects a provider list but is stored `;`-joined after `merge_providers`.

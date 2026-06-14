@@ -1,5 +1,51 @@
 (function () {
   document.addEventListener("DOMContentLoaded", () => {
+    const posterFocusButton = document.querySelector("[data-poster-focus]");
+    const posterFocusBackdrop = document.querySelector(
+      "[data-poster-focus-backdrop]",
+    );
+
+    if (posterFocusButton && posterFocusBackdrop) {
+      const movieTitle = posterFocusButton.dataset.movieTitle || "movie";
+
+      const setPosterFocused = (focused) => {
+        posterFocusButton.classList.toggle("is-poster-focused", focused);
+        posterFocusBackdrop.hidden = !focused;
+        posterFocusBackdrop.classList.toggle("is-visible", focused);
+        document.body.classList.toggle("poster-focus-open", focused);
+        posterFocusButton.setAttribute(
+          "aria-pressed",
+          focused ? "true" : "false",
+        );
+        posterFocusButton.setAttribute(
+          "aria-label",
+          `${focused ? "Reduce" : "Enlarge"} ${movieTitle} poster`,
+        );
+      };
+
+      posterFocusButton.addEventListener("click", () => {
+        setPosterFocused(
+          !posterFocusButton.classList.contains("is-poster-focused"),
+        );
+      });
+
+      posterFocusBackdrop.addEventListener("click", () => {
+        setPosterFocused(false);
+        posterFocusButton.focus();
+      });
+
+      document.addEventListener("keydown", (event) => {
+        if (
+          event.key === "Escape" &&
+          posterFocusButton.classList.contains("is-poster-focused")
+        ) {
+          event.preventDefault();
+          setPosterFocused(false);
+          posterFocusButton.focus();
+        }
+      });
+    }
+
     const getAdminToken = () =>
       window.localStorage?.getItem("adminToken") || "";
     const promptForAdminToken = (message) => {
@@ -36,62 +82,77 @@
 
     const openFlagDialog = (defaultReason) =>
       new Promise((resolve) => {
-        const overlay = document.createElement("div");
+        const overlay = document.createElement("dialog");
         overlay.className = "flag-dialog-overlay";
-        overlay.setAttribute("role", "dialog");
-        overlay.setAttribute("aria-modal", "true");
-        const dialog = document.createElement("div");
+        overlay.setAttribute("aria-hidden", "true");
+        const dialog = document.createElement("section");
         dialog.className = "flag-dialog";
-        dialog.innerHTML = `
-          <h3>Flag this movie</h3>
-          <label for="flag-reason">Reason</label>
-          <select id="flag-reason">
-            ${FLAG_REASONS.map((reason) => {
-              const selected = reason === defaultReason ? "selected" : "";
-              return `<option value="${reason}" ${selected}>${reason}</option>`;
-            }).join("")}
-          </select>
-          <label for="flag-notes">Notes (optional)</label>
-          <textarea id="flag-notes" maxlength="500" placeholder="What needs a fix?"></textarea>
-          <div class="flag-dialog__actions">
-            <button type="button" class="button-ghost" data-flag-cancel>Cancel</button>
-            <button type="button" class="button-primary" data-flag-save>Save</button>
-          </div>
-        `;
+        const heading = document.createElement("h3");
+        heading.textContent = "Flag this movie";
+        const reasonLabel = document.createElement("label");
+        reasonLabel.htmlFor = "flag-reason";
+        reasonLabel.textContent = "Reason";
+        const reasonSelect = document.createElement("select");
+        reasonSelect.id = "flag-reason";
+        FLAG_REASONS.forEach((reason) => {
+          const option = document.createElement("option");
+          option.value = reason;
+          option.textContent = reason;
+          option.selected = reason === defaultReason;
+          reasonSelect.append(option);
+        });
+        const notesLabel = document.createElement("label");
+        notesLabel.htmlFor = "flag-notes";
+        notesLabel.textContent = "Notes (optional)";
+        const notesInput = document.createElement("textarea");
+        notesInput.id = "flag-notes";
+        notesInput.maxLength = 500;
+        notesInput.placeholder = "What needs a fix?";
+        const actions = document.createElement("div");
+        actions.className = "flag-dialog__actions";
+        const cancelButton = document.createElement("button");
+        cancelButton.type = "button";
+        cancelButton.className = "button-ghost";
+        cancelButton.dataset.flagCancel = "";
+        cancelButton.textContent = "Cancel";
+        const saveButton = document.createElement("button");
+        saveButton.type = "button";
+        saveButton.className = "button-primary";
+        saveButton.dataset.flagSave = "";
+        saveButton.textContent = "Save";
+        actions.append(cancelButton, saveButton);
+        dialog.append(
+          heading,
+          reasonLabel,
+          reasonSelect,
+          notesLabel,
+          notesInput,
+          actions,
+        );
         overlay.append(dialog);
         document.body.append(overlay);
 
-        const cleanup = () => overlay.remove();
+        let result = null;
+        const controller = window.VaultDialog?.bind(overlay, {
+          closeSelector: "[data-flag-cancel]",
+          onClose: () => {
+            overlay.remove();
+            resolve(result);
+          },
+        });
         const close = (value) => {
-          cleanup();
-          resolve(value);
+          result = value;
+          controller?.close();
         };
 
-        overlay.addEventListener("click", (event) => {
-          if (event.target === overlay) {
-            close(null);
-          }
-        });
-        overlay.addEventListener("keydown", (event) => {
-          if (event.key === "Escape") {
-            event.preventDefault();
-            close(null);
-          }
-        });
-        dialog
-          .querySelector("[data-flag-cancel]")
-          ?.addEventListener("click", () => close(null));
-        dialog
-          .querySelector("[data-flag-save]")
-          ?.addEventListener("click", () => {
-            const reason = dialog.querySelector("#flag-reason")?.value || "";
-            const notes =
-              dialog.querySelector("#flag-notes")?.value.trim() || null;
-            close({ reason, notes });
+        saveButton.addEventListener("click", () => {
+          close({
+            reason: reasonSelect.value,
+            notes: notesInput.value.trim() || null,
           });
-        setTimeout(() => {
-          dialog.querySelector("#flag-reason")?.focus();
-        }, 0);
+        });
+        controller?.open();
+        reasonSelect.focus();
       });
 
     const updateFlagButton = (button, flagged) => {

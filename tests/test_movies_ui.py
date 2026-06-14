@@ -32,12 +32,92 @@ def test_movies_grid_persists_filters_via_cookie(client: TestClient) -> None:
     assert "Toy Story" not in html
 
 
+def test_movies_grid_explicit_clear_removes_cookie_backed_preset(
+    client: TestClient,
+) -> None:
+    selected = client.get("/ui/movies", params={"preset": "hidden-gems"})
+    assert selected.status_code == 200
+
+    restored = client.get("/ui/movies")
+    assert 'id="preset-input" value="hidden-gems"' in restored.text
+    assert 'data-clear-filter="preset"' in restored.text
+
+    cleared = client.get("/ui/movies", params={"_filters": "1", "page": "1"})
+    assert cleared.status_code == 200
+    assert 'id="preset-input" value=""' in cleared.text
+    assert 'data-clear-filter="preset"' not in cleared.text
+
+    restored_after_clear = client.get("/ui/movies")
+    assert 'id="preset-input" value=""' in restored_after_clear.text
+    assert 'data-clear-filter="preset"' not in restored_after_clear.text
+
+
 def test_movies_grid_filters_by_mood(client: TestClient) -> None:
     response = client.get("/ui/movies", params={"moods": "Moody"})
     assert response.status_code == 200
     html = response.text
     assert "Blade Runner" in html
     assert "The Matrix" not in html
+
+
+def test_library_card_can_be_flagged_for_review(
+    client: TestClient, db_session
+) -> None:
+    movie = db_session.query(Movie).filter(Movie.title == "Blade Runner").one()
+
+    page = client.get("/ui/movies")
+    assert "data-review-flag-button" in page.text
+    assert "js/card_review_flag.js?v=" in page.text
+
+    response = client.post(f"/ui/movies/{movie.id}/review-flag")
+    assert response.status_code == 200
+    assert response.json() == {"movie_id": movie.id, "flagged": True}
+
+    db_session.expire_all()
+    flag = db_session.get(MovieFlag, movie.id)
+    assert flag is not None
+    assert flag.reason == "Human review"
+    assert flag.notes == "Flagged for review"
+
+    repeated = client.post(f"/ui/movies/{movie.id}/review-flag")
+    assert repeated.status_code == 200
+    assert db_session.query(MovieFlag).filter(MovieFlag.movie_id == movie.id).count() == 1
+
+
+def test_library_review_flag_rejects_unknown_movie(client: TestClient) -> None:
+    response = client.post("/ui/movies/999999/review-flag")
+    assert response.status_code == 404
+
+
+def test_movies_grid_paginates_in_complete_36_card_pages(
+    client: TestClient, db_session
+) -> None:
+    for index in range(10):
+        db_session.add(
+            Movie(
+                title=f"Pagination Movie {index:02d}",
+                year=2020,
+                runtime=100,
+                imdb_id=f"ttpagination{index:02d}",
+                tmdb_id=9000 + index,
+            )
+        )
+    db_session.commit()
+
+    first_page = client.get("/ui/movies", params={"page": 1, "view": "grid"})
+    second_page = client.get("/ui/movies", params={"page": 2, "view": "grid"})
+
+    assert first_page.status_code == 200
+    assert second_page.status_code == 200
+    assert first_page.text.count("data-movie-card") == 36
+    assert second_page.text.count("data-movie-card") == 7
+    assert "Page 1 of 2" in first_page.text
+    assert "Page 2 of 2" in second_page.text
+    assert "page=0" not in first_page.text
+    assert 'data-disabled="true"' in first_page.text
+    assert 'data-goto-page="1"' in first_page.text
+    assert 'data-goto-page="1"' in second_page.text
+    assert 'data-disabled="true"' in second_page.text
 
 
 def test_library_search_is_prominent_and_searches_identity_fields(
@@ -59,10 +139,36 @@ def test_library_search_is_prominent_and_searches_identity_fields(
 
     page = client.get("/ui/movies")
 
-    assert "Search your Vault" in page.text
-    assert "director, actor, genre, or IMDb ID" in page.text
+    assert '<section class="library-search-panel" aria-label="Search your Vault">' in page.text
+    assert 'id="library-search-title"' not in page.text
+    assert "Find a movie by title" not in page.text
+    assert 'placeholder="Try “Ben Stiller” “2010” “Titanic” or a Vault ID"' in page.text
+    search_label = page.text.index('<label class="sr-only" for="search-q">')
+    search_label_end = page.text.index("</label>", search_label)
+    search_input = page.text.index('id="search-q"')
+    search_button = page.text.index('id="search-button"')
+    assert search_label < search_label_end < search_input < search_button
+    assert 'enterkeyhint="search"' in page.text
     assert 'aria-label="Open filters"' in page.text
     assert 'aria-label="Random trusted movie"' in page.text
+    assert "data-vault-busy" in page.text
+    assert "Vault is thinking" in page.text
+    assert 'aria-label="Grid view"' in page.text
+    assert 'aria-label="List view"' in page.text
+    assert 'data-filters-summary' in page.text
+    assert 'aria-label="Pending filter selections"' in page.text
+    assert 'data-filters-reset' in page.text
+    assert 'id="year-custom" hidden' in page.text
+    assert 'id="runtime-custom" hidden' in page.text
+    assert 'id="fliclists"' not in page.text
+    assert 'class="chip chip-preset"' not in page.text
+    assert "css/movies.css?v=" in page.text
+    assert "css/movie_components.css?v=" in page.text
+    assert "js/library_page.js?v=" in page.text
+    assert "css/base.css?v=" in page.text
+    assert '<span class="brand-mark">Vault 966</span>' in page.text
+    assert "Movie dispatch" not in page.text
+    assert "js/base.js?v=" in page.text
 
     by_vault_id = client.get("/ui/movies", params={"q": "V0001"})
     by_year = client.get("/ui/movies", params={"q": "1982"})
@@ -80,6 +186,10 @@ def test_health_page_uses_vault_health_title_and_prioritizes_metrics(
 
     assert response.status_code == 200
     assert "<h1>Vault Health</h1>" in response.text
+    assert 'class="library-heading"' in response.text
+    assert "items need" in response.text
+    assert "Back to movies" not in response.text
+    assert response.text.count('data-vault-busy-message="Checking Vault Health…"') == 2
     assert "Vault overview" in response.text
     assert "Review workbench" in response.text
     assert "Source synchronization" in response.text
@@ -99,6 +209,9 @@ def test_flags_page_lists_flagged_movies(client: TestClient, admin_headers: dict
     html = page.text
     assert "Flags" in html
     assert "Metadata cleanup" in html
+    assert "Find an external match" in html
+    assert "data-flag-match-search" in html
+    assert 'value="Blade Runner"' in html
 
 
 def test_review_route_redirects_to_vault_health_workbench(client: TestClient) -> None:

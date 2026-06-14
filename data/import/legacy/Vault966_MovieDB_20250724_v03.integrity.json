@@ -1,29 +1,29 @@
 {
   "schema_version": 2,
-  "generated_at": "2026-06-11T18:05:59.110473+00:00",
+  "generated_at": "2026-06-12T02:29:30.817689+00:00",
   "summary": {
     "movie_count": 1012,
     "structural_issue_count": 0,
-    "content_review_issue_count": 97,
+    "content_review_issue_count": 49,
     "source_drift_count": 0,
-    "approved_source_deviation_count": 299,
-    "artwork_enrichment_count": 842,
+    "approved_source_deviation_count": 315,
+    "artwork_enrichment_count": 880,
     "newer_source_entry_count": 43,
     "missing_source_id_count": 0,
     "source_unmatched_count": 11,
     "healthy": true,
     "review_required": true
   },
-  "collection_fingerprint": "c45258b777b4f814c8cb2021a79e46ccfeb5cdf72e83cf8703debb209037e23c",
+  "collection_fingerprint": "1111392f1e861906b5fd821fd9637420adfa04eb997da3a239a4dee505fcb2fb",
   "field_coverage": {
-    "year": 1003,
-    "runtime": 986,
+    "year": 1012,
+    "runtime": 1012,
     "plot": 960,
-    "poster_url": 863,
+    "poster_url": 902,
     "certificate": 813,
     "keywords": 861,
-    "imdb_id": 879,
-    "tmdb_id": 904,
+    "imdb_id": 918,
+    "tmdb_id": 943,
     "genres": 1001,
     "directors": 1007,
     "cast": 752
@@ -39,69 +39,12 @@
   },
   "content_review": {
     "title_embedded_year_conflicts": [],
-    "missing_year": [
-      {
-        "movie_id": 206,
-        "title": "Fantasy Island (Unrated Edition)"
-      },
-      {
-        "movie_id": 309,
-        "title": "How the Grinch Stole Christmas: The Ultimate Edition"
-      },
-      {
-        "movie_id": 494,
-        "title": "Paranormal Activity: The Ghost Dimension (New Extended Cut)"
-      },
-      {
-        "movie_id": 555,
-        "title": "Riddick (Unrated Director's Cut)"
-      },
-      {
-        "movie_id": 649,
-        "title": "Straight Outta Compton (Unrated Director's Cut)"
-      },
-      {
-        "movie_id": 658,
-        "title": "Taken (Extended Cut)"
-      },
-      {
-        "movie_id": 739,
-        "title": "The Godfather Part III: The Coppola Restoration"
-      },
-      {
-        "movie_id": 782,
-        "title": "The Last of the Mohicans (Director's Definitive Cut)"
-      },
-      {
-        "movie_id": 941,
-        "title": "Zoolander No. 2 (The Magnum Edition)"
-      }
-    ],
+    "missing_year": [],
     "missing_external_ids": [
-      {
-        "movie_id": 26,
-        "title": "A Million Ways to Die In the West (Unrated)",
-        "year": 2014
-      },
-      {
-        "movie_id": 89,
-        "title": "Bridesmaids (Unrated)",
-        "year": 2011
-      },
-      {
-        "movie_id": 96,
-        "title": "By the Light of the Silvery Moon (1953)",
-        "year": 1953
-      },
       {
         "movie_id": 97,
         "title": "By the Sea (2015)",
         "year": 2015
-      },
-      {
-        "movie_id": 105,
-        "title": "Carrie (1976)",
-        "year": 1976
       },
       {
         "movie_id": 118,
@@ -109,44 +52,14 @@
         "year": 2015
       },
       {
-        "movie_id": 122,
-        "title": "Coco (2017)",
-        "year": 2017
-      },
-      {
-        "movie_id": 148,
-        "title": "Death on the Nile (2022)",
-        "year": 2022
-      },
-      {
         "movie_id": 159,
         "title": "Dirty Girl (2007)",
         "year": 2007
       },
       {
-        "movie_id": 160,
-        "title": "Dirty Grandpa (Unrated)",
-        "year": 2016
-      },
-      {
-        "movie_id": 186,
-        "title": "Elemental (2023)",
-        "year": 2023
-      },
-      {
-        "movie_id": 187,
-        "title": "Elf (2003)",
-        "year": 2003
-      },
-      {
-        "movie_id": 198,
-        "title": "Everest (2015)",
-        "year": 2015
-      },
-      {
         "movie_id": 206,
         "title": "Fantasy Island (Unrated Edition)",
-        "year": null
+        "year": 2020
       },
       {
         "movie_id": 207,
@@ -154,39 +67,9 @@
         "year": 2013
       },
       {
-        "movie_id": 238,
-        "title": "Furious 7 (Extended Edition)",
-        "year": 2015
-      },
-      {
-        "movie_id": 241,
-        "title": "Game Night (2018)",
-        "year": 2018
-      },
-      {
-        "movie_id": 242,
-        "title": "Gangs of New York (2002)",
-        "year": 2002
-      },
-      {
-        "movie_id": 306,
-        "title": "Hot Tub Time Machine (Unrated)",
-        "year": 2010
-      },
-      {
         "movie_id": 309,
         "title": "How the Grinch Stole Christmas: The Ultimate Edition",
-        "year": null
-      },
-      {
-        "movie_id": 329,
-        "title": "Inside Out (2015)",
         "year": 2015
-      },
-      {
-        "movie_id": 335,
-        "title": "Into the Woods (2014)",
-        "year": 2014
       },
       {
         "movie_id": 338,
@@ -199,49 +82,14 @@
         "year": 2012
       },
       {
-        "movie_id": 399,
-        "title": "Little Boy (2015)",
-        "year": 2015
-      },
-      {
-        "movie_id": 493,
-        "title": "Paranormal Activity 4 (Extended Edition)",
-        "year": 2012
-      },
-      {
-        "movie_id": 494,
-        "title": "Paranormal Activity: The Ghost Dimension (New Extended Cut)",
-        "year": null
-      },
-      {
-        "movie_id": 497,
-        "title": "Passengers (2016)",
-        "year": 2016
-      },
-      {
-        "movie_id": 525,
-        "title": "Psycho (1960)",
-        "year": 1960
-      },
-      {
-        "movie_id": 547,
-        "title": "Requiem for a Dream (Director's Cut)",
-        "year": 2000
-      },
-      {
         "movie_id": 555,
         "title": "Riddick (Unrated Director's Cut)",
-        "year": null
+        "year": 2013
       },
       {
         "movie_id": 611,
         "title": "Sisters (Unrated)",
         "year": 2015
-      },
-      {
-        "movie_id": 620,
-        "title": "Snow White & the Huntsman (Extended Edition)",
-        "year": 2012
       },
       {
         "movie_id": 637,
@@ -251,42 +99,17 @@
       {
         "movie_id": 649,
         "title": "Straight Outta Compton (Unrated Director's Cut)",
-        "year": null
+        "year": 2015
       },
       {
         "movie_id": 658,
         "title": "Taken (Extended Cut)",
-        "year": null
-      },
-      {
-        "movie_id": 665,
-        "title": "Ted 2 (Unrated)",
-        "year": 2015
-      },
-      {
-        "movie_id": 666,
-        "title": "Teenage Mutant Ninja Turtles (2014)",
-        "year": 2014
-      },
-      {
-        "movie_id": 680,
-        "title": "The Amityville Horror (1979)",
-        "year": 1979
+        "year": 2009
       },
       {
         "movie_id": 686,
         "title": "The Boss (Unrated)",
         "year": 2016
-      },
-      {
-        "movie_id": 692,
-        "title": "The Boy (2016)",
-        "year": 2016
-      },
-      {
-        "movie_id": 693,
-        "title": "The Boy Next Door (2015)",
-        "year": 2015
       },
       {
         "movie_id": 735,
@@ -296,12 +119,7 @@
       {
         "movie_id": 739,
         "title": "The Godfather Part III: The Coppola Restoration",
-        "year": null
-      },
-      {
-        "movie_id": 749,
-        "title": "The Gunman (2015)",
-        "year": 2015
+        "year": 1990
       },
       {
         "movie_id": 759,
@@ -314,29 +132,14 @@
         "year": 2014
       },
       {
-        "movie_id": 765,
-        "title": "The Host (2013)",
-        "year": 2013
-      },
-      {
         "movie_id": 773,
         "title": "The Huntsman: Winter's War (Extended Edition)",
         "year": 2016
       },
       {
-        "movie_id": 781,
-        "title": "The Last House on the Left (Unrated) [2009]",
-        "year": 2009
-      },
-      {
         "movie_id": 782,
         "title": "The Last of the Mohicans (Director's Definitive Cut)",
-        "year": null
-      },
-      {
-        "movie_id": 790,
-        "title": "The Little Mermaid (1989)",
-        "year": 1989
+        "year": 2003
       },
       {
         "movie_id": 795,
@@ -344,44 +147,14 @@
         "year": 2001
       },
       {
-        "movie_id": 796,
-        "title": "The Lord of the Rings: The Return of the King (Extended Edition)",
-        "year": 2003
-      },
-      {
-        "movie_id": 797,
-        "title": "The Lord of the Rings: The Two Towers (Extended Edition)",
-        "year": 2002
-      },
-      {
         "movie_id": 839,
         "title": "The Snowman (2017)",
         "year": 2017
       },
       {
-        "movie_id": 849,
-        "title": "The Town (2010)",
-        "year": 2010
-      },
-      {
-        "movie_id": 852,
-        "title": "The Twilight Saga: Breaking Dawn - Part 1 (Extended Edition)",
-        "year": 2011
-      },
-      {
         "movie_id": 878,
         "title": "Total Recall (Newly Remastered)",
-        "year": 1990
-      },
-      {
-        "movie_id": 891,
-        "title": "Tropic Thunder (Director's Cut)",
-        "year": 2008
-      },
-      {
-        "movie_id": 901,
-        "title": "Unfriended (2014)",
-        "year": 2014
+        "year": 2019
       },
       {
         "movie_id": 918,
@@ -401,7 +174,7 @@
       {
         "movie_id": 941,
         "title": "Zoolander No. 2 (The Magnum Edition)",
-        "year": null
+        "year": 2016
       },
       {
         "movie_id": 970,
@@ -432,11 +205,6 @@
         "movie_id": 980,
         "title": "The Blair Witch Project",
         "year": 1999
-      },
-      {
-        "movie_id": 982,
-        "title": "The Fall Guy (2024)",
-        "year": 2024
       },
       {
         "movie_id": 984,
@@ -521,7 +289,7 @@
     ]
   },
   "source_reconciliation": {
-    "source_path": "/Users/corystoner/Documents/Codex/2026-06-09/computer-use-plugin-computer-use-openai/data/import/legacy/Vault966_MovieDB_20250724_v03.staged.csv",
+    "source_path": "/Users/corystoner/Documents/Vault 966 Project/data/import/legacy/Vault966_MovieDB_20250724_v03.staged.csv",
     "drift": [],
     "approved_deviations": [
       {
@@ -583,6 +351,22 @@
             "database": 2009,
             "review_decision_id": 1,
             "policy": "title_year_authority"
+          },
+          "runtime": {
+            "source": null,
+            "database": 96,
+            "decision_id": 399,
+            "source_snapshot_id": 1
+          },
+          "directors": {
+            "source": [
+              "Not Found"
+            ],
+            "database": [
+              "Robert Zemeckis"
+            ],
+            "decision_id": 400,
+            "source_snapshot_id": 1
           }
         }
       },
@@ -643,6 +427,20 @@
             "decision_id": 82,
             "source_snapshot_id": 1
           },
+          "imdb_id": {
+            "source": null,
+            "database": "tt2557490",
+            "provenance_id": 1116,
+            "provider": "omdb",
+            "policy": "exact_external_match"
+          },
+          "tmdb_id": {
+            "source": null,
+            "database": 188161,
+            "provenance_id": 1115,
+            "provider": "tmdb",
+            "policy": "exact_external_match"
+          },
           "directors": {
             "source": [
               "Not Found"
@@ -665,6 +463,22 @@
             "database": 2010,
             "review_decision_id": 2,
             "policy": "title_year_authority"
+          },
+          "runtime": {
+            "source": null,
+            "database": 95,
+            "decision_id": 443,
+            "source_snapshot_id": 1
+          },
+          "directors": {
+            "source": [
+              "Not Found"
+            ],
+            "database": [
+              "Samuel Bayer"
+            ],
+            "decision_id": 444,
+            "source_snapshot_id": 1
           }
         }
       },
@@ -816,6 +630,35 @@
         }
       },
       {
+        "movie_id": 74,
+        "vault_id": "V0074",
+        "title": "Birdman",
+        "differences": {
+          "year": {
+            "source": 2015,
+            "database": 2014,
+            "decision_id": 392,
+            "source_snapshot_id": 1
+          },
+          "runtime": {
+            "source": 30,
+            "database": 120,
+            "decision_id": 393,
+            "source_snapshot_id": 1
+          },
+          "directors": {
+            "source": [
+              "Guy Bolongaro"
+            ],
+            "database": [
+              "Alejandro González Iñárritu"
+            ],
+            "decision_id": 394,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
         "movie_id": 79,
         "vault_id": "V0079",
         "title": "Blair Witch",
@@ -909,6 +752,20 @@
             "decision_id": 17,
             "source_snapshot_id": 1
           },
+          "imdb_id": {
+            "source": null,
+            "database": "tt1478338",
+            "provenance_id": 1118,
+            "provider": "omdb",
+            "policy": "exact_external_match"
+          },
+          "tmdb_id": {
+            "source": null,
+            "database": 55721,
+            "provenance_id": 1117,
+            "provider": "tmdb",
+            "policy": "exact_external_match"
+          },
           "directors": {
             "source": [
               "Not Found"
@@ -954,6 +811,20 @@
             "database": 102,
             "decision_id": 18,
             "source_snapshot_id": 1
+          },
+          "imdb_id": {
+            "source": null,
+            "database": "tt0045586",
+            "provenance_id": 1120,
+            "provider": "omdb",
+            "policy": "exact_external_match"
+          },
+          "tmdb_id": {
+            "source": null,
+            "database": 19590,
+            "provenance_id": 1119,
+            "provider": "tmdb",
+            "policy": "exact_external_match"
           },
           "directors": {
             "source": [
@@ -1023,6 +894,36 @@
             "database": 1976,
             "review_decision_id": 3,
             "policy": "title_year_authority"
+          },
+          "runtime": {
+            "source": null,
+            "database": 98,
+            "decision_id": 395,
+            "source_snapshot_id": 1
+          },
+          "imdb_id": {
+            "source": null,
+            "database": "tt0074285",
+            "provenance_id": 1122,
+            "provider": "omdb",
+            "policy": "exact_external_match"
+          },
+          "tmdb_id": {
+            "source": null,
+            "database": 7340,
+            "provenance_id": 1121,
+            "provider": "tmdb",
+            "policy": "exact_external_match"
+          },
+          "directors": {
+            "source": [
+              "Not Found"
+            ],
+            "database": [
+              "Stephen King"
+            ],
+            "decision_id": 396,
+            "source_snapshot_id": 1
           }
         }
       },
@@ -1036,6 +937,22 @@
             "database": 2013,
             "review_decision_id": 5,
             "policy": "title_year_authority"
+          },
+          "runtime": {
+            "source": 3,
+            "database": 100,
+            "decision_id": 397,
+            "source_snapshot_id": 1
+          },
+          "directors": {
+            "source": [
+              "Not Found"
+            ],
+            "database": [
+              "Kimberly Peirce"
+            ],
+            "decision_id": 398,
+            "source_snapshot_id": 1
           }
         }
       },
@@ -1155,6 +1072,20 @@
             "decision_id": 21,
             "source_snapshot_id": 1
           },
+          "imdb_id": {
+            "source": null,
+            "database": "tt2380307",
+            "provenance_id": 1124,
+            "provider": "omdb",
+            "policy": "exact_external_match"
+          },
+          "tmdb_id": {
+            "source": null,
+            "database": 354912,
+            "provenance_id": 1123,
+            "provider": "tmdb",
+            "policy": "exact_external_match"
+          },
           "directors": {
             "source": [
               "Not Found"
@@ -1208,6 +1139,20 @@
             "database": 127,
             "decision_id": 22,
             "source_snapshot_id": 1
+          },
+          "imdb_id": {
+            "source": null,
+            "database": "tt7657566",
+            "provenance_id": 1126,
+            "provider": "omdb",
+            "policy": "exact_external_match"
+          },
+          "tmdb_id": {
+            "source": null,
+            "database": 505026,
+            "provenance_id": 1125,
+            "provider": "tmdb",
+            "policy": "exact_external_match"
           },
           "directors": {
             "source": [
@@ -1288,8 +1233,24 @@
           "year": {
             "source": 2010,
             "database": 2007,
-            "review_decision_id": 6,
+            "review_decision_id": 135,
             "policy": "title_year_authority"
+          },
+          "runtime": {
+            "source": null,
+            "database": 66,
+            "decision_id": 407,
+            "source_snapshot_id": 1
+          },
+          "directors": {
+            "source": [
+              "Not Found"
+            ],
+            "database": [
+              "Lisa Lampanelli"
+            ],
+            "decision_id": 408,
+            "source_snapshot_id": 1
           }
         }
       },
@@ -1303,6 +1264,20 @@
             "database": 110,
             "decision_id": 24,
             "source_snapshot_id": 1
+          },
+          "imdb_id": {
+            "source": null,
+            "database": "tt1860213",
+            "provenance_id": 1128,
+            "provider": "omdb",
+            "policy": "exact_external_match"
+          },
+          "tmdb_id": {
+            "source": null,
+            "database": 291870,
+            "provenance_id": 1127,
+            "provider": "tmdb",
+            "policy": "exact_external_match"
           },
           "directors": {
             "source": [
@@ -1361,6 +1336,35 @@
             "source": null,
             "database": 87,
             "decision_id": 27,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
+        "movie_id": 169,
+        "vault_id": "V0171",
+        "title": "Dr. Seuss' How the Grinch Stole Christmas",
+        "differences": {
+          "year": {
+            "source": 1966,
+            "database": 2000,
+            "decision_id": 409,
+            "source_snapshot_id": 1
+          },
+          "runtime": {
+            "source": null,
+            "database": 105,
+            "decision_id": 410,
+            "source_snapshot_id": 1
+          },
+          "directors": {
+            "source": [
+              "Chuck Jones"
+            ],
+            "database": [
+              "Ron Howard"
+            ],
+            "decision_id": 411,
             "source_snapshot_id": 1
           }
         }
@@ -1428,6 +1432,20 @@
             "decision_id": 29,
             "source_snapshot_id": 1
           },
+          "imdb_id": {
+            "source": null,
+            "database": "tt15789038",
+            "provenance_id": 1130,
+            "provider": "omdb",
+            "policy": "exact_external_match"
+          },
+          "tmdb_id": {
+            "source": null,
+            "database": 976573,
+            "provenance_id": 1129,
+            "provider": "tmdb",
+            "policy": "exact_external_match"
+          },
           "directors": {
             "source": [
               "Not Found"
@@ -1450,6 +1468,20 @@
             "database": 97,
             "decision_id": 30,
             "source_snapshot_id": 1
+          },
+          "imdb_id": {
+            "source": null,
+            "database": "tt0319343",
+            "provenance_id": 1132,
+            "provider": "omdb",
+            "policy": "exact_external_match"
+          },
+          "tmdb_id": {
+            "source": null,
+            "database": 10719,
+            "provenance_id": 1131,
+            "provider": "tmdb",
+            "policy": "exact_external_match"
           },
           "directors": {
             "source": [
@@ -1571,6 +1603,20 @@
             "decision_id": 33,
             "source_snapshot_id": 1
           },
+          "imdb_id": {
+            "source": null,
+            "database": "tt2719848",
+            "provenance_id": 1134,
+            "provider": "omdb",
+            "policy": "exact_external_match"
+          },
+          "tmdb_id": {
+            "source": null,
+            "database": 253412,
+            "provenance_id": 1133,
+            "provider": "tmdb",
+            "policy": "exact_external_match"
+          },
           "directors": {
             "source": [
               "Not Found"
@@ -1656,6 +1702,35 @@
         }
       },
       {
+        "movie_id": 206,
+        "vault_id": "V0208",
+        "title": "Fantasy Island (Unrated Edition)",
+        "differences": {
+          "year": {
+            "source": null,
+            "database": 2020,
+            "decision_id": 412,
+            "source_snapshot_id": 1
+          },
+          "runtime": {
+            "source": null,
+            "database": 110,
+            "decision_id": 413,
+            "source_snapshot_id": 1
+          },
+          "directors": {
+            "source": [
+              "Not Found"
+            ],
+            "database": [
+              "Jeff Wadlow"
+            ],
+            "decision_id": 414,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
         "movie_id": 207,
         "vault_id": "V0209",
         "title": "Fast & Furious 6 (Extended Edition)",
@@ -1714,6 +1789,22 @@
             "database": 1984,
             "review_decision_id": 8,
             "policy": "title_year_authority"
+          },
+          "runtime": {
+            "source": null,
+            "database": 107,
+            "decision_id": 415,
+            "source_snapshot_id": 1
+          },
+          "directors": {
+            "source": [
+              "Not Found"
+            ],
+            "database": [
+              "Dean Pitchford"
+            ],
+            "decision_id": 416,
+            "source_snapshot_id": 1
           }
         }
       },
@@ -1798,6 +1889,20 @@
             "decision_id": 39,
             "source_snapshot_id": 1
           },
+          "imdb_id": {
+            "source": null,
+            "database": "tt2820852",
+            "provenance_id": 1136,
+            "provider": "omdb",
+            "policy": "exact_external_match"
+          },
+          "tmdb_id": {
+            "source": null,
+            "database": 168259,
+            "provenance_id": 1135,
+            "provider": "tmdb",
+            "policy": "exact_external_match"
+          },
           "directors": {
             "source": [
               "Not Found"
@@ -1820,6 +1925,20 @@
             "database": 100,
             "decision_id": 40,
             "source_snapshot_id": 1
+          },
+          "imdb_id": {
+            "source": null,
+            "database": "tt2704998",
+            "provenance_id": 1138,
+            "provider": "omdb",
+            "policy": "exact_external_match"
+          },
+          "tmdb_id": {
+            "source": null,
+            "database": 445571,
+            "provenance_id": 1137,
+            "provider": "tmdb",
+            "policy": "exact_external_match"
           },
           "directors": {
             "source": [
@@ -1844,6 +1963,20 @@
             "database": 167,
             "decision_id": 41,
             "source_snapshot_id": 1
+          },
+          "imdb_id": {
+            "source": null,
+            "database": "tt0217505",
+            "provenance_id": 1140,
+            "provider": "omdb",
+            "policy": "exact_external_match"
+          },
+          "tmdb_id": {
+            "source": null,
+            "database": 3131,
+            "provenance_id": 1139,
+            "provider": "tmdb",
+            "policy": "exact_external_match"
           },
           "directors": {
             "source": [
@@ -2160,6 +2293,20 @@
             "decision_id": 57,
             "source_snapshot_id": 1
           },
+          "imdb_id": {
+            "source": null,
+            "database": "tt1231587",
+            "provenance_id": 1142,
+            "provider": "omdb",
+            "policy": "exact_external_match"
+          },
+          "tmdb_id": {
+            "source": null,
+            "database": 23048,
+            "provenance_id": 1141,
+            "provider": "tmdb",
+            "policy": "exact_external_match"
+          },
           "directors": {
             "source": [
               "Not Found"
@@ -2181,6 +2328,35 @@
             "source": 100,
             "database": 104,
             "decision_id": 264,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
+        "movie_id": 309,
+        "vault_id": "V0313",
+        "title": "How the Grinch Stole Christmas: The Ultimate Edition",
+        "differences": {
+          "year": {
+            "source": null,
+            "database": 2015,
+            "decision_id": 428,
+            "source_snapshot_id": 1
+          },
+          "runtime": {
+            "source": null,
+            "database": 75,
+            "decision_id": 429,
+            "source_snapshot_id": 1
+          },
+          "directors": {
+            "source": [
+              "Not Found"
+            ],
+            "database": [
+              "Charles M. Jones"
+            ],
+            "decision_id": 430,
             "source_snapshot_id": 1
           }
         }
@@ -2222,6 +2398,20 @@
             "decision_id": 62,
             "source_snapshot_id": 1
           },
+          "imdb_id": {
+            "source": null,
+            "database": "tt2096673",
+            "provenance_id": 1144,
+            "provider": "omdb",
+            "policy": "exact_external_match"
+          },
+          "tmdb_id": {
+            "source": null,
+            "database": 150540,
+            "provenance_id": 1143,
+            "provider": "tmdb",
+            "policy": "exact_external_match"
+          },
           "directors": {
             "source": [
               "Not Found"
@@ -2257,6 +2447,36 @@
             "database": 2014,
             "review_decision_id": 10,
             "policy": "title_year_authority"
+          },
+          "runtime": {
+            "source": null,
+            "database": 126,
+            "decision_id": 432,
+            "source_snapshot_id": 1
+          },
+          "imdb_id": {
+            "source": null,
+            "database": "tt2180411",
+            "provenance_id": 1146,
+            "provider": "omdb",
+            "policy": "exact_external_match"
+          },
+          "tmdb_id": {
+            "source": null,
+            "database": 224141,
+            "provenance_id": 1145,
+            "provider": "tmdb",
+            "policy": "exact_external_match"
+          },
+          "directors": {
+            "source": [
+              "Not Found"
+            ],
+            "database": [
+              "Rob Marshall"
+            ],
+            "decision_id": 433,
+            "source_snapshot_id": 1
           }
         }
       },
@@ -2461,6 +2681,22 @@
             "database": 2012,
             "review_decision_id": 12,
             "policy": "title_year_authority"
+          },
+          "runtime": {
+            "source": null,
+            "database": 158,
+            "decision_id": 437,
+            "source_snapshot_id": 1
+          },
+          "directors": {
+            "source": [
+              "Not Found"
+            ],
+            "database": [
+              "Tom Hooper"
+            ],
+            "decision_id": 438,
+            "source_snapshot_id": 1
           }
         }
       },
@@ -2487,6 +2723,20 @@
             "database": 107,
             "decision_id": 71,
             "source_snapshot_id": 1
+          },
+          "imdb_id": {
+            "source": null,
+            "database": "tt1810683",
+            "provenance_id": 1148,
+            "provider": "omdb",
+            "policy": "exact_external_match"
+          },
+          "tmdb_id": {
+            "source": null,
+            "database": 256962,
+            "provenance_id": 1147,
+            "provider": "tmdb",
+            "policy": "exact_external_match"
           },
           "directors": {
             "source": [
@@ -2776,6 +3026,23 @@
             "database": 2016,
             "review_decision_id": 14,
             "policy": "title_year_authority"
+          },
+          "runtime": {
+            "source": null,
+            "database": 108,
+            "decision_id": 441,
+            "source_snapshot_id": 1
+          },
+          "directors": {
+            "source": [
+              "Not Found"
+            ],
+            "database": [
+              "John Musker",
+              "Ron Clements"
+            ],
+            "decision_id": 442,
+            "source_snapshot_id": 1
           }
         }
       },
@@ -2978,6 +3245,63 @@
             "database": 97,
             "decision_id": 89,
             "source_snapshot_id": 1
+          },
+          "imdb_id": {
+            "source": null,
+            "database": "tt2109184",
+            "provenance_id": 1150,
+            "provider": "omdb",
+            "policy": "exact_external_match"
+          },
+          "tmdb_id": {
+            "source": null,
+            "database": 82990,
+            "provenance_id": 1149,
+            "provider": "tmdb",
+            "policy": "exact_external_match"
+          }
+        }
+      },
+      {
+        "movie_id": 494,
+        "vault_id": "V0498",
+        "title": "Paranormal Activity: The Ghost Dimension (New Extended Cut)",
+        "differences": {
+          "year": {
+            "source": null,
+            "database": 2015,
+            "decision_id": 445,
+            "source_snapshot_id": 1
+          },
+          "runtime": {
+            "source": null,
+            "database": 98,
+            "decision_id": 446,
+            "source_snapshot_id": 1
+          },
+          "imdb_id": {
+            "source": null,
+            "database": "tt2473510",
+            "provenance_id": 1152,
+            "provider": "omdb",
+            "policy": "exact_external_match"
+          },
+          "tmdb_id": {
+            "source": null,
+            "database": 146301,
+            "provenance_id": 1151,
+            "provider": "tmdb",
+            "policy": "exact_external_match"
+          },
+          "directors": {
+            "source": [
+              "Not Found"
+            ],
+            "database": [
+              "Gregory Plotkin"
+            ],
+            "decision_id": 447,
+            "source_snapshot_id": 1
           }
         }
       },
@@ -3015,6 +3339,20 @@
             "decision_id": 90,
             "source_snapshot_id": 1
           },
+          "imdb_id": {
+            "source": null,
+            "database": "tt1355644",
+            "provenance_id": 1154,
+            "provider": "omdb",
+            "policy": "exact_external_match"
+          },
+          "tmdb_id": {
+            "source": null,
+            "database": 274870,
+            "provenance_id": 1153,
+            "provider": "tmdb",
+            "policy": "exact_external_match"
+          },
           "directors": {
             "source": [
               "Not Found"
@@ -3050,6 +3388,23 @@
             "database": 2019,
             "review_decision_id": 15,
             "policy": "title_year_authority"
+          },
+          "runtime": {
+            "source": 65,
+            "database": 101,
+            "decision_id": 448,
+            "source_snapshot_id": 1
+          },
+          "directors": {
+            "source": [
+              "Not Found"
+            ],
+            "database": [
+              "Kevin Kolsch",
+              "Dennis Widmyer"
+            ],
+            "decision_id": 449,
+            "source_snapshot_id": 1
           }
         }
       },
@@ -3112,6 +3467,20 @@
             "database": 109,
             "decision_id": 94,
             "source_snapshot_id": 1
+          },
+          "imdb_id": {
+            "source": null,
+            "database": "tt0054215",
+            "provenance_id": 1156,
+            "provider": "omdb",
+            "policy": "exact_external_match"
+          },
+          "tmdb_id": {
+            "source": null,
+            "database": 539,
+            "provenance_id": 1155,
+            "provider": "tmdb",
+            "policy": "exact_external_match"
           }
         }
       },
@@ -3220,6 +3589,20 @@
             "decision_id": 96,
             "source_snapshot_id": 1
           },
+          "imdb_id": {
+            "source": null,
+            "database": "tt0180093",
+            "provenance_id": 1158,
+            "provider": "omdb",
+            "policy": "exact_external_match"
+          },
+          "tmdb_id": {
+            "source": null,
+            "database": 641,
+            "provenance_id": 1157,
+            "provider": "tmdb",
+            "policy": "exact_external_match"
+          },
           "directors": {
             "source": [
               "Not Found"
@@ -3264,6 +3647,35 @@
             "source": 2016,
             "database": 2017,
             "decision_id": 327,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
+        "movie_id": 555,
+        "vault_id": "V0560",
+        "title": "Riddick (Unrated Director's Cut)",
+        "differences": {
+          "year": {
+            "source": null,
+            "database": 2013,
+            "decision_id": 450,
+            "source_snapshot_id": 1
+          },
+          "runtime": {
+            "source": null,
+            "database": 127,
+            "decision_id": 454,
+            "source_snapshot_id": 1
+          },
+          "directors": {
+            "source": [
+              "Not Found"
+            ],
+            "database": [
+              "David Twohy"
+            ],
+            "decision_id": 455,
             "source_snapshot_id": 1
           }
         }
@@ -3533,6 +3945,20 @@
             "decision_id": 100,
             "source_snapshot_id": 1
           },
+          "imdb_id": {
+            "source": null,
+            "database": "tt1735898",
+            "provenance_id": 1160,
+            "provider": "omdb",
+            "policy": "exact_external_match"
+          },
+          "tmdb_id": {
+            "source": null,
+            "database": 58595,
+            "provenance_id": 1159,
+            "provider": "tmdb",
+            "policy": "exact_external_match"
+          },
           "directors": {
             "source": [
               "Not Found"
@@ -3765,6 +4191,35 @@
         }
       },
       {
+        "movie_id": 649,
+        "vault_id": "V0658",
+        "title": "Straight Outta Compton (Unrated Director's Cut)",
+        "differences": {
+          "year": {
+            "source": null,
+            "database": 2015,
+            "decision_id": 456,
+            "source_snapshot_id": 1
+          },
+          "runtime": {
+            "source": null,
+            "database": 167,
+            "decision_id": 457,
+            "source_snapshot_id": 1
+          },
+          "directors": {
+            "source": [
+              "Not Found"
+            ],
+            "database": [
+              "F. Gary Gray"
+            ],
+            "decision_id": 458,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
         "movie_id": 650,
         "vault_id": "V0659",
         "title": "Subservience",
@@ -3828,6 +4283,35 @@
         }
       },
       {
+        "movie_id": 654,
+        "vault_id": "V0663",
+        "title": "Superman: The Movie",
+        "differences": {
+          "year": {
+            "source": 1980,
+            "database": 2001,
+            "decision_id": 462,
+            "source_snapshot_id": 1
+          },
+          "runtime": {
+            "source": 36,
+            "database": 143,
+            "decision_id": 463,
+            "source_snapshot_id": 1
+          },
+          "directors": {
+            "source": [
+              "Iain Johnstone"
+            ],
+            "database": [
+              "Richard Donner"
+            ],
+            "decision_id": 464,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
         "movie_id": 655,
         "vault_id": "V0664",
         "title": "Sweeney Todd: The Demon Barber of Fleet Street",
@@ -3882,6 +4366,35 @@
             "source": 2008,
             "database": 2009,
             "decision_id": 365,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
+        "movie_id": 658,
+        "vault_id": "V0667",
+        "title": "Taken (Extended Cut)",
+        "differences": {
+          "year": {
+            "source": null,
+            "database": 2009,
+            "decision_id": 465,
+            "source_snapshot_id": 1
+          },
+          "runtime": {
+            "source": null,
+            "database": 94,
+            "decision_id": 466,
+            "source_snapshot_id": 1
+          },
+          "directors": {
+            "source": [
+              "Not Found"
+            ],
+            "database": [
+              "Pierre Morel"
+            ],
+            "decision_id": 467,
             "source_snapshot_id": 1
           }
         }
@@ -3957,6 +4470,20 @@
             "decision_id": 113,
             "source_snapshot_id": 1
           },
+          "imdb_id": {
+            "source": null,
+            "database": "tt2637276",
+            "provenance_id": 1162,
+            "provider": "omdb",
+            "policy": "exact_external_match"
+          },
+          "tmdb_id": {
+            "source": null,
+            "database": 214756,
+            "provenance_id": 1161,
+            "provider": "tmdb",
+            "policy": "exact_external_match"
+          },
           "directors": {
             "source": [
               "Not Found"
@@ -3979,6 +4506,20 @@
             "database": 102,
             "decision_id": 114,
             "source_snapshot_id": 1
+          },
+          "imdb_id": {
+            "source": null,
+            "database": "tt1291150",
+            "provenance_id": 1164,
+            "provider": "omdb",
+            "policy": "exact_external_match"
+          },
+          "tmdb_id": {
+            "source": null,
+            "database": 98566,
+            "provenance_id": 1163,
+            "provider": "tmdb",
+            "policy": "exact_external_match"
           },
           "directors": {
             "source": [
@@ -4051,6 +4592,23 @@
             "database": 2019,
             "review_decision_id": 16,
             "policy": "title_year_authority"
+          },
+          "runtime": {
+            "source": null,
+            "database": 87,
+            "decision_id": 390,
+            "source_snapshot_id": 1
+          },
+          "directors": {
+            "source": [
+              "Not Found"
+            ],
+            "database": [
+              "Conrad Vernon",
+              "Greg Tiernan"
+            ],
+            "decision_id": 391,
+            "source_snapshot_id": 1
           }
         }
       },
@@ -4064,6 +4622,20 @@
             "database": 119,
             "decision_id": 2,
             "source_snapshot_id": 1
+          },
+          "imdb_id": {
+            "source": null,
+            "database": "tt0078767",
+            "provenance_id": 1166,
+            "provider": "omdb",
+            "policy": "exact_external_match"
+          },
+          "tmdb_id": {
+            "source": null,
+            "database": 11449,
+            "provenance_id": 1165,
+            "provider": "tmdb",
+            "policy": "exact_external_match"
           },
           "directors": {
             "source": [
@@ -4111,6 +4683,20 @@
             "decision_id": 15,
             "source_snapshot_id": 1
           },
+          "imdb_id": {
+            "source": null,
+            "database": "tt3882082",
+            "provenance_id": 1168,
+            "provider": "omdb",
+            "policy": "exact_external_match"
+          },
+          "tmdb_id": {
+            "source": null,
+            "database": 321258,
+            "provenance_id": 1167,
+            "provider": "tmdb",
+            "policy": "exact_external_match"
+          },
           "directors": {
             "source": [
               "Not Found"
@@ -4133,6 +4719,20 @@
             "database": 91,
             "decision_id": 16,
             "source_snapshot_id": 1
+          },
+          "imdb_id": {
+            "source": null,
+            "database": "tt3181822",
+            "provenance_id": 1170,
+            "provider": "omdb",
+            "policy": "exact_external_match"
+          },
+          "tmdb_id": {
+            "source": null,
+            "database": 241251,
+            "provenance_id": 1169,
+            "provider": "tmdb",
+            "policy": "exact_external_match"
           },
           "directors": {
             "source": [
@@ -4186,6 +4786,22 @@
             "database": 2021,
             "review_decision_id": 17,
             "policy": "title_year_authority"
+          },
+          "runtime": {
+            "source": null,
+            "database": 112,
+            "decision_id": 404,
+            "source_snapshot_id": 1
+          },
+          "directors": {
+            "source": [
+              "Not Found"
+            ],
+            "database": [
+              "Dominic Cooke"
+            ],
+            "decision_id": 405,
+            "source_snapshot_id": 1
           }
         }
       },
@@ -4297,6 +4913,22 @@
             "database": 2015,
             "review_decision_id": 18,
             "policy": "title_year_authority"
+          },
+          "runtime": {
+            "source": null,
+            "database": 108,
+            "decision_id": 422,
+            "source_snapshot_id": 1
+          },
+          "directors": {
+            "source": [
+              "Not Found"
+            ],
+            "database": [
+              "Joel Edgerton"
+            ],
+            "decision_id": 423,
+            "source_snapshot_id": 1
           }
         }
       },
@@ -4309,6 +4941,35 @@
             "source": null,
             "database": 112,
             "decision_id": 43,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
+        "movie_id": 739,
+        "vault_id": "V0749",
+        "title": "The Godfather Part III: The Coppola Restoration",
+        "differences": {
+          "year": {
+            "source": null,
+            "database": 1990,
+            "decision_id": 424,
+            "source_snapshot_id": 1
+          },
+          "runtime": {
+            "source": null,
+            "database": 170,
+            "decision_id": 426,
+            "source_snapshot_id": 1
+          },
+          "directors": {
+            "source": [
+              "Not Found"
+            ],
+            "database": [
+              "Francis Ford Coppola"
+            ],
+            "decision_id": 427,
             "source_snapshot_id": 1
           }
         }
@@ -4372,6 +5033,20 @@
             "database": 116,
             "decision_id": 47,
             "source_snapshot_id": 1
+          },
+          "imdb_id": {
+            "source": null,
+            "database": "tt2515034",
+            "provenance_id": 1172,
+            "provider": "omdb",
+            "policy": "exact_external_match"
+          },
+          "tmdb_id": {
+            "source": null,
+            "database": 266396,
+            "provenance_id": 1171,
+            "provider": "tmdb",
+            "policy": "exact_external_match"
           },
           "directors": {
             "source": [
@@ -4471,6 +5146,20 @@
             "database": 126,
             "decision_id": 56,
             "source_snapshot_id": 1
+          },
+          "imdb_id": {
+            "source": null,
+            "database": "tt1517260",
+            "provenance_id": 1174,
+            "provider": "omdb",
+            "policy": "exact_external_match"
+          },
+          "tmdb_id": {
+            "source": null,
+            "database": 72710,
+            "provenance_id": 1173,
+            "provider": "tmdb",
+            "policy": "exact_external_match"
           },
           "directors": {
             "source": [
@@ -4632,6 +5321,49 @@
             "database": 114,
             "decision_id": 68,
             "source_snapshot_id": 1
+          },
+          "imdb_id": {
+            "source": null,
+            "database": "tt0844708",
+            "provenance_id": 1176,
+            "provider": "omdb",
+            "policy": "exact_external_match"
+          },
+          "tmdb_id": {
+            "source": null,
+            "database": 18405,
+            "provenance_id": 1175,
+            "provider": "tmdb",
+            "policy": "exact_external_match"
+          }
+        }
+      },
+      {
+        "movie_id": 782,
+        "vault_id": "V0792",
+        "title": "The Last of the Mohicans (Director's Definitive Cut)",
+        "differences": {
+          "year": {
+            "source": null,
+            "database": 2003,
+            "decision_id": 434,
+            "source_snapshot_id": 1
+          },
+          "runtime": {
+            "source": null,
+            "database": 115,
+            "decision_id": 435,
+            "source_snapshot_id": 1
+          },
+          "directors": {
+            "source": [
+              "Not Found"
+            ],
+            "database": [
+              "Michael Mann"
+            ],
+            "decision_id": 436,
+            "source_snapshot_id": 1
           }
         }
       },
@@ -4658,6 +5390,37 @@
             "database": 1989,
             "review_decision_id": 20,
             "policy": "title_year_authority"
+          },
+          "runtime": {
+            "source": null,
+            "database": 83,
+            "decision_id": 439,
+            "source_snapshot_id": 1
+          },
+          "imdb_id": {
+            "source": null,
+            "database": "tt0097757",
+            "provenance_id": 1178,
+            "provider": "omdb",
+            "policy": "exact_external_match"
+          },
+          "tmdb_id": {
+            "source": null,
+            "database": 10144,
+            "provenance_id": 1177,
+            "provider": "tmdb",
+            "policy": "exact_external_match"
+          },
+          "directors": {
+            "source": [
+              "Not Found"
+            ],
+            "database": [
+              "Ron Clements",
+              "John Musker"
+            ],
+            "decision_id": 440,
+            "source_snapshot_id": 1
           }
         }
       },
@@ -4752,6 +5515,20 @@
             "decision_id": 74,
             "source_snapshot_id": 1
           },
+          "imdb_id": {
+            "source": null,
+            "database": "tt0167260",
+            "provenance_id": 1180,
+            "provider": "omdb",
+            "policy": "exact_external_match"
+          },
+          "tmdb_id": {
+            "source": null,
+            "database": 122,
+            "provenance_id": 1179,
+            "provider": "tmdb",
+            "policy": "exact_external_match"
+          },
           "directors": {
             "source": [
               "Not Found"
@@ -4774,6 +5551,20 @@
             "database": 235,
             "decision_id": 75,
             "source_snapshot_id": 1
+          },
+          "imdb_id": {
+            "source": null,
+            "database": "tt0167261",
+            "provenance_id": 1182,
+            "provider": "omdb",
+            "policy": "exact_external_match"
+          },
+          "tmdb_id": {
+            "source": null,
+            "database": 121,
+            "provenance_id": 1181,
+            "provider": "tmdb",
+            "policy": "exact_external_match"
           },
           "directors": {
             "source": [
@@ -4990,6 +5781,20 @@
             "database": 125,
             "decision_id": 115,
             "source_snapshot_id": 1
+          },
+          "imdb_id": {
+            "source": null,
+            "database": "tt0840361",
+            "provenance_id": 1184,
+            "provider": "omdb",
+            "policy": "exact_external_match"
+          },
+          "tmdb_id": {
+            "source": null,
+            "database": 23168,
+            "provenance_id": 1183,
+            "provider": "tmdb",
+            "policy": "exact_external_match"
           }
         }
       },
@@ -5039,6 +5844,20 @@
             "database": 124,
             "decision_id": 119,
             "source_snapshot_id": 1
+          },
+          "imdb_id": {
+            "source": null,
+            "database": "tt1324999",
+            "provenance_id": 1186,
+            "provider": "omdb",
+            "policy": "exact_external_match"
+          },
+          "tmdb_id": {
+            "source": null,
+            "database": 50619,
+            "provenance_id": 1185,
+            "provider": "tmdb",
+            "policy": "exact_external_match"
           },
           "directors": {
             "source": [
@@ -5092,6 +5911,35 @@
         }
       },
       {
+        "movie_id": 878,
+        "vault_id": "V0888",
+        "title": "Total Recall (Newly Remastered)",
+        "differences": {
+          "year": {
+            "source": 1990,
+            "database": 2019,
+            "decision_id": 468,
+            "source_snapshot_id": 1
+          },
+          "runtime": {
+            "source": null,
+            "database": 113,
+            "decision_id": 469,
+            "source_snapshot_id": 1
+          },
+          "directors": {
+            "source": [
+              "Not Found"
+            ],
+            "database": [
+              "Paul Verhoeven"
+            ],
+            "decision_id": 470,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
         "movie_id": 880,
         "vault_id": "V0890",
         "title": "Toy Story 3",
@@ -5109,6 +5957,35 @@
         }
       },
       {
+        "movie_id": 882,
+        "vault_id": "V0892",
+        "title": "Tracks",
+        "differences": {
+          "year": {
+            "source": 1976,
+            "database": 2014,
+            "decision_id": 471,
+            "source_snapshot_id": 1
+          },
+          "runtime": {
+            "source": 112,
+            "database": 100,
+            "decision_id": 472,
+            "source_snapshot_id": 1
+          },
+          "directors": {
+            "source": [
+              "Henry Jaglom"
+            ],
+            "database": [
+              "John Curran"
+            ],
+            "decision_id": 473,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
         "movie_id": 891,
         "vault_id": "V0901",
         "title": "Tropic Thunder (Director's Cut)",
@@ -5118,6 +5995,20 @@
             "database": 121,
             "decision_id": 116,
             "source_snapshot_id": 1
+          },
+          "imdb_id": {
+            "source": null,
+            "database": "tt0942385",
+            "provenance_id": 1188,
+            "provider": "omdb",
+            "policy": "exact_external_match"
+          },
+          "tmdb_id": {
+            "source": null,
+            "database": 7446,
+            "provenance_id": 1187,
+            "provider": "tmdb",
+            "policy": "exact_external_match"
           },
           "directors": {
             "source": [
@@ -5154,6 +6045,22 @@
             "database": 1996,
             "review_decision_id": 22,
             "policy": "title_year_authority"
+          },
+          "runtime": {
+            "source": null,
+            "database": 113,
+            "decision_id": 474,
+            "source_snapshot_id": 1
+          },
+          "directors": {
+            "source": [
+              "Not Found"
+            ],
+            "database": [
+              "Jan de Bont"
+            ],
+            "decision_id": 475,
+            "source_snapshot_id": 1
           }
         }
       },
@@ -5179,6 +6086,43 @@
             "source": null,
             "database": 104,
             "decision_id": 121,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
+        "movie_id": 901,
+        "vault_id": "V0911",
+        "title": "Unfriended (2014)",
+        "differences": {
+          "runtime": {
+            "source": null,
+            "database": 83,
+            "decision_id": 477,
+            "source_snapshot_id": 1
+          },
+          "imdb_id": {
+            "source": null,
+            "database": "tt3713166",
+            "provenance_id": 1190,
+            "provider": "omdb",
+            "policy": "exact_external_match"
+          },
+          "tmdb_id": {
+            "source": null,
+            "database": 277685,
+            "provenance_id": 1189,
+            "provider": "tmdb",
+            "policy": "exact_external_match"
+          },
+          "directors": {
+            "source": [
+              "Not Found"
+            ],
+            "database": [
+              "Leo Gabriadze"
+            ],
+            "decision_id": 478,
             "source_snapshot_id": 1
           }
         }
@@ -5258,6 +6202,35 @@
               "Jon Chu"
             ],
             "decision_id": 380,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
+        "movie_id": 922,
+        "vault_id": "V0932",
+        "title": "Willy Wonka and the Chocolate Factory",
+        "differences": {
+          "year": {
+            "source": 2017,
+            "database": 1971,
+            "decision_id": 479,
+            "source_snapshot_id": 1
+          },
+          "runtime": {
+            "source": 79,
+            "database": 100,
+            "decision_id": 480,
+            "source_snapshot_id": 1
+          },
+          "directors": {
+            "source": [
+              "Spike Brandt"
+            ],
+            "database": [
+              "Mel Stuart"
+            ],
+            "decision_id": 481,
             "source_snapshot_id": 1
           }
         }
@@ -5344,6 +6317,51 @@
             "database": 2019,
             "review_decision_id": 23,
             "policy": "title_year_authority"
+          },
+          "runtime": {
+            "source": null,
+            "database": 116,
+            "decision_id": 482,
+            "source_snapshot_id": 1
+          },
+          "directors": {
+            "source": [
+              "Not Found"
+            ],
+            "database": [
+              "Danny Boyle"
+            ],
+            "decision_id": 483,
+            "source_snapshot_id": 1
+          }
+        }
+      },
+      {
+        "movie_id": 941,
+        "vault_id": "V0952",
+        "title": "Zoolander No. 2 (The Magnum Edition)",
+        "differences": {
+          "year": {
+            "source": null,
+            "database": 2016,
+            "decision_id": 484,
+            "source_snapshot_id": 1
+          },
+          "runtime": {
+            "source": null,
+            "database": 102,
+            "decision_id": 485,
+            "source_snapshot_id": 1
+          },
+          "directors": {
+            "source": [
+              "Not Found"
+            ],
+            "database": [
+              "Ben Stiller"
+            ],
+            "decision_id": 486,
+            "source_snapshot_id": 1
           }
         }
       },
@@ -5352,12 +6370,34 @@
         "vault_id": "V0953",
         "title": "Sunshine",
         "differences": {
+          "year": {
+            "source": 1999,
+            "database": 2007,
+            "decision_id": 459,
+            "source_snapshot_id": 1
+          },
+          "runtime": {
+            "source": 181,
+            "database": 108,
+            "decision_id": 460,
+            "source_snapshot_id": 1
+          },
           "imdb_id": {
             "source": null,
             "database": "tt0145503",
             "provenance_id": 1022,
             "provider": "omdb",
             "policy": "exact_external_match"
+          },
+          "directors": {
+            "source": [
+              "István Szabó"
+            ],
+            "database": [
+              "Danny Boyle"
+            ],
+            "decision_id": 461,
+            "source_snapshot_id": 1
           }
         }
       },
@@ -5366,12 +6406,34 @@
         "vault_id": "V0954",
         "title": "The Fugitive",
         "differences": {
+          "year": {
+            "source": 1947,
+            "database": 1993,
+            "decision_id": 417,
+            "source_snapshot_id": 1
+          },
+          "runtime": {
+            "source": 100,
+            "database": 130,
+            "decision_id": 420,
+            "source_snapshot_id": 1
+          },
           "imdb_id": {
             "source": null,
             "database": "tt0039402",
             "provenance_id": 1024,
             "provider": "omdb",
             "policy": "exact_external_match"
+          },
+          "directors": {
+            "source": [
+              "John Ford"
+            ],
+            "database": [
+              "Andrew Davis"
+            ],
+            "decision_id": 421,
+            "source_snapshot_id": 1
           }
         }
       },
@@ -5990,6 +7052,17 @@
           "poster_url": {
             "source": null,
             "database": "https://media.themoviedb.org/t/p/w500/f9BtX6wYOwJUyfUr4vyeT3COz6m.jpg"
+          }
+        }
+      },
+      {
+        "movie_id": 26,
+        "vault_id": "V0026",
+        "title": "A Million Ways to Die In the West (Unrated)",
+        "differences": {
+          "poster_url": {
+            "source": null,
+            "database": "https://image.tmdb.org/t/p/w500/n9SicwnoNGWBwE75le27sUhCLMm.jpg"
           }
         }
       },
@@ -6632,6 +7705,17 @@
         }
       },
       {
+        "movie_id": 89,
+        "vault_id": "V0090",
+        "title": "Bridesmaids (Unrated)",
+        "differences": {
+          "poster_url": {
+            "source": null,
+            "database": "https://image.tmdb.org/t/p/w500/gJtA7hYsBMQ7EM3sPBMUdBfU7a0.jpg"
+          }
+        }
+      },
+      {
         "movie_id": 90,
         "vault_id": "V0091",
         "title": "Bridge of Spies",
@@ -6683,6 +7767,17 @@
           "poster_url": {
             "source": null,
             "database": "https://media.themoviedb.org/t/p/w500/lQP2sZngXzjh3NDIWzo9OVK5YVh.jpg"
+          }
+        }
+      },
+      {
+        "movie_id": 96,
+        "vault_id": "V0097",
+        "title": "By the Light of the Silvery Moon (1953)",
+        "differences": {
+          "poster_url": {
+            "source": null,
+            "database": "https://image.tmdb.org/t/p/w500/v11fDnu7Oq8UeVt2xRy4GyPWZlX.jpg"
           }
         }
       },
@@ -6760,6 +7855,17 @@
           "poster_url": {
             "source": null,
             "database": "https://media.themoviedb.org/t/p/w500/8ofszdXTti3my1RGvyruu3rl9Hc.jpg"
+          }
+        }
+      },
+      {
+        "movie_id": 105,
+        "vault_id": "V0106",
+        "title": "Carrie (1976)",
+        "differences": {
+          "poster_url": {
+            "source": null,
+            "database": "https://image.tmdb.org/t/p/w500/8tT1rqlsTguyfUBMrbHR9cv1rxM.jpg"
           }
         }
       },
@@ -6903,6 +8009,17 @@
           "poster_url": {
             "source": null,
             "database": "https://media.themoviedb.org/t/p/w500/8AwVTcgpTnmeOs4TdTWqcFDXEsA.jpg"
+          }
+        }
+      },
+      {
+        "movie_id": 122,
+        "vault_id": "V0123",
+        "title": "Coco (2017)",
+        "differences": {
+          "poster_url": {
+            "source": null,
+            "database": "https://image.tmdb.org/t/p/w500/6Ryitt95xrO8KXuqRGm1fUuNwqF.jpg"
           }
         }
       },
@@ -7182,6 +8299,17 @@
         }
       },
       {
+        "movie_id": 148,
+        "vault_id": "V0150",
+        "title": "Death on the Nile (2022)",
+        "differences": {
+          "poster_url": {
+            "source": null,
+            "database": "https://image.tmdb.org/t/p/w500/kVr5zIAFSPRQ57Y1zE7KzmhzdMQ.jpg"
+          }
+        }
+      },
+      {
         "movie_id": 149,
         "vault_id": "V0151",
         "title": "Death Race 2",
@@ -7277,6 +8405,17 @@
           "poster_url": {
             "source": null,
             "database": "https://media.themoviedb.org/t/p/w500/ySL7B4FgYZR5xFBWc7c7lssuCN9.jpg"
+          }
+        }
+      },
+      {
+        "movie_id": 160,
+        "vault_id": "V0162",
+        "title": "Dirty Grandpa (Unrated)",
+        "differences": {
+          "poster_url": {
+            "source": null,
+            "database": "https://image.tmdb.org/t/p/w500/k0Lz1TfSlbcQthQKYGwE7blDfwN.jpg"
           }
         }
       },
@@ -7545,6 +8684,28 @@
         }
       },
       {
+        "movie_id": 186,
+        "vault_id": "V0188",
+        "title": "Elemental (2023)",
+        "differences": {
+          "poster_url": {
+            "source": null,
+            "database": "https://image.tmdb.org/t/p/w500/4Y1WNkd88JXmGfhtWR7dmDAo1T2.jpg"
+          }
+        }
+      },
+      {
+        "movie_id": 187,
+        "vault_id": "V0189",
+        "title": "Elf (2003)",
+        "differences": {
+          "poster_url": {
+            "source": null,
+            "database": "https://image.tmdb.org/t/p/w500/oOleziEempUPu96jkGs0Pj6tKxj.jpg"
+          }
+        }
+      },
+      {
         "movie_id": 189,
         "vault_id": "V0191",
         "title": "Elvis",
@@ -7629,6 +8790,17 @@
           "poster_url": {
             "source": null,
             "database": "https://media.themoviedb.org/t/p/w500/5MwkWH9tYHv3mV9OdYTMR5qreIz.jpg"
+          }
+        }
+      },
+      {
+        "movie_id": 198,
+        "vault_id": "V0200",
+        "title": "Everest (2015)",
+        "differences": {
+          "poster_url": {
+            "source": null,
+            "database": "https://image.tmdb.org/t/p/w500/2jKOu2bjpLP6NXJcm7Ep14bDGtA.jpg"
           }
         }
       },
@@ -7974,6 +9146,17 @@
         }
       },
       {
+        "movie_id": 238,
+        "vault_id": "V0240",
+        "title": "Furious 7 (Extended Edition)",
+        "differences": {
+          "poster_url": {
+            "source": null,
+            "database": "https://image.tmdb.org/t/p/w500/ktofZ9Htrjiy0P6LEowsDaxd3Ri.jpg"
+          }
+        }
+      },
+      {
         "movie_id": 239,
         "vault_id": "V0241",
         "title": "G.I. Joe: Retaliation",
@@ -7992,6 +9175,28 @@
           "poster_url": {
             "source": null,
             "database": "https://media.themoviedb.org/t/p/w500/mc9b25IAprHfsaOz0wTshOwGHcY.jpg"
+          }
+        }
+      },
+      {
+        "movie_id": 241,
+        "vault_id": "V0243",
+        "title": "Game Night (2018)",
+        "differences": {
+          "poster_url": {
+            "source": null,
+            "database": "https://image.tmdb.org/t/p/w500/85R8LMyn9f2Lev2YPBF8Nughrkv.jpg"
+          }
+        }
+      },
+      {
+        "movie_id": 242,
+        "vault_id": "V0244",
+        "title": "Gangs of New York (2002)",
+        "differences": {
+          "poster_url": {
+            "source": null,
+            "database": "https://image.tmdb.org/t/p/w500/lemqKtcCuAano5aqrzxYiKC8kkn.jpg"
           }
         }
       },
@@ -8645,6 +9850,17 @@
         }
       },
       {
+        "movie_id": 306,
+        "vault_id": "V0310",
+        "title": "Hot Tub Time Machine (Unrated)",
+        "differences": {
+          "poster_url": {
+            "source": null,
+            "database": "https://image.tmdb.org/t/p/w500/wjzbVXAes1acbh6k4OO5xVfy5.jpg"
+          }
+        }
+      },
+      {
         "movie_id": 307,
         "vault_id": "V0311",
         "title": "Hot Tub Time Machine 2",
@@ -8876,6 +10092,17 @@
         }
       },
       {
+        "movie_id": 329,
+        "vault_id": "V0333",
+        "title": "Inside Out (2015)",
+        "differences": {
+          "poster_url": {
+            "source": null,
+            "database": "https://image.tmdb.org/t/p/w500/2H1TmgdfNtsKlU9jKdeNyYL5y8T.jpg"
+          }
+        }
+      },
+      {
         "movie_id": 330,
         "vault_id": "V0334",
         "title": "Inside Out 2",
@@ -8927,6 +10154,17 @@
           "poster_url": {
             "source": null,
             "database": "https://media.themoviedb.org/t/p/w500/2162lAT2MP36MyJd2sttmj5du5T.jpg"
+          }
+        }
+      },
+      {
+        "movie_id": 335,
+        "vault_id": "V0339",
+        "title": "Into the Woods (2014)",
+        "differences": {
+          "poster_url": {
+            "source": null,
+            "database": "https://image.tmdb.org/t/p/w500/bINGDDuvUnZyde2sIcSx41IE5b6.jpg"
           }
         }
       },
@@ -9576,6 +10814,17 @@
           "poster_url": {
             "source": null,
             "database": "https://media.themoviedb.org/t/p/w500/7mUYEkv9W3ek61eetZCfMQYVoi.jpg"
+          }
+        }
+      },
+      {
+        "movie_id": 399,
+        "vault_id": "V0403",
+        "title": "Little Boy (2015)",
+        "differences": {
+          "poster_url": {
+            "source": null,
+            "database": "https://image.tmdb.org/t/p/w500/lAU9pgq3niI6sFemcKm4FGGmrnW.jpg"
           }
         }
       },
@@ -10526,6 +11775,28 @@
         }
       },
       {
+        "movie_id": 493,
+        "vault_id": "V0497",
+        "title": "Paranormal Activity 4 (Extended Edition)",
+        "differences": {
+          "poster_url": {
+            "source": null,
+            "database": "https://image.tmdb.org/t/p/w500/na5tAslm1kGNcft083AIXMTOsYR.jpg"
+          }
+        }
+      },
+      {
+        "movie_id": 494,
+        "vault_id": "V0498",
+        "title": "Paranormal Activity: The Ghost Dimension (New Extended Cut)",
+        "differences": {
+          "poster_url": {
+            "source": null,
+            "database": "https://image.tmdb.org/t/p/w500/1YpFQ2MQKzlDoa8diLWkapdRI8t.jpg"
+          }
+        }
+      },
+      {
         "movie_id": 495,
         "vault_id": "V0499",
         "title": "Paranormal Activity: The Marked Ones",
@@ -10544,6 +11815,17 @@
           "poster_url": {
             "source": null,
             "database": "https://media.themoviedb.org/t/p/w500/4DGPORlVIDIQvsuSDnM4uXKMjWS.jpg"
+          }
+        }
+      },
+      {
+        "movie_id": 497,
+        "vault_id": "V0501",
+        "title": "Passengers (2016)",
+        "differences": {
+          "poster_url": {
+            "source": null,
+            "database": "https://image.tmdb.org/t/p/w500/jK9S6HANSf2no64v1x1HxfcpmcA.jpg"
           }
         }
       },
@@ -10823,6 +12105,17 @@
         }
       },
       {
+        "movie_id": 525,
+        "vault_id": "V0529",
+        "title": "Psycho (1960)",
+        "differences": {
+          "poster_url": {
+            "source": null,
+            "database": "https://image.tmdb.org/t/p/w500/yz4QVqPx3h1hD1DfqqQkCq3rmxW.jpg"
+          }
+        }
+      },
+      {
         "movie_id": 526,
         "vault_id": "V0530",
         "title": "Pulp Fiction",
@@ -11028,6 +12321,17 @@
           "poster_url": {
             "source": null,
             "database": "https://media.themoviedb.org/t/p/w500/cdefNr6aS00IwVbSlxdFJnfmzKh.jpg"
+          }
+        }
+      },
+      {
+        "movie_id": 547,
+        "vault_id": "V0552",
+        "title": "Requiem for a Dream (Director's Cut)",
+        "differences": {
+          "poster_url": {
+            "source": null,
+            "database": "https://image.tmdb.org/t/p/w500/9BTwsLaMVHOGFlmsSlx5QYCaXb.jpg"
           }
         }
       },
@@ -11747,6 +13051,17 @@
         }
       },
       {
+        "movie_id": 620,
+        "vault_id": "V0626",
+        "title": "Snow White & the Huntsman (Extended Edition)",
+        "differences": {
+          "poster_url": {
+            "source": null,
+            "database": "https://image.tmdb.org/t/p/w500/8HUa5kRubYbnAD5UVpnhTGGgMTW.jpg"
+          }
+        }
+      },
+      {
         "movie_id": 621,
         "vault_id": "V0627",
         "title": "Snowden",
@@ -12132,6 +13447,28 @@
         }
       },
       {
+        "movie_id": 665,
+        "vault_id": "V0674",
+        "title": "Ted 2 (Unrated)",
+        "differences": {
+          "poster_url": {
+            "source": null,
+            "database": "https://image.tmdb.org/t/p/w500/38C91I7Xft0gyY7BITm8i4yvuRb.jpg"
+          }
+        }
+      },
+      {
+        "movie_id": 666,
+        "vault_id": "V0675",
+        "title": "Teenage Mutant Ninja Turtles (2014)",
+        "differences": {
+          "poster_url": {
+            "source": null,
+            "database": "https://image.tmdb.org/t/p/w500/azL2ThbJMIkts3ZMt3j1YgBUeDB.jpg"
+          }
+        }
+      },
+      {
         "movie_id": 667,
         "vault_id": "V0676",
         "title": "Teenage Mutant Ninja Turtles: Out of the Shadows",
@@ -12253,6 +13590,17 @@
         }
       },
       {
+        "movie_id": 680,
+        "vault_id": "V0689",
+        "title": "The Amityville Horror (1979)",
+        "differences": {
+          "poster_url": {
+            "source": null,
+            "database": "https://image.tmdb.org/t/p/w500/7VMscq0659xKmcXzd86de1DGV4W.jpg"
+          }
+        }
+      },
+      {
         "movie_id": 681,
         "vault_id": "V0690",
         "title": "The Batman",
@@ -12359,6 +13707,28 @@
           "poster_url": {
             "source": null,
             "database": "https://media.themoviedb.org/t/p/w500/npBf0yc5Gt7aAyyVOcYtFyT2IPa.jpg"
+          }
+        }
+      },
+      {
+        "movie_id": 692,
+        "vault_id": "V0702",
+        "title": "The Boy (2016)",
+        "differences": {
+          "poster_url": {
+            "source": null,
+            "database": "https://image.tmdb.org/t/p/w500/kW2vgzhyWXQu5UxNzebPokipBqH.jpg"
+          }
+        }
+      },
+      {
+        "movie_id": 693,
+        "vault_id": "V0703",
+        "title": "The Boy Next Door (2015)",
+        "differences": {
+          "poster_url": {
+            "source": null,
+            "database": "https://image.tmdb.org/t/p/w500/gicmSeLG6Uh7BF1r1mxZHUQ8r26.jpg"
           }
         }
       },
@@ -12924,6 +14294,17 @@
         }
       },
       {
+        "movie_id": 749,
+        "vault_id": "V0759",
+        "title": "The Gunman (2015)",
+        "differences": {
+          "poster_url": {
+            "source": null,
+            "database": "https://image.tmdb.org/t/p/w500/lnUozDnDANTsDYEdsNsHC6b8IiS.jpg"
+          }
+        }
+      },
+      {
         "movie_id": 750,
         "vault_id": "V0760",
         "title": "The Hangover",
@@ -13052,6 +14433,17 @@
           "poster_url": {
             "source": null,
             "database": "https://media.themoviedb.org/t/p/w500/h1ITOpvJN3Tw4Sy60w2QTfYMvdd.jpg"
+          }
+        }
+      },
+      {
+        "movie_id": 765,
+        "vault_id": "V0775",
+        "title": "The Host (2013)",
+        "differences": {
+          "poster_url": {
+            "source": null,
+            "database": "https://image.tmdb.org/t/p/w500/1mfIZw6WgkCX310eoe0Ys14c3Fi.jpg"
           }
         }
       },
@@ -13210,6 +14602,17 @@
         }
       },
       {
+        "movie_id": 781,
+        "vault_id": "V0791",
+        "title": "The Last House on the Left (Unrated) [2009]",
+        "differences": {
+          "poster_url": {
+            "source": null,
+            "database": "https://image.tmdb.org/t/p/w500/2Y35XCUS8U8vC8vs0HDEVkPu1BM.jpg"
+          }
+        }
+      },
+      {
         "movie_id": 783,
         "vault_id": "V0793",
         "title": "The Last Voyage of the Demeter",
@@ -13287,6 +14690,17 @@
         }
       },
       {
+        "movie_id": 790,
+        "vault_id": "V0800",
+        "title": "The Little Mermaid (1989)",
+        "differences": {
+          "poster_url": {
+            "source": null,
+            "database": "https://image.tmdb.org/t/p/w500/plcZXvI310FkbwIptvd6rqk63LP.jpg"
+          }
+        }
+      },
+      {
         "movie_id": 791,
         "vault_id": "V0801",
         "title": "The Lodge",
@@ -13327,6 +14741,28 @@
           "poster_url": {
             "source": null,
             "database": "https://media.themoviedb.org/t/p/w500/6oom5QYQ2yQTMJIbnvbkBL9cHo6.jpg"
+          }
+        }
+      },
+      {
+        "movie_id": 796,
+        "vault_id": "V0806",
+        "title": "The Lord of the Rings: The Return of the King (Extended Edition)",
+        "differences": {
+          "poster_url": {
+            "source": null,
+            "database": "https://image.tmdb.org/t/p/w500/rCzpDGLbOoPwLjy3OAm5NUPOTrC.jpg"
+          }
+        }
+      },
+      {
+        "movie_id": 797,
+        "vault_id": "V0807",
+        "title": "The Lord of the Rings: The Two Towers (Extended Edition)",
+        "differences": {
+          "poster_url": {
+            "source": null,
+            "database": "https://image.tmdb.org/t/p/w500/5VTN0pR8gcqV3EPUHHfMGnJYN9L.jpg"
           }
         }
       },
@@ -13859,6 +15295,28 @@
         }
       },
       {
+        "movie_id": 849,
+        "vault_id": "V0859",
+        "title": "The Town (2010)",
+        "differences": {
+          "poster_url": {
+            "source": null,
+            "database": "https://image.tmdb.org/t/p/w500/3NIzyXkfylsjflRKSz8Fts3lXzm.jpg"
+          }
+        }
+      },
+      {
+        "movie_id": 852,
+        "vault_id": "V0862",
+        "title": "The Twilight Saga: Breaking Dawn - Part 1 (Extended Edition)",
+        "differences": {
+          "poster_url": {
+            "source": null,
+            "database": "https://image.tmdb.org/t/p/w500/qs8LsHKYlVRmJbFUiSUhhRAygwj.jpg"
+          }
+        }
+      },
+      {
         "movie_id": 853,
         "vault_id": "V0863",
         "title": "The Twilight Saga: Breaking Dawn - Part 2",
@@ -14255,6 +15713,17 @@
         }
       },
       {
+        "movie_id": 891,
+        "vault_id": "V0901",
+        "title": "Tropic Thunder (Director's Cut)",
+        "differences": {
+          "poster_url": {
+            "source": null,
+            "database": "https://image.tmdb.org/t/p/w500/zAurB9mNxfYRoVrVjAJJwGV3sPg.jpg"
+          }
+        }
+      },
+      {
         "movie_id": 892,
         "vault_id": "V0902",
         "title": "Turbo (2013)",
@@ -14339,6 +15808,17 @@
           "poster_url": {
             "source": null,
             "database": "https://media.themoviedb.org/t/p/w500/gzlbb3yeVISpQ3REd3Ga1scWGTU.jpg"
+          }
+        }
+      },
+      {
+        "movie_id": 901,
+        "vault_id": "V0911",
+        "title": "Unfriended (2014)",
+        "differences": {
+          "poster_url": {
+            "source": null,
+            "database": "https://image.tmdb.org/t/p/w500/8byPxREr3BqBNyyij5WHVSOVtYk.jpg"
           }
         }
       },
@@ -15248,191 +16728,149 @@
   },
   "spot_check": [
     {
-      "movie_id": 35,
-      "vault_id": "V0035",
-      "title": "Alien: Covenant",
-      "year": 2017,
-      "runtime": 122,
-      "plot": "The crew of the colony ship Covenant, bound for a remote planet on the far side of the galaxy, discovers what they think is an uncharted paradise but is actually a dark, dangerous world.",
-      "awards": "3 wins & 26 nominations total",
-      "certificate": "R",
-      "imdb_id": "tt2316204",
-      "tmdb_id": 126889,
-      "imdb_rating": 6.4,
-      "imdb_votes": 327823,
-      "rt_score": 65,
-      "poster_url": "https://media.themoviedb.org/t/p/w500/zecMELPbU5YMQpC81Z8ImaaXuf9.jpg",
-      "genres": [
-        "Horror",
-        "Science Fiction",
-        "Thriller"
-      ],
-      "keywords": [
-        "acid",
-        "alien",
-        "alien life-form",
-        "alien technology",
-        "Android",
-        "creation",
-        "creature",
-        "engineer",
-        "experiment",
-        "genetic mutation",
-        "genocide",
-        "infection",
-        "robot",
-        "scientist",
-        "sequel",
-        "space",
-        "space travel",
-        "spacecraft",
-        "xenomorph"
-      ],
-      "directors": [
-        "Ridley Scott"
-      ],
-      "cast": [
-        "Billy Crudup",
-        "Katherine Waterston",
-        "Michael Fassbender"
-      ],
-      "where_to_watch": [
-        "iTunes"
-      ],
-      "collection": "Prometheus Collection"
-    },
-    {
-      "movie_id": 57,
-      "vault_id": "V0057",
-      "title": "Back to the Future",
-      "year": 1985,
-      "runtime": 116,
-      "plot": "Eighties teenager Marty McFly is accidentally sent back in time to 1955, inadvertently disrupting his parents' first meeting and attracting his mother's romantic interest. Marty must repair the damage to history by rekindling his parents' romance and - with the help of his eccentric inventor friend Doc Brown - return to 1985.",
-      "awards": "Won 1 Oscar. 27 wins & 25 nominations total",
-      "certificate": "PG",
-      "imdb_id": "tt0088763",
-      "tmdb_id": 105,
-      "imdb_rating": 8.5,
-      "imdb_votes": 1376002,
-      "rt_score": 93,
-      "poster_url": "https://media.themoviedb.org/t/p/w500/vN5B5WgYscRGcQpVhHl6p9DDTP0.jpg",
-      "genres": [
-        "Adventure",
-        "Comedy",
-        "Science Fiction"
-      ],
-      "keywords": [
-        "1950s",
-        "amused",
-        "bullying",
-        "car race",
-        "changing the past or future",
-        "cientifico loco",
-        "clock tower",
-        "destiny",
-        "exhilarated",
-        "fish out of water",
-        "Flying car",
-        "guitar",
-        "hidden identity",
-        "invention",
-        "inventor",
-        "journey in the past",
-        "lightning",
-        "love",
-        "mad scientist",
-        "nostalgic",
-        "optimistic",
-        "plutonium",
-        "race against time",
-        "suspenseful",
-        "teenage life",
-        "teenage love",
-        "terrorism",
-        "time travel"
-      ],
-      "directors": [
-        "Robert Zemeckis"
-      ],
-      "cast": [
-        "Christopher Lloyd",
-        "Crispin Glover",
-        "Michael J. Fox"
-      ],
-      "where_to_watch": [
-        "iTunes"
-      ],
-      "collection": "Back to the Future Collection"
-    },
-    {
-      "movie_id": 69,
-      "vault_id": "V0069",
-      "title": "Behind Enemy Lines",
-      "year": 2001,
-      "runtime": 106,
-      "plot": "While flying a routine reconnaissance mission over Bosnia, fighter pilot Lt. Chris Burnett photographs something he wasn't supposed to see and gets shot down behind enemy lines, where he must outrun an army led by a ruthless Serbian general. With time running out and a deadly tracker on his trail, Burnett's commanding officer, Admiral Reigart, decides to risk his career and launch a renegade rescue mission to save his life.",
-      "awards": "1 win & 2 nominations",
+      "movie_id": 34,
+      "vault_id": "V0034",
+      "title": "Admission",
+      "year": 2013,
+      "runtime": 107,
+      "plot": "Straitlaced Princeton University admissions officer Portia Nathan is caught off-guard when she makes a recruiting visit to an alternative high school overseen by her former classmate, the freewheeling John Pressman. Pressman has surmised that Jeremiah, his gifted yet very unconventional student, might well be the son that Portia secretly gave up for adoption many years ago.",
+      "awards": null,
       "certificate": "PG-13",
-      "imdb_id": "tt0159273",
-      "tmdb_id": 8007,
-      "imdb_rating": 6.4,
-      "imdb_votes": 114765,
-      "rt_score": 36,
-      "poster_url": "https://media.themoviedb.org/t/p/w500/fZReMWU3zszvaktDUqOoWCzHssZ.jpg",
+      "imdb_id": "tt1814621",
+      "tmdb_id": 144340,
+      "imdb_rating": 5.7,
+      "imdb_votes": 36510,
+      "rt_score": 37,
+      "poster_url": "https://media.themoviedb.org/t/p/w500/f3HoCikJxypRtLJptBwvs7L7etE.jpg",
+      "genres": [
+        "Comedy",
+        "Drama",
+        "Romance"
+      ],
+      "keywords": [
+        "admissions",
+        "Adoption",
+        "college admissions",
+        "princeton university",
+        "romantic dramedy",
+        "wedding"
+      ],
+      "directors": [
+        "Paul Weitz"
+      ],
+      "cast": [
+        "Ann Harada",
+        "Ben Levin",
+        "Tina Fey"
+      ],
+      "where_to_watch": [
+        "iTunes"
+      ],
+      "collection": null
+    },
+    {
+      "movie_id": 56,
+      "vault_id": "V0056",
+      "title": "Baby Driver",
+      "year": 2017,
+      "runtime": 113,
+      "plot": "After being coerced into working for a crime boss, a young getaway driver finds himself taking part in a heist doomed to fail.",
+      "awards": "Nominated for 3 Oscars. 43 wins & 66 nominations total",
+      "certificate": "R",
+      "imdb_id": "tt3890160",
+      "tmdb_id": 339403,
+      "imdb_rating": 7.5,
+      "imdb_votes": 641809,
+      "rt_score": 92,
+      "poster_url": "https://media.themoviedb.org/t/p/w500/tYzFuYXmT8LOYASlFCkaPiAFAl0.jpg",
       "genres": [
         "Action",
-        "Drama",
-        "Thriller",
-        "War"
+        "Crime"
       ],
       "keywords": [
-        "aircraft carrier",
-        "atrocity",
-        "based on true story",
-        "behind enemy lines",
-        "bosnia and herzegovina",
-        "bosnian war (1992-95)",
-        "combat",
-        "enemy territory",
-        "hunted",
-        "jet crash",
-        "jet fighter pilot",
-        "marines",
-        "mass grave",
-        "mine field",
-        "naval flight officer",
-        "naval officer",
-        "navy pilot",
-        "no fly zone",
-        "north atlantic treaty organization (nato)",
-        "reconnaissance",
-        "rescue mission",
-        "running for one's life",
-        "serbian",
-        "Sniper",
-        "u.s. navy",
-        "war crimes"
+        "aggressive",
+        "armed robbery",
+        "atlanta",
+        "bank robbery",
+        "crime boss",
+        "getaway car",
+        "getaway driver",
+        "hearing impaired",
+        "heist",
+        "joyful",
+        "on the run",
+        "Robbery",
+        "romance",
+        "shootout",
+        "sign languages",
+        "urgent",
+        "waitress"
       ],
       "directors": [
-        "John Moore"
+        "Edgar Wright"
       ],
       "cast": [
-        "Gabriel Macht",
-        "Gene Hackman",
-        "Owen Wilson"
+        "Ansel Elgort",
+        "Kevin Spacey",
+        "Lily James"
       ],
       "where_to_watch": [
         "iTunes"
       ],
-      "collection": "Behind Enemy Lines Collection"
+      "collection": "Baby Driver Collection"
     },
     {
-      "movie_id": 89,
-      "vault_id": "V0090",
-      "title": "Bridesmaids (Unrated)",
-      "year": 2011,
-      "runtime": 130,
-      "plot": "Annie's life is a mess. But when she finds out her lifetime best friend is engaged, she simply must serve as Lillian's maid of honor. Though lovelorn and broke, Annie bluffs her way through the expensive and bizarre rituals. With one chance to get it perfect, she’ll show Lillian and her bridesmaids just how far you’ll go for someone you love.",
+      "movie_id": 68,
+      "vault_id": "V0068",
+      "title": "Beauty and the Beast (2017)",
+      "year": 2017,
+      "runtime": 131,
+      "plot": "A twist on the morality tale of forbidden love between the beautiful Belle and the feared Beast. As the villagers are being brutally murdered and the Beast is hunted down as the one responsible for the mayhem, Belle and Beast team up to defeat the real killer; the power-hungry witch's malevolent troll.",
+      "awards": null,
+      "certificate": null,
+      "imdb_id": null,
+      "tmdb_id": 321612,
+      "imdb_rating": null,
+      "imdb_votes": null,
+      "rt_score": null,
+      "poster_url": "https://media.themoviedb.org/t/p/w500/hKegSKIDep2ewJWPUQD7u0KqFIp.jpg",
+      "genres": [
+        "Drama",
+        "Fantasy",
+        "Romance"
+      ],
+      "keywords": [
+        "18th century",
+        "beast",
+        "cartoon",
+        "castle",
+        "creature",
+        "curse",
+        "fairy tale",
+        "France",
+        "live action and animation",
+        "live action remake",
+        "magic",
+        "musical",
+        "remake",
+        "transformation"
+      ],
+      "directors": [
+        "Bill Condon"
+      ],
+      "cast": [],
+      "where_to_watch": [
+        "iTunes"
+      ],
+      "collection": null
+    },
+    {
+      "movie_id": 97,
+      "vault_id": "V0098",
+      "title": "By the Sea (2015)",
+      "year": 2015,
+      "runtime": 122,
+      "plot": "Set in France during the mid-1970s, Vanessa, a former dancer, and her husband Roland, an American writer, travel the country together. They seem to be growing apart, but when they linger in one quiet, seaside town they begin to draw close to some of its more vibrant inhabitants, such as a local bar/café-keeper and a hotel owner.",
       "awards": null,
       "certificate": null,
       "imdb_id": null,
@@ -15442,12 +16880,12 @@
       "rt_score": null,
       "poster_url": null,
       "genres": [
-        "Comedy",
+        "Drama",
         "Romance"
       ],
       "keywords": [],
       "directors": [
-        "Paul Feig"
+        "Angelina Jolie Pitt"
       ],
       "cast": [],
       "where_to_watch": [
@@ -15456,534 +16894,280 @@
       "collection": null
     },
     {
-      "movie_id": 242,
-      "vault_id": "V0244",
-      "title": "Gangs of New York (2002)",
-      "year": 2002,
-      "runtime": 167,
-      "plot": "In 1863, Amsterdam Vallon returns to the Five Points of America to seek vengeance against the psychotic gangland kingpin, Bill the Butcher, who murdered his father years earlier. With an eager pickpocket by his side and a whole new army, Vallon fights his way to seek vengeance on the Butcher and restore peace in the area.",
-      "awards": null,
-      "certificate": null,
-      "imdb_id": null,
-      "tmdb_id": null,
-      "imdb_rating": null,
-      "imdb_votes": null,
-      "rt_score": null,
-      "poster_url": null,
-      "genres": [
-        "Crime",
-        "Drama",
-        "History"
-      ],
-      "keywords": [],
-      "directors": [
-        "Martin Scorsese"
-      ],
-      "cast": [],
-      "where_to_watch": [
-        "iTunes"
-      ],
-      "collection": null
-    },
-    {
-      "movie_id": 313,
-      "vault_id": "V0317",
-      "title": "I, Frankenstein",
-      "year": 2017,
-      "runtime": 92,
-      "plot": "200 years after his shocking creation, Dr. Frankenstein's creature, Adam, still walks the earth. But when he finds himself in the middle of a war over the fate of humanity, Adam discovers he holds the key that could destroy humankind.",
-      "awards": "4 nominations total",
-      "certificate": "PG-13",
-      "imdb_id": "tt1418377",
-      "tmdb_id": 100241,
-      "imdb_rating": 5.1,
-      "imdb_votes": 84771,
-      "rt_score": 5,
-      "poster_url": "https://media.themoviedb.org/t/p/w500/a53tIl4k20zCZCNyq73kiXkwWkl.jpg",
-      "genres": [
-        "Horror",
-        "Thriller"
-      ],
-      "keywords": [
-        "Anti hero",
-        "based on comic",
-        "demon",
-        "fighting",
-        "gargoyle",
-        "prince",
-        "queen",
-        "supernatural"
-      ],
-      "directors": [
-        "Stuart Beattie"
-      ],
-      "cast": [
-        "Aaron Eckhart",
-        "Bill Nighy",
-        "Yvonne Strahovski"
-      ],
-      "where_to_watch": [
-        "iTunes"
-      ],
-      "collection": null
-    },
-    {
-      "movie_id": 329,
-      "vault_id": "V0333",
-      "title": "Inside Out (2015)",
-      "year": 2015,
-      "runtime": 95,
-      "plot": "When 11-year-old Riley moves to a new city, her Emotions team up to help her through the transition. Joy, Fear, Anger, Disgust and Sadness work together, but when Joy and Sadness get lost, they must journey through unfamiliar places to get back home.",
-      "awards": null,
-      "certificate": null,
-      "imdb_id": null,
-      "tmdb_id": null,
-      "imdb_rating": null,
-      "imdb_votes": null,
-      "rt_score": null,
-      "poster_url": null,
-      "genres": [
-        "Adventure",
-        "Animation",
-        "Comedy",
-        "Drama",
-        "Family"
-      ],
-      "keywords": [],
-      "directors": [
-        "Pete Docter"
-      ],
-      "cast": [],
-      "where_to_watch": [
-        "iTunes"
-      ],
-      "collection": null
-    },
-    {
-      "movie_id": 341,
-      "vault_id": "V0345",
-      "title": "It Comes at Night",
-      "year": 2017,
-      "runtime": 91,
-      "plot": "Secure within a desolate home as an unnatural threat terrorizes the world, a man has established a tenuous domestic order with his wife and son, but this will soon be put to test when a desperate young family arrives seeking refuge.",
-      "awards": "1 win & 13 nominations total",
-      "certificate": "R",
-      "imdb_id": "tt4695012",
-      "tmdb_id": 418078,
-      "imdb_rating": 6.1,
-      "imdb_votes": 106873,
-      "rt_score": 88,
-      "poster_url": "https://media.themoviedb.org/t/p/w500/rNKJpFMlOZn5zkzBPZxEJrQn5Km.jpg",
-      "genres": [
-        "Drama",
-        "Horror",
-        "Mystery"
-      ],
-      "keywords": [
-        "cremation",
-        "darkness",
-        "dog",
-        "door",
-        "fear",
-        "Fire",
-        "forest",
-        "homicide",
-        "hopelessness",
-        "infected",
-        "madness",
-        "malevolence",
-        "nightmare",
-        "nihilism",
-        "pandemic",
-        "paranoia",
-        "post-apocalyptic future",
-        "suspenseful"
-      ],
-      "directors": [
-        "Trey Edward Shults"
-      ],
-      "cast": [
-        "Carmen Ejogo",
-        "Christopher Abbott",
-        "Joel Edgerton"
-      ],
-      "where_to_watch": [
-        "Vudu"
-      ],
-      "collection": null
-    },
-    {
-      "movie_id": 354,
-      "vault_id": "V0358",
-      "title": "John Wick: Chapter 3 - Parabellum",
+      "movie_id": 298,
+      "vault_id": "V0301",
+      "title": "High Life",
       "year": 2019,
-      "runtime": 130,
-      "plot": "Super-assassin John Wick returns with a $14 million price tag on his head and an army of bounty-hunting killers on his trail. After killing a member of the shadowy international assassin’s guild, the High Table, John Wick is excommunicado, but the world’s most ruthless hit men and women await his every turn.",
-      "awards": "18 wins & 29 nominations total",
-      "certificate": "R",
-      "imdb_id": "tt6146586",
-      "tmdb_id": 458156,
-      "imdb_rating": 7.4,
-      "imdb_votes": 452207,
-      "rt_score": 89,
-      "poster_url": "https://media.themoviedb.org/t/p/w500/ziEuG1essDuWuC5lpWUaw1uXY2O.jpg",
-      "genres": [
-        "Action",
-        "Crime",
-        "Thriller"
-      ],
-      "keywords": [
-        "baba yaga",
-        "black humor",
-        "bratva (russian mafia)",
-        "casablanca",
-        "consequences",
-        "dog man friendship",
-        "martial arts",
-        "Morocco",
-        "New york city",
-        "one man army",
-        "organized crime",
-        "professional assassin",
-        "sahara desert",
-        "secret organization",
-        "secret society",
-        "sequel"
-      ],
-      "directors": [
-        "Chad Stahelski"
-      ],
-      "cast": [
-        "Halle Berry",
-        "Ian McShane",
-        "Keanu Reeves"
-      ],
-      "where_to_watch": [
-        "iTunes"
-      ],
-      "collection": "John Wick Collection"
-    },
-    {
-      "movie_id": 364,
-      "vault_id": "V0368",
-      "title": "Jurassic Park III",
-      "year": 2001,
-      "runtime": 92,
-      "plot": "A very in depth look at the making of the movie, a look at the special effects and animatronics made for the motion picture, Jurassic Park III (2001). Interviews with the cast and crew give us a sneak peek at the film. The movie used many different new dinosaurs compared to the first two films, here they examine how they'll look in the final product",
-      "awards": "5 wins & 16 nominations total",
-      "certificate": "PG-13",
-      "imdb_id": "tt0163025",
-      "tmdb_id": 1200709,
-      "imdb_rating": 5.9,
-      "imdb_votes": 352096,
-      "rt_score": 49,
-      "poster_url": null,
-      "genres": [
-        "Documentary"
-      ],
-      "keywords": [],
-      "directors": [
-        "Joe Johnston"
-      ],
-      "cast": [],
-      "where_to_watch": [
-        "iTunes"
-      ],
-      "collection": null
-    },
-    {
-      "movie_id": 365,
-      "vault_id": "V0369",
-      "title": "Jurassic World",
-      "year": 2015,
-      "runtime": 124,
-      "plot": "Twenty-two years after the events of Jurassic Park, Isla Nublar now features a fully functioning dinosaur theme park, Jurassic World, as originally envisioned by John Hammond.",
-      "awards": "15 wins & 58 nominations total",
-      "certificate": "PG-13",
-      "imdb_id": "tt0369610",
-      "tmdb_id": 135397,
-      "imdb_rating": 6.9,
-      "imdb_votes": 693345,
-      "rt_score": 72,
-      "poster_url": "https://media.themoviedb.org/t/p/w500/rhr4y79GpxQF9IsfJItRXVaoGs4.jpg",
-      "genres": [
-        "Action",
-        "Adventure",
-        "Science Fiction",
-        "Thriller"
-      ],
-      "keywords": [
-        "amusement park",
-        "animal attack",
-        "animal horror",
-        "creature",
-        "dinosaur",
-        "dna",
-        "escape",
-        "genetic engineering",
-        "Island",
-        "mosasaurus",
-        "park",
-        "primal fear",
-        "raptor",
-        "sequel",
-        "theme park",
-        "tyrannosaurus rex",
-        "velociraptor"
-      ],
-      "directors": [
-        "Colin Trevorrow"
-      ],
-      "cast": [
-        "Bryce Dallas Howard",
-        "Chris Pratt",
-        "Irrfan Khan"
-      ],
-      "where_to_watch": [
-        "iTunes"
-      ],
-      "collection": "Jurassic Park Collection"
-    },
-    {
-      "movie_id": 415,
-      "vault_id": "V0419",
-      "title": "Mad Max: Fury Road",
-      "year": 2015,
-      "runtime": 120,
-      "plot": "An apocalyptic story set in the furthest reaches of our planet, in a stark desert landscape where humanity is broken, and most everyone is crazed fighting for the necessities of life. Within this world exist two rebels on the run who just might be able to restore order.",
-      "awards": "Won 6 Oscars. 245 wins & 233 nominations total",
-      "certificate": "R",
-      "imdb_id": "tt1392190",
-      "tmdb_id": 76341,
-      "imdb_rating": 8.1,
-      "imdb_votes": 1151388,
-      "rt_score": 97,
-      "poster_url": "https://media.themoviedb.org/t/p/w500/hA2ple9q4qnwxp3hKVNhroipsir.jpg",
-      "genres": [
-        "Action",
-        "Adventure",
-        "Science Fiction"
-      ],
-      "keywords": [
-        "australia",
-        "awestruck",
-        "car",
-        "chase",
-        "commanding",
-        "convoy",
-        "dark future",
-        "desert",
-        "dystopia",
-        "future",
-        "on the road",
-        "on the run",
-        "peak oil",
-        "post-apocalyptic future",
-        "Rescue",
-        "survival",
-        "suspenseful"
-      ],
-      "directors": [
-        "George Miller"
-      ],
-      "cast": [
-        "Charlize Theron",
-        "Nicholas Hoult",
-        "Tom Hardy"
-      ],
-      "where_to_watch": [
-        "iTunes"
-      ],
-      "collection": "Mad Max Collection"
-    },
-    {
-      "movie_id": 507,
-      "vault_id": "V0511",
-      "title": "Pirates of the Caribbean: On Stranger Tides",
-      "year": 2011,
-      "runtime": 136,
-      "plot": "Captain Jack Sparrow crosses paths with a woman from his past, and he's not sure if it's love — or if she's a ruthless con artist who's using him to find the fabled Fountain of Youth. When she forces him aboard the Queen Anne's Revenge, the ship of the formidable pirate Blackbeard, Jack finds himself on an unexpected adventure in which he doesn't know who to fear more: Blackbeard or the woman from his past.",
-      "awards": "3 wins & 31 nominations total",
-      "certificate": "PG-13",
-      "imdb_id": "tt1298650",
-      "tmdb_id": 1865,
-      "imdb_rating": 6.6,
-      "imdb_votes": 584632,
-      "rt_score": 32,
-      "poster_url": "https://media.themoviedb.org/t/p/w500/keGfSvCmYj7CvdRx36OdVrAEibE.jpg",
-      "genres": [
-        "Action",
-        "Adventure",
-        "Fantasy"
-      ],
-      "keywords": [
-        "1750s",
-        "18th century",
-        "aftercreditsstinger",
-        "battle",
-        "blackbeard",
-        "captain",
-        "duke",
-        "england",
-        "mermaid",
-        "mutiny",
-        "pirate",
-        "prime minister",
-        "sailing",
-        "Sea",
-        "ship",
-        "silver",
-        "soldier",
-        "spain",
-        "swashbuckler",
-        "sword"
-      ],
-      "directors": [
-        "Rob Marshall"
-      ],
-      "cast": [
-        "Geoffrey Rush",
-        "Johnny Depp",
-        "Penélope Cruz"
-      ],
-      "where_to_watch": [
-        "iTunes"
-      ],
-      "collection": "Pirates of the Caribbean Collection"
-    },
-    {
-      "movie_id": 529,
-      "vault_id": "V0533",
-      "title": "R.I.P.D.",
-      "year": 2013,
-      "runtime": 96,
-      "plot": "A recently slain cop joins a team of undead police officers working for the Rest in Peace Department and tries to find the man who murdered him.",
-      "awards": null,
-      "certificate": "PG-13",
-      "imdb_id": "tt0790736",
-      "tmdb_id": 49524,
-      "imdb_rating": 5.6,
-      "imdb_votes": 147556,
-      "rt_score": 13,
-      "poster_url": "https://media.themoviedb.org/t/p/w500/rS0kByPD4YF8pQ85KjzMdGiu7Xf.jpg",
-      "genres": [
-        "Action",
-        "Comedy",
-        "Fantasy"
-      ],
-      "keywords": [
-        "absurd",
-        "amused",
-        "based on comic",
-        "death",
-        "detective",
-        "detectives",
-        "ghost",
-        "Gold",
-        "husband",
-        "investigation",
-        "love",
-        "partner",
-        "police department",
-        "police operation",
-        "revenge",
-        "undead",
-        "wife"
-      ],
-      "directors": [
-        "Robert Schwentke"
-      ],
-      "cast": [
-        "Jeff Bridges",
-        "Kevin Bacon",
-        "Ryan Reynolds"
-      ],
-      "where_to_watch": [
-        "iTunes"
-      ],
-      "collection": "R.I.P.D. Collection"
-    },
-    {
-      "movie_id": 549,
-      "vault_id": "V0554",
-      "title": "Resident Evil",
-      "year": 2002,
-      "runtime": 100,
-      "plot": "U.S. federal agent Leon S. Kennedy sneaks into the \"East Slavic Republic\" to verify rumors that Bio-Organic Weapons (BOWs) are being used in the country's civil war, which the U.S. and Russia are making preparations to jointly intervene in. Right after his infiltration, the U.S. government orders him to leave immediately. Determined to uncover the truth, Leon ignores the order and enters the battlefield to end the chain of tragedies caused by the BOWs.",
+      "runtime": 113,
+      "plot": "It's 1983, and hopeless junkie Dick gets an unwelcome visit from the past - his seriously sleazy former cellmate, Bug, to be precise. Bug requires a crash course in the 80s: different music, different drugs, and machines in walls that dispense money. The latter development gives Dick an idea.",
       "awards": "2 wins & 6 nominations total",
       "certificate": "R",
-      "imdb_id": "tt0120804",
-      "tmdb_id": 133121,
-      "imdb_rating": 6.6,
-      "imdb_votes": 297957,
-      "rt_score": 36,
-      "poster_url": null,
+      "imdb_id": "tt4827558",
+      "tmdb_id": 29388,
+      "imdb_rating": 5.7,
+      "imdb_votes": 43572,
+      "rt_score": 83,
+      "poster_url": "https://media.themoviedb.org/t/p/w500/alzUTGTbpA204di5WSIWlBKdjbl.jpg",
       "genres": [
-        "Action",
-        "Animation",
-        "Horror",
-        "Science Fiction"
+        "Comedy",
+        "Crime"
       ],
       "keywords": [
-        "adult animation",
-        "anime",
-        "based on video game",
-        "biological weapon",
-        "dystopia",
-        "genetic mutation",
-        "gore",
-        "infection",
-        "military operation",
-        "Mind control",
-        "parasite underneath skin",
-        "political instability",
-        "survival horror",
-        "unkillable monster",
-        "zombie"
+        "addict",
+        "addicted",
+        "addiction",
+        "armed robbery",
+        "armored car",
+        "drug addiction",
+        "morphine",
+        "Robbery"
       ],
       "directors": [
-        "Paul W.S. Anderson"
+        "Claire Denis"
+      ],
+      "cast": [
+        "Rossif Sutherland",
+        "Stephen Eric McIntyre",
+        "Timothy Olyphant"
+      ],
+      "where_to_watch": [
+        "iTunes"
+      ],
+      "collection": null
+    },
+    {
+      "movie_id": 324,
+      "vault_id": "V0328",
+      "title": "Indiana Jones and the Raiders of the Lost Ark",
+      "year": 1981,
+      "runtime": 116,
+      "plot": "When Dr. Indiana Jones – the tweed-suited professor who just happens to be a celebrated archaeologist – is hired by the government to locate the legendary Ark of the Covenant, he finds himself up against the entire Nazi regime.",
+      "awards": null,
+      "certificate": null,
+      "imdb_id": null,
+      "tmdb_id": 85,
+      "imdb_rating": null,
+      "imdb_votes": null,
+      "rt_score": null,
+      "poster_url": "https://media.themoviedb.org/t/p/w500/ceG9VzoRAVGwivFU403Wc3AHRys.jpg",
+      "genres": [
+        "Action",
+        "Adventure"
+      ],
+      "keywords": [
+        "1930s",
+        "adventurer",
+        "archaeologist",
+        "archeology",
+        "ark of the covenant",
+        "cairo",
+        "dramatic",
+        "Egypt",
+        "excavation",
+        "hat",
+        "himalaya mountain range",
+        "leather jacket",
+        "medallion",
+        "mediterranean",
+        "moses",
+        "nazi",
+        "nepal",
+        "religious history",
+        "riddle",
+        "saving the world",
+        "swastika",
+        "ten commandments",
+        "treasure",
+        "treasure hunt",
+        "whip"
+      ],
+      "directors": [
+        "Steven Spielberg"
       ],
       "cast": [],
       "where_to_watch": [
         "iTunes"
       ],
-      "collection": "Resident Evil (Animated) Collection"
+      "collection": "Indiana Jones Collection"
     },
     {
-      "movie_id": 618,
-      "vault_id": "V0624",
-      "title": "Snatched",
-      "year": 2017,
-      "runtime": 90,
-      "plot": "When her boyfriend dumps Emily, a spontaneous woman in her 30s, she persuades her ultra-cautious mom to accompany her on a vacation to Ecuador. When these two very different women are trapped on this wild journey, their bond as mother and daughter is tested and strengthened while they attempt to navigate the jungle and escape.",
-      "awards": "2 wins & 2 nominations total",
-      "certificate": "R",
-      "imdb_id": "tt2334871",
-      "tmdb_id": 373569,
-      "imdb_rating": 4.7,
-      "imdb_votes": 38130,
-      "rt_score": 36,
-      "poster_url": "https://media.themoviedb.org/t/p/w500/gsleO1KultziWltEAngAEZkxQhf.jpg",
+      "movie_id": 337,
+      "vault_id": "V0341",
+      "title": "Iron Man 3",
+      "year": 2013,
+      "runtime": 130,
+      "plot": "When Tony Stark's world is torn apart by a formidable terrorist called the Mandarin, he starts an odyssey of rebuilding and retribution.",
+      "awards": "Nominated for 1 Oscar. 20 wins & 63 nominations total",
+      "certificate": "PG-13",
+      "imdb_id": "tt1300854",
+      "tmdb_id": 68721,
+      "imdb_rating": 7.1,
+      "imdb_votes": 929173,
+      "rt_score": 79,
+      "poster_url": "https://media.themoviedb.org/t/p/w500/qhPtAc1TKbMPqNvcdXSOn9Bn7hZ.jpg",
       "genres": [
         "Action",
+        "Adventure",
+        "Science Fiction"
+      ],
+      "keywords": [
+        "aftercreditsstinger",
+        "america",
+        "based on comic",
+        "billionaire",
+        "California",
+        "christmas",
+        "malibu",
+        "marvel cinematic universe (mcu)",
+        "superhero",
+        "suspenseful",
+        "tennessee",
+        "war on terror"
+      ],
+      "directors": [
+        "Shane Black"
+      ],
+      "cast": [
+        "Don Cheadle",
+        "Gwyneth Paltrow",
+        "Robert Downey Jr."
+      ],
+      "where_to_watch": [
+        "iTunes"
+      ],
+      "collection": "Iron Man Collection"
+    },
+    {
+      "movie_id": 348,
+      "vault_id": "V0352",
+      "title": "Jackass Presents: Bad Grandpa",
+      "year": 2013,
+      "runtime": 92,
+      "plot": "86-year-old Irving Zisman is on a journey across America with the most unlikely companion: his 8 year-old grandson, Billy.",
+      "awards": "Nominated for 1 Oscar. 1 win & 10 nominations total",
+      "certificate": "R",
+      "imdb_id": "tt3063516",
+      "tmdb_id": 208134,
+      "imdb_rating": 6.5,
+      "imdb_votes": 99409,
+      "rt_score": 62,
+      "poster_url": "https://media.themoviedb.org/t/p/w500/dDSMzBEaM0LYSy9Muo0zsCo77Vh.jpg",
+      "genres": [
         "Comedy"
       ],
       "keywords": [
-        "ecuador",
-        "kidnapping",
-        "parent child relationship",
-        "Ransom",
-        "tourist",
-        "vacation"
+        "Duringcreditsstinger"
       ],
       "directors": [
-        "Jonathan Levine"
+        "Jeff Tremaine"
       ],
       "cast": [
-        "Amy Schumer",
-        "Goldie Hawn",
-        "Tom Bateman"
+        "Georgina Cates",
+        "Jackson Nicoll",
+        "Johnny Knoxville"
+      ],
+      "where_to_watch": [
+        "iTunes"
+      ],
+      "collection": "Jackass Presents: Bad Grandpa Collection"
+    },
+    {
+      "movie_id": 349,
+      "vault_id": "V0353",
+      "title": "Jason Bourne",
+      "year": 2016,
+      "runtime": 123,
+      "plot": "The most dangerous former operative of the CIA is drawn out of hiding to uncover hidden truths about his past.",
+      "awards": "3 wins & 20 nominations total",
+      "certificate": "PG-13",
+      "imdb_id": "tt4196776",
+      "tmdb_id": 324668,
+      "imdb_rating": 6.6,
+      "imdb_votes": 249669,
+      "rt_score": 55,
+      "poster_url": "https://media.themoviedb.org/t/p/w500/xA7N41glw17MBQtcWSm2eBlBRuG.jpg",
+      "genres": [
+        "Action",
+        "Thriller"
+      ],
+      "keywords": [
+        "amnesia",
+        "armored vehicle",
+        "Assassin",
+        "black ops",
+        "casino",
+        "central intelligence agency (cia)",
+        "chase",
+        "flashback",
+        "greece",
+        "hacking",
+        "hdd",
+        "Iceland",
+        "las vegas",
+        "reykjavík",
+        "rogue agent"
+      ],
+      "directors": [
+        "Paul Greengrass"
+      ],
+      "cast": [
+        "Alicia Vikander",
+        "Matt Damon",
+        "Tommy Lee Jones"
+      ],
+      "where_to_watch": [
+        "iTunes"
+      ],
+      "collection": "The Bourne Collection"
+    },
+    {
+      "movie_id": 398,
+      "vault_id": "V0402",
+      "title": "Lincoln",
+      "year": 2012,
+      "runtime": 150,
+      "plot": "The revealing story of the 16th US President's tumultuous final months in office. In a nation divided by war and the strong winds of change, Lincoln pursues a course of action designed to end the war, unite the country and abolish slavery. With the moral courage and fierce determination to succeed, his choices during this critical moment will change the fate of generations to come.",
+      "awards": "Won 2 Oscars. 107 wins & 251 nominations total",
+      "certificate": "PG-13",
+      "imdb_id": "tt0443272",
+      "tmdb_id": 72976,
+      "imdb_rating": 7.3,
+      "imdb_votes": 278651,
+      "rt_score": 89,
+      "poster_url": "https://media.themoviedb.org/t/p/w500/7mUYEkv9W3ek61eetZCfMQYVoi.jpg",
+      "genres": [
+        "Drama",
+        "History"
+      ],
+      "keywords": [
+        "19th century",
+        "abraham",
+        "abraham lincoln",
+        "america",
+        "american civil war",
+        "assertive",
+        "based on true story",
+        "battle of gettysburg",
+        "battlefield",
+        "conflagration",
+        "cultural conflict",
+        "emancipation",
+        "ethical dilemma",
+        "family conflict",
+        "gettysburg address",
+        "historical fiction",
+        "Mutiny",
+        "secession",
+        "speech",
+        "usa president"
+      ],
+      "directors": [
+        "Steven Spielberg"
+      ],
+      "cast": [
+        "Daniel Day-Lewis",
+        "David Strathairn",
+        "Sally Field"
       ],
       "where_to_watch": [
         "iTunes"
@@ -15991,87 +17175,158 @@
       "collection": null
     },
     {
-      "movie_id": 662,
-      "vault_id": "V0671",
-      "title": "Talk To Me",
-      "year": 2023,
-      "runtime": 95,
-      "plot": "When a group of friends discover how to conjure spirits using an embalmed hand, they become hooked on the new thrill, until one of them goes too far and unleashes terrifying supernatural forces.",
-      "awards": null,
-      "certificate": "R",
-      "imdb_id": "tt10638522",
-      "tmdb_id": 1008042,
-      "imdb_rating": 7.1,
-      "imdb_votes": 182686,
-      "rt_score": null,
-      "poster_url": "https://media.themoviedb.org/t/p/w500/kdPMUMJzyYAc4roD52qavX0nLIC.jpg",
+      "movie_id": 487,
+      "vault_id": "V0491",
+      "title": "Ouija: Origin of Evil",
+      "year": 2016,
+      "runtime": 99,
+      "plot": "In 1967 Los Angeles, a widowed mother and her two daughters add a new stunt to bolster their séance scam business and unwittingly invite authentic evil into their home. When the youngest daughter is overtaken by the merciless spirit, this small family confronts unthinkable fears to save her and send her possessor back to the other side.",
+      "awards": "2 wins & 7 nominations total",
+      "certificate": "PG-13",
+      "imdb_id": "tt4361050",
+      "tmdb_id": 335796,
+      "imdb_rating": 6.2,
+      "imdb_votes": 77954,
+      "rt_score": 83,
+      "poster_url": "https://media.themoviedb.org/t/p/w500/gwynHc2RrOFaplYMMpQRpr3TIA4.jpg",
       "genres": [
         "Horror"
       ],
       "keywords": [
-        "addiction",
-        "adelaide australia",
-        "body horror",
-        "cautionary tale",
-        "dead parent",
-        "death of mother",
-        "disembodied hand",
-        "female friendship",
-        "female protagonist",
-        "generation z",
-        "grief",
-        "mental health",
-        "modern australia",
-        "peer pressure",
+        "1960s",
+        "aftercreditsstinger",
         "possession",
-        "self mutilation",
-        "self-harm",
-        "social media",
-        "Suicide",
-        "supernatural horror",
-        "teenager",
-        "trauma"
+        "prequel",
+        "spirit",
+        "Supernatural"
       ],
       "directors": [
-        "Michael Philippou",
-        "Danny Philippou"
+        "Mike Flanagan"
       ],
-      "cast": [],
+      "cast": [
+        "Annalise Basso",
+        "Elizabeth Reaser",
+        "Lulu Wilson"
+      ],
       "where_to_watch": [
         "iTunes"
       ],
-      "collection": "Talk to Me Collection"
+      "collection": "Ouija Collection"
     },
     {
-      "movie_id": 696,
-      "vault_id": "V0706",
-      "title": "The Bye Bye Man",
-      "year": 2017,
-      "runtime": 100,
-      "plot": "When three college students move into an old house off campus, they unwittingly unleash a supernatural entity known as The Bye Bye Man, who comes to prey upon them once they discover his name. The friends must try to save each other, all the while keeping The Bye Bye Man's existence a secret to save others from the same deadly fate.",
-      "awards": null,
+      "movie_id": 508,
+      "vault_id": "V0512",
+      "title": "Pitch Perfect",
+      "year": 2012,
+      "runtime": 112,
+      "plot": "College student Beca knows she does not want to be part of a clique, but that's exactly where she finds herself after arriving at her new school. Thrust in among mean gals, nice gals and just plain weird gals, Beca finds that the only thing they have in common is how well they sing together. She takes the women of the group out of their comfort zone of traditional arrangements and into a world of amazing harmonic combinations in a fight to the top of college music competitions.",
+      "awards": "9 wins & 20 nominations total",
       "certificate": "PG-13",
-      "imdb_id": "tt4030600",
-      "tmdb_id": 292280,
-      "imdb_rating": 4.3,
-      "imdb_votes": 26866,
-      "rt_score": 18,
-      "poster_url": "https://media.themoviedb.org/t/p/w500/bape74Eeli5NJ6x4UKuUr604xXh.jpg",
+      "imdb_id": "tt1981677",
+      "tmdb_id": 114150,
+      "imdb_rating": 7.1,
+      "imdb_votes": 340606,
+      "rt_score": 81,
+      "poster_url": "https://media.themoviedb.org/t/p/w500/gsFoJk9g8W3zgaipRrrURk7LbiF.jpg",
       "genres": [
-        "Horror",
-        "Thriller"
+        "Comedy",
+        "Music",
+        "Romance"
       ],
       "keywords": [
-        "college student",
-        "hooded figure",
-        "supernatural",
-        "urban legend",
-        "Wisconsin",
-        "woman director",
+        "acapella",
+        "audition",
+        "bickering",
+        "college",
+        "Competition",
+        "dj",
+        "dorm room",
+        "female friendship",
+        "film score",
+        "group of friends",
+        "hazing",
+        "misfit",
+        "roommates",
+        "singing competition",
+        "university",
         "young adult"
       ],
       "directors": [
-        "Stacy Title"
+        "Jason Moore"
+      ],
+      "cast": [
+        "Anna Camp",
+        "Anna Kendrick",
+        "Brittany Snow"
+      ],
+      "where_to_watch": [
+        "iTunes"
+      ],
+      "collection": "Pitch Perfect Collection"
+    },
+    {
+      "movie_id": 527,
+      "vault_id": "V0531",
+      "title": "Pumpkinhead",
+      "year": 1988,
+      "runtime": 86,
+      "plot": "When a group of teenagers inadvertently kill his only son, Ed Harley seeks the powers of a backwoods witch to bring the child back to life.",
+      "awards": "3 nominations total",
+      "certificate": "R",
+      "imdb_id": "tt0095925",
+      "tmdb_id": 26515,
+      "imdb_rating": 6.2,
+      "imdb_votes": 29400,
+      "rt_score": 64,
+      "poster_url": "https://media.themoviedb.org/t/p/w500/gx7Gej5Srp3E13oqy1Kghtox2VZ.jpg",
+      "genres": [
+        "Fantasy",
+        "Horror"
+      ],
+      "keywords": [
+        "based on song",
+        "cabin",
+        "demon",
+        "evil",
+        "loss of loved one",
+        "murder",
+        "Poem or rhyme",
+        "pumpkin",
+        "vengeance",
+        "Witch"
+      ],
+      "directors": [
+        "Stan Winston"
+      ],
+      "cast": [
+        "Jeff East",
+        "John D'Aquino",
+        "Lance Henriksen"
+      ],
+      "where_to_watch": [
+        "iTunes"
+      ],
+      "collection": "Pumpkinhead Collection"
+    },
+    {
+      "movie_id": 555,
+      "vault_id": "V0560",
+      "title": "Riddick (Unrated Director's Cut)",
+      "year": 2013,
+      "runtime": 127,
+      "plot": null,
+      "awards": null,
+      "certificate": null,
+      "imdb_id": null,
+      "tmdb_id": null,
+      "imdb_rating": null,
+      "imdb_votes": null,
+      "rt_score": null,
+      "poster_url": null,
+      "genres": [],
+      "keywords": [],
+      "directors": [
+        "David Twohy"
       ],
       "cast": [],
       "where_to_watch": [
@@ -16080,49 +17335,99 @@
       "collection": null
     },
     {
-      "movie_id": 717,
-      "vault_id": "V0727",
-      "title": "The Divergent Series: Allegiant",
-      "year": 2016,
-      "runtime": 121,
-      "plot": "Beatrice Prior and Tobias Eaton venture into the world outside of the fence and are taken into protective custody by a mysterious agency known as the Bureau of Genetic Welfare.",
-      "awards": null,
-      "certificate": null,
-      "imdb_id": null,
-      "tmdb_id": 262504,
-      "imdb_rating": null,
-      "imdb_votes": null,
-      "rt_score": null,
-      "poster_url": null,
+      "movie_id": 595,
+      "vault_id": "V0601",
+      "title": "Sherlock Gnomes",
+      "year": 2018,
+      "runtime": 86,
+      "plot": "Garden gnomes Gnomeo & Juliet recruit renown detective Sherlock Gnomes to investigate the mysterious disappearance of other garden ornaments.",
+      "awards": "1 win & 6 nominations",
+      "certificate": "PG",
+      "imdb_id": "tt2296777",
+      "tmdb_id": 370567,
+      "imdb_rating": 5.3,
+      "imdb_votes": 14496,
+      "rt_score": 28,
+      "poster_url": "https://media.themoviedb.org/t/p/w500/wqnzpJR3PwS4doVkAkt9seSEpoX.jpg",
       "genres": [
-        "Action",
         "Adventure",
-        "Mystery",
-        "Science Fiction"
+        "Animation",
+        "Comedy",
+        "Family",
+        "Fantasy",
+        "Mystery"
       ],
       "keywords": [
-        "Based on novel or book",
-        "based on young adult novel",
-        "dystopia",
-        "revolution",
-        "sequel"
+        "animate statue",
+        "missing person",
+        "sequel",
+        "sherlock holmes",
+        "Villain"
       ],
       "directors": [
-        "Robert Schwente"
+        "John Stevenson"
       ],
-      "cast": [],
+      "cast": [
+        "Emily Blunt",
+        "James McAvoy",
+        "Johnny Depp"
+      ],
       "where_to_watch": [
         "iTunes"
       ],
-      "collection": "Divergent Collection"
+      "collection": "Gnomeo & Juliet Collection"
     },
     {
-      "movie_id": 790,
-      "vault_id": "V0800",
-      "title": "The Little Mermaid (1989)",
-      "year": 1989,
-      "runtime": null,
-      "plot": "A young reporter and his niece discover a beautiful and enchanting creature they believe to be the real little mermaid.",
+      "movie_id": 636,
+      "vault_id": "V0645",
+      "title": "Spiral: From the Book of Saw",
+      "year": 2021,
+      "runtime": 93,
+      "plot": "Working in the shadow of an esteemed police veteran, brash Detective Ezekiel “Zeke” Banks and his rookie partner take charge of a grisly investigation into murders that are eerily reminiscent of the city’s gruesome past.  Unwittingly entrapped in a deepening mystery, Zeke finds himself at the center of the killer’s morbid game.",
+      "awards": null,
+      "certificate": null,
+      "imdb_id": null,
+      "tmdb_id": 602734,
+      "imdb_rating": null,
+      "imdb_votes": null,
+      "rt_score": null,
+      "poster_url": "https://media.themoviedb.org/t/p/w500/cTvSDfBuXTZTdRCNduGMANd7VEP.jpg",
+      "genres": [
+        "Horror",
+        "Mystery"
+      ],
+      "keywords": [
+        "body count",
+        "death game",
+        "father son relationship",
+        "murder",
+        "murder of a policeman",
+        "mystery killings",
+        "police corruption",
+        "procedural",
+        "Sequel",
+        "survival horror"
+      ],
+      "directors": [
+        "Darren Lynn Bousman"
+      ],
+      "cast": [
+        "Chris Rock",
+        "Max Minghella",
+        "Samuel L. Jackson"
+      ],
+      "where_to_watch": [
+        "iTunes"
+      ],
+      "collection": "Saw Collection"
+    },
+    {
+      "movie_id": 637,
+      "vault_id": "V0646",
+      "title": "Split (2017)",
+      "year": 2017,
+      "runtime": 117,
+      "plot": "Though Kevin has evidenced 23 personalities to his trusted psychiatrist, Dr. Fletcher, there remains one still submerged who is set to materialize and dominate all the others. Compelled to abduct three teenage girls led by the willful, observant Casey, Kevin reaches a war for survival among all of those contained within him — as well as everyone around him — as the walls between his compartments shatter apart.",
       "awards": null,
       "certificate": null,
       "imdb_id": null,
@@ -16132,15 +17437,145 @@
       "rt_score": null,
       "poster_url": null,
       "genres": [
-        "Adventure",
-        "Drama",
-        "Family",
-        "Fantasy",
-        "Romance"
+        "Horror",
+        "Thriller"
       ],
       "keywords": [],
       "directors": [
-        "Not Found"
+        "M. Night Shyamalan"
+      ],
+      "cast": [],
+      "where_to_watch": [
+        "iTunes"
+      ],
+      "collection": null
+    },
+    {
+      "movie_id": 667,
+      "vault_id": "V0676",
+      "title": "Teenage Mutant Ninja Turtles: Out of the Shadows",
+      "year": 2016,
+      "runtime": 112,
+      "plot": "After supervillain Shredder escapes custody, he joins forces with mad scientist Baxter Stockman and two dimwitted henchmen, Bebop and Rocksteady, to unleash a diabolical plan to take over the world. As the Turtles prepare to take on Shredder and his new crew, they find themselves facing an even greater evil with similar intentions: the notorious Krang.",
+      "awards": "10 nominations total",
+      "certificate": "PG-13",
+      "imdb_id": "tt3949660",
+      "tmdb_id": 308531,
+      "imdb_rating": 5.9,
+      "imdb_votes": 103159,
+      "rt_score": 38,
+      "poster_url": "https://media.themoviedb.org/t/p/w500/euVaCiCWz3AALcQXHT6aUqdGUo6.jpg",
+      "genres": [
+        "Action",
+        "Adventure",
+        "Comedy",
+        "Family",
+        "Science Fiction"
+      ],
+      "keywords": [
+        "based on comic",
+        "bebop and rocksteady",
+        "ninja",
+        "rat",
+        "sequel",
+        "Sibling relationship",
+        "turtle"
+      ],
+      "directors": [
+        "Dave Green"
+      ],
+      "cast": [
+        "Alan Ritchson",
+        "Jeremy Howard",
+        "Pete Ploszek"
+      ],
+      "where_to_watch": [
+        "iTunes"
+      ],
+      "collection": "Teenage Mutant Ninja Turtles (Remake) Collection"
+    },
+    {
+      "movie_id": 689,
+      "vault_id": "V0699",
+      "title": "The Bourne Supremacy",
+      "year": 2004,
+      "runtime": 108,
+      "plot": "A CIA operation to purchase classified Russian documents is blown by a rival agent, who then shows up in the sleepy seaside village where Bourne and Marie have been living. The pair run for their lives and Bourne, who promised retaliation should anyone from his former life attempt contact, is forced to once again take up his life as a trained assassin to survive.",
+      "awards": "5 wins & 22 nominations total",
+      "certificate": "PG-13",
+      "imdb_id": "tt0372183",
+      "tmdb_id": 2502,
+      "imdb_rating": 7.7,
+      "imdb_votes": 499099,
+      "rt_score": 82,
+      "poster_url": "https://media.themoviedb.org/t/p/w500/jupG9sFT64YwM8PSkwkUD2wHcYD.jpg",
+      "genres": [
+        "Action",
+        "Drama",
+        "Thriller"
+      ],
+      "keywords": [
+        "action hero",
+        "amnesia",
+        "assassin",
+        "based on novel or book",
+        "berlin",
+        "bourne",
+        "dark past",
+        "dramatic",
+        "espionage",
+        "exploding house",
+        "foot chase",
+        "Germany",
+        "hand to hand combat",
+        "jason bourne",
+        "lie",
+        "moscow",
+        "on the run",
+        "one against many",
+        "rail car",
+        "Russia",
+        "sequel",
+        "shootout",
+        "Sniper",
+        "suspenseful"
+      ],
+      "directors": [
+        "Paul Greengrass"
+      ],
+      "cast": [
+        "Brian Cox",
+        "Franka Potente",
+        "Matt Damon"
+      ],
+      "where_to_watch": [
+        "iTunes"
+      ],
+      "collection": "The Bourne Collection"
+    },
+    {
+      "movie_id": 938,
+      "vault_id": "V0949",
+      "title": "Yesterday (2019)",
+      "year": 2019,
+      "runtime": 116,
+      "plot": "Set in the 60's in a provincial town: four high school teenagers approach graduation, but all they think about are The Beatles.",
+      "awards": null,
+      "certificate": null,
+      "imdb_id": null,
+      "tmdb_id": null,
+      "imdb_rating": null,
+      "imdb_votes": null,
+      "rt_score": null,
+      "poster_url": null,
+      "genres": [
+        "Comedy",
+        "Drama",
+        "Music"
+      ],
+      "keywords": [],
+      "directors": [
+        "Danny Boyle"
       ],
       "cast": [],
       "where_to_watch": [

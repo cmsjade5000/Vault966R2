@@ -1,7 +1,14 @@
 from datetime import datetime
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Literal, Optional, Union
 
-from pydantic import BaseModel, ConfigDict, Field, computed_field, field_serializer
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    computed_field,
+    field_serializer,
+    model_validator,
+)
 
 from api.models.person import RoleType
 from api.schemas.person import PersonRead
@@ -194,6 +201,34 @@ class MovieLookupCandidate(BaseModel):
 class MovieLookupResponse(BaseModel):
     items: List[MovieLookupCandidate] = Field(default_factory=list)
     notice: Optional[str] = None
+
+
+class MovieMatchSelection(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    title: str = Field(min_length=1, max_length=300)
+    year: Optional[int] = Field(default=None, ge=1870, le=2100)
+    source: Literal["tmdb", "omdb"]
+    tmdb_id: Optional[int] = Field(default=None, gt=0)
+    imdb_id: Optional[str] = Field(default=None, pattern=r"^tt\d{5,12}$")
+
+    @model_validator(mode="after")
+    def validate_provider_id(self):
+        if self.source == "tmdb" and self.tmdb_id is None:
+            raise ValueError("tmdb_id is required for a TMDB selection")
+        if self.source == "omdb" and self.imdb_id is None:
+            raise ValueError("imdb_id is required for an OMDb selection")
+        return self
+
+
+class MovieMatchApplyResponse(BaseModel):
+    movie_id: int
+    vault_id: Optional[str] = None
+    title: str
+    imdb_id: Optional[str] = None
+    tmdb_id: Optional[int] = None
+    flag_resolved: bool
+    message: str
 
 
 class MovieSearchResponse(BaseModel):

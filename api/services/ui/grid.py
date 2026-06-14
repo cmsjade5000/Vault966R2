@@ -16,6 +16,7 @@ from core.poster_theme import select_poster_theme
 
 FILTER_COOKIE_NAME = "movies:lastFilters"
 FILTER_COOKIE_MAX_AGE = 60 * 60 * 24 * 30  # 30 days
+FILTER_COOKIE_PATH = "/ui/movies"
 
 
 def load_filter_cookie(request: Request) -> dict[str, object]:
@@ -335,6 +336,7 @@ def attach_genre_display(movies: Iterable[Movie]) -> None:
 __all__ = [
     "FILTER_COOKIE_NAME",
     "FILTER_COOKIE_MAX_AGE",
+    "FILTER_COOKIE_PATH",
     "load_filter_cookie",
     "dump_filter_cookie",
     "query_library_stats",

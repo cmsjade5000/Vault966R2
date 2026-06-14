@@ -1,7 +1,18 @@
+from datetime import date
+
 from api.models.usage_event import UsageEvent
 from api.models.movie import Movie
 from api.models.movie_flag import MovieFlag
-from api.routers.ui.discover import _rail_candidates
+from api.models.profile import MoviePreference, Profile
+from api.routers.ui.discover import (
+    RAIL_DEFINITIONS,
+    _build_discover_rails,
+    _ordered_rail_definitions,
+    _pick_selected_for_you,
+    _rail_candidates,
+    _stable_daily_rank,
+)
+from api.services.ui.templates import poster_image_url
 from api.services.trusted_movies import get_untrusted_movie_ids, trusted_movie_query
 from core.genres import split_and_normalize
 
@@ -49,6 +60,35 @@ def test_usage_events_accept_only_whitelisted_fields(client, db_session) -> None
     assert db_session.query(UsageEvent).count() == 1
 
 
+def test_personalized_impression_event_uses_fixed_whitelisted_context(
+    client, db_session
+) -> None:
+    response = client.post(
+        "/ui/events",
+        json={
+            "event_name": "personalized_recommendations_shown",
+            "page": "discover",
+            "context": "selected_for_you",
+        },
+    )
+
+    assert response.status_code == 204
+    event = db_session.query(UsageEvent).one()
+    assert event.movie_id is None
+    assert event.context == "selected_for_you"
+
+    rejected = client.post(
+        "/ui/events",
+        json={
+            "event_name": "personalized_recommendations_shown",
+            "page": "discover",
+            "context": "selected_for_you",
+            "liked_titles": ["Blade Runner"],
+        },
+    )
+    assert rejected.status_code == 422
+
+
 def test_trusted_query_excludes_open_flags(db_session) -> None:
     db_session.add(MovieFlag(movie_id=1, reason="Verify identity"))
     db_session.commit()
@@ -58,6 +98,31 @@ def test_trusted_query_excludes_open_flags(db_session) -> None:
         movie_id for (movie_id,) in trusted_movie_query(db_session).with_entities(Movie.id).all()
     }
     assert 1 not in trusted_ids
+
+
+def test_scoped_untrusted_lookup_only_checks_requested_movies(db_session) -> None:
+    db_session.add(MovieFlag(movie_id=1, reason="Verify identity"))
+    db_session.add(MovieFlag(movie_id=3, reason="Verify identity"))
+    db_session.commit()
+
+    assert get_untrusted_movie_ids(db_session, {1, 2}) == {1}
+
+
+def test_poster_image_url_uses_one_smaller_tmdb_origin() -> None:
+    assert (
+        poster_image_url("https://media.themoviedb.org/t/p/w500/example.jpg")
+        == "https://image.tmdb.org/t/p/w342/example.jpg"
+    )
+    assert (
+        poster_image_url(
+            "https://image.tmdb.org/t/p/original/example.jpg?language=en",
+            "w500",
+        )
+        == "https://image.tmdb.org/t/p/w500/example.jpg?language=en"
+    )
+    assert poster_image_url("https://example.com/poster.jpg") == (
+        "https://example.com/poster.jpg"
+    )
 
 
 def test_discover_contains_all_collection_rails(client, db_session) -> None:
@@ -80,6 +145,134 @@ def test_discover_contains_all_collection_rails(client, db_session) -> None:
     assert 'data-preference-type="watchlist"' in response.text
     assert ">♡</button>" not in response.text
     assert ">▯</button>" not in response.text
+    assert 'class="library-card discover-rail-card"' in response.text
+    assert 'class="library-card__link"' in response.text
+    assert 'class="library-card__media"' in response.text
+    assert 'class="library-card__body"' in response.text
+    assert 'class="library-card__meta"' in response.text
+    assert 'class="library-card__genres"' in response.text
+    assert 'class="library-card__actions"' in response.text
+    assert "Today’s shelves" in response.text
+    assert 'data-rail-next' in response.text
+    assert 'data-rail-progress' in response.text
+    assert "Why this" in response.text
+    assert 'rel="preconnect" href="https://image.tmdb.org"' in response.text
+    assert 'fetchpriority="high"' in response.text
+    assert 'loading="eager"' in response.text
+
+
+def test_discover_rail_order_is_stable_and_rotates_by_day() -> None:
+    first_day = date(2026, 6, 14)
+    second_day = date(2026, 6, 15)
+
+    first_order = [rail.key for rail in _ordered_rail_definitions(first_day)]
+    repeated_order = [rail.key for rail in _ordered_rail_definitions(first_day)]
+    second_order = [rail.key for rail in _ordered_rail_definitions(second_day)]
+
+    assert first_order == repeated_order
+    assert first_order != second_order
+    assert set(first_order) == {rail.key for rail in RAIL_DEFINITIONS}
+
+
+def test_daily_movie_rank_uses_stable_vault_identity() -> None:
+    day = date(2026, 6, 14)
+
+    assert _stable_daily_rank(day, "hidden-gems", "V0042") == _stable_daily_rank(
+        day, "hidden-gems", "V0042"
+    )
+    assert _stable_daily_rank(day, "hidden-gems", "V0042") != _stable_daily_rank(
+        day, "hidden-gems", "V0043"
+    )
+
+
+def test_discover_rails_keep_all_topics_and_do_not_repeat_movies(db_session) -> None:
+    for movie in db_session.query(Movie).all():
+        movie.poster_url = f"https://example.com/posters/{movie.id}.jpg"
+        movie.imdb_rating = movie.imdb_rating or 8.0
+        movie.imdb_votes = movie.imdb_votes or 20_000
+    db_session.commit()
+
+    rails = _build_discover_rails(
+        db_session,
+        used_ids=set(),
+        limit=3,
+        day=date(2026, 6, 14),
+    )
+    movie_ids = [
+        movie.id
+        for rail in rails
+        for movie in rail["movies"]
+        if movie.id is not None
+    ]
+
+    assert {rail["key"] for rail in rails} == {
+        definition.key for definition in RAIL_DEFINITIONS
+    }
+    assert len(movie_ids) == len(set(movie_ids))
+
+
+def test_discover_explains_how_to_enable_personalization(client) -> None:
+    response = client.get("/ui/discover")
+
+    assert response.status_code == 200
+    assert "Make Discover yours" in response.text
+    assert "Like a movie in the Library" in response.text
+    assert 'data-selected-for-you' not in response.text
+
+
+def test_selected_for_you_is_profile_specific_trusted_and_non_repeating(
+    client, db_session, monkeypatch
+) -> None:
+    profile_a = Profile(name="User A", role="admin")
+    profile_b = Profile(name="User B", role="reviewer")
+    db_session.add_all([profile_a, profile_b])
+    db_session.flush()
+
+    liked_movie = db_session.get(Movie, 1)
+    candidate = db_session.get(Movie, 2)
+    flagged_candidate = db_session.get(Movie, 3)
+    sci_fi = liked_movie.genres[0]
+
+    for movie in (liked_movie, candidate, flagged_candidate):
+        movie.poster_url = f"https://example.com/posters/{movie.id}.jpg"
+        movie.imdb_rating = 8.0
+        if sci_fi not in movie.genres:
+            movie.genres.append(sci_fi)
+
+    for movie in db_session.query(Movie).filter(Movie.id.between(4, 12)).all():
+        movie.poster_url = f"https://example.com/posters/{movie.id}.jpg"
+        movie.imdb_rating = 7.0
+        movie.genres.append(sci_fi)
+
+    db_session.add(
+        MoviePreference(profile_id=profile_a.id, movie_id=liked_movie.id, liked=True)
+    )
+    db_session.add(
+        MoviePreference(profile_id=profile_a.id, movie_id=candidate.id, watchlist=True)
+    )
+    db_session.add(MovieFlag(movie_id=flagged_candidate.id, reason="Verify identity"))
+    db_session.commit()
+
+    recommendations, genres = _pick_selected_for_you(db_session, profile_a.id, limit=12)
+    recommendation_ids = {movie.id for movie in recommendations}
+
+    assert genres[0] == sci_fi.name
+    assert liked_movie.id not in recommendation_ids
+    assert flagged_candidate.id not in recommendation_ids
+    assert candidate.id not in recommendation_ids
+    assert all(sci_fi in movie.genres for movie in recommendations)
+    assert _pick_selected_for_you(db_session, profile_b.id) == ([], [])
+
+    monkeypatch.setattr(
+        "api.routers.ui.discover.get_daily_spotlight_movies",
+        lambda _db, limit: [],
+    )
+    response = client.get("/ui/discover")
+    assert response.status_code == 200
+    assert "Selected for You" in response.text
+    assert f"in {sci_fi.name}." in response.text
+    assert 'data-selected-for-you' in response.text
+    assert response.text.count(f'href="/ui/movies/{candidate.id}"') == 1
 
 
 def test_discover_rails_only_surface_movies_with_posters(db_session) -> None:

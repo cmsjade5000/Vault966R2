@@ -12,7 +12,7 @@ from api.services.profiles import (
     get_preferences_for_movies,
     get_profiles,
 )
-from api.services.ui.spotlight import build_spotlight_reason, get_daily_spotlight_ids
+from api.services.ui.spotlight import build_spotlight_reason
 from api.services.ui.templates import TEMPLATES
 from api.services.source_sync import source_provenance_for_movie
 from api.services.trusted_movies import get_untrusted_movie_ids
@@ -123,8 +123,7 @@ def movie_detail(
         )
 
     spotlight_reason = None
-    spotlight_ids = get_daily_spotlight_ids(db, limit=4)
-    if detail.id in spotlight_ids or spotlight:
+    if spotlight:
         spotlight_reason = build_spotlight_reason(detail)
 
     review_prev_id = None
@@ -134,13 +133,12 @@ def movie_detail(
 
     profiles = get_profiles(db)
     active_profile_id = get_active_profile_id(request, db)
-    untrusted_ids = get_untrusted_movie_ids(db)
+    similar_ids = {item.id for item in (detail.similar or []) if item.id is not None}
+    untrusted_ids = get_untrusted_movie_ids(db, similar_ids)
     similar_list = [item for item in (detail.similar or []) if item.id not in untrusted_ids]
-    used_ids: set[int] = set()
-    pair_with = _pick_diverse(similar_list, limit=2, used_ids=used_ids)
-    more_like = _pick_diverse(similar_list, limit=6, used_ids=used_ids)
+    more_like = _pick_diverse(similar_list, limit=6, used_ids=set())
 
-    preference_ids = [detail.id] + [item.id for item in pair_with + more_like if item.id]
+    preference_ids = [detail.id] + [item.id for item in more_like if item.id]
     preferences = get_preferences_for_movies(db, active_profile_id, preference_ids)
     pref = preferences.get(detail.id, {})
     similar_preferences = {
@@ -148,7 +146,7 @@ def movie_detail(
     }
     similar_reasons = {
         item.id: _build_reason_tags(detail.genres, detail.year, item)
-        for item in pair_with + more_like
+        for item in more_like
         if item.id
     }
 
@@ -169,7 +167,6 @@ def movie_detail(
             "movie_watchlist": pref.get("watchlist", False),
             "similar_preferences": similar_preferences,
             "similar_reasons": similar_reasons,
-            "pair_with": pair_with,
             "more_like": more_like,
             "source_provenance": source_provenance_for_movie(db, detail.id),
         },

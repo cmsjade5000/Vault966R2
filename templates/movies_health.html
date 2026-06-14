@@ -1,19 +1,20 @@
 {% extends "base.html" %}
 {% block title %}Vault 966 · Vault Health{% endblock %}
 {% block head %}
-<link rel="stylesheet" href="{{ url_for('static', path='css/movies.css') }}" />
+  <link rel="stylesheet" href="{{ static_asset('css/movies.css') }}" />
 {% endblock %}
+{% block body_class %}health-page{% endblock %}
 {% block content %}
-  <section class="page-hero">
-    <div class="hero-header">
-      <div class="hero-title">
+  <section class="health-heading-shell page-shell">
+    <header class="library-heading">
+      <div>
         <h1>Vault Health</h1>
+        <p>
+          <strong>{{ total_review_count }}</strong>
+          {{ "item needs" if total_review_count == 1 else "items need" }} review
+        </p>
       </div>
-      <p class="tagline">Review, integrity, metadata, and source synchronization in one place.</p>
-    </div>
-    <div class="hero-health-links">
-      <a class="hero-health-link" href="/ui/movies">← Back to movies</a>
-    </div>
+    </header>
   </section>
 
   {% if request.query_params.get('message') %}
@@ -154,6 +155,6 @@
 {% endblock %}
 {% block scripts %}
   {{ super() }}
-<script src="{{ url_for('static', path='js/collection_health.js') }}" defer></script>
-<script src="{{ url_for('static', path='js/review_page.js') }}" defer></script>
+<script src="{{ static_asset('js/collection_health.js') }}" defer></script>
+<script src="{{ static_asset('js/review_page.js') }}" defer></script>
 {% endblock %}

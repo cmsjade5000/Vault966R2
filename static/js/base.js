@@ -9,8 +9,7 @@
       return;
     }
 
-    const isMobileNav = () =>
-      window.matchMedia("(max-width: 820px)").matches;
+    const isMobileNav = () => window.matchMedia("(max-width: 820px)").matches;
 
     const setExpanded = (next) => {
       navToggles.forEach((toggle) =>
@@ -76,6 +75,94 @@ window.persistToastMessage = function (message) {
     console.warn("Failed to persist toast message", err);
   }
 };
+
+(() => {
+  const indicator = document.querySelector("[data-vault-busy]");
+  const messageTarget = indicator?.querySelector("[data-vault-busy-message]");
+  let activeToken = null;
+  let showTimer = null;
+
+  const clearBusy = () => {
+    activeToken = null;
+    window.clearTimeout(showTimer);
+    showTimer = null;
+    indicator?.setAttribute("hidden", "");
+    document.body.removeAttribute("aria-busy");
+  };
+
+  window.setVaultBusy = function setVaultBusy(
+    message = "Vault is thinking…",
+    { delay = 120 } = {},
+  ) {
+    if (!indicator || !messageTarget) return () => {};
+    const token = Symbol("vault-busy");
+    activeToken = token;
+    window.clearTimeout(showTimer);
+    messageTarget.textContent = String(message);
+    document.body.setAttribute("aria-busy", "true");
+    const show = () => {
+      if (activeToken === token) indicator.removeAttribute("hidden");
+    };
+    if (delay > 0) {
+      showTimer = window.setTimeout(show, delay);
+    } else {
+      show();
+    }
+    return () => {
+      if (activeToken === token) clearBusy();
+    };
+  };
+
+  document.addEventListener("click", (event) => {
+    if (
+      event.defaultPrevented ||
+      event.button !== 0 ||
+      event.metaKey ||
+      event.ctrlKey ||
+      event.shiftKey ||
+      event.altKey
+    ) {
+      return;
+    }
+    const link = event.target.closest("a[href]");
+    if (
+      !link ||
+      link.hasAttribute("download") ||
+      link.target === "_blank" ||
+      link.hasAttribute("data-back-link")
+    )
+      return;
+    const url = new URL(link.href, window.location.href);
+    if (
+      url.origin !== window.location.origin ||
+      (url.pathname === window.location.pathname &&
+        url.search === window.location.search &&
+        url.hash)
+    ) {
+      return;
+    }
+    const message =
+      link.dataset.vaultBusyMessage ||
+      (url.pathname.match(/^\/ui\/movies\/\d+/)
+        ? "Opening movie details…"
+        : "Opening the Vault…");
+    event.preventDefault();
+    window.setVaultBusy(message, { delay: 0 });
+    window.setTimeout(() => {
+      window.location.assign(url.toString());
+    }, 400);
+  });
+
+  document.addEventListener("submit", (event) => {
+    const form = event.target;
+    const method = String(form?.method || "get").toLowerCase();
+    const message =
+      form?.dataset?.vaultBusyMessage ||
+      (method === "get" ? "Searching the Vault…" : "Updating the Vault…");
+    window.setVaultBusy(message);
+  });
+  window.addEventListener("pageshow", clearBusy);
+})();
 
 const collectFallbackPickParams = () => {
   const params = new URLSearchParams();

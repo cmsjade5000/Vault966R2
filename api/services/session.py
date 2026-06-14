@@ -4,12 +4,14 @@ import base64
 import hashlib
 import hmac
 import json
+import secrets
 import time
 from dataclasses import dataclass
 from typing import Optional
 
 SESSION_COOKIE_NAME = "vault_session"
 SESSION_VERSION = 1
+_EPHEMERAL_SESSION_SECRET = secrets.token_urlsafe(32)
 
 
 @dataclass(frozen=True)
@@ -17,6 +19,11 @@ class SessionData:
     profile_id: int
     issued_at: int
     expires_at: int
+
+
+def get_session_secret(configured_secret: Optional[str]) -> str:
+    """Use the configured secret or a process-local fallback for local unlocks."""
+    return configured_secret or _EPHEMERAL_SESSION_SECRET
 
 
 def _b64encode(raw: bytes) -> str:

@@ -1,147 +1,218 @@
 {% extends "base.html" %}
+{% from "partials/movies/card.html" import movie_card %}
 {% block title %}Vault 966 · Discover{% endblock %}
 {% block head %}
-<link rel="stylesheet" href="{{ url_for('static', path='css/movies.css') }}" />
-<link rel="stylesheet" href="{{ url_for('static', path='css/discover.css') }}" />
+<link rel="stylesheet" href="{{ static_asset('css/movies.css') }}" />
+<link rel="stylesheet" href="{{ static_asset('css/discover.css') }}" />
+<link rel="preconnect" href="https://image.tmdb.org" crossorigin />
+<link rel="dns-prefetch" href="//image.tmdb.org" />
 {% endblock %}
 {% block content %}
-  <header class="app-hero discover-hero">
-    <div class="app-hero__inner">
-      <div class="hero-title hero-title--center"><h1>Discover</h1></div>
-      <p class="tagline app-hero__tagline">Trusted picks from the collection, arranged for an easier decision.</p>
-    </div>
-  </header>
-
-  {% if spotlight_movies %}
-  <section class="poster-banner discover-spotlight">
-    <div class="poster-banner__inner" aria-label="Daily spotlight">
-      <header class="poster-banner__header">
-        <div>
-          <h2 class="poster-banner__title">Daily Spotlight</h2>
-          <p class="poster-banner__subtitle">Four trusted picks with a fresh angle each day.</p>
-        </div>
+  <div class="discover-layout page-shell">
+    <aside class="discover-sidebar" aria-label="Discover navigation">
+      <header class="discover-heading">
+        <h1>Discover</h1>
+        <p>Trusted picks, arranged for an easier decision.</p>
       </header>
-      <div class="poster-banner__grid" role="list">
-        {% for movie in spotlight_movies %}
-        <div class="poster-banner__tile" role="listitem">
-          <a class="poster-banner__link" href="/ui/movies/{{ movie.id }}?spotlight=1" data-movie-detail-link data-movie-id="{{ movie.id }}" data-event-context="daily_spotlight">
-            <div class="poster-banner__poster">
-              {% if movie.poster_url %}
-              <img class="poster-banner__image" src="{{ movie.poster_url }}" alt="{{ movie.title | display_title }} poster" loading="lazy" />
+      <div class="discover-index">
+        <h2>Today’s shelves</h2>
+        <nav>
+          {% if spotlight_lead %}
+          <a class="is-active" href="#daily-spotlight">Daily Spotlight</a>
+          {% endif %}
+          <a href="#selected-for-you">Selected for You</a>
+          {% for rail in rails %}
+          <a href="#rail-{{ rail.key }}">{{ rail.title }}</a>
+          {% endfor %}
+        </nav>
+      </div>
+    </aside>
+
+    <div class="discover-content">
+      {% if spotlight_lead %}
+      <section class="discover-spotlight" id="daily-spotlight" aria-labelledby="daily-spotlight-title">
+        <header class="discover-section-header">
+          <div>
+            <h2 id="daily-spotlight-title">Daily Spotlight</h2>
+            <p>Four trusted picks with a fresh angle each day.</p>
+          </div>
+        </header>
+        <div class="discover-spotlight__grid">
+          <article class="discover-spotlight__lead" data-movie-card data-movie-id="{{ spotlight_lead.id }}">
+            <a class="discover-spotlight__poster" href="/ui/movies/{{ spotlight_lead.id }}?spotlight=1" data-movie-detail-link data-movie-id="{{ spotlight_lead.id }}" data-event-context="daily_spotlight">
+              {% if spotlight_lead.poster_url %}
+              <img
+                src="{{ poster_image_url(spotlight_lead.poster_url, 'w500') }}"
+                alt="{{ spotlight_lead.title | display_title }} poster"
+                decoding="async"
+                fetchpriority="high"
+              />
               {% else %}
-              <div class="poster-banner__image poster-banner__image--empty {{ movie.poster_theme or 'poster-theme-default' }}" aria-hidden="true">966</div>
+              <div class="poster poster--empty {{ spotlight_lead.poster_theme or 'poster-theme-default' }}" aria-hidden="true">966</div>
               {% endif %}
-              <div class="poster-banner__meta" aria-hidden="true">
-                <span class="poster-banner__meta-title">{{ movie.title | display_title }}</span>
-                <span class="poster-banner__meta-subtitle">{{ movie.year or '' }}</span>
+            </a>
+            <div class="discover-spotlight__story">
+              <div>
+                <h3>{{ spotlight_lead.title | display_title }}</h3>
+                <p class="discover-spotlight__meta">
+                  <span>{{ spotlight_lead.year or '—' }}</span>
+                  {% if spotlight_lead.runtime %}<span>{{ spotlight_lead.runtime }} min</span>{% endif %}
+                  {% if spotlight_lead.genre_display %}
+                  <span>{{ spotlight_lead.genre_display[:2] | join(', ') }}</span>
+                  {% endif %}
+                </p>
+              </div>
+              {% if spotlight_lead.plot %}
+              <p class="discover-spotlight__plot">{{ spotlight_lead.plot }}</p>
+              {% endif %}
+              <div class="discover-why">
+                <span>Why this</span>
+                <strong>{{ spotlight_reasons.get(spotlight_lead.id, "Today’s spotlight pick.") }}</strong>
+              </div>
+              <div class="discover-spotlight__actions" aria-label="Preferences for {{ spotlight_lead.title | display_title }}">
+                <button
+                  type="button"
+                  class="discover-action{% if spotlight_lead.watchlist %} is-active{% endif %}"
+                  data-preference-button
+                  data-preference-type="watchlist"
+                  data-movie-id="{{ spotlight_lead.id }}"
+                  data-movie-title="{{ spotlight_lead.title | display_title }}"
+                  aria-label="{{ 'Remove' if spotlight_lead.watchlist else 'Add' }} {{ spotlight_lead.title | display_title }} {{ 'from' if spotlight_lead.watchlist else 'to' }} watchlist"
+                  aria-pressed="{{ 'true' if spotlight_lead.watchlist else 'false' }}"
+                >
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1z"></path></svg>
+                  <span>Watchlist</span>
+                </button>
+                <button
+                  type="button"
+                  class="discover-action{% if spotlight_lead.liked %} is-active{% endif %}"
+                  data-preference-button
+                  data-preference-type="like"
+                  data-movie-id="{{ spotlight_lead.id }}"
+                  data-movie-title="{{ spotlight_lead.title | display_title }}"
+                  aria-label="{{ 'Unlike' if spotlight_lead.liked else 'Like' }} {{ spotlight_lead.title | display_title }}"
+                  aria-pressed="{{ 'true' if spotlight_lead.liked else 'false' }}"
+                >
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8l1.1 1.1L12 21.2l7.8-7.7 1.1-1.1a5.5 5.5 0 0 0-.1-7.8z"></path></svg>
+                  <span>Like</span>
+                </button>
               </div>
             </div>
-          </a>
+          </article>
+
+          <div class="discover-spotlight__supporting" role="list">
+            {% for movie in spotlight_supporting %}
+            <article class="discover-spotlight-card" role="listitem">
+              <a href="/ui/movies/{{ movie.id }}?spotlight=1" data-movie-detail-link data-movie-id="{{ movie.id }}" data-event-context="daily_spotlight">
+                {% if movie.poster_url %}
+                <img
+                  src="{{ poster_image_url(movie.poster_url) }}"
+                  alt="{{ movie.title | display_title }} poster"
+                  loading="eager"
+                  decoding="async"
+                  fetchpriority="auto"
+                />
+                {% else %}
+                <div class="poster poster--empty {{ movie.poster_theme or 'poster-theme-default' }}" aria-hidden="true">966</div>
+                {% endif %}
+                <h3>{{ movie.title | display_title }}</h3>
+                <p>{{ movie.year or '—' }}{% if movie.runtime %} · {{ movie.runtime }} min{% endif %}</p>
+              </a>
+            </article>
+            {% endfor %}
+          </div>
         </div>
-        {% endfor %}
-      </div>
-    </div>
-  </section>
-  {% endif %}
+      </section>
+      {% endif %}
 
-  {% if pairings %}
-  <section class="discover-section page-shell" aria-label="Perfect pairing">
-    <header class="discover-section__header">
-      <h2>Perfect Pairing</h2>
-      <p>One complementary double built for variety and momentum.</p>
-    </header>
-    {% for pairing in pairings %}
-    <article class="discover-pairing">
-      <div class="discover-pairing__posters">
-        {% for movie in [pairing.primary, pairing.secondary] %}
-        <a href="/ui/movies/{{ movie.id }}" class="discover-pairing__poster-link" data-movie-detail-link data-movie-id="{{ movie.id }}" data-event-context="perfect_pairing">
-          {% if movie.poster_url %}
-          <img src="{{ movie.poster_url }}" alt="{{ movie.title | display_title }} poster" loading="lazy" />
-          {% else %}
-          <div class="poster poster--empty {{ movie.poster_theme or 'poster-theme-default' }}" aria-hidden="true">966</div>
-          {% endif %}
-        </a>
-        {% endfor %}
-      </div>
-      <div class="discover-pairing__meta">
-        <span class="chip chip-flic">Double Feature</span>
-        <h3>{{ pairing.primary.title | display_title }} + {{ pairing.secondary.title | display_title }}</h3>
-        <p>{{ pairing.theme_label or "Two picks that travel well together." }}</p>
-        <div class="discover-pairing__runtime">{{ pairing.total_runtime }} total</div>
-      </div>
-    </article>
-    {% endfor %}
-  </section>
-  {% endif %}
-
-  {% for rail in rails %}
-  <section class="discover-rail page-shell" aria-labelledby="rail-{{ rail.key }}">
-    <header class="discover-rail__header">
-      <div>
-        <h2 id="rail-{{ rail.key }}">{{ rail.title }}</h2>
-        <p>{{ rail.description }}</p>
-      </div>
-      <a href="{{ rail.href }}" data-discover-rail-link data-rail-key="{{ rail.key }}">See all</a>
-    </header>
-    <div class="discover-rail__track" role="list">
-      {% for movie in rail.movies %}
-      <article class="discover-rail-card" role="listitem" data-movie-card data-movie-id="{{ movie.id }}">
-        <a href="/ui/movies/{{ movie.id }}" data-movie-detail-link data-event-context="{{ rail.key }}">
-          <div class="discover-rail-card__poster">
-            {% if movie.poster_url %}
-            <img src="{{ movie.poster_url }}" alt="{{ movie.title | display_title }} poster" loading="lazy" />
+      <section
+        class="discover-rail discover-rail--personalized"
+        id="selected-for-you"
+        aria-labelledby="rail-selected-for-you"
+        {% if selected_for_you %}data-selected-for-you{% endif %}
+        data-discover-rail
+      >
+        <header class="discover-section-header">
+          <div>
+            <h2 id="rail-selected-for-you">Selected for You</h2>
+            {% if selected_for_you %}
+            <p>Based on movies you liked{% if selected_for_you_genres %} in {{ selected_for_you_genres | join(', ') }}{% endif %}.</p>
             {% else %}
-            <div class="poster poster--empty {{ movie.poster_theme or 'poster-theme-default' }}" aria-hidden="true">966</div>
+            <p>Like movies to shape this shelf around your taste.</p>
             {% endif %}
           </div>
-          <h3>{{ movie.title | display_title }}</h3>
-          <p>
-            <span>{{ movie.year or '—' }}</span>
-            {% if movie.runtime %}<span>{{ movie.runtime }} min</span>{% endif %}
-          </p>
-        </a>
-        <div class="discover-rail-card__actions">
-          <button
-            type="button"
-            class="preference-icon{% if movie.liked %} is-active{% endif %}"
-            data-preference-button
-            data-preference-type="like"
-            data-movie-id="{{ movie.id }}"
-            data-movie-title="{{ movie.title | display_title }}"
-            aria-label="{{ 'Unlike' if movie.liked else 'Like' }} {{ movie.title | display_title }}"
-            title="Like"
-            aria-pressed="{{ 'true' if movie.liked else 'false' }}"
-          >
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8l1.1 1.1L12 21.2l7.8-7.7 1.1-1.1a5.5 5.5 0 0 0-.1-7.8z"></path>
-            </svg>
-          </button>
-          <button
-            type="button"
-            class="preference-icon{% if movie.watchlist %} is-active{% endif %}"
-            data-preference-button
-            data-preference-type="watchlist"
-            data-movie-id="{{ movie.id }}"
-            data-movie-title="{{ movie.title | display_title }}"
-            aria-label="{{ 'Remove' if movie.watchlist else 'Add' }} {{ movie.title | display_title }} {{ 'from' if movie.watchlist else 'to' }} watchlist"
-            title="Watchlist"
-            aria-pressed="{{ 'true' if movie.watchlist else 'false' }}"
-          >
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1z"></path>
-            </svg>
-          </button>
+          {% if selected_for_you %}
+          <div class="discover-rail-controls" aria-label="Selected for You carousel controls">
+            <button type="button" data-rail-previous aria-label="Scroll Selected for You backward">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"></path></svg>
+            </button>
+            <button type="button" data-rail-next aria-label="Scroll Selected for You forward">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg>
+            </button>
+          </div>
+          {% endif %}
+        </header>
+        {% if selected_for_you %}
+        <div class="discover-rail__viewport" data-rail-viewport>
+          <div class="discover-rail__track" role="list">
+            {% for movie in selected_for_you %}
+            {% set genre_labels = movie.genre_display if movie.genre_display is defined else [] %}
+            {{ movie_card(movie, movie.liked, movie.watchlist, genre_labels, extra_class="discover-rail-card discover-rail-card--personalized", role="listitem", event_context="selected_for_you", reason_labels=[selected_for_you_reasons.get(movie.id)], image_loading="eager" if loop.index <= 4 else "lazy") }}
+            {% endfor %}
+          </div>
         </div>
-      </article>
-      {% else %}
-      <p class="discover-rail__empty">No trusted titles match this rail yet.</p>
-      {% endfor %}
+        <div class="discover-rail-progress" aria-hidden="true"><span data-rail-progress></span></div>
+        {% else %}
+        <div class="discover-personalization">
+          <div>
+            <h3>Make Discover yours</h3>
+            <p>Like a movie in the Library or on any movie card to unlock recommendations shaped around your taste.</p>
+          </div>
+          <a class="button-secondary" href="/ui/movies">Browse the Library</a>
+        </div>
+        {% endif %}
+      </section>
+
+      <div class="discover-topic-rails">
+        {% for rail in rails %}
+        <section class="discover-rail" id="rail-{{ rail.key }}" aria-labelledby="rail-title-{{ rail.key }}" data-discover-rail>
+          <header class="discover-section-header">
+            <div>
+              <h2 id="rail-title-{{ rail.key }}">{{ rail.title }}</h2>
+              <p>{{ rail.description }}</p>
+            </div>
+            <div class="discover-rail-header-actions">
+              <a href="{{ rail.href }}" data-discover-rail-link data-rail-key="{{ rail.key }}">See all</a>
+              <div class="discover-rail-controls" aria-label="{{ rail.title }} carousel controls">
+                <button type="button" data-rail-previous aria-label="Scroll {{ rail.title }} backward">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"></path></svg>
+                </button>
+                <button type="button" data-rail-next aria-label="Scroll {{ rail.title }} forward">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg>
+                </button>
+              </div>
+            </div>
+          </header>
+          <div class="discover-rail__viewport" data-rail-viewport>
+            <div class="discover-rail__track" role="list">
+              {% for movie in rail.movies %}
+              {% set genre_labels = movie.genre_display if movie.genre_display is defined else [] %}
+              {{ movie_card(movie, movie.liked, movie.watchlist, genre_labels, extra_class="discover-rail-card", role="listitem", event_context=rail.key) }}
+              {% else %}
+              <p class="discover-rail__empty">No trusted titles match this rail yet.</p>
+              {% endfor %}
+            </div>
+          </div>
+          <div class="discover-rail-progress" aria-hidden="true"><span data-rail-progress></span></div>
+        </section>
+        {% endfor %}
+      </div>
     </div>
-  </section>
-  {% endfor %}
+  </div>
 {% endblock %}
 
 {% block scripts %}
   {{ super() }}
-  <script src="{{ url_for('static', path='js/discover_page.js') }}" defer></script>
+  <script src="{{ static_asset('js/movie_preferences.js') }}" defer></script>
+  <script src="{{ static_asset('js/discover_page.js') }}" defer></script>
 {% endblock %}

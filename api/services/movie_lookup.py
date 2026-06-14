@@ -319,8 +319,22 @@ def _clean_title_aliases(title: str) -> str:
 
     cleaned = title.strip()
     cleaned = re.sub(r"\[[^\]]*\]", " ", cleaned)
-    cleaned = re.sub(r"\s{2,}", " ", cleaned)
     cleaned = cleaned.replace("&", "and")
+    suffix_pattern = re.compile(
+        r"(?:"
+        r"\s*[\[(](?:18|19|20)\d{2}[\])]"
+        r"|\s*\((?:unrated|uncut(?: version)?|newly remastered|"
+        r"extended(?: edition| cut)?|unrated extended edition|"
+        r"director'?s (?:cut|definitive cut)|new extended cut|"
+        r"special edition|theatrical cut|final cut|restored edition|"
+        r"the ultimate edition|the magnum edition)\)"
+        r")\s*$",
+        flags=re.I,
+    )
+    previous = None
+    while cleaned != previous:
+        previous = cleaned
+        cleaned = suffix_pattern.sub("", cleaned)
     cleaned = re.sub(
         r"\bpart\s+([ivx]+)\b",
         lambda m: f"part {ROMAN_NUMERALS.get(m.group(1).lower(), m.group(1))}",
@@ -466,6 +480,92 @@ def lookup_movie_candidates(title: str, year: int | None = None, limit: int = 5)
     if not results:
         raise MovieLookupNotFound("No TMDb results found")
 
+    return results
+
+
+def lookup_omdb_candidates(
+    title: str,
+    year: int | None = None,
+    limit: int = 10,
+) -> List[dict]:
+    api_key = settings.omdb_api_key
+    if not api_key:
+        raise MovieLookupUnavailable("OMDb API key not configured")
+
+    params: dict[str, str | int] = {
+        "apikey": api_key,
+        "s": _clean_title_aliases(title),
+        "type": "movie",
+        "page": 1,
+    }
+    if year is not None:
+        params["y"] = year
+    try:
+        response = httpx.get(
+            "https://www.omdbapi.com/",
+            params=params,
+            timeout=10.0,
+        )
+        response.raise_for_status()
+    except httpx.HTTPError as exc:
+        raise MovieLookupError(f"OMDb search failed: {exc}") from exc
+
+    payload = response.json()
+    if payload.get("Response") != "True":
+        raise MovieLookupNotFound("No OMDb results found")
+
+    results: List[dict] = []
+    for item in (payload.get("Search") or [])[: max(1, min(limit, 10))]:
+        imdb_id = str(item.get("imdbID") or "").strip()
+        if not imdb_id:
+            continue
+        detail = _omdb_details(api_key, imdb_id)
+        if not detail:
+            continue
+        matched_title = str(detail.get("Title") or item.get("Title") or "").strip()
+        matched_year = _parse_release_year(str(detail.get("Year") or item.get("Year") or ""))
+        runtime = None
+        runtime_value = detail.get("Runtime")
+        if runtime_value and runtime_value != "N/A":
+            try:
+                runtime = int(str(runtime_value).split()[0])
+            except (TypeError, ValueError):
+                runtime = None
+        poster = str(detail.get("Poster") or "").strip()
+        if poster == "N/A" or not poster.startswith("https://"):
+            poster = ""
+        candidate = {
+            "title": matched_title or title,
+            "year": matched_year,
+            "runtime": runtime,
+            "plot": detail.get("Plot"),
+            "imdb_id": imdb_id,
+            "poster_url": poster,
+            "genres": [
+                value.strip()
+                for value in str(detail.get("Genre") or "").split(",")
+                if value.strip() and value.strip() != "N/A"
+            ],
+            "certificate": detail.get("Rated"),
+            "source": "omdb",
+            "last_omdb_fetch_at": datetime.now(timezone.utc),
+            "omdb_payload_sha": _payload_sha(detail),
+            "imdb_rating": parse_imdb_rating(detail.get("imdbRating")),
+            "imdb_votes": parse_imdb_votes(detail.get("imdbVotes")),
+            "rt_score": extract_rotten_tomatoes_score(detail),
+        }
+        normalized = MovieMetadata.from_mapping(candidate).to_lookup_dict()
+        normalized["match_confidence"] = _compute_match_confidence(
+            title,
+            year,
+            matched_title,
+            matched_year,
+            "omdb_title",
+        )
+        results.append(normalized)
+
+    if not results:
+        raise MovieLookupNotFound("No OMDb results found")
     return results
 
 

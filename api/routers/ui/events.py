@@ -24,6 +24,7 @@ EventName = Literal[
     "view_changed",
     "movie_details_opened",
     "discover_rail_opened",
+    "personalized_recommendations_shown",
     "random_pick_requested",
     "preference_toggled",
 ]

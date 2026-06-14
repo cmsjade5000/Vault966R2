@@ -1,4 +1,4 @@
-from api.services.movie_lookup import iter_tmdb_search_variants
+from api.services.movie_lookup import _clean_title_aliases, iter_tmdb_search_variants
 
 
 def test_iter_tmdb_search_variants_includes_alias_cleanup_and_year_tolerance():
@@ -14,3 +14,12 @@ def test_iter_tmdb_search_variants_includes_alias_cleanup_and_year_tolerance():
     assert 2008 in years
     assert 2012 in years
     assert None in years
+
+
+def test_clean_title_aliases_removes_year_and_edition_suffixes():
+    assert _clean_title_aliases("Cinderella (2015)") == "Cinderella"
+    assert _clean_title_aliases("The Boss (Unrated)") == "The Boss"
+    assert (
+        _clean_title_aliases("The Last House (Unrated) [2009]")
+        == "The Last House"
+    )

@@ -6,12 +6,14 @@
     shell?.setAttribute("data-unlocked", "1");
     const archive = document.querySelector(".login-archive");
     archive?.classList.add("is-unlocked");
-    const tickerSpans = document.querySelectorAll(
-      ".login-ticker__track span",
-    );
+    const tickerSpans = document.querySelectorAll(".login-ticker__group span");
     tickerSpans.forEach((span) => {
       span.textContent = "Vault Unlocked";
     });
+    const buttonValue = document.querySelector(".login-button__value");
+    if (buttonValue) {
+      buttonValue.textContent = "Vault unlocked";
+    }
     document.dispatchEvent(new CustomEvent("vault:unlocked"));
   };
 

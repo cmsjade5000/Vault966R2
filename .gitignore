@@ -21,3 +21,4 @@ reports/*.jpeg
 legacy/data/
 legacy/reports/
 llm-council/
+.codex-log/

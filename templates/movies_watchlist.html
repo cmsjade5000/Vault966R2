@@ -1,98 +1,23 @@
 {% extends "base.html" %}
+{% from "partials/movies/card.html" import movie_card %}
 {% block title %}Vault 966 · Watchlist{% endblock %}
 {% block head %}
-<link rel="stylesheet" href="{{ url_for('static', path='css/movies.css') }}" />
+  <link rel="stylesheet" href="{{ static_asset('css/movies.css') }}" />
 {% endblock %}
 {% block body_class %}watchlist-page{% endblock %}
 {% block content %}
-  <section class="page-hero">
-    <div class="hero-header">
-      <div class="hero-title">
+  <section class="library-shell page-shell" aria-live="polite">
+    <header class="library-heading">
+      <div>
         <h1>Watchlist</h1>
-        <span class="chip chip-flic">Personal picks</span>
+        <p><strong>{{ total }}</strong> saved {{ "movie" if total == 1 else "movies" }}</p>
       </div>
-      <p class="tagline">Titles saved for a future watch.</p>
-    </div>
-    <div class="hero-health-links">
-      <a class="hero-health-link" href="/ui/movies">← Back to movies</a>
-    </div>
-  </section>
-
-  <main class="results-shell page-shell" aria-live="polite">
+    </header>
     {% if movies %}
-      <div class="grid" aria-label="Watchlist movies">
+      <div class="library-grid" aria-label="Watchlist movies">
         {% for movie in movies %}
-        <article
-          class="card"
-          data-movie-card
-          data-movie-id="{{ movie.id }}"
-          data-liked="{{ 'true' if movie.liked else 'false' }}"
-          data-watchlist="{{ 'true' if movie.watchlist else 'false' }}"
-        >
-          <a class="card-link" href="/ui/movies/{{ movie.id }}">
-            <div class="card-media">
-              {% if movie.poster_url %}
-              <img class="poster" src="{{ movie.poster_url }}" alt="{{ movie.title | display_title }} poster" loading="lazy" />
-              {% else %}
-              <div class="poster poster--empty {{ movie.poster_theme or 'poster-theme-default' }}" aria-hidden="true">🍿</div>
-              {% endif %}
-            </div>
-            <div class="card-body">
-              <div class="card-title-row">
-                <h2 class="card-title">{{ movie.title | display_title }}</h2>
-              </div>
-              {% set genre_labels = movie.genre_display if movie.genre_display is defined and movie.genre_display else [] %}
-              {% if not genre_labels and movie.genres %}
-                {% set genre_labels = [] %}
-                {% for genre in movie.genres %}
-                  {% set genre_label = genre.name if genre.__class__.__name__ == 'Genre' else genre %}
-                  {% if genre_label %}
-                    {% set genre_labels = genre_labels + [genre_label] %}
-                  {% endif %}
-                {% endfor %}
-              {% endif %}
-              <div class="card-statline" aria-label="Movie details">
-                <div class="card-statline__row">
-                  <span class="card-stat">{{ movie.year or '—' }}</span>
-                  <span class="card-stat">
-                    {% if movie.runtime %}{{ movie.runtime }} min{% else %}—{% endif %}
-                  </span>
-                </div>
-                <div class="card-statline__row card-statline__row--chips" aria-label="Genres">
-                  {% if genre_labels %}
-                    {% for label in genre_labels[:3] %}
-                    <span class="card-chip">{{ label }}</span>
-                    {% endfor %}
-                  {% else %}
-                    <span class="card-chip">—</span>
-                  {% endif %}
-                </div>
-              </div>
-            </div>
-          </a>
-          <div class="card-preferences" aria-label="Movie preferences">
-            <button
-              type="button"
-              class="preference-button{% if movie.liked %} is-active{% endif %}"
-              data-preference-button
-              data-preference-type="like"
-              data-movie-id="{{ movie.id }}"
-              aria-pressed="{{ 'true' if movie.liked else 'false' }}"
-            >
-              Like
-            </button>
-            <button
-              type="button"
-              class="preference-button{% if movie.watchlist %} is-active{% endif %}"
-              data-preference-button
-              data-preference-type="watchlist"
-              data-movie-id="{{ movie.id }}"
-              aria-pressed="{{ 'true' if movie.watchlist else 'false' }}"
-            >
-              Watchlist
-            </button>
-          </div>
-        </article>
+        {% set genre_labels = movie.genre_display if movie.genre_display is defined else [] %}
+        {{ movie_card(movie, movie.liked, movie.watchlist, genre_labels, event_context="watchlist_grid") }}
         {% endfor %}
       </div>
     {% else %}
@@ -103,11 +28,10 @@
         </div>
       </div>
     {% endif %}
-  </main>
+  </section>
 {% endblock %}
 
 {% block scripts %}
   {{ super() }}
-  <script type="application/json" id="movies-page-data">{{ {'pageContext': 'watchlist'} | tojson }}</script>
-  <script src="{{ url_for('static', path='js/movies_page.js') }}" defer></script>
+  <script src="{{ static_asset('js/movie_preferences.js') }}" defer></script>
 {% endblock %}

@@ -7,6 +7,9 @@
   --flic-muted: #94a3b8;
   --nav-height: 56px;
   --shell-max: clamp(320px, 92vw, 1080px);
+  --vault-wordmark-font:
+    "Avenir Next Condensed", "Arial Narrow", "Helvetica Neue", Arial,
+    sans-serif;
   --flic-projector-glow: radial-gradient(circle at 20% 25%, rgba(251, 191, 36, 0.55), transparent 55%),
     radial-gradient(circle at 80% 10%, rgba(248, 113, 113, 0.45), transparent 60%),
     linear-gradient(135deg, #1f2937 0%, #111827 55%, #0b0f19 100%);
@@ -70,7 +73,10 @@ input:focus-visible {
   padding: 0.85rem 1rem;
   border-radius: 1rem;
   border: 1px solid rgba(148, 163, 184, 0.25);
-  background: rgba(15, 23, 42, 0.85);
+  background: #0f172a;
+  background: rgba(15, 23, 42, 0.9);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
   box-shadow: 0 18px 32px rgba(15, 23, 42, 0.45);
   color: rgba(226, 232, 240, 0.95);
 }
@@ -94,8 +100,8 @@ input:focus-visible {
   border: 1px solid rgba(148, 163, 184, 0.3);
   background: rgba(15, 23, 42, 0.5);
   color: rgba(226, 232, 240, 0.9);
-  width: 2.2rem;
-  height: 2.2rem;
+  width: 2.75rem;
+  height: 2.75rem;
   border-radius: 999px;
   cursor: pointer;
   display: grid;
@@ -163,11 +169,13 @@ body.is-standalone .app-shell {
 }
 
 .site-nav {
+  background: #071020;
   background: rgba(7, 16, 32, 0.95);
   border-bottom: 1px solid rgba(30, 144, 255, 0.15);
   position: sticky;
   top: 0;
   z-index: 900;
+  -webkit-backdrop-filter: blur(14px);
   backdrop-filter: blur(14px);
   min-height: calc(var(--nav-height) + var(--safe-top));
   padding-top: var(--safe-top);
@@ -188,27 +196,31 @@ body.is-standalone .app-shell {
 
 .brand {
   display: flex;
-  flex-direction: column;
-  gap: 0.1rem;
-  font-weight: 700;
-  font-size: 1rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  align-items: center;
   color: #fff;
   text-decoration: none;
-  line-height: 1.1;
+  min-height: 44px;
 }
 
 .brand-mark {
-  font-size: 1rem;
-  letter-spacing: 0.12em;
+  font-family: var(--vault-wordmark-font);
+  font-size: 1.35rem;
+  font-stretch: condensed;
+  font-weight: 750;
+  letter-spacing: 0.13em;
+  line-height: 0.92;
+  text-transform: uppercase;
+  text-shadow:
+    0 6px 20px rgba(0, 0, 0, 0.5),
+    0 0 18px rgba(111, 211, 255, 0.08);
 }
 
-.brand-subtitle {
-  font-size: 0.6rem;
-  letter-spacing: 0.18em;
-  color: rgba(226, 232, 240, 0.7);
-  text-transform: uppercase;
+.poster--empty,
+.poster-banner__image--empty {
+  font-family: var(--vault-wordmark-font);
+  font-stretch: condensed;
+  font-weight: 750;
+  letter-spacing: 0.13em;
 }
 
 .nav-toggle {
@@ -327,8 +339,10 @@ body.is-standalone .app-shell {
     padding: 0.5rem max(1rem, var(--safe-left))
       calc(max(0.5rem, var(--safe-bottom) + 0.2rem))
       max(1rem, var(--safe-right));
+    background: #071020;
     background: rgba(7, 16, 32, 0.95);
     border-top: 1px solid rgba(30, 144, 255, 0.18);
+    -webkit-backdrop-filter: blur(12px);
     backdrop-filter: blur(12px);
     z-index: 920;
     justify-content: space-between;
@@ -425,6 +439,47 @@ body.is-standalone .app-shell {
   z-index: 1000;
 }
 
+.vault-busy {
+  align-items: center;
+  background: rgba(15, 45, 74, 0.96);
+  border: 1px solid rgba(96, 165, 250, 0.45);
+  border-radius: 999px;
+  bottom: calc(1.25rem + env(safe-area-inset-bottom));
+  box-shadow: 0 16px 40px rgba(2, 6, 23, 0.5);
+  color: #f8fafc;
+  display: flex;
+  font-size: 0.9rem;
+  font-weight: 700;
+  gap: 0.65rem;
+  left: 50%;
+  max-width: calc(100vw - 2rem);
+  padding: 0.7rem 1rem;
+  pointer-events: none;
+  position: fixed;
+  transform: translateX(-50%);
+  z-index: 1600;
+}
+
+.vault-busy[hidden] {
+  display: none;
+}
+
+.vault-busy__spinner {
+  animation: vault-busy-spin 800ms linear infinite;
+  border: 2px solid rgba(248, 250, 252, 0.35);
+  border-radius: 50%;
+  border-top-color: #f8fafc;
+  flex: 0 0 auto;
+  height: 1rem;
+  width: 1rem;
+}
+
+@keyframes vault-busy-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .toast {
   min-width: 220px;
   max-width: 320px;
@@ -445,6 +500,18 @@ body.is-standalone .app-shell {
   opacity: 0;
   transform: translateY(8px);
   transition: opacity 150ms ease, transform 150ms ease;
+}
+
+@media (max-width: 820px) {
+  .vault-busy {
+    bottom: calc(5.4rem + env(safe-area-inset-bottom));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vault-busy__spinner {
+    animation-duration: 1.6s;
+  }
 }
 
 .toast.show {
@@ -469,9 +536,6 @@ body.is-standalone .app-shell {
     justify-content: flex-start;
   }
 
-  .brand-subtitle {
-    font-size: 0.65rem;
-  }
 }
 
 @media (max-width: 820px) {

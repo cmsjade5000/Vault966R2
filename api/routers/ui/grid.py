@@ -1,22 +1,25 @@
 from __future__ import annotations
 
+from datetime import datetime, timezone
 from typing import Iterable, Optional, Tuple
 
-from fastapi import APIRouter, Depends, Query, Request
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import HTMLResponse
 from sqlalchemy import func, or_
 from sqlalchemy.orm import Session, selectinload
 
 from api.config import settings
 from api.db import get_db
-from api.deps.auth import require_profile_role
+from api.deps.auth import require_profile_role, require_same_origin
 from api.models.movie import Movie
+from api.models.movie_flag import MovieFlag
 from api.models.source_sync import SourceSnapshot
 from api.services.movies_curated import get_collection_health
 from api.services.source_sync import latest_active_snapshot, snapshot_summary
 from api.services.ui.grid import (
     FILTER_COOKIE_MAX_AGE,
     FILTER_COOKIE_NAME,
+    FILTER_COOKIE_PATH,
     attach_genre_display,
     attach_poster_themes,
     dump_filter_cookie,
@@ -71,6 +74,8 @@ LIBRARY_PRESETS = {
     "before-2000",
     "edition-cuts",
 }
+
+LIBRARY_PAGE_SIZE = 36
 
 
 def _apply_library_preset(query, preset: str | None):
@@ -266,7 +271,7 @@ def movies_grid(
     decade_options = get_decade_options(db)
     runtime_presets = get_runtime_presets()
 
-    page_size = 30
+    page_size = LIBRARY_PAGE_SIZE
     flic_filters_summary = None
     flic_filters_default = False
     flic_rank_offset = 0
@@ -365,7 +370,7 @@ def movies_grid(
     if movies:
         movie_ids = {movie.id for movie in movies if movie.id is not None}
         if movie_ids:
-            review_ids = get_untrusted_movie_ids(db)
+            review_ids = get_untrusted_movie_ids(db, movie_ids)
             preferences = get_preferences_for_movies(db, active_profile_id, movie_ids)
             for movie in movies:
                 setattr(movie, "flagged", movie.id in review_ids)
@@ -425,9 +430,35 @@ def movies_grid(
         dump_filter_cookie(cookie_payload),
         max_age=FILTER_COOKIE_MAX_AGE,
         samesite="lax",
-        path="/ui/movies",
+        path=FILTER_COOKIE_PATH,
     )
     return response
+
+
+@router.post("/ui/movies/{movie_id}/review-flag")
+def flag_movie_for_review(
+    movie_id: int,
+    db: Session = Depends(get_db),
+    _: str = Depends(require_profile_role(ROLE_ADMIN, ROLE_REVIEWER)),
+    __: None = Depends(require_same_origin),
+) -> dict[str, int | bool]:
+    movie = db.get(Movie, movie_id)
+    if movie is None:
+        raise HTTPException(status_code=404, detail="Movie not found")
+
+    flag = db.get(MovieFlag, movie_id)
+    if flag is None:
+        db.add(
+            MovieFlag(
+                movie_id=movie_id,
+                reason="Human review",
+                notes="Flagged for review",
+                updated_at=datetime.now(timezone.utc),
+            )
+        )
+        db.commit()
+
+    return {"movie_id": movie_id, "flagged": True}
 
 
 @router.get("/ui/movies/health", response_class=HTMLResponse)

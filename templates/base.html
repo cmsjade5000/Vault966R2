@@ -56,11 +56,18 @@
       href="{{ url_for('static', path='img/splash-2048x1536.png') }}"
       media="(device-width: 1024px) and (device-height: 768px) and (-webkit-device-pixel-ratio: 2)"
     />
-    <script src="{{ url_for('static', path='js/install_prompt.js') }}" defer></script>
-    <link rel="stylesheet" href="{{ url_for('static', path='css/base.css') }}" />
+    <script src="{{ static_asset('js/install_prompt.js') }}" defer></script>
+    <link rel="stylesheet" href="{{ static_asset('css/base.css') }}" />
+    <link rel="stylesheet" href="{{ static_asset('css/movie_components.css') }}" />
     {% block head %}{% endblock %}
   </head>
-  <body class="{% block body_class %}{% endblock %}">
+  <body
+    class="{% block body_class %}{% endblock %}"
+    {% if request.state.session_profile_id %}
+    data-vault-auto-lock
+    data-vault-auto-lock-ms="1200000"
+    {% endif %}
+  >
     <a href="#main" class="skip-link">Skip to main content</a>
     {% set current_path = request.url.path %}
     <div class="app-shell">
@@ -74,7 +81,6 @@
             aria-controls="primary-nav"
           >
             <span class="brand-mark">Vault 966</span>
-            <span class="brand-subtitle">Movie dispatch</span>
           </a>
           <nav class="primary-nav" id="primary-nav" data-nav-menu>
             <div class="nav-group" role="menubar">
@@ -104,12 +110,18 @@
                 class="nav-link{% if current_path == '/ui/movies/health' or current_path.startswith('/ui/source-sync/') %} is-active{% endif %}"
                 href="/ui/movies/health"
                 role="menuitem"
+                data-vault-busy-message="Checking Vault Health…"
                 {% if current_path == '/ui/movies/health' or current_path.startswith('/ui/source-sync/') %}aria-current="page"{% endif %}
                 >Vault Health</a
               >
               {% endif %}
               {% if request.state.session_profile_id %}
-              <form class="nav-logout" method="post" action="/logout">
+              <form
+                class="nav-logout"
+                method="post"
+                action="/logout"
+                data-vault-busy-message="Locking the Vault…"
+              >
                 <button class="nav-link nav-link--logout" type="submit">Log out</button>
               </form>
               {% endif %}
@@ -186,6 +198,7 @@
         <a
           class="bottom-nav__link{% if current_path == '/ui/movies/health' or current_path.startswith('/ui/source-sync/') %} is-active{% endif %}"
           href="/ui/movies/health"
+          data-vault-busy-message="Checking Vault Health…"
           {% if current_path == '/ui/movies/health' or current_path.startswith('/ui/source-sync/') %}aria-current="page"{% endif %}
         >
           <span class="bottom-nav__icon" aria-hidden="true">
@@ -209,9 +222,24 @@
         {% block content %}{% endblock %}
       </main>
     </div>
+    <div
+      class="vault-busy"
+      data-vault-busy
+      role="status"
+      aria-live="polite"
+      aria-atomic="true"
+      hidden
+    >
+      <span class="vault-busy__spinner" aria-hidden="true"></span>
+      <span data-vault-busy-message>Vault is thinking…</span>
+    </div>
     <div id="toast-container" aria-live="polite" aria-atomic="true"></div>
-    <script src="{{ url_for('static', path='js/base.js') }}" defer></script>
-    <script src="{{ url_for('static', path='js/back_link.js') }}" defer></script>
+    <script src="{{ static_asset('js/base.js') }}" defer></script>
+    <script src="{{ static_asset('js/dialog.js') }}" defer></script>
+    {% if request.state.session_profile_id %}
+    <script src="{{ static_asset('js/auto_lock.js') }}" defer></script>
+    {% endif %}
+    <script src="{{ static_asset('js/back_link.js') }}" defer></script>
     {% block scripts %}{% endblock %}
   </body>
 </html>

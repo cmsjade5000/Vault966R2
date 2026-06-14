@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from urllib.parse import quote
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import RedirectResponse
 from sqlalchemy import desc
 from sqlalchemy.orm import joinedload
@@ -10,15 +10,29 @@ from sqlalchemy.orm import Session
 
 from api.db import get_db
 from api.deps.auth import require_profile_role, require_same_origin
-from api.models.movie import Movie
+from api.models.movie import Movie, MovieIngestProvenance
 from api.models.movie_flag import MovieFlag
 from api.models.source_sync import SourceFieldDecision
+from api.schemas.movie import (
+    MovieLookupResponse,
+    MovieMatchApplyResponse,
+    MovieMatchSelection,
+    MovieUpdate,
+)
+from api.services.movie_lookup import (
+    MovieLookupError,
+    MovieLookupNotFound,
+    MovieLookupUnavailable,
+    lookup_movie_candidates,
+    lookup_omdb_candidates,
+)
 from api.services.movie_review import (
     detect_review_issues,
     get_review_queue,
     mark_all_review_items_needs_fix,
     record_review_decision,
 )
+from api.services.movie_updates import apply_movie_update
 from api.services.source_sync import (
     SourceSyncError,
     accept_all_source_differences,
@@ -390,6 +404,260 @@ def _load_movie(db: Session, movie_id: int) -> Movie:
     if movie is None:
         raise HTTPException(status_code=404, detail="Movie not found")
     return movie
+
+
+def _selected_external_candidate(
+    *,
+    title: str,
+    year: int | None,
+    source: str,
+    tmdb_id: int | None,
+    imdb_id: str | None,
+) -> dict:
+    try:
+        candidates = (
+            lookup_movie_candidates(title, year, limit=20)
+            if source == "tmdb"
+            else lookup_omdb_candidates(title, year, limit=10)
+        )
+    except MovieLookupUnavailable as exc:
+        raise HTTPException(status_code=503, detail="External lookup is not configured") from exc
+    except MovieLookupNotFound as exc:
+        raise HTTPException(status_code=404, detail="No provider matches found") from exc
+    except MovieLookupError as exc:
+        raise HTTPException(status_code=502, detail="External lookup failed") from exc
+
+    candidate = next(
+        (
+            item
+            for item in candidates
+            if item.get("source") == source
+            and (
+                item.get("tmdb_id") == tmdb_id
+                if source == "tmdb"
+                else item.get("imdb_id") == imdb_id
+            )
+        ),
+        None,
+    )
+    if candidate is None:
+        raise HTTPException(
+            status_code=400,
+            detail="Selected match is not in the current provider results",
+        )
+    return candidate
+
+
+def _ensure_external_ids_available(
+    db: Session,
+    *,
+    movie_id: int,
+    tmdb_id: int | None,
+    imdb_id: str | None,
+) -> None:
+    if tmdb_id is not None:
+        tmdb_owner = (
+            db.query(Movie)
+            .filter(Movie.tmdb_id == tmdb_id, Movie.id != movie_id)
+            .one_or_none()
+        )
+        if tmdb_owner is not None:
+            raise HTTPException(
+                status_code=409,
+                detail=(
+                    f"TMDB {tmdb_id} is already assigned to "
+                    f"{tmdb_owner.vault_id or tmdb_owner.title}"
+                ),
+            )
+    if not imdb_id:
+        return
+    imdb_owner = (
+        db.query(Movie)
+        .filter(Movie.imdb_id == imdb_id, Movie.id != movie_id)
+        .one_or_none()
+    )
+    if imdb_owner is not None:
+        raise HTTPException(
+            status_code=409,
+            detail=(
+                f"IMDb {imdb_id} is already assigned to "
+                f"{imdb_owner.vault_id or imdb_owner.title}"
+            ),
+        )
+
+
+def _record_manual_match_provenance(
+    db: Session,
+    *,
+    movie: Movie,
+    candidate: dict,
+) -> None:
+    providers = []
+    if candidate.get("tmdb_id"):
+        providers.append(
+            (
+                "tmdb",
+                str(candidate["tmdb_id"]),
+                candidate.get("tmdb_payload_sha"),
+                f"https://www.themoviedb.org/movie/{candidate['tmdb_id']}",
+            )
+        )
+    if candidate.get("imdb_id"):
+        providers.append(
+            (
+                "omdb",
+                str(candidate["imdb_id"]),
+                candidate.get("omdb_payload_sha"),
+                f"https://www.imdb.com/title/{candidate['imdb_id']}/",
+            )
+        )
+    for provider, provider_id, payload_sha, source_url in providers:
+        record = (
+            db.query(MovieIngestProvenance)
+            .filter(
+                MovieIngestProvenance.movie_id == movie.id,
+                MovieIngestProvenance.provider == provider,
+            )
+            .one_or_none()
+        )
+        if record is None:
+            record = MovieIngestProvenance(movie_id=movie.id, provider=provider)
+            db.add(record)
+        record.provider_id = provider_id
+        record.payload_sha = payload_sha
+        record.source_url = source_url
+        record.notes = "Manually selected from the Flags review workbench."
+
+
+@router.get(
+    "/ui/movies/health/review/{movie_id}/matches",
+    response_model=MovieLookupResponse,
+)
+def search_flagged_movie_matches(
+    movie_id: int,
+    title: str = Query(min_length=1, max_length=300),
+    year: int | None = Query(default=None, ge=1870, le=2100),
+    db: Session = Depends(get_db),
+    _: str = Depends(require_profile_role(ROLE_ADMIN, ROLE_REVIEWER)),
+) -> MovieLookupResponse:
+    movie = _load_movie(db, movie_id)
+    if movie.flag is None:
+        raise HTTPException(status_code=409, detail="Movie is not currently flagged")
+    candidates = []
+    provider_errors = 0
+    for lookup, limit in (
+        (lookup_movie_candidates, 10),
+        (lookup_omdb_candidates, 10),
+    ):
+        try:
+            candidates.extend(lookup(title.strip(), year, limit=limit))
+        except (MovieLookupUnavailable, MovieLookupNotFound):
+            continue
+        except MovieLookupError:
+            provider_errors += 1
+
+    deduped = []
+    seen = set()
+    for candidate in candidates:
+        key = (
+            candidate.get("imdb_id")
+            or (
+                f"tmdb:{candidate.get('tmdb_id')}"
+                if candidate.get("tmdb_id")
+                else None
+            )
+            or (
+                str(candidate.get("title") or "").casefold(),
+                candidate.get("year"),
+            )
+        )
+        if key in seen:
+            continue
+        seen.add(key)
+        deduped.append(candidate)
+    if deduped:
+        return MovieLookupResponse(items=deduped[:20])
+    if provider_errors:
+        raise HTTPException(status_code=502, detail="External lookup failed")
+    raise HTTPException(status_code=404, detail="No provider matches found")
+
+
+@router.post(
+    "/ui/movies/health/review/{movie_id}/matches/apply",
+    response_model=MovieMatchApplyResponse,
+)
+def apply_flagged_movie_match(
+    movie_id: int,
+    payload: MovieMatchSelection,
+    db: Session = Depends(get_db),
+    _: str = Depends(require_profile_role(ROLE_ADMIN, ROLE_REVIEWER)),
+    __: None = Depends(require_same_origin),
+) -> MovieMatchApplyResponse:
+    movie = _load_movie(db, movie_id)
+    if movie.flag is None:
+        raise HTTPException(status_code=409, detail="Movie is not currently flagged")
+
+    candidate = _selected_external_candidate(
+        title=payload.title.strip(),
+        year=payload.year,
+        source=payload.source,
+        tmdb_id=payload.tmdb_id,
+        imdb_id=payload.imdb_id,
+    )
+    imdb_id = candidate.get("imdb_id") or payload.imdb_id
+    tmdb_id = candidate.get("tmdb_id") or payload.tmdb_id
+    _ensure_external_ids_available(
+        db,
+        movie_id=movie.id,
+        tmdb_id=tmdb_id,
+        imdb_id=imdb_id,
+    )
+
+    update_values = {
+        "year": candidate.get("year"),
+        "runtime": candidate.get("runtime"),
+        "plot": candidate.get("synopsis") or candidate.get("overview"),
+        "certificate": candidate.get("certificate"),
+        "keywords": candidate.get("keywords"),
+        "imdb_id": imdb_id,
+        "tmdb_id": tmdb_id,
+        "imdb_rating": candidate.get("imdb_rating"),
+        "imdb_votes": candidate.get("imdb_votes"),
+        "metascore": candidate.get("metascore"),
+        "tomato_meter": candidate.get("tomato_meter"),
+        "tomato_audience": candidate.get("tomato_audience"),
+        "rt_score": candidate.get("rt_score"),
+        "poster_url": candidate.get("poster_url"),
+        "backdrop_url": candidate.get("backdrop_url"),
+        "where_to_watch": candidate.get("where_to_watch"),
+        "last_tmdb_fetch_at": candidate.get("last_tmdb_fetch_at"),
+        "last_omdb_fetch_at": candidate.get("last_omdb_fetch_at"),
+        "tmdb_payload_sha": candidate.get("tmdb_payload_sha"),
+        "omdb_payload_sha": candidate.get("omdb_payload_sha"),
+        "genres": candidate.get("genres"),
+        "resolve_flag": True,
+    }
+    update_payload = MovieUpdate(
+        **{
+            key: value
+            for key, value in update_values.items()
+            if value not in (None, "", [])
+        }
+    )
+    apply_movie_update(db, movie, update_payload)
+    _record_manual_match_provenance(db, movie=movie, candidate=candidate)
+    db.add(movie)
+    db.commit()
+
+    return MovieMatchApplyResponse(
+        movie_id=movie.id,
+        vault_id=movie.vault_id,
+        title=movie.title,
+        imdb_id=movie.imdb_id,
+        tmdb_id=movie.tmdb_id,
+        flag_resolved=movie.flag is None,
+        message=f"{movie.vault_id or movie.title} matched and removed from Flags.",
+    )
 
 
 @router.post("/ui/movies/health/review/{movie_id}/checked")

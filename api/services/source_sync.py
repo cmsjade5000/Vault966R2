@@ -699,17 +699,22 @@ def _values_differ(field_name: str, source_value: object, vault_value: object) -
 
 
 def source_row_conflicts(
-    db: Session, row: SourceMovieRow, movie: Movie
+    db: Session,
+    row: SourceMovieRow,
+    movie: Movie,
+    *,
+    decisions: dict[str, SourceFieldDecision] | None = None,
 ) -> tuple[SourceFieldConflict, ...]:
-    decisions: dict[str, SourceFieldDecision] = {}
-    for decision in (
-        db.query(SourceFieldDecision)
-        .filter(SourceFieldDecision.source_row_id == row.id)
-        .filter(SourceFieldDecision.undone_at.is_(None))
-        .order_by(SourceFieldDecision.decided_at.desc(), SourceFieldDecision.id.desc())
-        .all()
-    ):
-        decisions.setdefault(decision.field_name, decision)
+    if decisions is None:
+        decisions = {}
+        for decision in (
+            db.query(SourceFieldDecision)
+            .filter(SourceFieldDecision.source_row_id == row.id)
+            .filter(SourceFieldDecision.undone_at.is_(None))
+            .order_by(SourceFieldDecision.decided_at.desc(), SourceFieldDecision.id.desc())
+            .all()
+        ):
+            decisions.setdefault(decision.field_name, decision)
     labels = {
         "title": "Title",
         "year": "Year",
@@ -756,6 +761,22 @@ def get_source_review_queue(
         .order_by(SourceMovieRow.row_number.asc())
         .all()
     )
+    row_ids = [row.id for row in rows]
+    decisions_by_row: dict[int, dict[str, SourceFieldDecision]] = defaultdict(dict)
+    if row_ids:
+        active_decisions = (
+            db.query(SourceFieldDecision)
+            .filter(SourceFieldDecision.source_row_id.in_(row_ids))
+            .filter(SourceFieldDecision.undone_at.is_(None))
+            .order_by(
+                SourceFieldDecision.source_row_id.asc(),
+                SourceFieldDecision.decided_at.desc(),
+                SourceFieldDecision.id.desc(),
+            )
+            .all()
+        )
+        for decision in active_decisions:
+            decisions_by_row[decision.source_row_id].setdefault(decision.field_name, decision)
     movie_by_id = {
         movie.id: movie
         for movie in db.query(Movie)
@@ -788,7 +809,12 @@ def get_source_review_queue(
             for candidate in candidate_movies
         }
         if match.match_type in {"exact", "likely", "manual"} and match.movie is not None:
-            conflicts = source_row_conflicts(db, row, match.movie)
+            conflicts = source_row_conflicts(
+                db,
+                row,
+                match.movie,
+                decisions=decisions_by_row.get(row.id, {}),
+            )
             if conflicts:
                 items.append(
                     SourceReviewItem(
@@ -1026,18 +1052,14 @@ def _bulk_source_fields(
             "title": normalize_title(row.title),
             "year": row.year,
             "runtime": row.runtime,
-            "director": tuple(
-                sorted(name.casefold() for name in parse_directors(row.director))
-            ),
+            "director": tuple(sorted(name.casefold() for name in parse_directors(row.director))),
         }
         for field_name, value in values.items():
             if value not in {None, "", ()}:
                 source_values[(match.movie_id, field_name)].add(value)
 
     open_fields = [
-        field
-        for field in candidate_fields
-        if len(source_values[(field[1], field[2])]) <= 1
+        field for field in candidate_fields if len(source_values[(field[1], field[2])]) <= 1
     ]
     return open_fields, len(candidate_fields) - len(open_fields)
 

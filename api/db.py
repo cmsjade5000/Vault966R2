@@ -2,8 +2,9 @@ from collections.abc import Generator
 
 import logging
 import os
+import sqlite3
 
-from sqlalchemy import create_engine, text
+from sqlalchemy import create_engine, event, text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
 
@@ -12,10 +13,17 @@ from api.config import settings
 DEFAULT_SQLITE = "sqlite:///./vault.db"
 DB_URL = settings.database_url or DEFAULT_SQLITE
 
-# Check if SQLite; need check_same_thread False for SQLite
-connect_args = {"check_same_thread": False} if DB_URL.startswith("sqlite") else {}
+# SQLite serves the local always-on deployment, where concurrent browser requests can
+# otherwise fail immediately while a write is in progress.
+connect_args = {"check_same_thread": False, "timeout": 15.0} if DB_URL.startswith("sqlite") else {}
 
-engine = create_engine(DB_URL, echo=False, future=True, connect_args=connect_args)
+engine = create_engine(
+    DB_URL,
+    echo=False,
+    future=True,
+    connect_args=connect_args,
+    pool_pre_ping=True,
+)
 SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False, future=True)
 
 
@@ -24,6 +32,24 @@ logger = logging.getLogger(__name__)
 
 class Base(DeclarativeBase):
     pass
+
+
+def _configure_sqlite_connection(
+    dbapi_connection: sqlite3.Connection, _connection_record: object
+) -> None:
+    """Apply reliability and concurrency settings to every SQLite connection."""
+    cursor = dbapi_connection.cursor()
+    try:
+        cursor.execute("PRAGMA foreign_keys=ON")
+        cursor.execute("PRAGMA busy_timeout=15000")
+        cursor.execute("PRAGMA journal_mode=WAL")
+        cursor.execute("PRAGMA synchronous=NORMAL")
+    finally:
+        cursor.close()
+
+
+if DB_URL.startswith("sqlite"):
+    event.listen(engine, "connect", _configure_sqlite_connection)
 
 
 def should_bootstrap_sqlite_schema() -> bool:

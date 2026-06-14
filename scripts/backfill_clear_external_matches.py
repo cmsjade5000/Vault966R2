@@ -37,6 +37,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--limit", type=int, default=0)
     parser.add_argument(
+        "--flags-only",
+        action="store_true",
+        help="Process only movies currently in the manual flag queue.",
+    )
+    parser.add_argument(
         "--report",
         default=str(ROOT_DIR / "reports" / "clear_external_matches.csv"),
     )
@@ -89,7 +94,7 @@ def unique_exact_tmdb_match(
         f"{TMDB_API_BASE}/search/movie",
         params={
             "api_key": api_key,
-            "query": title,
+            "query": normalize_title(title),
             "year": year,
             "include_adult": "false",
         },
@@ -126,7 +131,12 @@ def omdb_by_title(
 ) -> dict[str, Any] | None:
     response = client.get(
         OMDB_API_BASE,
-        params={"apikey": api_key, "t": title, "y": year, "type": "movie"},
+        params={
+            "apikey": api_key,
+            "t": normalize_title(title),
+            "y": year,
+            "type": "movie",
+        },
         timeout=12.0,
     )
     response.raise_for_status()
@@ -175,10 +185,13 @@ def _clear_missing_id_flag(session, movie: Movie) -> None:
     flag = movie.flag
     if flag is None or flag.reason != "Human review":
         return
+    resolved_notes = {"No source IDs"}
+    if movie.year is not None:
+        resolved_notes.add("Year is missing")
     remaining = [
         note.strip()
         for note in (flag.notes or "").split(";")
-        if note.strip() and note.strip() != "No source IDs"
+        if note.strip() and note.strip() not in resolved_notes
     ]
     if remaining:
         flag.notes = "; ".join(remaining)
@@ -230,6 +243,8 @@ def main() -> int:
         for movie in movies:
             if args.limit and len(report_rows) >= args.limit:
                 break
+            if args.flags_only and movie.flag is None:
+                continue
             if movie.year is None or movie.id in source_review_ids:
                 continue
             if movie.flag is not None and movie.flag.reason != "Human review":

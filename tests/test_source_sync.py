@@ -5,6 +5,7 @@ from urllib.parse import parse_qs, urlparse
 import pytest
 from fastapi import HTTPException, Request
 from fastapi.testclient import TestClient
+from sqlalchemy import event
 
 from api.config import settings
 from api.deps.auth import require_same_origin
@@ -16,7 +17,12 @@ from api.models.source_sync import (
     SourceReconciliationMatch,
     SourceSnapshot,
 )
-from api.services.source_sync import build_research_links, clean_research_title, parse_directors
+from api.services.source_sync import (
+    build_research_links,
+    clean_research_title,
+    get_source_review_queue,
+    parse_directors,
+)
 
 
 def _csv(*rows: str) -> bytes:
@@ -79,16 +85,17 @@ def test_source_sync_status_and_history_live_on_collection_health(client: TestCl
     health = client.get("/ui/movies/health")
 
     assert source_sync.status_code == 302
-    assert source_sync.headers["location"] == (
-        "/ui/movies/health#source-synchronization"
-    )
+    assert source_sync.headers["location"] == ("/ui/movies/health#source-synchronization")
     assert "Upload collection CSV" in health.text
     assert "Latest confirmed snapshot" in health.text
     assert "Snapshot history" in health.text
     assert "Auto-matched" in health.text
     assert "Manually matched" in health.text
     assert '<details class="page-shell source-health" id="source-synchronization">' in health.text
-    assert '<details class="page-shell source-health" id="source-synchronization" open>' not in health.text
+    assert (
+        '<details class="page-shell source-health" id="source-synchronization" open>'
+        not in health.text
+    )
 
 
 def test_source_upload_errors_return_to_collection_health(client: TestClient) -> None:
@@ -195,14 +202,43 @@ def test_review_queue_can_select_and_navigate_source_rows(client: TestClient, db
         .all()
     )
 
-    response = client.get(
-        f"/ui/movies/health?view=differences&row={matches[1].source_row_id}"
-    )
+    response = client.get(f"/ui/movies/health?view=differences&row={matches[1].source_row_id}")
 
     assert response.status_code == 200
     assert "2 of 2 in Differences" in response.text
     assert "The Matrix" in response.text
     assert f"row={matches[0].source_row_id}" in response.text
+
+
+def test_source_review_queue_batches_field_decision_queries(client: TestClient, db_session) -> None:
+    _upload_and_confirm(
+        client,
+        _csv(
+            "Blade Runner,1:57:00,,1983,Sci-Fi,PG,6/25/82,1",
+            "The Matrix,2:16:00,,2000,Action,R,3/31/99,1",
+        ),
+    )
+    decision_queries = 0
+
+    def count_decision_queries(
+        _connection, _cursor, statement, _parameters, _context, _executemany
+    ) -> None:
+        nonlocal decision_queries
+        if (
+            statement.lstrip().lower().startswith("select")
+            and "source_field_decisions" in statement.lower()
+        ):
+            decision_queries += 1
+
+    engine = db_session.get_bind()
+    event.listen(engine, "before_cursor_execute", count_decision_queries)
+    try:
+        queue = get_source_review_queue(db_session)
+    finally:
+        event.remove(engine, "before_cursor_execute", count_decision_queries)
+
+    assert len(queue) == 2
+    assert decision_queries == 1
 
 
 def test_ambiguous_row_can_create_new_vault_entry(client: TestClient, db_session) -> None:
@@ -279,9 +315,7 @@ def test_field_decisions_preserve_full_history(client: TestClient, db_session) -
     client.post(
         f"/ui/movies/health/review/source-row/{match.source_row_id}/field/year/needs_research"
     )
-    client.post(
-        f"/ui/movies/health/review/source-row/{match.source_row_id}/field/year/keep_vault"
-    )
+    client.post(f"/ui/movies/health/review/source-row/{match.source_row_id}/field/year/keep_vault")
 
     decisions = (
         db_session.query(SourceFieldDecision)
@@ -327,9 +361,10 @@ def test_bulk_accept_uses_source_for_all_matched_differences(
     )
 
     assert response.status_code == 303
-    assert "Applied%204%20source%20values%20across%202%20Vault%20entries" in response.headers[
-        "location"
-    ]
+    assert (
+        "Applied%204%20source%20values%20across%202%20Vault%20entries"
+        in response.headers["location"]
+    )
     db_session.expire_all()
     blade = db_session.query(Movie).filter(Movie.title == "Blade Runner").one()
     matrix = db_session.query(Movie).filter(Movie.title == "The Matrix").one()
@@ -366,9 +401,7 @@ def test_bulk_accept_skips_conflicting_rows_for_the_same_movie_field(
 
     assert response.status_code == 303
     assert "Applied%201%20source%20values" in response.headers["location"]
-    assert "Left%201%20conflicting%20source%20value%20in%20review" in response.headers[
-        "location"
-    ]
+    assert "Left%201%20conflicting%20source%20value%20in%20review" in response.headers["location"]
     db_session.expire_all()
     assert db_session.get(Movie, 1).year == 1982
     decisions = (

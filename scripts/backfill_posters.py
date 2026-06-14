@@ -126,14 +126,21 @@ def parse_args() -> argparse.Namespace:
 def normalize_title(title: str) -> str:
     cleaned = title.strip().lower()
     cleaned = cleaned.replace("&", "and")
-    cleaned = re.sub(r"\s*\((?:18|19|20)\d{2}\)\s*$", "", cleaned)
-    cleaned = re.sub(
-        r"\s*\((?:unrated|extended(?: edition| cut)?|director'?s cut|"
-        r"special edition|theatrical cut|final cut|restored edition)\)\s*$",
-        "",
-        cleaned,
+    suffix_pattern = re.compile(
+        r"(?:"
+        r"\s*[\[(](?:18|19|20)\d{2}[\])]"
+        r"|\s*\((?:unrated|uncut(?: version)?|newly remastered|"
+        r"extended(?: edition| cut)?|unrated extended edition|"
+        r"director'?s (?:cut|definitive cut)|new extended cut|"
+        r"special edition|theatrical cut|final cut|restored edition|"
+        r"the ultimate edition|the magnum edition)\)"
+        r")\s*$",
         flags=re.I,
     )
+    previous = None
+    while cleaned != previous:
+        previous = cleaned
+        cleaned = suffix_pattern.sub("", cleaned)
     cleaned = re.sub(r"[^a-z0-9]+", " ", cleaned)
     return " ".join(cleaned.split())
 

@@ -1,4 +1,94 @@
 (function () {
+  const buildClearFilterUrl = (href, key) => {
+    const url = new URL(href);
+    if (key === "preset") {
+      url.searchParams.delete("preset");
+    }
+    url.searchParams.set("_filters", "1");
+    url.searchParams.set("page", "1");
+    return url.toString();
+  };
+
+  const buildClearAllFiltersUrl = (href) => {
+    const url = new URL(href);
+    [
+      "q",
+      "preset",
+      "genres",
+      "moods",
+      "year_min",
+      "year_max",
+      "runtime_min",
+      "runtime_max",
+      "semantic",
+      "page",
+    ].forEach((key) => url.searchParams.delete(key));
+    url.searchParams.set("_filters", "1");
+    url.searchParams.set("page", "1");
+    return url.toString();
+  };
+
+  const parseCsv = (value = "") =>
+    value
+      .split(",")
+      .map((item) => item.trim())
+      .filter(Boolean);
+
+  const formatPresetName = (value = "") =>
+    value
+      .split("-")
+      .filter(Boolean)
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ");
+
+  const buildPendingSummary = ({
+    genres = [],
+    presetName = "",
+    runtimeMax = "",
+    yearLabel = "",
+  } = {}) => {
+    const items = [];
+    if (presetName) {
+      items.push({ kind: "preset", label: `Fliclist: ${presetName}` });
+    }
+    genres.forEach((genre) => items.push({ kind: "genre", label: genre }));
+    if (yearLabel) items.push({ kind: "year", label: yearLabel });
+    if (runtimeMax) {
+      items.push({ kind: "runtime", label: `≤ ${runtimeMax} min` });
+    }
+    return items;
+  };
+
+  const formatApplyLabel = (count) => {
+    if (!count) return "Show results";
+    return `Show results · ${count} ${count === 1 ? "filter" : "filters"}`;
+  };
+
+  const emptyFilterState = () => ({
+    genres: [],
+    presetName: "",
+    runtimeMax: "",
+    yearMax: "",
+    yearMin: "",
+  });
+
+  const shouldShowCustomControl = ({
+    hasPresetMatch = false,
+    selected = false,
+    value = "",
+  } = {}) => selected || Boolean(value && !hasPresetMatch);
+
+  window.VaultLibrarySupport = {
+    buildClearAllFiltersUrl,
+    buildClearFilterUrl,
+    buildPendingSummary,
+    emptyFilterState,
+    formatApplyLabel,
+    formatPresetName,
+    parseCsv,
+    shouldShowCustomControl,
+  };
+
   document.addEventListener("DOMContentLoaded", () => {
     const form = document.getElementById("filters-form");
     const dialog = document.querySelector("[data-filters-dialog]");
@@ -7,12 +97,155 @@
     const yearMaxInput = document.getElementById("year-max-input");
     const runtimeInput = document.getElementById("runtime-max-input");
     const presetInput = document.getElementById("preset-input");
-    const selectedGenres = new Set(
-      (genresInput?.value || "")
-        .split(",")
-        .map((value) => value.trim())
-        .filter(Boolean),
+    const applyButton = document.querySelector("[data-filters-apply]");
+    const resetButton = document.querySelector("[data-filters-reset]");
+    const summary = document.querySelector("[data-filters-summary]");
+    const summaryEmpty = document.querySelector("[data-filters-summary-empty]");
+    const yearCustom = document.getElementById("year-custom");
+    const yearCustomMin = document.getElementById("year-custom-min");
+    const yearCustomMax = document.getElementById("year-custom-max");
+    const runtimeCustom = document.getElementById("runtime-custom");
+    const runtimeCustomInput = document.getElementById("runtime-custom-input");
+    const genreButtons = Array.from(
+      document.querySelectorAll(
+        '[data-filter-group="genres"] [data-filter-value]',
+      ),
     );
+    const yearButtons = Array.from(
+      document.querySelectorAll("[data-year-range]"),
+    );
+    const runtimeButtons = Array.from(
+      document.querySelectorAll("[data-runtime-max]"),
+    );
+    const presetButtons = Array.from(
+      document.querySelectorAll(".chip-preset[data-filters]"),
+    );
+    const selectedGenres = new Set(parseCsv(genresInput?.value || ""));
+    let pendingPresetName = formatPresetName(presetInput?.value || "");
+    let yearCustomSelected = false;
+    let runtimeCustomSelected = false;
+
+    const clearPendingPreset = () => {
+      pendingPresetName = "";
+      if (presetInput) presetInput.value = "";
+    };
+
+    const getMatchingYearButton = () => {
+      const minimum = yearMinInput?.value || "";
+      const maximum = yearMaxInput?.value || "";
+      return yearButtons.find((button) => {
+        const range = button.dataset.yearRange || "";
+        if (range === "custom") return false;
+        const [rangeMin = "", rangeMax = ""] = range.split("-");
+        return rangeMin === minimum && rangeMax === maximum;
+      });
+    };
+
+    const getMatchingRuntimeButton = () => {
+      const value = runtimeInput?.value || "";
+      return runtimeButtons.find((button) => {
+        const presetValue = button.dataset.runtimeMax || "";
+        return presetValue !== "custom" && presetValue === value;
+      });
+    };
+
+    const getYearLabel = () => {
+      const minimum = yearMinInput?.value || "";
+      const maximum = yearMaxInput?.value || "";
+      if (!minimum && !maximum) return "";
+      const match = getMatchingYearButton();
+      if (match?.dataset.yearLabel) return match.dataset.yearLabel;
+      return `${minimum || "Any"}–${maximum || "Now"}`;
+    };
+
+    const syncControls = () => {
+      genreButtons.forEach((button) => {
+        button.classList.toggle(
+          "is-active",
+          selectedGenres.has(button.dataset.filterValue),
+        );
+      });
+
+      const matchingYearButton = getMatchingYearButton();
+      const hasYear = Boolean(yearMinInput?.value || yearMaxInput?.value);
+      yearCustomSelected = shouldShowCustomControl({
+        hasPresetMatch: Boolean(matchingYearButton),
+        selected: yearCustomSelected,
+        value: hasYear,
+      });
+      yearButtons.forEach((button) => {
+        const isCustom = button.dataset.yearRange === "custom";
+        button.classList.toggle(
+          "is-active",
+          isCustom
+            ? yearCustomSelected
+            : !yearCustomSelected && button === matchingYearButton,
+        );
+      });
+      yearCustom?.toggleAttribute("hidden", !yearCustomSelected);
+      if (yearCustomSelected) {
+        if (yearCustomMin) yearCustomMin.value = yearMinInput?.value || "";
+        if (yearCustomMax) yearCustomMax.value = yearMaxInput?.value || "";
+      }
+
+      const matchingRuntimeButton = getMatchingRuntimeButton();
+      const hasRuntime = Boolean(runtimeInput?.value);
+      runtimeCustomSelected = shouldShowCustomControl({
+        hasPresetMatch: Boolean(matchingRuntimeButton),
+        selected: runtimeCustomSelected,
+        value: hasRuntime,
+      });
+      runtimeButtons.forEach((button) => {
+        const isCustom = button.dataset.runtimeMax === "custom";
+        button.classList.toggle(
+          "is-active",
+          isCustom
+            ? runtimeCustomSelected
+            : !runtimeCustomSelected && button === matchingRuntimeButton,
+        );
+      });
+      runtimeCustom?.toggleAttribute("hidden", !runtimeCustomSelected);
+      if (runtimeCustomSelected && runtimeCustomInput) {
+        runtimeCustomInput.value = runtimeInput?.value || "";
+      }
+
+      presetButtons.forEach((button) => {
+        button.classList.toggle(
+          "is-active",
+          button.dataset.presetName === pendingPresetName,
+        );
+      });
+    };
+
+    const renderSummary = () => {
+      const items = buildPendingSummary({
+        genres: Array.from(selectedGenres),
+        presetName: pendingPresetName,
+        runtimeMax: runtimeInput?.value || "",
+        yearLabel: getYearLabel(),
+      });
+      if (summary) {
+        summary.replaceChildren(
+          ...items.map((item) => {
+            const chip = document.createElement("span");
+            chip.className = `filters-pending__chip filters-pending__chip--${item.kind}`;
+            chip.textContent = item.label;
+            return chip;
+          }),
+        );
+      }
+      if (summaryEmpty) summaryEmpty.hidden = items.length > 0;
+      if (resetButton) {
+        resetButton.disabled =
+          items.length === 0 && !yearCustomSelected && !runtimeCustomSelected;
+      }
+      if (applyButton) applyButton.textContent = formatApplyLabel(items.length);
+    };
+
+    const syncFilterUi = () => {
+      syncControls();
+      renderSummary();
+    };
 
     const recordEvent = (eventName, options = {}) => {
       const payload = {
@@ -31,117 +264,150 @@
       }).catch(() => {});
     };
 
-    const openFilters = () => {
-      if (!dialog) return;
-      dialog.classList.add("is-open");
-      dialog.setAttribute("aria-hidden", "false");
-      document.body.classList.add("filters-open");
+    const dialogController = window.VaultDialog?.bind(dialog, {
+      bodyClass: "filters-open",
+      closeSelector: "[data-filters-close]",
+    });
+
+    const openFilters = (event) => {
+      if (!dialogController) return;
+      syncFilterUi();
+      dialogController.open(event?.currentTarget);
     };
 
     const closeFilters = () => {
-      if (!dialog) return;
-      dialog.classList.remove("is-open");
-      dialog.setAttribute("aria-hidden", "true");
-      document.body.classList.remove("filters-open");
+      dialogController?.close();
     };
 
     document
       .querySelector("[data-filters-open]")
       ?.addEventListener("click", openFilters);
-    document
-      .querySelector("[data-filters-close]")
-      ?.addEventListener("click", closeFilters);
-    dialog?.addEventListener("click", (event) => {
-      if (event.target === dialog) closeFilters();
-    });
-    document.addEventListener("keydown", (event) => {
-      if (event.key === "Escape") closeFilters();
-    });
 
-    document
-      .querySelectorAll('[data-filter-group="genres"] [data-filter-value]')
-      .forEach((button) => {
-        const value = button.dataset.filterValue;
-        button.classList.toggle("is-active", selectedGenres.has(value));
-        button.addEventListener("click", () => {
-          if (selectedGenres.has(value)) {
-            selectedGenres.delete(value);
-          } else {
-            selectedGenres.add(value);
-          }
-          genresInput.value = Array.from(selectedGenres).join(", ");
-          button.classList.toggle("is-active", selectedGenres.has(value));
-          if (presetInput) presetInput.value = "";
-        });
+    genreButtons.forEach((button) => {
+      const value = button.dataset.filterValue;
+      button.addEventListener("click", () => {
+        if (selectedGenres.has(value)) {
+          selectedGenres.delete(value);
+        } else {
+          selectedGenres.add(value);
+        }
+        genresInput.value = Array.from(selectedGenres).join(", ");
+        clearPendingPreset();
+        syncFilterUi();
       });
+    });
 
-    document.querySelectorAll("[data-year-range]").forEach((button) => {
+    yearButtons.forEach((button) => {
       button.addEventListener("click", () => {
         const range = button.dataset.yearRange || "";
         if (range === "custom") {
-          document.getElementById("year-custom")?.removeAttribute("hidden");
+          yearCustomSelected = true;
+          clearPendingPreset();
+          syncFilterUi();
+          yearCustomMin?.focus();
           return;
         }
         const [minimum = "", maximum = ""] = range.split("-");
         yearMinInput.value = minimum;
         yearMaxInput.value = maximum;
-        if (presetInput) presetInput.value = "";
+        yearCustomSelected = false;
+        clearPendingPreset();
+        syncFilterUi();
       });
     });
-    document
-      .getElementById("year-custom-min")
-      ?.addEventListener("input", (event) => {
-        yearMinInput.value = event.target.value;
-      });
-    document
-      .getElementById("year-custom-max")
-      ?.addEventListener("input", (event) => {
-        yearMaxInput.value = event.target.value;
-      });
+    yearCustomMin?.addEventListener("input", (event) => {
+      yearMinInput.value = event.target.value;
+      yearCustomSelected = true;
+      clearPendingPreset();
+      syncFilterUi();
+    });
+    yearCustomMax?.addEventListener("input", (event) => {
+      yearMaxInput.value = event.target.value;
+      yearCustomSelected = true;
+      clearPendingPreset();
+      syncFilterUi();
+    });
 
-    document.querySelectorAll("[data-runtime-max]").forEach((button) => {
+    runtimeButtons.forEach((button) => {
       button.addEventListener("click", () => {
         const value = button.dataset.runtimeMax || "";
         if (value === "custom") {
-          document.getElementById("runtime-custom")?.removeAttribute("hidden");
+          runtimeCustomSelected = true;
+          clearPendingPreset();
+          syncFilterUi();
+          runtimeCustomInput?.focus();
           return;
         }
         runtimeInput.value = value;
-        if (presetInput) presetInput.value = "";
+        runtimeCustomSelected = false;
+        clearPendingPreset();
+        syncFilterUi();
       });
     });
-    document
-      .getElementById("runtime-custom-input")
-      ?.addEventListener("input", (event) => {
-        runtimeInput.value = event.target.value;
-      });
+    runtimeCustomInput?.addEventListener("input", (event) => {
+      runtimeInput.value = event.target.value;
+      runtimeCustomSelected = true;
+      clearPendingPreset();
+      syncFilterUi();
+    });
 
-    document
-      .querySelectorAll(".chip-preset[data-filters]")
-      .forEach((button) => {
-        button.addEventListener("click", () => {
-          let filters = {};
-          try {
-            filters = JSON.parse(button.dataset.filters || "{}");
-          } catch {
-            return;
-          }
-          selectedGenres.clear();
-          (filters.genres || []).forEach((genre) => selectedGenres.add(genre));
-          genresInput.value = Array.from(selectedGenres).join(", ");
-          yearMinInput.value = filters.year_min || "";
-          yearMaxInput.value = filters.year_max || "";
-          runtimeInput.value = filters.runtime_max || "";
-          const orderSelect = document.getElementById("order-by");
-          if (orderSelect && filters.order_by)
-            orderSelect.value = filters.order_by;
-          form?.requestSubmit();
-        });
+    presetButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        let filters = {};
+        try {
+          filters = JSON.parse(button.dataset.filters || "{}");
+        } catch {
+          return;
+        }
+        selectedGenres.clear();
+        (filters.genres || []).forEach((genre) => selectedGenres.add(genre));
+        genresInput.value = Array.from(selectedGenres).join(", ");
+        yearMinInput.value = filters.year_min || "";
+        yearMaxInput.value = filters.year_max || "";
+        runtimeInput.value = filters.runtime_max || "";
+        if (presetInput) presetInput.value = "";
+        pendingPresetName = button.dataset.presetName || "";
+        yearCustomSelected = Boolean(
+          (yearMinInput.value || yearMaxInput.value) &&
+          !getMatchingYearButton(),
+        );
+        runtimeCustomSelected = Boolean(
+          runtimeInput.value && !getMatchingRuntimeButton(),
+        );
+        const orderSelect = document.getElementById("order-by");
+        if (orderSelect && filters.order_by)
+          orderSelect.value = filters.order_by;
+        syncFilterUi();
       });
+    });
+
+    resetButton?.addEventListener("click", () => {
+      selectedGenres.clear();
+      if (genresInput) genresInput.value = "";
+      if (yearMinInput) yearMinInput.value = "";
+      if (yearMaxInput) yearMaxInput.value = "";
+      if (runtimeInput) runtimeInput.value = "";
+      if (presetInput) presetInput.value = "";
+      if (yearCustomMin) yearCustomMin.value = "";
+      if (yearCustomMax) yearCustomMax.value = "";
+      if (runtimeCustomInput) runtimeCustomInput.value = "";
+      pendingPresetName = "";
+      yearCustomSelected = false;
+      runtimeCustomSelected = false;
+      syncFilterUi();
+    });
+
+    syncFilterUi();
 
     const clearFilter = (key, value) => {
       if (key === "q") document.getElementById("search-q").value = "";
-      if (key === "preset" && presetInput) presetInput.value = "";
+      if (key === "preset") {
+        if (presetInput) presetInput.value = "";
+        window.location.assign(
+          buildClearFilterUrl(window.location.href, "preset"),
+        );
+        return;
+      }
       if (key === "genre") {
         selectedGenres.delete(value);
         genresInput.value = Array.from(selectedGenres).join(", ");
@@ -161,7 +427,7 @@
     document
       .getElementById("clear-active-filters")
       ?.addEventListener("click", () => {
-        window.location.href = "/ui/movies";
+        window.location.assign(buildClearAllFiltersUrl(window.location.href));
       });
     document
       .querySelector("[data-clear-search]")
@@ -202,61 +468,27 @@
       });
     });
 
-    const updatePreferenceButtons = (movieId, payload) => {
-      document
-        .querySelectorAll(
-          `[data-preference-button][data-movie-id="${movieId}"]`,
-        )
-        .forEach((button) => {
-          const active =
-            button.dataset.preferenceType === "like"
-              ? payload.liked
-              : payload.watchlist;
-          button.classList.toggle("is-active", Boolean(active));
-          button.setAttribute("aria-pressed", active ? "true" : "false");
-          const title = button.dataset.movieTitle || "movie";
-          if (button.dataset.preferenceType === "like") {
-            button.setAttribute(
-              "aria-label",
-              `${active ? "Unlike" : "Like"} ${title}`,
-            );
-          } else {
-            button.setAttribute(
-              "aria-label",
-              `${active ? "Remove" : "Add"} ${title} ${
-                active ? "from" : "to"
-              } watchlist`,
-            );
-          }
-        });
-    };
-    document.addEventListener("click", async (event) => {
-      const button = event.target.closest("[data-preference-button]");
-      if (!button) return;
-      event.preventDefault();
-      const movieId = Number(button.dataset.movieId);
-      const type = button.dataset.preferenceType;
-      const method = button.classList.contains("is-active") ? "DELETE" : "POST";
-      button.disabled = true;
-      try {
-        const response = await fetch(`/movies/${movieId}/${type}`, {
-          method,
-          headers: { Accept: "application/json" },
-        });
-        if (!response.ok) return;
-        updatePreferenceButtons(movieId, await response.json());
-        recordEvent("preference_toggled", {
-          movie_id: movieId,
-          context: type,
-        });
-      } finally {
-        button.disabled = false;
-      }
+    document.addEventListener("vault:preference-updated", (event) => {
+      recordEvent("preference_toggled", {
+        movie_id: event.detail.movieId,
+        context: event.detail.type,
+      });
     });
 
-    document
-      .getElementById("pick-button")
-      ?.addEventListener("click", async () => {
+    const pickButton = document.getElementById("pick-button");
+    pickButton?.addEventListener("click", async () => {
+      if (pickButton.disabled) return;
+      const releaseBusy =
+        typeof window.setVaultBusy === "function"
+          ? window.setVaultBusy("Vault is choosing a movie…", { delay: 0 })
+          : () => {};
+      pickButton.disabled = true;
+      pickButton.classList.add("is-busy");
+      pickButton.setAttribute("aria-busy", "true");
+      pickButton.setAttribute("aria-label", "Choosing a random trusted movie");
+      const busyStartedAt = Date.now();
+      let navigating = false;
+      try {
         recordEvent("random_pick_requested", { context: "toolbar" });
         const params = new URLSearchParams();
         const firstGenre = selectedGenres.values().next().value;
@@ -265,9 +497,34 @@
         if (yearMaxInput?.value) params.set("year_max", yearMaxInput.value);
         if (runtimeInput?.value) params.set("runtime_max", runtimeInput.value);
         const response = await fetch(`/movies/picks?${params.toString()}`);
-        if (!response.ok) return;
+        if (response.status === 404) {
+          window.showToast?.("Nothing matched—try widening the filters.");
+          return;
+        }
+        if (!response.ok) {
+          window.showToast?.("The Vault couldn’t choose right now. Try again.");
+          return;
+        }
         const movie = await response.json();
+        const remainingBusyTime = 650 - (Date.now() - busyStartedAt);
+        if (remainingBusyTime > 0) {
+          await new Promise((resolve) =>
+            window.setTimeout(resolve, remainingBusyTime),
+          );
+        }
+        navigating = true;
         window.location.href = `/ui/movies/${movie.id}`;
-      });
+      } catch {
+        window.showToast?.("The Vault couldn’t connect. Try again.");
+      } finally {
+        if (!navigating) {
+          releaseBusy();
+          pickButton.disabled = false;
+          pickButton.classList.remove("is-busy");
+          pickButton.removeAttribute("aria-busy");
+          pickButton.setAttribute("aria-label", "Random trusted movie");
+        }
+      }
+    });
   });
 })();
