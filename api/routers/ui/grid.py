@@ -13,7 +13,7 @@ from api.deps.auth import require_profile_role, require_same_origin
 from api.models.movie import Movie
 from api.models.source_sync import SourceSnapshot
 from api.schemas.movie import MovieFlagCreate, MovieFlagRead
-from api.services.movie_flags import clear_movie_flag, set_movie_flag
+from api.services.movie_flags import clear_movie_flag, report_movie_flag, set_movie_flag
 from api.services.movies_curated import get_collection_health
 from api.services.source_sync import latest_active_snapshot, snapshot_summary
 from api.services.ui.grid import (
@@ -438,6 +438,7 @@ def movies_grid(
 @router.post("/ui/movies/{movie_id}/review-flag")
 def flag_movie_for_review(
     movie_id: int,
+    request: Request,
     db: Session = Depends(get_db),
     _: str = Depends(require_profile_role(ROLE_ADMIN, ROLE_REVIEWER)),
     __: None = Depends(require_same_origin),
@@ -446,14 +447,14 @@ def flag_movie_for_review(
     if movie is None:
         raise HTTPException(status_code=404, detail="Movie not found")
 
-    if movie.flag is None:
-        set_movie_flag(
-            db,
-            movie,
-            reason="Human review",
-            notes="Flagged for review",
-        )
-        db.commit()
+    report_movie_flag(
+        db,
+        movie,
+        reason="Human review",
+        notes="Flagged for review",
+        reported_by_profile_id=get_active_profile_id(request, db),
+    )
+    db.commit()
 
     return {"movie_id": movie_id, "flagged": True}
 
@@ -463,7 +464,7 @@ def manage_movie_flag(
     movie_id: int,
     payload: MovieFlagCreate,
     db: Session = Depends(get_db),
-    _: str = Depends(require_profile_role(ROLE_ADMIN, ROLE_REVIEWER)),
+    _: str = Depends(require_profile_role(ROLE_ADMIN)),
     __: None = Depends(require_same_origin),
 ) -> MovieFlagRead:
     movie = db.get(Movie, movie_id)
@@ -485,7 +486,7 @@ def manage_movie_flag(
 def resolve_movie_flag(
     movie_id: int,
     db: Session = Depends(get_db),
-    _: str = Depends(require_profile_role(ROLE_ADMIN, ROLE_REVIEWER)),
+    _: str = Depends(require_profile_role(ROLE_ADMIN)),
     __: None = Depends(require_same_origin),
 ) -> Response:
     clear_movie_flag(db, movie_id)
@@ -501,7 +502,7 @@ def movies_health(
     movie: int | None = Query(default=None, ge=1),
     undo_decision: int | None = Query(default=None, ge=1),
     db: Session = Depends(get_db),
-    _: str = Depends(require_profile_role(ROLE_ADMIN, ROLE_REVIEWER)),
+    _: str = Depends(require_profile_role(ROLE_ADMIN)),
 ):
     collection_health = get_collection_health(db)
     source_snapshots = (

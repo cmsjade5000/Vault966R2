@@ -5,7 +5,7 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session, selectinload
 
 from api.db import get_db
-from api.deps.auth import require_admin
+from api.deps.auth import require_admin, require_profile_role
 from api.models.flic_memory import FlicMemory
 from api.models.movie import Genre, Mood, Movie, movie_genres, movie_moods
 from api.models.movie_flag import MovieFlag
@@ -47,10 +47,15 @@ from api.services.llm_filters import (
     generate_llm_filters,
 )
 from api.services.movie_updates import apply_movie_update
-from api.services.movie_flags import clear_movie_flag, set_movie_flag
+from api.services.movie_flags import clear_movie_flag, report_movie_flag, set_movie_flag
 from api.services.double_feature import DEFAULT_DOUBLE_FEATURE_RUNTIME, pick_double_feature
 from api.services.flic_ordering import fetch_movies_in_rank_order, rank_movie_ids_by_flic
-from api.services.profiles import get_active_profile_id, update_movie_preference
+from api.services.profiles import (
+    ROLE_ADMIN,
+    ROLE_REVIEWER,
+    get_active_profile_id,
+    update_movie_preference,
+)
 from api.services.trusted_movies import trusted_movie_query
 from core.picker import (
     PickerCandidate,
@@ -443,6 +448,7 @@ def list_flags(
     page: int = Query(default=1, ge=1),
     page_size: int = Query(default=100, ge=1, le=500),
     db: Session = Depends(get_db),
+    _: None = Depends(require_admin),
 ) -> List[MovieFlagRead]:
     flags = (
         db.query(MovieFlag)
@@ -452,6 +458,30 @@ def list_flags(
         .all()
     )
     return flags
+
+
+@router.post("/{movie_id}/flag/report", response_model=MovieFlagRead)
+def report_flag(
+    movie_id: int,
+    payload: MovieFlagCreate,
+    request: Request,
+    db: Session = Depends(get_db),
+    _: str = Depends(require_profile_role(ROLE_ADMIN, ROLE_REVIEWER)),
+):
+    movie = db.get(Movie, movie_id)
+    if movie is None:
+        raise HTTPException(status_code=404, detail="Movie not found")
+
+    flag = report_movie_flag(
+        db,
+        movie,
+        reason=payload.reason,
+        notes=payload.notes or None,
+        reported_by_profile_id=get_active_profile_id(request, db),
+    )
+    db.commit()
+    db.refresh(flag)
+    return flag
 
 
 @router.patch("/{movie_id}", response_model=MovieRead)

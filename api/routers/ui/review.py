@@ -49,7 +49,6 @@ from api.services.source_sync import (
 )
 from api.services.profiles import (
     ROLE_ADMIN,
-    ROLE_REVIEWER,
     get_active_profile_role,
     get_active_profile_id,
     get_profiles,
@@ -205,7 +204,7 @@ def build_review_context(
 @router.get("/ui/review")
 def review_queue_ui(
     request: Request,
-    _: str = Depends(require_profile_role(ROLE_ADMIN, ROLE_REVIEWER)),
+    _: str = Depends(require_profile_role(ROLE_ADMIN)),
 ) -> RedirectResponse:
     query = f"?{request.url.query}" if request.url.query else ""
     return RedirectResponse(
@@ -239,7 +238,7 @@ def decide_source_review_field(
     request: Request,
     view: str = "differences",
     db: Session = Depends(get_db),
-    _: str = Depends(require_profile_role(ROLE_ADMIN, ROLE_REVIEWER)),
+    _: str = Depends(require_profile_role(ROLE_ADMIN)),
     __: None = Depends(require_same_origin),
 ) -> RedirectResponse:
     try:
@@ -298,7 +297,7 @@ def defer_source_review_movie(
     request: Request,
     view: str = "differences",
     db: Session = Depends(get_db),
-    _: str = Depends(require_profile_role(ROLE_ADMIN, ROLE_REVIEWER)),
+    _: str = Depends(require_profile_role(ROLE_ADMIN)),
     __: None = Depends(require_same_origin),
 ) -> RedirectResponse:
     try:
@@ -322,7 +321,7 @@ def undo_source_review_field(
     request: Request,
     view: str = "differences",
     db: Session = Depends(get_db),
-    _: str = Depends(require_profile_role(ROLE_ADMIN, ROLE_REVIEWER)),
+    _: str = Depends(require_profile_role(ROLE_ADMIN)),
     __: None = Depends(require_same_origin),
 ) -> RedirectResponse:
     try:
@@ -346,7 +345,7 @@ def confirm_source_row_match(
     request: Request,
     view: str = "ambiguous",
     db: Session = Depends(get_db),
-    _: str = Depends(require_profile_role(ROLE_ADMIN, ROLE_REVIEWER)),
+    _: str = Depends(require_profile_role(ROLE_ADMIN)),
     __: None = Depends(require_same_origin),
 ) -> RedirectResponse:
     try:
@@ -370,7 +369,7 @@ def create_source_row_movie(
     request: Request,
     view: str = "new",
     db: Session = Depends(get_db),
-    _: str = Depends(require_profile_role(ROLE_ADMIN, ROLE_REVIEWER)),
+    _: str = Depends(require_profile_role(ROLE_ADMIN)),
     __: None = Depends(require_same_origin),
 ) -> RedirectResponse:
     try:
@@ -389,7 +388,7 @@ def dismiss_source_duplicate(
     row_id: int,
     view: str = "duplicates",
     db: Session = Depends(get_db),
-    _: str = Depends(require_profile_role(ROLE_ADMIN, ROLE_REVIEWER)),
+    _: str = Depends(require_profile_role(ROLE_ADMIN)),
     __: None = Depends(require_same_origin),
 ) -> RedirectResponse:
     try:
@@ -538,7 +537,7 @@ def search_flagged_movie_matches(
     title: str = Query(min_length=1, max_length=300),
     year: int | None = Query(default=None, ge=1870, le=2100),
     db: Session = Depends(get_db),
-    _: str = Depends(require_profile_role(ROLE_ADMIN, ROLE_REVIEWER)),
+    _: str = Depends(require_profile_role(ROLE_ADMIN)),
 ) -> MovieLookupResponse:
     movie = _load_movie(db, movie_id)
     if movie.flag is None:
@@ -590,7 +589,7 @@ def apply_flagged_movie_match(
     movie_id: int,
     payload: MovieMatchSelection,
     db: Session = Depends(get_db),
-    _: str = Depends(require_profile_role(ROLE_ADMIN, ROLE_REVIEWER)),
+    _: str = Depends(require_profile_role(ROLE_ADMIN)),
     __: None = Depends(require_same_origin),
 ) -> MovieMatchApplyResponse:
     movie = _load_movie(db, movie_id)
@@ -666,7 +665,7 @@ def mark_review_checked(
     request: Request,
     view: str = "vault",
     db: Session = Depends(get_db),
-    _: str = Depends(require_profile_role(ROLE_ADMIN, ROLE_REVIEWER)),
+    _: str = Depends(require_profile_role(ROLE_ADMIN)),
     __: None = Depends(require_same_origin),
 ) -> RedirectResponse:
     movie = _load_movie(db, movie_id)
@@ -690,7 +689,7 @@ def mark_review_needs_fix(
     request: Request,
     view: str = "vault",
     db: Session = Depends(get_db),
-    _: str = Depends(require_profile_role(ROLE_ADMIN, ROLE_REVIEWER)),
+    _: str = Depends(require_profile_role(ROLE_ADMIN)),
     __: None = Depends(require_same_origin),
 ) -> RedirectResponse:
     movie = _load_movie(db, movie_id)

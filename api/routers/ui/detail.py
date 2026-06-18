@@ -8,8 +8,10 @@ from api.db import get_db
 from api.schemas.movie import FLAG_REASONS
 from api.services.movies_detail import get_movie_detail, get_review_neighbors
 from api.services.profiles import (
+    ROLE_ADMIN,
     ensure_profile_cookie,
     get_active_profile_id,
+    get_active_profile_role,
     get_preferences_for_movies,
     get_profiles,
 )
@@ -135,6 +137,7 @@ def movie_detail(
 
     profiles = get_profiles(db)
     active_profile_id = get_active_profile_id(request, db)
+    can_manage_flags = get_active_profile_role(request, db) == ROLE_ADMIN
     similar_ids = {item.id for item in (detail.similar or []) if item.id is not None}
     untrusted_ids = get_untrusted_movie_ids(db, similar_ids)
     similar_list = [item for item in (detail.similar or []) if item.id not in untrusted_ids]
@@ -165,6 +168,7 @@ def movie_detail(
             "review_next_id": review_next_id,
             "profiles": profiles,
             "active_profile_id": active_profile_id,
+            "can_manage_flags": can_manage_flags,
             "movie_liked": pref.get("liked", False),
             "movie_watchlist": pref.get("watchlist", False),
             "similar_preferences": similar_preferences,

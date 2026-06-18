@@ -98,7 +98,7 @@
                 {% if current_path == '/ui/watchlist' %}aria-current="page"{% endif %}
                 >Watchlist</a
               >
-              {% if request.state.session_profile_role in ['admin', 'reviewer'] %}
+              {% if request.state.session_profile_role == 'admin' %}
               <a
                 class="nav-link{% if current_path == '/ui/movies/health' or current_path.startswith('/ui/source-sync/') %} is-active{% endif %}"
                 href="/ui/movies/health"
@@ -169,7 +169,7 @@
           </span>
           <span class="bottom-nav__label">Watchlist</span>
         </a>
-        {% if request.state.session_profile_role in ['admin', 'reviewer'] %}
+        {% if request.state.session_profile_role == 'admin' %}
         <a
           class="bottom-nav__link{% if current_path == '/ui/movies/health' or current_path.startswith('/ui/source-sync/') %} is-active{% endif %}"
           href="/ui/movies/health"

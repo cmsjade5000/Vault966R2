@@ -286,6 +286,7 @@ class MovieFlagRead(BaseModel):
     movie_id: int
     reason: Optional[str] = None
     notes: Optional[str] = None
+    reported_by_profile_id: Optional[int] = None
     created_at: datetime
     updated_at: datetime
 

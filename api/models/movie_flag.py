@@ -21,6 +21,9 @@ class MovieFlag(Base):
     )
     reason: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    reported_by_profile_id: Mapped[Optional[int]] = mapped_column(
+        ForeignKey("profiles.id", ondelete="SET NULL"), nullable=True
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=_utcnow, nullable=False
     )
@@ -29,6 +32,7 @@ class MovieFlag(Base):
     )
 
     movie = relationship("Movie", back_populates="flag")
+    reported_by_profile = relationship("Profile")
 
 
 __all__ = ["MovieFlag"]

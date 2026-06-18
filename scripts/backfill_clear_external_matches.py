@@ -22,7 +22,6 @@ if str(ROOT_DIR) not in sys.path:
 from api.config import settings  # noqa: E402
 from api.db import SessionLocal  # noqa: E402
 from api.models.movie import Movie, MovieIngestProvenance  # noqa: E402
-from api.models.movie_flag import MovieFlag  # noqa: E402
 from api.services.source_sync import get_source_review_queue  # noqa: E402
 from scripts.backfill_posters import normalize_title  # noqa: E402
 

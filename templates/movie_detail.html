@@ -62,6 +62,7 @@
               {{ movie.flag_notes or "No notes were added." }}
             </span>
           </div>
+          {% if can_manage_flags %}
           <button
             type="button"
             class="flag-status__manage"
@@ -70,6 +71,7 @@
           >
             Manage flag
           </button>
+          {% endif %}
         </div>
         <div class="hero-tags">
           <button
@@ -348,6 +350,7 @@
     </section>
     {% endif %}
     <div class="detail-actions detail-actions--footer">
+      {% if can_manage_flags %}
       <button
         type="button"
         class="edit-toggle"
@@ -357,14 +360,15 @@
       >
         Edit
       </button>
+      {% endif %}
       <button
         type="button"
         class="flag-toggle"
         data-flag-button
         data-movie-id="{{ movie.id }}"
-        aria-label="{% if movie.flagged %}Manage review flag{% else %}Flag for review{% endif %}"
+        aria-label="{% if can_manage_flags %}{% if movie.flagged %}Manage review flag{% else %}Flag for review{% endif %}{% else %}Report issue{% endif %}"
       >
-        {% if movie.flagged %}Manage flag{% else %}Flag for review{% endif %}
+        {% if can_manage_flags %}{% if movie.flagged %}Manage flag{% else %}Flag for review{% endif %}{% else %}Report issue{% endif %}
       </button>
     </div>
     {% if review_mode %}
@@ -396,14 +400,18 @@
     aria-describedby="flag-dialog-description"
     aria-hidden="true"
   >
-    <form class="flag-dialog" data-flag-form>
+    <form
+      class="flag-dialog"
+      data-flag-form
+      data-flag-mode="{{ 'manage' if can_manage_flags else 'report' }}"
+    >
       <header class="flag-dialog__header">
         <div>
           <h2 id="flag-dialog-title">
-            {% if movie.flagged %}Manage review flag{% else %}Flag for review{% endif %}
+            {% if can_manage_flags %}{% if movie.flagged %}Manage review flag{% else %}Flag for review{% endif %}{% else %}Report issue{% endif %}
           </h2>
           <p id="flag-dialog-description">
-            Record what needs attention so it appears in the Flags queue.
+            {% if can_manage_flags %}Record what needs attention so it appears in the Flags queue.{% else %}Send this movie to the admin review queue with a short note.{% endif %}
           </p>
         </div>
         <button
@@ -437,6 +445,7 @@
       </label>
       <p class="flag-dialog__status" data-flag-dialog-status role="status" aria-live="polite"></p>
       <div class="flag-dialog__actions">
+        {% if can_manage_flags %}
         <button
           type="button"
           class="button-ghost flag-dialog__resolve"
@@ -445,14 +454,17 @@
         >
           Resolve flag
         </button>
+        {% endif %}
         <button type="button" class="button-ghost" data-flag-close>Cancel</button>
         <button type="submit" class="button-primary" data-flag-save>
-          Save changes
+          {% if can_manage_flags %}Save changes{% else %}Report issue{% endif %}
         </button>
       </div>
     </form>
   </dialog>
+  {% if can_manage_flags %}
   {% include "partials/movies/edit_dialog.html" %}
+  {% endif %}
   {% else %}
   <div class="container">
     <div class="not-found">
@@ -466,6 +478,8 @@
 {% block scripts %}
   {{ super() }}
   <script src="{{ static_asset('js/movie_preferences.js') }}" defer></script>
+  {% if can_manage_flags %}
   <script src="{{ static_asset('js/movie_detail_edit.js') }}" defer></script>
+  {% endif %}
   <script src="{{ static_asset('js/movie_detail.js') }}" defer></script>
 {% endblock %}

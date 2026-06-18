@@ -3,6 +3,7 @@ from typing import Optional
 
 from fastapi.testclient import TestClient
 
+from api.config import settings
 from api.db import get_db
 from api.models.movie import Movie
 from api.routers.ui.manual_add import ManualMovieCreate, ManualMovieMetadata
@@ -138,6 +139,22 @@ def test_manual_add_caches_poster_after_commit(
 
     assert response.status_code == 201
     assert cached_movie_ids == [response.json()["id"]]
+
+
+def test_reviewer_cannot_preview_or_submit_manual_add(
+    client: TestClient,
+    monkeypatch,
+) -> None:
+    monkeypatch.setattr(settings, "disable_auth", False)
+    monkeypatch.setattr(settings, "login_session_secret", None)
+    client.post("/login", data={"profile_id": "2"}, follow_redirects=False)
+
+    payload = {"title": "Reviewer Add Attempt", "year": 2026}
+    preview = client.post("/ui/movies/manual-add/preview", json=payload)
+    submit = client.post("/ui/movies/manual-add", json=payload)
+
+    assert preview.status_code == 403
+    assert submit.status_code == 403
 
 
 def test_manual_add_rejects_duplicate_imdb(client: TestClient, admin_headers: dict[str, str]):

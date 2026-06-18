@@ -74,6 +74,8 @@
     const flagResolve = document.querySelector("[data-flag-resolve]");
     const flagButtons = document.querySelectorAll("[data-flag-button]");
     const movieId = flagButtons[0]?.dataset.movieId;
+    const flagMode = flagForm?.dataset.flagMode || "manage";
+    const canManageFlags = flagMode === "manage";
     let resolveArmed = false;
 
     const flagDialogController = window.VaultDialog?.bind(flagDialog, {
@@ -105,21 +107,29 @@
         flagStatusNotes.textContent = notes || "No notes were added.";
       }
       if (flagDialogTitle) {
-        flagDialogTitle.textContent = flagged
-          ? "Manage review flag"
-          : "Flag for review";
+        flagDialogTitle.textContent = canManageFlags
+          ? flagged
+            ? "Manage review flag"
+            : "Flag for review"
+          : "Report issue";
       }
       if (flagResolve) flagResolve.hidden = !flagged;
       flagButtons.forEach((button) => {
         const inStatus = Boolean(button.closest("[data-flag-status]"));
-        button.textContent = flagged
-          ? "Manage flag"
-          : inStatus
+        button.textContent = canManageFlags
+          ? flagged
             ? "Manage flag"
-            : "Flag for review";
+            : inStatus
+              ? "Manage flag"
+              : "Flag for review"
+          : "Report issue";
         button.setAttribute(
           "aria-label",
-          flagged ? "Manage review flag" : "Flag for review",
+          canManageFlags
+            ? flagged
+              ? "Manage review flag"
+              : "Flag for review"
+            : "Report issue",
         );
       });
     };
@@ -137,23 +147,33 @@
       setFlagPending(true);
       if (flagDialogStatus) {
         flagDialogStatus.classList.remove("is-error");
-        flagDialogStatus.textContent = "Saving flag…";
+        flagDialogStatus.textContent = canManageFlags
+          ? "Saving flag…"
+          : "Sending report…";
       }
       try {
-        const response = await fetch(`/ui/movies/${movieId}/flag`, {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Accept: "application/json",
+        const response = await fetch(
+          canManageFlags
+            ? `/ui/movies/${movieId}/flag`
+            : `/movies/${movieId}/flag/report`,
+          {
+            method: canManageFlags ? "PUT" : "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Accept: "application/json",
+            },
+            body: JSON.stringify({
+              reason: flagReason.value,
+              notes: flagNotes?.value.trim() || null,
+            }),
           },
-          body: JSON.stringify({
-            reason: flagReason.value,
-            notes: flagNotes?.value.trim() || null,
-          }),
-        });
+        );
         if (!response.ok) {
           throw new Error(
-            (await parseErrorDetail(response)) || "Could not save that flag.",
+            (await parseErrorDetail(response)) ||
+              (canManageFlags
+                ? "Could not save that flag."
+                : "Could not send that report."),
           );
         }
         const savedFlag = await response.json();
@@ -163,11 +183,14 @@
           notes: savedFlag.notes,
         });
         flagDialogController?.close();
-        window.showToast?.("Flag saved.");
+        window.showToast?.(canManageFlags ? "Flag saved." : "Report sent.");
       } catch (error) {
         if (flagDialogStatus) {
           flagDialogStatus.textContent =
-            error?.message || "Could not save that flag.";
+            error?.message ||
+            (canManageFlags
+              ? "Could not save that flag."
+              : "Could not send that report.");
           flagDialogStatus.classList.add("is-error");
         }
       } finally {
