@@ -56,16 +56,16 @@ def test_movie_detail_provenance_is_a_collapsed_vault_history_section() -> None:
     template = (ROOT / "templates/movie_detail.html").read_text(encoding="utf-8")
 
     assert '<details class="section-card section-card--wide provenance-section">' in template
-    assert '<span>Vault History</span>' in template
+    assert "<span>Vault History</span>" in template
     assert "<h2>Vault provenance</h2>" not in template
-    assert '<details class="section-card section-card--wide provenance-section" open>' not in template
+    assert (
+        '<details class="section-card section-card--wide provenance-section" open>' not in template
+    )
 
 
 def test_ipad_filter_apply_button_does_not_use_cyclic_percentage_height() -> None:
     movies_css = (ROOT / "static/css/movies.css").read_text(encoding="utf-8")
-    ipad_rules = movies_css.split(
-        "@media (min-width: 761px) and (max-width: 1100px)", 1
-    )[1]
+    ipad_rules = movies_css.split("@media (min-width: 761px) and (max-width: 1100px)", 1)[1]
     apply_rule = ipad_rules.split(".library-page .filters-apply", 1)[1].split("}", 1)[0]
 
     assert "align-self: start" in apply_rule

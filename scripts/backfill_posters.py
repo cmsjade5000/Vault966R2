@@ -369,8 +369,7 @@ def main() -> int:
                 matched_year = movie.year
                 match_strategy = "tmdb_page_id"
                 title_matches = bool(
-                    matched_title
-                    and normalize_title(matched_title) == normalize_title(movie.title)
+                    matched_title and normalize_title(matched_title) == normalize_title(movie.title)
                 )
                 match_confidence = 1.0 if title_matches else 0.0
                 if title_matches:

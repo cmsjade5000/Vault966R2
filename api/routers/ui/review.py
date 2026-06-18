@@ -54,6 +54,7 @@ from api.services.profiles import (
     get_active_profile_id,
     get_profiles,
 )
+
 router = APIRouter(tags=["ui"])
 REVIEW_VIEWS = {
     "differences",
@@ -121,9 +122,9 @@ def build_review_context(
                 index
                 for index, item in enumerate(selected_queue)
                 if (
-                    item.movie.id if view == "vault" else
-                    item.movie_id if view == "flags" else
-                    item.source_row.id
+                    item.movie.id
+                    if view == "vault"
+                    else item.movie_id if view == "flags" else item.source_row.id
                 )
                 == requested_item_id
             ),
@@ -133,30 +134,21 @@ def build_review_context(
     item_param = "movie" if view in {"vault", "flags"} else "row"
     previous_item = selected_queue[selected_index - 1] if selected_index > 0 else None
     next_item = (
-        selected_queue[selected_index + 1]
-        if selected_index + 1 < len(selected_queue)
-        else None
+        selected_queue[selected_index + 1] if selected_index + 1 < len(selected_queue) else None
     )
 
     def item_url(item) -> str | None:
         if item is None:
             return None
         item_id = (
-            item.movie.id if view == "vault" else
-            item.movie_id if view == "flags" else
-            item.source_row.id
+            item.movie.id
+            if view == "vault"
+            else item.movie_id if view == "flags" else item.source_row.id
         )
-        return (
-            f"/ui/movies/health?view={quote(view)}&{item_param}={item_id}"
-            "#review-workbench"
-        )
+        return f"/ui/movies/health?view={quote(view)}&{item_param}={item_id}" "#review-workbench"
 
     next_nonempty_view = next(
-        (
-            (key, label)
-            for key, label in review_tabs
-            if key != view and review_counts[key]
-        ),
+        ((key, label) for key, label in review_tabs if key != view and review_counts[key]),
         None,
     )
     source_snapshot = latest_active_snapshot(db)
@@ -168,38 +160,34 @@ def build_review_context(
     if undo_record is not None and undo_record.undone_at is not None:
         undo_record = None
     return {
-            "queue": queue,
-            "flags": flags,
-            "source_queue": selected_queue if view not in {"vault", "flags"} else [],
-            "source_groups": source_groups,
-            "source_snapshot": source_snapshot,
-            "finding_count": finding_count,
-            "review_counts": review_counts,
-            "review_tabs": review_tabs,
-            "total_review_count": len(
-                {
-                    item.source_row.id
-                    for items in source_groups.values()
-                    for item in items
-                }
-            )
-            + len(queue)
-            + len(flags),
-            "review_view": view,
-            "review_view_label": review_view_label,
-            "review_item": review_item,
-            "review_position": selected_index + 1 if review_item else 0,
-            "review_queue_count": len(selected_queue),
-            "previous_item_url": item_url(previous_item),
-            "next_item_url": item_url(next_item),
-            "next_nonempty_view": next_nonempty_view,
-            "undo_record": undo_record,
-            "profiles": get_profiles(db),
-            "active_profile_id": get_active_profile_id(request, db),
-            "can_bulk_accept_source": get_active_profile_role(request, db) == ROLE_ADMIN,
-            "bulk_source_field_count": bulk_source_field_count,
-            "bulk_source_skipped_count": bulk_source_skipped_count,
-        }
+        "queue": queue,
+        "flags": flags,
+        "source_queue": selected_queue if view not in {"vault", "flags"} else [],
+        "source_groups": source_groups,
+        "source_snapshot": source_snapshot,
+        "finding_count": finding_count,
+        "review_counts": review_counts,
+        "review_tabs": review_tabs,
+        "total_review_count": len(
+            {item.source_row.id for items in source_groups.values() for item in items}
+        )
+        + len(queue)
+        + len(flags),
+        "review_view": view,
+        "review_view_label": review_view_label,
+        "review_item": review_item,
+        "review_position": selected_index + 1 if review_item else 0,
+        "review_queue_count": len(selected_queue),
+        "previous_item_url": item_url(previous_item),
+        "next_item_url": item_url(next_item),
+        "next_nonempty_view": next_nonempty_view,
+        "undo_record": undo_record,
+        "profiles": get_profiles(db),
+        "active_profile_id": get_active_profile_id(request, db),
+        "can_bulk_accept_source": get_active_profile_role(request, db) == ROLE_ADMIN,
+        "bulk_source_field_count": bulk_source_field_count,
+        "bulk_source_skipped_count": bulk_source_skipped_count,
+    }
 
 
 @router.get("/ui/review")
@@ -457,9 +445,7 @@ def _ensure_external_ids_available(
 ) -> None:
     if tmdb_id is not None:
         tmdb_owner = (
-            db.query(Movie)
-            .filter(Movie.tmdb_id == tmdb_id, Movie.id != movie_id)
-            .one_or_none()
+            db.query(Movie).filter(Movie.tmdb_id == tmdb_id, Movie.id != movie_id).one_or_none()
         )
         if tmdb_owner is not None:
             raise HTTPException(
@@ -472,9 +458,7 @@ def _ensure_external_ids_available(
     if not imdb_id:
         return
     imdb_owner = (
-        db.query(Movie)
-        .filter(Movie.imdb_id == imdb_id, Movie.id != movie_id)
-        .one_or_none()
+        db.query(Movie).filter(Movie.imdb_id == imdb_id, Movie.id != movie_id).one_or_none()
     )
     if imdb_owner is not None:
         raise HTTPException(
@@ -561,11 +545,7 @@ def search_flagged_movie_matches(
     for candidate in candidates:
         key = (
             candidate.get("imdb_id")
-            or (
-                f"tmdb:{candidate.get('tmdb_id')}"
-                if candidate.get("tmdb_id")
-                else None
-            )
+            or (f"tmdb:{candidate.get('tmdb_id')}" if candidate.get("tmdb_id") else None)
             or (
                 str(candidate.get("title") or "").casefold(),
                 candidate.get("year"),
@@ -638,11 +618,7 @@ def apply_flagged_movie_match(
         "resolve_flag": True,
     }
     update_payload = MovieUpdate(
-        **{
-            key: value
-            for key, value in update_values.items()
-            if value not in (None, "", [])
-        }
+        **{key: value for key, value in update_values.items() if value not in (None, "", [])}
     )
     apply_movie_update(db, movie, update_payload)
     _record_manual_match_provenance(db, movie=movie, candidate=candidate)

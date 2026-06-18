@@ -16,12 +16,7 @@ from api.models.movie import Movie
 logger = logging.getLogger("vault966")
 
 POSTER_CACHE_DIR = (
-    pathlib.Path.home()
-    / "Library"
-    / "Application Support"
-    / "Vault966"
-    / "cache"
-    / "posters"
+    pathlib.Path.home() / "Library" / "Application Support" / "Vault966" / "cache" / "posters"
 )
 ALLOWED_POSTER_SIZES = {"w185", "w342"}
 ALLOWED_IMAGE_TYPES = {

@@ -19,7 +19,4 @@ def test_iter_tmdb_search_variants_includes_alias_cleanup_and_year_tolerance():
 def test_clean_title_aliases_removes_year_and_edition_suffixes():
     assert _clean_title_aliases("Cinderella (2015)") == "Cinderella"
     assert _clean_title_aliases("The Boss (Unrated)") == "The Boss"
-    assert (
-        _clean_title_aliases("The Last House (Unrated) [2009]")
-        == "The Last House"
-    )
+    assert _clean_title_aliases("The Last House (Unrated) [2009]") == "The Last House"
