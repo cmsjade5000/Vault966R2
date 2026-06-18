@@ -62,12 +62,8 @@ def test_normalize_title_handles_ampersand() -> None:
     assert normalize_title("Fish & Chips") == normalize_title("Fish and   Chips")
     assert normalize_title("The Boss (Unrated)") == normalize_title("The Boss")
     assert normalize_title("Her (2013)") == normalize_title("Her")
-    assert normalize_title("The Last House (Unrated) [2009]") == normalize_title(
-        "The Last House"
-    )
-    assert normalize_title("American Psycho (Uncut Version)") == normalize_title(
-        "American Psycho"
-    )
+    assert normalize_title("The Last House (Unrated) [2009]") == normalize_title("The Last House")
+    assert normalize_title("American Psycho (Uncut Version)") == normalize_title("American Psycho")
 
 
 def test_valid_tmdb_poster_url_restricts_host_and_image_path() -> None:

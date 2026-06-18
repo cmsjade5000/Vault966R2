@@ -61,9 +61,7 @@ def test_provider_searches_use_normalized_title() -> None:
         )
 
     with httpx.Client(transport=httpx.MockTransport(handler)) as client:
-        assert unique_exact_tmdb_match(
-            client, "tmdb-key", "The Boss (Unrated)", 2016
-        )
+        assert unique_exact_tmdb_match(client, "tmdb-key", "The Boss (Unrated)", 2016)
         assert omdb_by_title(client, "omdb-key", "The Boss (Unrated)", 2016)
 
     assert requests[0].url.params["query"] == "the boss"

@@ -46,14 +46,10 @@ def poster_image_url(value: object, size: str = "w342") -> str:
         return url
 
     parts[3] = size
-    return urlunsplit(
-        ("https", "image.tmdb.org", "/".join(parts), parsed.query, "")
-    )
+    return urlunsplit(("https", "image.tmdb.org", "/".join(parts), parsed.query, ""))
 
 
-TEMPLATES = Jinja2Templates(
-    directory=str(ROOT / "templates")
-)
+TEMPLATES = Jinja2Templates(directory=str(ROOT / "templates"))
 TEMPLATES.env.filters["display_title"] = display_movie_title
 TEMPLATES.env.globals["static_asset"] = static_asset
 TEMPLATES.env.globals["poster_image_url"] = poster_image_url

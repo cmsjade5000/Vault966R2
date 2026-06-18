@@ -60,9 +60,7 @@ def test_usage_events_accept_only_whitelisted_fields(client, db_session) -> None
     assert db_session.query(UsageEvent).count() == 1
 
 
-def test_personalized_impression_event_uses_fixed_whitelisted_context(
-    client, db_session
-) -> None:
+def test_personalized_impression_event_uses_fixed_whitelisted_context(client, db_session) -> None:
     response = client.post(
         "/ui/events",
         json={
@@ -120,9 +118,7 @@ def test_poster_image_url_uses_one_smaller_tmdb_origin() -> None:
         )
         == "https://image.tmdb.org/t/p/w500/example.jpg?language=en"
     )
-    assert poster_image_url("https://example.com/poster.jpg") == (
-        "https://example.com/poster.jpg"
-    )
+    assert poster_image_url("https://example.com/poster.jpg") == ("https://example.com/poster.jpg")
 
 
 def test_discover_contains_all_collection_rails(client, db_session) -> None:
@@ -145,7 +141,7 @@ def test_discover_contains_all_collection_rails(client, db_session) -> None:
     assert 'data-preference-type="watchlist"' in response.text
     assert ">♡</button>" not in response.text
     assert ">▯</button>" not in response.text
-    assert 'library-card discover-rail-card library-card--poster-only' in response.text
+    assert "library-card discover-rail-card library-card--poster-only" in response.text
     assert 'class="library-card__link"' in response.text
     assert 'class="library-card__media"' in response.text
     assert 'class="library-card__body"' not in response.text
@@ -156,14 +152,14 @@ def test_discover_contains_all_collection_rails(client, db_session) -> None:
     assert "Today’s shelves" not in response.text
     assert 'class="discover-sidebar"' not in response.text
     assert 'class="discover-index"' not in response.text
-    assert 'data-rail-next' in response.text
-    assert 'data-rail-progress' in response.text
+    assert "data-rail-next" in response.text
+    assert "data-rail-progress" in response.text
     assert "Why this" in response.text
     assert 'fetchpriority="high"' in response.text
     assert 'fetchpriority="auto"' not in response.text
     assert "image.tmdb.org" not in response.text
     assert 'src="/ui/posters/' in response.text
-    assert 'data-deferred-poster' in response.text
+    assert "data-deferred-poster" in response.text
     assert 'data-poster-src="/ui/posters/' in response.text
     eager_poster_sources = response.text.count('src="/ui/posters/') - response.text.count(
         'data-poster-src="/ui/posters/'
@@ -227,16 +223,9 @@ def test_discover_rails_keep_all_topics_and_do_not_repeat_movies(db_session) -> 
         limit=3,
         day=date(2026, 6, 14),
     )
-    movie_ids = [
-        movie.id
-        for rail in rails
-        for movie in rail["movies"]
-        if movie.id is not None
-    ]
+    movie_ids = [movie.id for rail in rails for movie in rail["movies"] if movie.id is not None]
 
-    assert {rail["key"] for rail in rails} == {
-        definition.key for definition in RAIL_DEFINITIONS
-    }
+    assert {rail["key"] for rail in rails} == {definition.key for definition in RAIL_DEFINITIONS}
     assert len(movie_ids) == len(set(movie_ids))
 
 
@@ -246,7 +235,7 @@ def test_discover_explains_how_to_enable_personalization(client) -> None:
     assert response.status_code == 200
     assert "Make Discover yours" in response.text
     assert "Like a movie in the Library" in response.text
-    assert 'data-selected-for-you' not in response.text
+    assert "data-selected-for-you" not in response.text
 
 
 def test_selected_for_you_is_profile_specific_trusted_and_non_repeating(
@@ -273,12 +262,8 @@ def test_selected_for_you_is_profile_specific_trusted_and_non_repeating(
         movie.imdb_rating = 7.0
         movie.genres.append(sci_fi)
 
-    db_session.add(
-        MoviePreference(profile_id=profile_a.id, movie_id=liked_movie.id, liked=True)
-    )
-    db_session.add(
-        MoviePreference(profile_id=profile_a.id, movie_id=candidate.id, watchlist=True)
-    )
+    db_session.add(MoviePreference(profile_id=profile_a.id, movie_id=liked_movie.id, liked=True))
+    db_session.add(MoviePreference(profile_id=profile_a.id, movie_id=candidate.id, watchlist=True))
     db_session.add(MovieFlag(movie_id=flagged_candidate.id, reason="Verify identity"))
     db_session.commit()
 
@@ -300,7 +285,7 @@ def test_selected_for_you_is_profile_specific_trusted_and_non_repeating(
     assert response.status_code == 200
     assert "Selected for You" in response.text
     assert f"in {sci_fi.name}." in response.text
-    assert 'data-selected-for-you' in response.text
+    assert "data-selected-for-you" in response.text
     assert response.text.count(f'href="/ui/movies/{candidate.id}"') == 1
 
 

@@ -52,8 +52,7 @@ async def upload_source_snapshot(
     filename = source_file.filename or "collection.csv"
     if len(filename) > 255:
         return RedirectResponse(
-            url="/ui/movies/health?error=Filename%20is%20too%20long."
-            "#source-synchronization",
+            url="/ui/movies/health?error=Filename%20is%20too%20long." "#source-synchronization",
             status_code=303,
         )
     content = await source_file.read(5 * 1024 * 1024 + 1)

@@ -319,10 +319,8 @@ def audit(
                 }
             elif (
                 field == "year"
-                and (title_year_decision := approved_title_year_decisions.get(movie.id))
-                is not None
-                and (title_year_match := TITLE_YEAR_RE.search(movie.title or ""))
-                is not None
+                and (title_year_decision := approved_title_year_decisions.get(movie.id)) is not None
+                and (title_year_match := TITLE_YEAR_RE.search(movie.title or "")) is not None
                 and int(title_year_match.group(1)) == actual[field]
             ):
                 approved[field] = {

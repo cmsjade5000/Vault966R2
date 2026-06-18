@@ -220,7 +220,9 @@ def main() -> int:
 
     if not args.dry_run:
         stamp = now.strftime("%Y%m%d-%H%M%S")
-        shutil.copy2(ROOT_DIR / "vault.db", ROOT_DIR / f"vault.db.before-external-sweep-{stamp}.bak")
+        shutil.copy2(
+            ROOT_DIR / "vault.db", ROOT_DIR / f"vault.db.before-external-sweep-{stamp}.bak"
+        )
 
     with SessionLocal() as session, httpx.Client() as client:
         source_review_ids = {
@@ -288,9 +290,7 @@ def main() -> int:
                         (tmdb_payload.get("external_ids") or {}).get("imdb_id") or ""
                     ).strip()
                     if movie.imdb_id:
-                        omdb_payload = omdb_by_id(
-                            client, settings.omdb_api_key, movie.imdb_id
-                        )
+                        omdb_payload = omdb_by_id(client, settings.omdb_api_key, movie.imdb_id)
                         if not omdb_payload or not exact_title_year(
                             movie.title,
                             movie.year,
@@ -353,9 +353,11 @@ def main() -> int:
             else:
                 movie.tmdb_id = movie.tmdb_id or tmdb_id
                 movie.imdb_id = movie.imdb_id or imdb_id or None
-                movie.poster_url = movie.poster_url or poster_from_tmdb(
-                    tmdb_payload
-                ) or poster_from_omdb(omdb_payload)
+                movie.poster_url = (
+                    movie.poster_url
+                    or poster_from_tmdb(tmdb_payload)
+                    or poster_from_omdb(omdb_payload)
+                )
                 movie.last_tmdb_fetch_at = now
                 movie.tmdb_payload_sha = payload_sha(tmdb_payload)
                 if omdb_payload:

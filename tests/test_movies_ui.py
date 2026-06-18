@@ -61,9 +61,7 @@ def test_movies_grid_filters_by_mood(client: TestClient) -> None:
     assert "The Matrix" not in html
 
 
-def test_library_card_can_be_flagged_for_review(
-    client: TestClient, db_session
-) -> None:
+def test_library_card_can_be_flagged_for_review(client: TestClient, db_session) -> None:
     movie = db_session.query(Movie).filter(Movie.title == "Blade Runner").one()
 
     page = client.get("/ui/movies")
@@ -230,7 +228,7 @@ def test_admin_can_manage_movie_detail_flags_with_session(
 
     detail = client.get("/ui/movies/1")
     assert detail.status_code == 200
-    assert "data-flag-mode=\"manage\"" in detail.text
+    assert 'data-flag-mode="manage"' in detail.text
     assert "data-edit-button" in detail.text
 
     create = client.put(
@@ -274,9 +272,7 @@ def test_reviewer_cannot_open_admin_health_or_review_routes(
         assert response.status_code == 403
 
 
-def test_movies_grid_paginates_in_complete_36_card_pages(
-    client: TestClient, db_session
-) -> None:
+def test_movies_grid_paginates_in_complete_36_card_pages(client: TestClient, db_session) -> None:
     for index in range(10):
         db_session.add(
             Movie(
@@ -340,9 +336,9 @@ def test_library_search_is_prominent_and_searches_identity_fields(
     assert "Vault is thinking" in page.text
     assert 'aria-label="Grid view"' in page.text
     assert 'aria-label="List view"' in page.text
-    assert 'data-filters-summary' in page.text
+    assert "data-filters-summary" in page.text
     assert 'aria-label="Pending filter selections"' in page.text
-    assert 'data-filters-reset' in page.text
+    assert "data-filters-reset" in page.text
     assert 'id="year-custom" hidden' in page.text
     assert 'id="runtime-custom" hidden' in page.text
     assert 'id="fliclists"' not in page.text

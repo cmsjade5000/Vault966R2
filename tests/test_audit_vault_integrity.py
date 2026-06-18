@@ -192,8 +192,7 @@ def test_audit_accepts_exact_external_id_enrichment(db_session, tmp_path):
 
     source_path = tmp_path / "legacy.csv"
     source_path.write_text(
-        "vault_id,title,year,runtime,imdb_id,tmdb_id\n"
-        "V0001,Blade Runner,1982,117,,\n",
+        "vault_id,title,year,runtime,imdb_id,tmdb_id\n" "V0001,Blade Runner,1982,117,,\n",
         encoding="utf-8",
     )
 
