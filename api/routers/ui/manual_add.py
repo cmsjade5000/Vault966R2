@@ -8,7 +8,7 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from api.db import get_db
-from api.deps.auth import require_admin
+from api.deps.auth import require_profile_role
 from api.models.movie import Genre, Movie, MovieIngestProvenance
 from api.services.manual_add import (
     append_movie_to_cleaned_csv,
@@ -20,6 +20,7 @@ from api.services.movie_lookup import (
     lookup_movie,
 )
 from api.services.poster_cache import cache_movie_posters_safely
+from api.services.profiles import ROLE_ADMIN
 from api.utils.providers import merge_providers
 from core.genres import split_and_normalize
 from core.movie_metadata import MovieMetadata
@@ -141,6 +142,7 @@ def _find_existing_movie(session: Session, title: str, year: Optional[int]) -> O
 def manual_add_preview(
     payload: ManualMovieCreate = Body(...),
     db: Session = Depends(get_db),
+    _: str = Depends(require_profile_role(ROLE_ADMIN)),
 ):
     title = payload.title.strip()
     year = payload.year
@@ -169,7 +171,7 @@ def manual_add_movie(
     background_tasks: BackgroundTasks,
     payload: ManualMovieCreate = Body(...),
     db: Session = Depends(get_db),
-    _: None = Depends(require_admin),
+    _: str = Depends(require_profile_role(ROLE_ADMIN)),
 ):
     title = payload.title.strip()
     year = payload.year

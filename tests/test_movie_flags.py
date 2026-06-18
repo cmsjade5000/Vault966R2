@@ -12,7 +12,7 @@ def test_flag_and_unflag_movie(client: TestClient, admin_headers: dict[str, str]
     assert body["movie_id"] == 1
     assert body["reason"] == "Missing poster"
 
-    flags_response = client.get("/movies/flags")
+    flags_response = client.get("/movies/flags", headers=admin_headers)
     assert flags_response.status_code == 200
     flags = flags_response.json()
     assert any(flag["movie_id"] == 1 for flag in flags)
@@ -25,7 +25,7 @@ def test_flag_and_unflag_movie(client: TestClient, admin_headers: dict[str, str]
     clear_response = client.delete("/movies/1/flag", headers=admin_headers)
     assert clear_response.status_code == 204
 
-    flags_after = client.get("/movies/flags").json()
+    flags_after = client.get("/movies/flags", headers=admin_headers).json()
     assert all(flag["movie_id"] != 1 for flag in flags_after)
 
 

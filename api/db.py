@@ -168,12 +168,27 @@ def _ensure_sqlite_movie_columns() -> None:
                         movie_id INTEGER PRIMARY KEY REFERENCES movies(id) ON DELETE CASCADE,
                         reason TEXT,
                         notes TEXT,
+                        reported_by_profile_id INTEGER REFERENCES profiles(id) ON DELETE SET NULL,
                         created_at TIMESTAMP NOT NULL,
                         updated_at TIMESTAMP NOT NULL
                     )
                     """
                 )
             )
+        else:
+            flag_columns = {
+                row[1] for row in connection.execute(text("PRAGMA table_info(movie_flags)"))
+            }
+            if "reported_by_profile_id" not in flag_columns:
+                connection.execute(
+                    text(
+                        """
+                        ALTER TABLE movie_flags
+                        ADD COLUMN reported_by_profile_id INTEGER
+                        REFERENCES profiles(id) ON DELETE SET NULL
+                        """
+                    )
+                )
 
         review_checks_exists = connection.execute(
             text(

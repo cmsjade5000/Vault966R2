@@ -1,5 +1,6 @@
 from fastapi.testclient import TestClient
 
+from api.config import settings
 from api.models.movie import Movie
 from api.models.movie_flag import MovieFlag
 from api.models.movie_review import MovieReviewCheck
@@ -126,6 +127,149 @@ def test_movie_detail_flag_rejects_unexpected_input(client: TestClient) -> None:
         },
     )
     assert response.status_code == 422
+
+
+def test_reviewer_can_report_movie_but_cannot_manage_flags(
+    client: TestClient,
+    db_session,
+    monkeypatch,
+) -> None:
+    monkeypatch.setattr(settings, "disable_auth", False)
+    monkeypatch.setattr(settings, "login_session_secret", None)
+
+    login = client.post("/login", data={"profile_id": "2"}, follow_redirects=False)
+    assert login.status_code == 303
+
+    detail = client.get("/ui/movies/1")
+    assert detail.status_code == 200
+    assert "Report issue" in detail.text
+    assert "Manage flag" not in detail.text
+    assert "data-edit-button" not in detail.text
+
+    report = client.post(
+        "/movies/1/flag/report",
+        json={"reason": "Wrong runtime/year", "notes": "Runtime looks off."},
+    )
+    assert report.status_code == 200
+    body = report.json()
+    assert body["movie_id"] == 1
+    assert body["reported_by_profile_id"] == 2
+
+    db_session.expire_all()
+    flag = db_session.get(MovieFlag, 1)
+    assert flag is not None
+    assert flag.reason == "Wrong runtime/year"
+    assert flag.notes == "Runtime looks off."
+    assert flag.reported_by_profile_id == 2
+
+    overwrite = client.put(
+        "/ui/movies/1/flag",
+        json={"reason": "Other", "notes": "Reviewer should not manage."},
+        headers={"Origin": "http://testserver"},
+    )
+    assert overwrite.status_code == 403
+
+    resolve = client.delete(
+        "/ui/movies/1/flag",
+        headers={"Origin": "http://testserver"},
+    )
+    assert resolve.status_code == 403
+
+    db_session.expire_all()
+    flag = db_session.get(MovieFlag, 1)
+    assert flag is not None
+    assert flag.reason == "Wrong runtime/year"
+
+
+def test_reviewer_report_does_not_overwrite_existing_admin_flag(
+    client: TestClient,
+    db_session,
+    monkeypatch,
+) -> None:
+    db_session.add(
+        MovieFlag(
+            movie_id=1,
+            reason="Movie mismatch",
+            notes="Admin context stays.",
+        )
+    )
+    db_session.commit()
+
+    monkeypatch.setattr(settings, "disable_auth", False)
+    monkeypatch.setattr(settings, "login_session_secret", None)
+    client.post("/login", data={"profile_id": "2"}, follow_redirects=False)
+
+    response = client.post(
+        "/movies/1/flag/report",
+        json={"reason": "Other", "notes": "Reviewer context."},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["reported_by_profile_id"] == 2
+
+    db_session.expire_all()
+    flag = db_session.get(MovieFlag, 1)
+    assert flag is not None
+    assert flag.reason == "Movie mismatch"
+    assert flag.notes == "Admin context stays."
+    assert flag.reported_by_profile_id == 2
+
+
+def test_admin_can_manage_movie_detail_flags_with_session(
+    client: TestClient,
+    db_session,
+    monkeypatch,
+) -> None:
+    monkeypatch.setattr(settings, "disable_auth", False)
+    monkeypatch.setattr(settings, "login_session_secret", None)
+
+    login = client.post("/login", data={"profile_id": "1"}, follow_redirects=False)
+    assert login.status_code == 303
+
+    detail = client.get("/ui/movies/1")
+    assert detail.status_code == 200
+    assert 'data-flag-mode="manage"' in detail.text
+    assert "data-edit-button" in detail.text
+
+    create = client.put(
+        "/ui/movies/1/flag",
+        json={"reason": "Metadata cleanup", "notes": "Admin note."},
+        headers={"Origin": "http://testserver"},
+    )
+    assert create.status_code == 200
+    assert create.json()["reason"] == "Metadata cleanup"
+
+    resolve = client.delete(
+        "/ui/movies/1/flag",
+        headers={"Origin": "http://testserver"},
+    )
+    assert resolve.status_code == 204
+
+    db_session.expire_all()
+    assert db_session.get(MovieFlag, 1) is None
+
+
+def test_reviewer_cannot_open_admin_health_or_review_routes(
+    client: TestClient,
+    monkeypatch,
+) -> None:
+    monkeypatch.setattr(settings, "disable_auth", False)
+    monkeypatch.setattr(settings, "login_session_secret", None)
+    client.post("/login", data={"profile_id": "2"}, follow_redirects=False)
+
+    library = client.get("/ui/movies")
+    assert library.status_code == 200
+    assert "Vault Health" not in library.text
+
+    for path in (
+        "/ui/movies/health",
+        "/ui/movies/health/missing",
+        "/ui/flags",
+        "/ui/review",
+        "/ui/source-sync",
+    ):
+        response = client.get(path, follow_redirects=False)
+        assert response.status_code == 403
 
 
 def test_movies_grid_paginates_in_complete_36_card_pages(client: TestClient, db_session) -> None:
