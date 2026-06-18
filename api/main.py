@@ -17,7 +17,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from api.config import settings
-from api.db import SessionLocal, bootstrap_sqlite_schema, engine
+from api.db import SessionLocal, bootstrap_sqlite_schema, engine, get_db
 from api.models.profile import Profile
 from api.routers import (
     ai,
@@ -317,12 +317,21 @@ class AuthRequiredMiddleware(BaseHTTPMiddleware):
         profile_id = getattr(request.state, "session_profile_id", None)
         if not isinstance(profile_id, int) or profile_id <= 0:
             return
-        db = SessionLocal()
+
+        db_override = request.app.dependency_overrides.get(get_db)
+        db_generator = db_override() if db_override else None
+        db = next(db_generator) if db_generator else SessionLocal()
         try:
             profile = db.get(Profile, profile_id)
             request.state.session_profile_role = getattr(profile, "role", None) or ROLE_REVIEWER
         finally:
-            db.close()
+            if db_generator:
+                try:
+                    next(db_generator)
+                except StopIteration:
+                    pass
+            else:
+                db.close()
 
     async def dispatch(self, request: Request, call_next):
         request.state.session_profile_id = None
