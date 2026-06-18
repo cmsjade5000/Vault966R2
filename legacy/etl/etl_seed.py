@@ -36,9 +36,10 @@ if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
 
 import api.models  # noqa: F401  # ensure all ORM mappers are registered (e.g., MovieFlag)
-from core.enriched_csv import normalize_countries, normalize_languages
+from core.movie_metadata import MovieMetadata
+from core.vault_ids import normalize_vault_id
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.exc import SQLAlchemyError
 
 from api.db import Base, SessionLocal, engine
@@ -54,7 +55,7 @@ class ProvenanceContext:
     notes: Optional[str] = None
 
 
-from api.models.person import Role  # noqa: F401 - ensure mapper registration
+from api.models.person import Person, Role, RoleType
 from api.utils.providers import collect_provider_tokens, merge_providers
 
 logger = logging.getLogger(__name__)
@@ -92,6 +93,11 @@ def parse_args() -> argparse.Namespace:
         help="Allow inserts using tmdb_id when imdb_id cannot be resolved",
     )
     parser.add_argument(
+        "--allow-unidentified",
+        action="store_true",
+        help="Allow inserts without IMDb/TMDb IDs using title/year identity",
+    )
+    parser.add_argument(
         "--encoding",
         default="utf-8",
         help="File encoding (default: utf-8).",
@@ -107,6 +113,18 @@ def parse_args() -> argparse.Namespace:
         type=float,
         default=0.2,
         help="Delay in seconds between HTTP retries (default: 0.2).",
+    )
+    parser.add_argument(
+        "--reports-dir",
+        type=pathlib.Path,
+        default=ROOT_DIR / "reports",
+        help="Directory for import audit logs (default: reports/).",
+    )
+    parser.add_argument(
+        "--dead-letter-dir",
+        type=pathlib.Path,
+        default=ROOT_DIR / "data",
+        help="Directory for skipped-row logs (default: data/).",
     )
     return parser.parse_args()
 
@@ -301,7 +319,7 @@ def split_multi(value: Any) -> List[str]:
     if isinstance(value, list):
         candidates = value
     else:
-        candidates = [part.strip() for part in str(value).replace(";", ",").split(",")]
+        candidates = [part.strip() for part in re.split(r"[|;,]", str(value)) if part.strip()]
 
     seen = set()
     result: List[str] = []
@@ -430,14 +448,14 @@ def _merge_providers_json(existing: dict, new: dict) -> dict:
     return merged
 
 
-def normalize_providers(value: Any) -> Optional[str]:
+def normalize_providers(value: Any) -> Optional[List[str]]:
     providers = merge_providers(_split_providers(value))
-    return "; ".join(providers) if providers else None
+    return providers or None
 
 
-def merge_where_to_watch(existing_value: Any, new_value: Any) -> Optional[str]:
+def merge_where_to_watch(existing_value: Any, new_value: Any) -> Optional[List[str]]:
     providers = merge_providers(_split_providers(existing_value), _split_providers(new_value))
-    return "; ".join(providers) if providers else None
+    return providers or None
 
 
 def normalize_row(raw: Dict[str, Any], row_number: int) -> Dict[str, Any]:
@@ -453,43 +471,15 @@ def normalize_row(raw: Dict[str, Any], row_number: int) -> Dict[str, Any]:
     imdb_id = normalize_imdb_id(imdb_id_raw)
     imdb_invalid = bool(imdb_id_raw not in (None, "")) and imdb_id is None
 
-    year_value = _first_value(raw, ["year", "release_year", "verified_year"])
-    runtime_value = _first_value(raw, ["runtime", "runtime_min", "minutes"])
-    plot_value = _first_value(raw, ["plot", "plot_summary", "overview"])
-    tmdb_value = _first_value(raw, ["tmdb_id"])
-    poster_value = _first_value(raw, ["poster_url"])
-    backdrop_value = _first_value(raw, ["backdrop_url"])
-    genres_value = _first_value(raw, ["genre", "genres"])
-    moods_value = _first_value(raw, ["mood", "moods"])
-    imdb_rating_value = _first_value(raw, ["imdb_rating"])
-    imdb_votes_value = _first_value(raw, ["imdb_votes"])
-    rt_score_value = _first_value(raw, ["rt_score", "rt_percent"])
-    where_value = _first_value(raw, ["where_to_watch", "digital_location"])
-    languages_value = _first_value(raw, ["languages_iso", "languages"])
-    countries_value = _first_value(raw, ["countries_iso", "countries"])
-    collection_value = _first_value(raw, ["collection", "franchise"])
-
-    record = {
-        "title": title,
-        "year": coerce_int(year_value),
-        "runtime": coerce_int(runtime_value),
-        "plot": plot_value,
-        "imdb_id": imdb_id,
-        "imdb_id_original": imdb_id_raw,
-        "imdb_invalid": imdb_invalid,
-        "tmdb_id": coerce_int(tmdb_value),
-        "poster_url": poster_value,
-        "backdrop_url": backdrop_value,
-        "genres": split_multi(genres_value),
-        "moods": split_multi(moods_value),
-        "imdb_rating": coerce_float(imdb_rating_value),
-        "imdb_votes": coerce_int(imdb_votes_value),
-        "rt_score": coerce_int(rt_score_value),
-        "where_to_watch": normalize_providers(where_value),
-        "languages": normalize_languages(clean_text(languages_value)).iso or None,
-        "countries": normalize_countries(clean_text(countries_value)).iso or None,
-        "collection": clean_text(collection_value),
-    }
+    canonical = MovieMetadata.from_mapping({**raw, "title": title, "imdb_id": imdb_id})
+    record = canonical.to_import_record()
+    record.update(
+        {
+            "imdb_id_original": imdb_id_raw,
+            "imdb_invalid": imdb_invalid,
+            "legacy_vault_id": _first_value(raw, ["vault_id", "legacy_vault_id"]),
+        }
+    )
     return record
 
 
@@ -511,6 +501,9 @@ def compute_payload_sha(record: Dict[str, Any]) -> str:
 
 
 def determine_provenance_provider_id(record: Dict[str, Any]) -> Optional[str]:
+    legacy_vault_id = record.get("legacy_vault_id")
+    if legacy_vault_id:
+        return str(legacy_vault_id)
     imdb_id = record.get("imdb_id")
     if imdb_id:
         return str(imdb_id)
@@ -542,6 +535,42 @@ def get_or_create_mood(session, name: str) -> Mood:
         mood = Mood(name=name)
         session.add(mood)
     return mood
+
+
+def get_or_create_person(session, name: str) -> Person:
+    cleaned = name.strip()
+    stmt = select(Person).where(
+        func.lower(Person.name) == cleaned.lower(),
+        Person.tmdb_id.is_(None),
+    )
+    person = session.execute(stmt).scalar_one_or_none()
+    if person is None:
+        person = Person(name=cleaned)
+        session.add(person)
+        session.flush()
+    return person
+
+
+def sync_people_roles(session, movie: Movie, record: Dict[str, Any]) -> None:
+    role_groups = (
+        (RoleType.DIRECTOR, record.get("directors") or []),
+        (RoleType.ACTOR, record.get("cast") or []),
+    )
+    for role_type, names in role_groups:
+        if not names:
+            continue
+        existing = [role for role in movie.roles if role.role_type == role_type]
+        for role in existing:
+            session.delete(role)
+        for billing_order, name in enumerate(names):
+            person = get_or_create_person(session, name)
+            movie.roles.append(
+                Role(
+                    person=person,
+                    role_type=role_type,
+                    billing_order=billing_order,
+                )
+            )
 
 
 class Summary:
@@ -589,6 +618,7 @@ def _has_changes(existing: Movie, record: Dict[str, Any]) -> bool:
         or existing.year != record["year"]
         or existing.runtime != record["runtime"]
         or existing.plot != record["plot"]
+        or existing.awards != record.get("awards")
         or existing.imdb_id != record["imdb_id"]
         or existing.tmdb_id != record["tmdb_id"]
         or existing.imdb_rating != record.get("imdb_rating")
@@ -883,15 +913,35 @@ def process_record(
                 stmt = select(Movie).where(Movie.title == record["title"])
                 existing = session.execute(stmt).scalar_one_or_none()
 
+            if existing is not None:
+                incoming_title = normalize_title(record["title"])
+                existing_title = normalize_title(existing.title)
+                incoming_year = record.get("year")
+                existing_year = existing.year
+                title_conflict = incoming_title != existing_title
+                year_conflict = (
+                    incoming_year is not None
+                    and existing_year is not None
+                    and incoming_year != existing_year
+                )
+                if title_conflict or year_conflict:
+                    session.rollback()
+                    _write_db_duplicate(record, duplicates_path)
+                    return "skipped", "identifier_conflict"
+
             genre_objs = [get_or_create_genre(session, name) for name in record["genres"]]
             mood_objs = [get_or_create_mood(session, name) for name in record["moods"]]
 
             if existing is None:
                 movie = Movie(
+                    vault_id=normalize_vault_id(record.get("legacy_vault_id")),
                     title=record["title"],
                     year=record["year"],
                     runtime=record["runtime"],
                     plot=record["plot"],
+                    awards=record.get("awards"),
+                    certificate=record.get("certificate"),
+                    keywords=record.get("keywords") or None,
                     imdb_id=record["imdb_id"],
                     tmdb_id=record["tmdb_id"],
                     imdb_rating=record.get("imdb_rating"),
@@ -908,6 +958,7 @@ def process_record(
                 )
                 session.add(movie)
                 session.flush()
+                sync_people_roles(session, movie, record)
                 _upsert_movie_provenance(session, movie, provenance)
                 session.flush()
                 if dry_run:
@@ -935,6 +986,21 @@ def process_record(
                 merged_plot = _merge_values(existing.plot, record["plot"])
                 if merged_plot != existing.plot:
                     existing.plot = merged_plot
+                    updated = True
+
+                merged_awards = _merge_values(existing.awards, record.get("awards"))
+                if merged_awards != existing.awards:
+                    existing.awards = merged_awards
+                    updated = True
+
+                merged_certificate = _merge_values(existing.certificate, record.get("certificate"))
+                if merged_certificate != existing.certificate:
+                    existing.certificate = merged_certificate
+                    updated = True
+
+                merged_keywords = _merge_values(existing.keywords, record.get("keywords") or None)
+                if merged_keywords != existing.keywords:
+                    existing.keywords = merged_keywords
                     updated = True
 
                 merged_imdb = _merge_values(existing.imdb_id, record["imdb_id"])
@@ -1002,6 +1068,10 @@ def process_record(
                     existing.moods = mood_objs
                     updated = True
 
+                if record.get("directors") or record.get("cast"):
+                    sync_people_roles(session, existing, record)
+                    updated = True
+
                 if not updated:
                     session.rollback()
                     _write_db_duplicate(record, duplicates_path)
@@ -1044,7 +1114,7 @@ def main() -> int:
         logger.error("Failed to load data: %s", exc)
         return 1
 
-    dead_letter_dir = ROOT_DIR / "data"
+    dead_letter_dir = args.dead_letter_dir
     dead_letter_dir.mkdir(parents=True, exist_ok=True)
     dead_letter_path = dead_letter_dir / f"skips_{start_time:%Y%m%d_%H%M%S}.csv"
     with dead_letter_path.open("w", encoding="utf-8", newline="") as fh:
@@ -1053,7 +1123,7 @@ def main() -> int:
 
     summary = Summary()
     seen_keys = set()
-    reports_dir = ROOT_DIR / "reports"
+    reports_dir = args.reports_dir
     reports_dir.mkdir(parents=True, exist_ok=True)
     input_duplicates_path = reports_dir / "duplicates_in_input.csv"
     db_duplicates_path = reports_dir / "duplicates_in_db.csv"
@@ -1094,13 +1164,27 @@ def main() -> int:
         initial_invalid = bool(record.get("imdb_invalid"))
         resolved_source = "csv"
         using_tmdb_only = False
+        using_unidentified = False
 
         if imdb_id and original_imdb_id:
             normalized_original = normalize_imdb_id(original_imdb_id)
             if normalized_original == imdb_id and original_imdb_id.strip().lower() != imdb_id:
                 resolved_source = "normalized"
 
-        if not imdb_id:
+        if not imdb_id and allow_tmdb_only and record.get("tmdb_id"):
+            using_tmdb_only = True
+            resolved_source = "tmdb_only"
+
+        if (
+            not imdb_id
+            and not record.get("tmdb_id")
+            and args.allow_unidentified
+            and record.get("title")
+        ):
+            using_unidentified = True
+            resolved_source = "title_year"
+
+        if not imdb_id and not using_tmdb_only and not using_unidentified:
             imdb_id = apply_overrides(record, overrides, index, overrides_log_path)
             if imdb_id:
                 resolved_source = "override"
@@ -1110,7 +1194,7 @@ def main() -> int:
         resolver_state.last_tmdb_imdb_id = None
         resolver_state.last_omdb_payload = None
 
-        if not imdb_id:
+        if not imdb_id and not using_tmdb_only and not using_unidentified:
             resolved, tag, tmdb_candidate = resolve_imdb_via_network(
                 record,
                 allow_network=allow_network,
@@ -1151,7 +1235,7 @@ def main() -> int:
                     writer.writerow([index, record.get("title"), original_imdb_id])
                 continue
 
-        if not imdb_id and not using_tmdb_only:
+        if not imdb_id and not using_tmdb_only and not using_unidentified:
             reason = "invalid_imdb_id" if initial_invalid else "missing_imdb_id"
             summary.record_skip(reason)
             logger.warning("Row %s skipped: %s", index, reason)
@@ -1222,7 +1306,7 @@ def main() -> int:
 
         payload_sha = compute_payload_sha(record)
         provenance = ProvenanceContext(
-            provider="etl_seed",
+            provider="legacy_vault_csv" if record.get("legacy_vault_id") else "etl_seed",
             provider_id=determine_provenance_provider_id(record),
             payload_sha=payload_sha,
             source_url=str(path),

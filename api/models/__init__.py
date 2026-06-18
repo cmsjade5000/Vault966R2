@@ -6,18 +6,34 @@ Import key models here so SQLAlchemy registers all mappers at import time.
 # like relationship("MovieFlag") inside Movie.
 from .movie import Movie, MovieIngestProvenance  # noqa: F401
 from .movie_flag import MovieFlag  # noqa: F401
+from .movie_review import MovieReviewCheck  # noqa: F401
 from .person import Person, Role  # noqa: F401
 from .profile import MoviePreference, Profile  # noqa: F401
 from .semantic_search import AiCache, MovieDocument  # noqa: F401
+from .source_sync import (  # noqa: F401
+    OwnedMovieCopy,
+    SourceFieldDecision,
+    SourceMovieRow,
+    SourceReconciliationMatch,
+    SourceSnapshot,
+)
+from .usage_event import UsageEvent  # noqa: F401
 
 __all__ = [
     "Movie",
     "MovieFlag",
     "MovieIngestProvenance",
+    "MovieReviewCheck",
     "Person",
     "Role",
     "Profile",
     "MoviePreference",
     "AiCache",
     "MovieDocument",
+    "SourceSnapshot",
+    "SourceMovieRow",
+    "SourceReconciliationMatch",
+    "SourceFieldDecision",
+    "OwnedMovieCopy",
+    "UsageEvent",
 ]

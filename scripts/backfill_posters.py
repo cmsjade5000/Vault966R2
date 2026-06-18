@@ -18,10 +18,14 @@ import argparse
 import csv
 import os
 import pathlib
+import re
 import sys
 import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone
+from html.parser import HTMLParser
 from typing import Any, Dict, Iterable, Optional
+from urllib.parse import urlparse
 
 import httpx
 from sqlalchemy import select
@@ -33,8 +37,31 @@ if str(ROOT_DIR) not in sys.path:
 from api.config import settings  # noqa: E402
 from api.db import SessionLocal  # noqa: E402
 from api.models.movie import Movie  # noqa: E402
+from api.models.movie_flag import MovieFlag  # noqa: E402
 from api.models.person import Role  # noqa: E402,F401  # ensure mapper registration
 from api.services import movie_lookup  # noqa: E402
+from api.services.movie_review import get_review_queue  # noqa: E402
+from api.services.source_sync import get_source_review_queue  # noqa: E402
+
+TMDB_IMAGE_HOSTS = {"image.tmdb.org", "media.themoviedb.org"}
+TMDB_IMAGE_PATH_RE = re.compile(r"^/t/p/(?:original|w\d+)/[^/]+\.(?:jpe?g|png|webp)$", re.I)
+
+
+class _OpenGraphImageParser(HTMLParser):
+    def __init__(self) -> None:
+        super().__init__()
+        self.images: list[str] = []
+        self.titles: list[str] = []
+
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        if tag.casefold() != "meta":
+            return
+        values = {key.casefold(): value for key, value in attrs if value is not None}
+        property_name = values.get("property", "").casefold()
+        if property_name == "og:image" and values.get("content"):
+            self.images.append(values["content"])
+        elif property_name == "og:title" and values.get("content"):
+            self.titles.append(values["content"])
 
 
 def parse_args() -> argparse.Namespace:
@@ -82,12 +109,39 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Log changes without writing to the database.",
     )
+    parser.add_argument(
+        "--include-review",
+        action="store_true",
+        help="Include movies in source review, Vault checks, or the manual flag queue.",
+    )
+    parser.add_argument(
+        "--workers",
+        type=int,
+        default=4,
+        help="Concurrent workers for keyless TMDB page reads (default: 4, maximum: 8).",
+    )
     return parser.parse_args()
 
 
 def normalize_title(title: str) -> str:
     cleaned = title.strip().lower()
     cleaned = cleaned.replace("&", "and")
+    suffix_pattern = re.compile(
+        r"(?:"
+        r"\s*[\[(](?:18|19|20)\d{2}[\])]"
+        r"|\s*\((?:unrated|uncut(?: version)?|newly remastered|"
+        r"extended(?: edition| cut)?|unrated extended edition|"
+        r"director'?s (?:cut|definitive cut)|new extended cut|"
+        r"special edition|theatrical cut|final cut|restored edition|"
+        r"the ultimate edition|the magnum edition)\)"
+        r")\s*$",
+        flags=re.I,
+    )
+    previous = None
+    while cleaned != previous:
+        previous = cleaned
+        cleaned = suffix_pattern.sub("", cleaned)
+    cleaned = re.sub(r"[^a-z0-9]+", " ", cleaned)
     return " ".join(cleaned.split())
 
 
@@ -173,6 +227,46 @@ def fetch_tmdb_detail(client: httpx.Client, api_key: str, tmdb_id: int) -> Dict[
     return response.json()
 
 
+def valid_tmdb_poster_url(value: object) -> Optional[str]:
+    if not isinstance(value, str):
+        return None
+    parsed = urlparse(value.strip())
+    if (
+        parsed.scheme != "https"
+        or parsed.hostname not in TMDB_IMAGE_HOSTS
+        or not TMDB_IMAGE_PATH_RE.fullmatch(parsed.path)
+    ):
+        return None
+    return value.strip()
+
+
+def fetch_tmdb_page_match(client: httpx.Client, tmdb_id: int) -> Dict[str, Optional[str]]:
+    response = client.get(
+        f"https://www.themoviedb.org/movie/{tmdb_id}",
+        headers={"User-Agent": "Vault966/1.0"},
+        follow_redirects=True,
+        timeout=15.0,
+    )
+    response.raise_for_status()
+    parser = _OpenGraphImageParser()
+    parser.feed(response.text)
+    title = parser.titles[0].strip() if parser.titles else None
+    for image in parser.images:
+        poster_url = valid_tmdb_poster_url(image)
+        if poster_url:
+            return {"title": title, "poster_url": poster_url}
+    return {"title": title, "poster_url": None}
+
+
+def fetch_tmdb_page_poster(client: httpx.Client, tmdb_id: int) -> Optional[str]:
+    return fetch_tmdb_page_match(client, tmdb_id)["poster_url"]
+
+
+def fetch_tmdb_page_match_isolated(tmdb_id: int) -> Dict[str, Optional[str]]:
+    with httpx.Client() as client:
+        return fetch_tmdb_page_match(client, tmdb_id)
+
+
 def fetch_omdb_detail(client: httpx.Client, api_key: str, imdb_id: str) -> Optional[Dict[str, Any]]:
     response = client.get(
         "https://www.omdbapi.com/",
@@ -205,11 +299,10 @@ def write_report(path: pathlib.Path, rows: Iterable[Dict[str, Any]]) -> None:
 
 def main() -> int:
     args = parse_args()
+    if not 1 <= args.workers <= 8:
+        raise SystemExit("--workers must be between 1 and 8")
     tmdb_key = args.tmdb_key or settings.tmdb_api_key or os.getenv("TMDB_API_KEY")
     omdb_key = args.omdb_key or settings.omdb_api_key or os.getenv("OMDB_API_KEY")
-
-    if not tmdb_key and not omdb_key:
-        raise SystemExit("TMDB_API_KEY or OMDB_API_KEY is required to backfill posters.")
 
     now = datetime.now(timezone.utc)
     report_rows: list[Dict[str, Any]] = []
@@ -218,11 +311,35 @@ def main() -> int:
 
     with SessionLocal() as session, httpx.Client() as client:
         movies = session.execute(select(Movie).order_by(Movie.id)).scalars().all()
-        missing = [movie for movie in movies if needs_poster(movie)]
+        excluded_movie_ids: set[int] = set()
+        if not args.include_review:
+            excluded_movie_ids.update(
+                item.movie.id for item in get_source_review_queue(session) if item.movie
+            )
+            excluded_movie_ids.update(item.movie.id for item in get_review_queue(session)[0])
+            excluded_movie_ids.update(session.execute(select(MovieFlag.movie_id)).scalars().all())
+        missing = [
+            movie for movie in movies if needs_poster(movie) and movie.id not in excluded_movie_ids
+        ]
+        if args.limit:
+            missing = missing[: args.limit]
+
+        page_matches: dict[int, Dict[str, Optional[str]]] = {}
+        if not tmdb_key:
+            page_candidates = [movie for movie in missing if movie.tmdb_id]
+            with ThreadPoolExecutor(max_workers=args.workers) as executor:
+                futures = {
+                    executor.submit(fetch_tmdb_page_match_isolated, movie.tmdb_id): movie.id
+                    for movie in page_candidates
+                }
+                for future in as_completed(futures):
+                    movie_id = futures[future]
+                    try:
+                        page_matches[movie_id] = future.result()
+                    except httpx.HTTPError:
+                        page_matches[movie_id] = {"title": None, "poster_url": None}
 
         for movie in missing:
-            if args.limit and attempted >= args.limit:
-                break
             attempted += 1
 
             match_source = "tmdb_search"
@@ -244,6 +361,19 @@ def main() -> int:
                 matched_year = movie.year
                 match_strategy = "tmdb_id"
                 match_confidence = 1.0
+            elif movie.tmdb_id:
+                match_source = "tmdb_page_id"
+                page_match = page_matches.get(movie.id) or {}
+                matched_tmdb_id = movie.tmdb_id
+                matched_title = page_match.get("title")
+                matched_year = movie.year
+                match_strategy = "tmdb_page_id"
+                title_matches = bool(
+                    matched_title and normalize_title(matched_title) == normalize_title(movie.title)
+                )
+                match_confidence = 1.0 if title_matches else 0.0
+                if title_matches:
+                    poster_url = page_match.get("poster_url")
             elif tmdb_key:
                 match_source = "tmdb_search"
                 try:
@@ -298,6 +428,7 @@ def main() -> int:
             report_rows.append(
                 {
                     "movie_id": movie.id,
+                    "vault_id": movie.vault_id or "",
                     "title": movie.title,
                     "year": movie.year or "",
                     "imdb_id": movie.imdb_id or "",

@@ -5,15 +5,20 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlalchemy.orm import Session
 
 from api.db import get_db
-from api.services.movies_detail import get_first_movie_id, get_movie_detail, get_review_neighbors
+from api.schemas.movie import FLAG_REASONS
+from api.services.movies_detail import get_movie_detail, get_review_neighbors
 from api.services.profiles import (
+    ROLE_ADMIN,
     ensure_profile_cookie,
     get_active_profile_id,
+    get_active_profile_role,
     get_preferences_for_movies,
     get_profiles,
 )
-from api.services.ui.spotlight import build_spotlight_reason, get_daily_spotlight_ids
+from api.services.ui.spotlight import build_spotlight_reason
 from api.services.ui.templates import TEMPLATES
+from api.services.source_sync import source_provenance_for_movie
+from api.services.trusted_movies import get_untrusted_movie_ids
 
 router = APIRouter()
 
@@ -85,10 +90,10 @@ def _build_reason_tags(base_genres: list[str], base_year: int | None, item) -> l
 
 @router.get("/ui/movies/review")
 def start_review(request: Request, db: Session = Depends(get_db)) -> RedirectResponse:
-    first_id = get_first_movie_id(db)
-    if first_id is None:
-        return RedirectResponse(url="/ui/movies", status_code=302)
-    return RedirectResponse(url=f"/ui/movies/{first_id}?review=1", status_code=302)
+    return RedirectResponse(
+        url="/ui/movies/health?view=vault#review-workbench",
+        status_code=302,
+    )
 
 
 @router.get("/ui/movies/{movie_id}", response_class=HTMLResponse)
@@ -115,13 +120,14 @@ def movie_detail(
                 "review_next_id": None,
                 "profiles": get_profiles(db),
                 "active_profile_id": get_active_profile_id(request, db),
+                "source_provenance": None,
+                "flag_reasons": FLAG_REASONS,
             },
             status_code=404,
         )
 
     spotlight_reason = None
-    spotlight_ids = get_daily_spotlight_ids(db, limit=4)
-    if detail.id in spotlight_ids or spotlight:
+    if spotlight:
         spotlight_reason = build_spotlight_reason(detail)
 
     review_prev_id = None
@@ -131,12 +137,13 @@ def movie_detail(
 
     profiles = get_profiles(db)
     active_profile_id = get_active_profile_id(request, db)
-    similar_list = list(detail.similar or [])
-    used_ids: set[int] = set()
-    pair_with = _pick_diverse(similar_list, limit=2, used_ids=used_ids)
-    more_like = _pick_diverse(similar_list, limit=6, used_ids=used_ids)
+    can_manage_flags = get_active_profile_role(request, db) == ROLE_ADMIN
+    similar_ids = {item.id for item in (detail.similar or []) if item.id is not None}
+    untrusted_ids = get_untrusted_movie_ids(db, similar_ids)
+    similar_list = [item for item in (detail.similar or []) if item.id not in untrusted_ids]
+    more_like = _pick_diverse(similar_list, limit=6, used_ids=set())
 
-    preference_ids = [detail.id] + [item.id for item in pair_with + more_like if item.id]
+    preference_ids = [detail.id] + [item.id for item in more_like if item.id]
     preferences = get_preferences_for_movies(db, active_profile_id, preference_ids)
     pref = preferences.get(detail.id, {})
     similar_preferences = {
@@ -144,7 +151,7 @@ def movie_detail(
     }
     similar_reasons = {
         item.id: _build_reason_tags(detail.genres, detail.year, item)
-        for item in pair_with + more_like
+        for item in more_like
         if item.id
     }
 
@@ -154,19 +161,21 @@ def movie_detail(
         {
             "movie": detail,
             "roles": detail.roles,
-            "similar": detail.similar,
+            "similar": similar_list,
             "spotlight_reason": spotlight_reason,
             "review_mode": review,
             "review_prev_id": review_prev_id,
             "review_next_id": review_next_id,
             "profiles": profiles,
             "active_profile_id": active_profile_id,
+            "can_manage_flags": can_manage_flags,
             "movie_liked": pref.get("liked", False),
             "movie_watchlist": pref.get("watchlist", False),
             "similar_preferences": similar_preferences,
             "similar_reasons": similar_reasons,
-            "pair_with": pair_with,
             "more_like": more_like,
+            "source_provenance": source_provenance_for_movie(db, detail.id),
+            "flag_reasons": FLAG_REASONS,
         },
     )
     ensure_profile_cookie(request, response, db)

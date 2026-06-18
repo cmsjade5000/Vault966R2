@@ -88,6 +88,8 @@ def test_movie_detail_api(client: TestClient, detail_movie_setup):
     assert payload["where_to_watch"] == ["Netflix", "Prime Video"]
     assert payload["similar"]
     assert payload["flagged"] is False
+    assert payload["flag_reason"] is None
+    assert payload["flag_notes"] is None
     assert payload["top_billed"][0]["name"] == "Case Worker"
     assert payload["top_billed"][0]["character"] == "Dreamer"
 
@@ -100,6 +102,41 @@ def test_movie_detail_template(client: TestClient, detail_movie_setup):
     assert "Case Worker" in html
     assert "Top billed" in html
     assert "data-copy-vault" in html
+    assert 'data-vault-busy-message="Returning to the Library…"' in html
+    assert "js/back_link.js?v=" in html
+    assert "css/movies.css?v=" in html
+    assert "css/movie_detail.css?v=" in html
+    assert "css/movie_components.css?v=" in html
+    assert "js/movie_detail.js?v=" in html
+    assert "js/movie_preferences.js?v=" in html
+    assert "js/movie_detail_edit.js?v=" in html
+    assert "js/movies_page.js" not in html
+    assert "data-poster-focus" in html
+    assert "data-poster-focus-backdrop" in html
+    assert 'aria-label="Enlarge Test Detail Movie poster"' in html
+    assert 'class="library-grid"' in html
+    assert 'class="library-card"' in html
+    assert 'class="library-card__actions"' in html
+    assert 'class="preference-icon' in html
+    assert 'class="preference-button' not in html
+    assert "detail-rec-card" not in html
+    assert "Pair with this" not in html
+    assert "More like this" in html
+    assert "data-flag-dialog" in html
+    assert "data-flag-form" in html
+    assert "Flag for review" in html
+    assert "adminToken" not in html
+
+
+def test_movie_detail_renders_spotlight_context_when_requested(
+    client: TestClient, detail_movie_setup
+):
+    movie_id = detail_movie_setup
+
+    response = client.get(f"/ui/movies/{movie_id}?spotlight=1")
+
+    assert response.status_code == 200
+    assert "spotlight-banner" in response.text
 
 
 def test_movie_detail_accepts_json_languages_and_countries(client: TestClient, detail_movie_setup):
@@ -128,12 +165,13 @@ def test_movie_detail_flag_status(
     movie_id = detail_movie_setup
     client.post(
         f"/movies/{movie_id}/flag",
-        json={"reason": "Poster"},
+        json={"reason": "Poster/backdrop issue"},
         headers=admin_headers,
     )
     resp = client.get(f"/movies/{movie_id}/detail")
     assert resp.status_code == 200
     assert resp.json()["flagged"] is True
+    assert resp.json()["flag_reason"] == "Poster/backdrop issue"
 
 
 def test_movie_detail_handles_dict_languages_and_countries(client: TestClient, detail_movie_setup):

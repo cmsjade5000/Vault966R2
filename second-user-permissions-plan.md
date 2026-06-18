@@ -133,7 +133,7 @@ Introduce profile roles so User A is the admin and User B is a limited reviewer.
   - Query DB after a reviewer report.
 
 ### Task 3.3: Update UI to show reviewer flag action
-- **Location**: `templates/movie_detail.html`, `static/js/movies_page.js`, `static/css/movies.css`
+- **Location**: `templates/movie_detail.html`, `static/js/movie_detail.js`, `static/css/movie_detail.css`
 - **Description**: Add a “Report incorrect” action for non‑admin profiles that calls the reviewer endpoint. Keep admin resolve/clear actions restricted.
 - **Complexity**: 5
 - **Dependencies**: Task 3.1

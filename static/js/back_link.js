@@ -45,12 +45,15 @@
         if (url.pathname.startsWith("/ui/discover")) {
           link.textContent = "← Back to Discover";
           link.setAttribute("href", "/ui/discover");
+          link.dataset.vaultBusyMessage = "Returning to Discover…";
         } else if (url.pathname.startsWith("/ui/watchlist")) {
           link.textContent = "← Back to Watchlist";
           link.setAttribute("href", "/ui/watchlist");
+          link.dataset.vaultBusyMessage = "Returning to the Watchlist…";
         } else if (url.pathname.startsWith("/ui/movies")) {
           link.textContent = "← Back to Library";
           link.setAttribute("href", "/ui/movies");
+          link.dataset.vaultBusyMessage = "Returning to the Library…";
         }
       }
     } catch (err) {
@@ -60,17 +63,21 @@
 
   link.addEventListener("click", (event) => {
     const baseHref = link.getAttribute("href") || "/ui/movies";
-    if (!baseHref.startsWith("/ui/movies")) {
-      return;
-    }
-    const params = readPersistedFilters();
-    if (!params) {
-      return;
-    }
     try {
+      const params = baseHref.startsWith("/ui/movies")
+        ? readPersistedFilters()
+        : null;
       const url = buildUrl(baseHref, params);
       event.preventDefault();
-      window.location.href = url;
+      if (typeof window.setVaultBusy === "function") {
+        window.setVaultBusy(
+          link.dataset.vaultBusyMessage || "Returning to the Library…",
+          { delay: 0 },
+        );
+      }
+      window.setTimeout(() => {
+        window.location.href = url;
+      }, 400);
     } catch (err) {
       console.warn("Failed to restore filters", err);
     }

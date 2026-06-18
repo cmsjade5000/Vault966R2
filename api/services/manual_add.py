@@ -2,10 +2,12 @@ from __future__ import annotations
 
 import csv
 import pathlib
+from datetime import datetime, timezone
 from typing import Iterable, Tuple
 
-from core.enriched_csv import normalize_where_to_watch
 from api.utils.providers import merge_providers
+from core.enriched_csv import normalize_where_to_watch
+from core.movie_metadata import MovieMetadata
 
 BASE_DIR = pathlib.Path(__file__).resolve().parents[2]
 DATA_DIR = BASE_DIR / "data"
@@ -157,23 +159,35 @@ def append_movie_to_enriched_csv(
     row["year"] = year or ""
     row["watch_region"] = "US"
 
-    provider_list = merge_providers(providers or [], (metadata or {}).get("where_to_watch"))
+    canonical = MovieMetadata.from_mapping(metadata or {})
+    provider_list = merge_providers(providers or [], canonical.where_to_watch)
 
     if metadata:
-        row["imdb_id"] = metadata.get("imdb_id") or ""
-        row["tmdb_id"] = metadata.get("tmdb_id") or ""
-        row["runtime_min"] = metadata.get("runtime") or ""
-        row["plot"] = metadata.get("overview") or ""
-        row["poster_url"] = metadata.get("poster_url") or ""
-        row["backdrop_url"] = metadata.get("backdrop_url") or ""
-        row["genres"] = "; ".join(metadata.get("genres", []) or [])
-        keywords = metadata.get("keywords") or []
+        row["imdb_id"] = canonical.imdb_id or ""
+        row["tmdb_id"] = canonical.tmdb_id or ""
+        row["runtime_min"] = canonical.runtime or ""
+        row["plot"] = canonical.plot or ""
+        row["poster_url"] = canonical.poster_url or ""
+        row["backdrop_url"] = canonical.backdrop_url or ""
+        row["genres"] = "; ".join(canonical.genres)
+        keywords = canonical.keywords
         if keywords:
             row["keywords"] = "; ".join(keywords)
-        row["tmdb_last_scraped"] = metadata.get("release_date") or ""
+        row["imdb_rating"] = canonical.imdb_rating or ""
+        row["imdb_votes"] = canonical.imdb_votes or ""
+        row["rt_score"] = canonical.rt_score or ""
+        row["languages"] = "; ".join(canonical.languages)
+        row["countries"] = "; ".join(canonical.countries)
+        row["collection"] = canonical.collection or ""
+        fetched_at = canonical.last_tmdb_fetch_at or datetime.now(timezone.utc)
+        row["tmdb_last_scraped"] = fetched_at.isoformat()
 
     if provider_list:
-        row["providers_stream"] = "; ".join(provider_list)
+        watch = normalize_where_to_watch("; ".join(provider_list), region="US")
+        row["providers_stream"] = "; ".join(watch.stream)
+        row["providers_rent"] = "; ".join(watch.rent)
+        row["providers_buy"] = "; ".join(watch.buy)
+        row["tmdb_watch_url"] = watch.tmdb_watch_url or ""
 
     _append_row(path, fieldnames, row)
     return True

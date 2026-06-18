@@ -12,7 +12,7 @@ def test_flag_and_unflag_movie(client: TestClient, admin_headers: dict[str, str]
     assert body["movie_id"] == 1
     assert body["reason"] == "Missing poster"
 
-    flags_response = client.get("/movies/flags")
+    flags_response = client.get("/movies/flags", headers=admin_headers)
     assert flags_response.status_code == 200
     flags = flags_response.json()
     assert any(flag["movie_id"] == 1 for flag in flags)
@@ -25,20 +25,20 @@ def test_flag_and_unflag_movie(client: TestClient, admin_headers: dict[str, str]
     clear_response = client.delete("/movies/1/flag", headers=admin_headers)
     assert clear_response.status_code == 204
 
-    flags_after = client.get("/movies/flags").json()
+    flags_after = client.get("/movies/flags", headers=admin_headers).json()
     assert all(flag["movie_id"] != 1 for flag in flags_after)
 
 
-def test_flag_movie_allows_custom_reason(client: TestClient, admin_headers: dict[str, str]) -> None:
+def test_flag_movie_rejects_unknown_reason(
+    client: TestClient, admin_headers: dict[str, str]
+) -> None:
     movie_id = 1
     resp = client.post(
         f"/movies/{movie_id}/flag",
         json={"reason": "Not a reason"},
         headers=admin_headers,
     )
-    assert resp.status_code == 200
-    body = resp.json()
-    assert body["reason"] == "Not a reason"
+    assert resp.status_code == 422
 
 
 def test_flag_movie_rejects_long_notes(client: TestClient, admin_headers: dict[str, str]) -> None:
@@ -49,8 +49,8 @@ def test_flag_movie_rejects_long_notes(client: TestClient, admin_headers: dict[s
         json={"reason": "Metadata cleanup", "notes": long_notes},
         headers=admin_headers,
     )
-    assert resp.status_code == 400
-    assert "Notes" in resp.json()["message"]
+    assert resp.status_code == 422
+    assert "500 characters" in resp.json()["message"]
 
 
 def test_update_movie_metadata_resolves_flag(
@@ -75,7 +75,7 @@ def test_update_movie_metadata_resolves_flag(
     body = response.json()
     assert body["runtime"] == 123
     assert body["flagged"] is False
-    assert body["where_to_watch"] == "Blu-ray"
+    assert body["where_to_watch"] == ["Blu-ray"]
 
     detail = client.get("/movies/1/detail").json()
     assert detail["flagged"] is False
@@ -120,7 +120,7 @@ def test_update_movie_metadata_handles_optional_fields(
     assert body["tomato_audience"] == 91
     assert body["poster_url"] == "https://example.com/poster.jpg"
     assert body["backdrop_url"] == "https://example.com/backdrop.jpg"
-    assert body["where_to_watch"] == "Netflix; Vudu"
+    assert body["where_to_watch"] == ["Netflix", "Vudu"]
     assert body["languages"] == "English, Japanese"
     assert body["countries"] == "United States"
     assert body["collection"] == "Blade Runner Collection"
@@ -132,6 +132,19 @@ def test_update_movie_metadata_handles_optional_fields(
 
     detail = client.get("/movies/1/detail").json()
     assert detail["rt_score"] == 95
+
+
+def test_update_movie_uses_terminal_title_year_as_authority(
+    client: TestClient, admin_headers: dict[str, str]
+) -> None:
+    response = client.patch(
+        "/movies/1",
+        json={"title": "Blade Runner (1981)", "year": 1982},
+        headers=admin_headers,
+    )
+
+    assert response.status_code == 200
+    assert response.json()["year"] == 1981
 
 
 @pytest.mark.parametrize(
@@ -164,7 +177,7 @@ def test_resolve_flag_without_other_changes(
 ) -> None:
     client.post(
         "/movies/1/flag",
-        json={"reason": "Needs review"},
+        json={"reason": "Metadata cleanup"},
         headers=admin_headers,
     )
 

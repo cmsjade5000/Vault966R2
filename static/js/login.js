@@ -6,19 +6,20 @@
     shell?.setAttribute("data-unlocked", "1");
     const archive = document.querySelector(".login-archive");
     archive?.classList.add("is-unlocked");
-    const tickerSpans = document.querySelectorAll(
-      ".login-ticker__track span",
-    );
+    const tickerSpans = document.querySelectorAll(".login-ticker__group span");
     tickerSpans.forEach((span) => {
       span.textContent = "Vault Unlocked";
     });
+    const buttonValue = document.querySelector(".login-button__value");
+    if (buttonValue) {
+      buttonValue.textContent = "Vault unlocked";
+    }
     document.dispatchEvent(new CustomEvent("vault:unlocked"));
-  };
 
-  const runUnlockRedirect = () => {
+    const firstProfile = document.querySelector(".login-profile");
     window.setTimeout(() => {
-      window.location.replace("/ui/discover");
-    }, 2200);
+      firstProfile?.focus();
+    }, 260);
   };
 
   const initLogin = () => {
@@ -26,57 +27,53 @@
     if (!shell) return;
     if (shell.getAttribute("data-unlocked") === "1") {
       applyUnlockVisuals();
-      runUnlockRedirect();
-      return;
     }
 
     const form = document.querySelector(".login-form");
-    if (!form) return;
     const errorEl = document.querySelector(".login-card__error");
-    const submitButton = form.querySelector("button[type='submit']");
-    form.addEventListener("submit", async (event) => {
-      event.preventDefault();
-      if (form.dataset.submitting === "true") return;
-      form.dataset.submitting = "true";
-      if (submitButton) {
-        submitButton.disabled = true;
-        submitButton.setAttribute("aria-busy", "true");
+    const showProfileBusy = (message = "Unlocking the Vault…") => {
+      if (typeof window.setVaultBusy === "function") {
+        window.setVaultBusy(message, { delay: 0 });
       }
+
+      const indicator = document.querySelector("[data-vault-busy]");
+      const messageTarget = indicator?.querySelector(
+        "[data-vault-busy-message]",
+      );
+      if (!indicator || !messageTarget) return;
+      messageTarget.textContent = message;
+      indicator.removeAttribute("hidden");
+      indicator.setAttribute("aria-busy", "true");
+      document.body.setAttribute("aria-busy", "true");
+    };
+    const clearError = () => {
       if (errorEl) {
         errorEl.textContent = "";
         errorEl.hidden = true;
       }
-      try {
-        const response = await fetch(form.action || "/login", {
-          method: "POST",
-          headers: {
-            Accept: "application/json",
-          },
-          body: new FormData(form),
+    };
+
+    form?.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      if (form.dataset.submitting === "true") return;
+      clearError();
+      applyUnlockVisuals();
+    });
+
+    document.querySelectorAll(".login-profile-form").forEach((profileForm) => {
+      const message =
+        profileForm.dataset.vaultBusyMessage || "Unlocking the Vault…";
+      const profileButton = profileForm.querySelector(".login-profile");
+      ["pointerdown", "touchstart", "click"].forEach((eventName) => {
+        profileButton?.addEventListener(eventName, () => {
+          showProfileBusy(message);
         });
-        if (!response.ok) {
-          const data = await response.json().catch(() => ({}));
-          const message = data.error || "Login failed.";
-          if (errorEl) {
-            errorEl.textContent = message;
-            errorEl.hidden = false;
-          }
-          return;
-        }
-        applyUnlockVisuals();
-        runUnlockRedirect();
-      } catch (error) {
-        if (errorEl) {
-          errorEl.textContent = "Login failed.";
-          errorEl.hidden = false;
-        }
-      } finally {
-        delete form.dataset.submitting;
-        if (submitButton) {
-          submitButton.disabled = false;
-          submitButton.removeAttribute("aria-busy");
-        }
-      }
+      });
+      profileForm.addEventListener("submit", (event) => {
+        event.stopPropagation();
+        showProfileBusy(message);
+      });
     });
   };
 

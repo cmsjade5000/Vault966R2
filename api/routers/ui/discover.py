@@ -1,7 +1,11 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
+from datetime import date, datetime
+from hashlib import sha256
 from random import Random
 from typing import Iterable, Optional
+from zoneinfo import ZoneInfo
 
 from fastapi import APIRouter, Depends, Query, Request
 from fastapi.responses import HTMLResponse
@@ -21,8 +25,157 @@ from api.services.profiles import (
 from api.services.ui.grid import attach_genre_display, attach_poster_themes
 from api.services.ui.spotlight import build_spotlight_reason, get_daily_spotlight_movies
 from api.services.ui.templates import TEMPLATES
+from api.services.trusted_movies import get_untrusted_movie_ids, trusted_movie_query
 
 router = APIRouter()
+
+DISCOVER_TIME_ZONE = ZoneInfo("America/New_York")
+
+
+@dataclass(frozen=True)
+class RailDefinition:
+    key: str
+    title: str
+    description: str
+
+
+RAIL_DEFINITIONS = (
+    RailDefinition(
+        "recently-added",
+        "Recently Added",
+        "The newest trusted Vault entries.",
+    ),
+    RailDefinition(
+        "under-100",
+        "Under 100 Minutes",
+        "Shorter picks that still feel like a full movie night.",
+    ),
+    RailDefinition(
+        "highly-rated",
+        "Highly Rated",
+        "Strong audience or critic scores with meaningful support.",
+    ),
+    RailDefinition(
+        "hidden-gems",
+        "Hidden Gems",
+        "Well-liked titles outside the most heavily voted mainstream.",
+    ),
+    RailDefinition(
+        "before-2000",
+        "Before 2000",
+        "Trusted favorites from the earlier shelves.",
+    ),
+    RailDefinition(
+        "edition-cuts",
+        "Edition Cuts",
+        "Unrated, extended, director's cuts, and other named editions.",
+    ),
+)
+
+
+def _with_poster(query):
+    return query.filter(
+        Movie.poster_url.isnot(None),
+        Movie.poster_url != "",
+        Movie.poster_url != "N/A",
+    )
+
+
+def _discover_day() -> date:
+    return datetime.now(DISCOVER_TIME_ZONE).date()
+
+
+def _stable_daily_rank(day: date, scope: str, stable_id: str) -> str:
+    value = f"discover:v2|{day.isoformat()}|{scope}|{stable_id}"
+    return sha256(value.encode("utf-8")).hexdigest()
+
+
+def _stable_movie_id(movie: Movie) -> str:
+    return movie.vault_id or f"movie-{movie.id}"
+
+
+def _ordered_rail_definitions(day: date) -> list[RailDefinition]:
+    return sorted(
+        RAIL_DEFINITIONS,
+        key=lambda rail: _stable_daily_rank(day, "rail-order", rail.key),
+    )
+
+
+def _rail_candidates(db: Session, key: str) -> list[Movie]:
+    query = _with_poster(trusted_movie_query(db)).options(selectinload(Movie.genres))
+    if key == "recently-added":
+        return query.order_by(Movie.id.desc()).limit(80).all()
+    if key == "under-100":
+        query = query.filter(Movie.runtime.isnot(None), Movie.runtime <= 100)
+    elif key == "highly-rated":
+        query = query.filter(
+            or_(
+                (Movie.imdb_rating >= 7.5) & (Movie.imdb_votes >= 10_000),
+                Movie.rt_score >= 85,
+            )
+        )
+    elif key == "hidden-gems":
+        query = query.filter(
+            Movie.imdb_rating >= 6.8,
+            Movie.imdb_votes.isnot(None),
+            Movie.imdb_votes < 100_000,
+        )
+    elif key == "before-2000":
+        query = query.filter(Movie.year.isnot(None), Movie.year < 2000)
+    elif key == "edition-cuts":
+        markers = (
+            "%(Unrated)%",
+            "%(Extended%",
+            "%Director's Cut%",
+            "%Special Edition%",
+            "%Anniversary Edition%",
+            "%Final Cut%",
+        )
+        query = query.filter(or_(*(Movie.title.ilike(marker) for marker in markers)))
+    return query.all()
+
+
+def _build_discover_rails(
+    db: Session,
+    *,
+    used_ids: set[int],
+    limit: int = 5,
+    day: Optional[date] = None,
+) -> list[dict[str, object]]:
+    day = day or _discover_day()
+    rails: list[dict[str, object]] = []
+    for definition in _ordered_rail_definitions(day):
+        candidates = sorted(
+            _rail_candidates(db, definition.key),
+            key=lambda movie: _stable_daily_rank(
+                day,
+                definition.key,
+                _stable_movie_id(movie),
+            ),
+        )
+        fresh = [movie for movie in candidates if movie.id is not None and movie.id not in used_ids]
+        selected = fresh[:limit]
+        if len(selected) < limit:
+            selected_ids = {movie.id for movie in selected}
+            selected.extend(
+                movie
+                for movie in candidates
+                if movie.id is not None
+                and movie.id not in used_ids
+                and movie.id not in selected_ids
+            )
+            selected = selected[:limit]
+        used_ids.update(movie.id for movie in selected if movie.id is not None)
+        rails.append(
+            {
+                "key": definition.key,
+                "title": definition.title,
+                "description": definition.description,
+                "movies": selected,
+                "href": f"/ui/movies?preset={definition.key}&view=grid&page=1",
+            }
+        )
+    return rails
 
 
 def _top_imdb(
@@ -68,10 +221,12 @@ def _top_rt(
 
 
 def _top_genre_names(db: Session, *, limit: int) -> list[str]:
+    excluded_ids = get_untrusted_movie_ids(db)
     rows = (
         db.query(Genre.name, func.count().label("count"))
         .join(movie_genres, Genre.id == movie_genres.c.genre_id)
         .join(Movie, Movie.id == movie_genres.c.movie_id)
+        .filter(~Movie.id.in_(excluded_ids) if excluded_ids else True)
         .group_by(Genre.name)
         .order_by(func.count().desc())
         .limit(limit)
@@ -156,8 +311,19 @@ def _pick_selected_for_you(
     if not liked_movies:
         return [], []
 
-    liked_ids = {movie.id for movie in liked_movies if movie.id is not None}
-    excluded = set(exclude_ids or set()) | liked_ids
+    preference_rows = (
+        db.query(MoviePreference)
+        .filter(MoviePreference.profile_id == profile_id)
+        .filter(
+            or_(
+                MoviePreference.liked.is_(True),
+                MoviePreference.watchlist.is_(True),
+            )
+        )
+        .all()
+    )
+    preferred_ids = {preference.movie_id for preference in preference_rows}
+    excluded = set(exclude_ids or set()) | preferred_ids
 
     genre_counts: dict[str, int] = {}
     for movie in liked_movies:
@@ -176,7 +342,7 @@ def _pick_selected_for_you(
         return [], []
 
     candidates = (
-        db.query(Movie)
+        _with_poster(trusted_movie_query(db))
         .options(selectinload(Movie.genres))
         .filter(Movie.genres.any(Genre.name.in_(top_genres)))
         .filter(or_(Movie.imdb_rating.isnot(None), Movie.rt_score.isnot(None)))
@@ -218,6 +384,18 @@ def _pick_selected_for_you(
     return selected, top_genres
 
 
+def _personalized_reason(movie: Movie, preferred_genres: list[str]) -> str:
+    movie_genres = {genre.lower(): genre for genre in _movie_genres(movie)}
+    for genre in preferred_genres:
+        if genre.lower() in movie_genres:
+            return f"Because you like {movie_genres[genre.lower()]}"
+    if movie.imdb_rating is not None:
+        return f"IMDb {movie.imdb_rating:.1f} match"
+    if movie.rt_score is not None:
+        return f"RT {movie.rt_score}% match"
+    return "Matches your recent likes"
+
+
 def _pick_genre_spotlights(
     db: Session,
     genre_names: Iterable[str],
@@ -231,7 +409,7 @@ def _pick_genre_spotlights(
     for genre_name in genre_names:
         genre_rng = Random((seed or 0) + len(spotlights)) if base_rng else None
         query = (
-            db.query(Movie)
+            _with_poster(trusted_movie_query(db))
             .options(selectinload(Movie.genres))
             .filter(Movie.genres.any(Genre.name == genre_name))
             .filter(or_(Movie.imdb_rating.isnot(None), Movie.rt_score.isnot(None)))
@@ -292,6 +470,7 @@ def _pick_pairings(
             runtime_cap=DEFAULT_DOUBLE_FEATURE_RUNTIME,
             genre=genre_name,
             seed=seeds[idx % len(seeds)],
+            require_poster=True,
         )
         if selection:
             register(selection)
@@ -303,6 +482,7 @@ def _pick_pairings(
             db,
             runtime_cap=DEFAULT_DOUBLE_FEATURE_RUNTIME,
             seed=seeds[-1],
+            require_poster=True,
         )
         if selection:
             register(selection)
@@ -434,108 +614,38 @@ def discover(request: Request, db: Session = Depends(get_db)):
     active_profile_id = get_active_profile_id(request, db)
 
     spotlight_movies = get_daily_spotlight_movies(db, limit=4)
+
+    used_ids = {movie.id for movie in spotlight_movies if movie.id is not None}
+    selected_for_you, selected_for_you_genres = _pick_selected_for_you(
+        db,
+        active_profile_id,
+        exclude_ids=used_ids,
+    )
+    used_ids.update(movie.id for movie in selected_for_you if movie.id is not None)
+
+    rails = _build_discover_rails(db, used_ids=used_ids)
     spotlight_reasons = {
         movie.id: build_spotlight_reason(movie)
         for movie in spotlight_movies
         if movie.id is not None
     }
-
-    top_genres = _top_genre_names(db, limit=6)
-
-    used_ids = {movie.id for movie in spotlight_movies if movie.id is not None}
-    pairings = _pick_pairings(db, top_genres, used_ids)
-    double_feature = pairings[0] if pairings else None
-    pairings = pairings[1:] if len(pairings) > 1 else []
-    if double_feature:
-        used_ids.update(
-            {
-                movie_id
-                for movie_id in (
-                    getattr(double_feature.primary, "id", None),
-                    getattr(double_feature.secondary, "id", None),
-                )
-                if movie_id is not None
-            }
-        )
-    selected_for_you, liked_genres = _pick_selected_for_you(
-        db,
-        active_profile_id,
-        limit=6,
-        exclude_ids=used_ids,
-    )
-    used_ids.update({movie.id for movie in selected_for_you if movie.id is not None})
-
-    genre_spotlights = _pick_genre_spotlights(db, top_genres, used_ids)
-    top_imdb = _top_imdb(db, limit=8, exclude_ids=used_ids)
-    used_ids.update({movie.id for movie in top_imdb if movie.id is not None})
-    top_rt = _top_rt(db, limit=8, exclude_ids=used_ids)
-    used_ids.update({movie.id for movie in top_rt if movie.id is not None})
-
-    pairing_reasons: dict[str, list[str]] = {}
-    discover_reasons: dict[int, list[str]] = {}
-    for pairing in pairings:
-        primary_id = getattr(pairing.primary, "id", None)
-        secondary_id = getattr(pairing.secondary, "id", None)
-        if primary_id is None or secondary_id is None:
-            continue
-        key = f"{primary_id}-{secondary_id}"
-        pairing_reasons[key] = _pairing_reason_tags(
-            pairing.primary, pairing.secondary, pairing.theme_label
-        )
-        discover_reasons[primary_id] = _reason_tags_for_movie(pairing.primary, include_rating=True)
-        discover_reasons[secondary_id] = _reason_tags_for_movie(
-            pairing.secondary, include_rating=True
-        )
-
-    for item in genre_spotlights:
-        movie = item.get("movie")
-        genre = item.get("genre")
-        if isinstance(movie, Movie) and movie.id is not None and isinstance(genre, str):
-            discover_reasons[movie.id] = _reason_tags_for_movie(
-                movie, forced_tags=[genre], include_rating=True
-            )
-
-    for movie in top_imdb:
-        if movie.id is None or movie.imdb_rating is None:
-            continue
-        discover_reasons[movie.id] = _reason_tags_for_movie(
-            movie, forced_tags=[f"IMDb {movie.imdb_rating:.1f}"]
-        )
-
-    for movie in top_rt:
-        if movie.id is None or movie.rt_score is None:
-            continue
-        discover_reasons[movie.id] = _reason_tags_for_movie(
-            movie, forced_tags=[f"RT {movie.rt_score}%"]
-        )
-
-    liked_genre_set = {genre.lower() for genre in liked_genres if genre}
-    for movie in selected_for_you:
-        if movie.id is None:
-            continue
-        reason = None
-        for genre in _movie_genres(movie):
-            if genre.lower() in liked_genre_set:
-                reason = f"Liked {genre}"
-                break
-        forced_tags = [reason] if reason else ["Picked for you"]
-        discover_reasons[movie.id] = _reason_tags_for_movie(
-            movie, forced_tags=forced_tags, include_rating=True
-        )
+    selected_for_you_reasons = {
+        movie.id: _personalized_reason(movie, selected_for_you_genres)
+        for movie in selected_for_you
+        if movie.id is not None
+    }
 
     all_movies: dict[int, Movie] = {}
-    for movie in spotlight_movies + selected_for_you + top_imdb + top_rt:
+    for movie in spotlight_movies:
         if movie.id is not None:
             all_movies[movie.id] = movie
-    for item in genre_spotlights:
-        movie = item.get("movie")
-        if isinstance(movie, Movie) and movie.id is not None:
+    for movie in selected_for_you:
+        if movie.id is not None:
             all_movies[movie.id] = movie
-    for pairing in pairings:
-        for movie in (pairing.primary, pairing.secondary):
+    for rail in rails:
+        for movie in rail["movies"]:
             if movie.id is not None:
                 all_movies[movie.id] = movie
-
     attach_poster_themes(all_movies.values())
     attach_genre_display(all_movies.values())
 
@@ -550,15 +660,13 @@ def discover(request: Request, db: Session = Depends(get_db)):
         "profiles": profiles,
         "active_profile_id": active_profile_id,
         "spotlight_movies": spotlight_movies,
+        "spotlight_lead": spotlight_movies[0] if spotlight_movies else None,
+        "spotlight_supporting": spotlight_movies[1:],
         "spotlight_reasons": spotlight_reasons,
-        "double_feature": double_feature,
-        "pairings": pairings,
-        "pairing_reasons": pairing_reasons,
-        "discover_reasons": discover_reasons,
         "selected_for_you": selected_for_you,
-        "top_imdb": top_imdb,
-        "top_rt": top_rt,
-        "genre_spotlights": genre_spotlights,
+        "selected_for_you_genres": selected_for_you_genres,
+        "selected_for_you_reasons": selected_for_you_reasons,
+        "rails": rails,
     }
     response = TEMPLATES.TemplateResponse(request, "movies_discover.html", context)
     ensure_profile_cookie(request, response, db)

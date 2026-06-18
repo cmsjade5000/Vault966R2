@@ -1,11 +1,28 @@
 (() => {
-  const isIos = () => /iphone|ipad|ipod/i.test(window.navigator.userAgent);
-  const isStandalone = () =>
-    window.matchMedia("(display-mode: standalone)").matches ||
-    window.navigator.standalone === true;
+  const isIosDevice = (navigatorLike = window.navigator) => {
+    const userAgent = navigatorLike.userAgent || "";
+    const platform = navigatorLike.platform || "";
+    const touchPoints = Number(navigatorLike.maxTouchPoints || 0);
+    return (
+      /iphone|ipad|ipod/i.test(userAgent) ||
+      (platform === "MacIntel" && touchPoints > 1)
+    );
+  };
+
+  const isStandaloneMode = ({
+    navigatorLike = window.navigator,
+    matchMediaLike = window.matchMedia.bind(window),
+  } = {}) =>
+    matchMediaLike("(display-mode: standalone)").matches ||
+    navigatorLike.standalone === true;
+
+  window.VaultInstallSupport = {
+    isIosDevice,
+    isStandaloneMode,
+  };
 
   const shouldShow = () => {
-    if (!isIos() || isStandalone()) return false;
+    if (!isIosDevice() || isStandaloneMode()) return false;
     if (window.location.pathname !== "/login") return false;
     try {
       const dismissed = localStorage.getItem("vaultInstallPromptDismissed");
@@ -38,7 +55,8 @@
     title.textContent = "Add Vault 966 to your Home Screen";
 
     const body = document.createElement("p");
-    body.textContent = "Tap Share, then Add to Home Screen for the full-screen vault.";
+    body.textContent =
+      "Tap Share, then Add to Home Screen for the full-screen vault.";
 
     copy.appendChild(title);
     copy.appendChild(body);

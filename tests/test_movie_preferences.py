@@ -39,3 +39,29 @@ def test_like_watchlist_is_profile_scoped(client) -> None:
     assert response.status_code == 200
     payload = response.json()
     assert payload["watchlist"] is False
+
+
+def test_watchlist_uses_library_movie_cards(client) -> None:
+    movie_id = _first_movie_id(client)
+    response = client.post(f"/movies/{movie_id}/watchlist")
+    assert response.status_code == 200
+
+    page = client.get("/ui/watchlist")
+    assert page.status_code == 200
+    assert 'class="library-shell page-shell"' in page.text
+    assert 'class="library-heading"' in page.text
+    assert "<h1>Watchlist</h1>" in page.text
+    assert "saved movie" in page.text
+    assert "Personal picks" not in page.text
+    assert "Back to movies" not in page.text
+    assert 'class="results-shell page-shell"' not in page.text
+    assert 'class="library-grid"' in page.text
+    assert 'class="library-card"' in page.text
+    assert 'class="library-card__actions"' in page.text
+    assert 'data-preference-type="like"' in page.text
+    assert 'data-preference-type="watchlist"' in page.text
+    assert 'class="card-preferences"' not in page.text
+    assert 'class="preference-button' not in page.text
+    assert "css/movies.css?v=" in page.text
+    assert "js/movie_preferences.js?v=" in page.text
+    assert "js/movies_page.js" not in page.text

@@ -2,14 +2,14 @@ from __future__ import annotations
 
 from typing import List, Optional
 
-from fastapi import APIRouter, Body, Depends, HTTPException, status
+from fastapi import APIRouter, BackgroundTasks, Body, Depends, HTTPException, status
 from pydantic import BaseModel, Field, field_validator
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from api.db import get_db
-from api.deps.auth import require_admin
-from api.models.movie import Genre, Movie
+from api.deps.auth import require_profile_role
+from api.models.movie import Genre, Movie, MovieIngestProvenance
 from api.services.manual_add import (
     append_movie_to_cleaned_csv,
     append_movie_to_enriched_csv,
@@ -19,8 +19,12 @@ from api.services.movie_lookup import (
     MovieLookupUnavailable,
     lookup_movie,
 )
+from api.services.poster_cache import cache_movie_posters_safely
+from api.services.profiles import ROLE_ADMIN
 from api.utils.providers import merge_providers
 from core.genres import split_and_normalize
+from core.movie_metadata import MovieMetadata
+from core.vault_ids import next_vault_id
 
 router = APIRouter()
 
@@ -37,6 +41,21 @@ class ManualMovieMetadata(BaseModel):
     source: Optional[str] = None
     keywords: List[str] = Field(default_factory=list)
     where_to_watch: List[str] = Field(default_factory=list)
+    awards: Optional[str] = None
+    certificate: Optional[str] = None
+    imdb_rating: Optional[float] = None
+    imdb_votes: Optional[int] = None
+    metascore: Optional[int] = None
+    tomato_meter: Optional[int] = None
+    tomato_audience: Optional[int] = None
+    rt_score: Optional[int] = None
+    languages: List[str] = Field(default_factory=list)
+    countries: List[str] = Field(default_factory=list)
+    collection: Optional[str] = None
+    last_tmdb_fetch_at: Optional[str] = None
+    last_omdb_fetch_at: Optional[str] = None
+    tmdb_payload_sha: Optional[str] = None
+    omdb_payload_sha: Optional[str] = None
 
 
 class ManualMovieCreate(BaseModel):
@@ -77,6 +96,21 @@ class ManualMoviePreviewResponse(BaseModel):
     source: Optional[str] = None
     keywords: List[str] = Field(default_factory=list)
     where_to_watch: List[str] = Field(default_factory=list)
+    awards: Optional[str] = None
+    certificate: Optional[str] = None
+    imdb_rating: Optional[float] = None
+    imdb_votes: Optional[int] = None
+    metascore: Optional[int] = None
+    tomato_meter: Optional[int] = None
+    tomato_audience: Optional[int] = None
+    rt_score: Optional[int] = None
+    languages: List[str] = Field(default_factory=list)
+    countries: List[str] = Field(default_factory=list)
+    collection: Optional[str] = None
+    last_tmdb_fetch_at: Optional[str] = None
+    last_omdb_fetch_at: Optional[str] = None
+    tmdb_payload_sha: Optional[str] = None
+    omdb_payload_sha: Optional[str] = None
 
 
 def _ensure_genres(session: Session, names: List[str]) -> List[Genre]:
@@ -108,6 +142,7 @@ def _find_existing_movie(session: Session, title: str, year: Optional[int]) -> O
 def manual_add_preview(
     payload: ManualMovieCreate = Body(...),
     db: Session = Depends(get_db),
+    _: str = Depends(require_profile_role(ROLE_ADMIN)),
 ):
     title = payload.title.strip()
     year = payload.year
@@ -133,9 +168,10 @@ def manual_add_preview(
 
 @router.post("/ui/movies/manual-add", status_code=status.HTTP_201_CREATED)
 def manual_add_movie(
+    background_tasks: BackgroundTasks,
     payload: ManualMovieCreate = Body(...),
     db: Session = Depends(get_db),
-    _: None = Depends(require_admin),
+    _: str = Depends(require_profile_role(ROLE_ADMIN)),
 ):
     title = payload.title.strip()
     year = payload.year
@@ -156,16 +192,16 @@ def manual_add_movie(
         except MovieLookupError:
             metadata_dict = {}
 
-    metadata = metadata_dict or {}
+    metadata = MovieMetadata.from_mapping(metadata_dict or {})
 
-    runtime = metadata.get("runtime")
-    overview = metadata.get("overview")
-    imdb_id = metadata.get("imdb_id")
-    tmdb_id = metadata.get("tmdb_id")
-    poster_url = metadata.get("poster_url")
-    backdrop_url = metadata.get("backdrop_url")
+    runtime = metadata.runtime
+    overview = metadata.plot
+    imdb_id = metadata.imdb_id
+    tmdb_id = metadata.tmdb_id
+    poster_url = metadata.poster_url
+    backdrop_url = metadata.backdrop_url
     providers = merge_providers(
-        metadata.get("where_to_watch"),
+        metadata.where_to_watch,
         ["Vudu"] if payload.vudu else None,
     )
 
@@ -186,32 +222,68 @@ def manual_add_movie(
             )
 
     movie = Movie(
+        vault_id=next_vault_id(db),
         title=title,
         year=year,
         runtime=runtime,
         plot=overview,
         imdb_id=imdb_id,
         tmdb_id=tmdb_id,
+        imdb_rating=metadata.imdb_rating,
+        imdb_votes=metadata.imdb_votes,
+        metascore=metadata.metascore,
+        tomato_meter=metadata.tomato_meter,
+        tomato_audience=metadata.tomato_audience,
+        rt_score=metadata.rt_score,
+        awards=metadata.awards,
+        certificate=metadata.certificate,
+        keywords=metadata.keywords or None,
         poster_url=poster_url,
         backdrop_url=backdrop_url,
-        where_to_watch="; ".join(providers) if providers else None,
+        where_to_watch=providers or None,
+        languages=metadata.languages or None,
+        countries=metadata.countries or None,
+        collection=metadata.collection,
+        last_tmdb_fetch_at=metadata.last_tmdb_fetch_at,
+        last_omdb_fetch_at=metadata.last_omdb_fetch_at,
+        tmdb_payload_sha=metadata.tmdb_payload_sha,
+        omdb_payload_sha=metadata.omdb_payload_sha,
     )
 
     genre_objs: List[Genre] = []
     if metadata:
-        genre_objs = _ensure_genres(db, metadata.get("genres", []))
+        genre_objs = _ensure_genres(db, metadata.genres)
         if genre_objs:
             movie.genres = genre_objs
 
     db.add(movie)
+    db.flush()
+    db.add(
+        MovieIngestProvenance(
+            movie_id=movie.id,
+            provider=metadata.source or "manual_add",
+            provider_id=metadata.imdb_id
+            or (f"tmdb:{metadata.tmdb_id}" if metadata.tmdb_id else None),
+            payload_sha=metadata.payload_sha(),
+            notes="Created through manual add",
+        )
+    )
     db.commit()
     db.refresh(movie)
 
     cleaned_written = append_movie_to_cleaned_csv(title, year)
-    enriched_written = append_movie_to_enriched_csv(title, year, metadata, providers)
+    enriched_written = append_movie_to_enriched_csv(
+        title,
+        year,
+        metadata.model_dump(mode="json"),
+        providers,
+    )
+    if movie.poster_url:
+        background_tasks.add_task(cache_movie_posters_safely, movie.id)
 
     return {
         "id": movie.id,
+        "vault_id": movie.vault_id,
         "title": movie.title,
         "year": movie.year,
         "runtime": movie.runtime,
@@ -226,5 +298,5 @@ def manual_add_movie(
             "cleaned": cleaned_written,
             "enriched": enriched_written,
         },
-        "metadata": metadata,
+        "metadata": metadata.model_dump(mode="json"),
     }

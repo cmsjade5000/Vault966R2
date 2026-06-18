@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block title %}Vault 966 · Missing Details{% endblock %}
 {% block head %}
-<link rel="stylesheet" href="{{ url_for('static', path='css/movies.css') }}" />
+<link rel="stylesheet" href="{{ static_asset('css/movies.css') }}" />
 {% endblock %}
 {% block content %}
   <section class="page-hero">
@@ -13,7 +13,7 @@
       <p class="tagline">Review titles that need runtimes, synopses, or artwork.</p>
     </div>
     <div class="hero-health-links">
-      <a class="hero-health-link" href="/ui/movies/health">← Back to Collection Health</a>
+      <a class="hero-health-link" href="/ui/movies/health">← Back to Vault Health</a>
     </div>
   </section>
 

@@ -1,4 +1,3 @@
-from datetime import datetime, timezone
 from typing import List, Optional, Sequence
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
@@ -6,7 +5,7 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session, selectinload
 
 from api.db import get_db
-from api.deps.auth import require_admin
+from api.deps.auth import require_admin, require_profile_role
 from api.models.flic_memory import FlicMemory
 from api.models.movie import Genre, Mood, Movie, movie_genres, movie_moods
 from api.models.movie_flag import MovieFlag
@@ -32,6 +31,8 @@ from core.movie_filters import (
     ordering_clause,
     parse_movie_filters,
 )
+from core.movie_metadata import MovieMetadata
+from core.vault_ids import next_vault_id, normalize_vault_id
 from api.utils.pagination import paginate
 from api.services.movie_lookup import (
     MovieLookupError,
@@ -46,9 +47,16 @@ from api.services.llm_filters import (
     generate_llm_filters,
 )
 from api.services.movie_updates import apply_movie_update
+from api.services.movie_flags import clear_movie_flag, report_movie_flag, set_movie_flag
 from api.services.double_feature import DEFAULT_DOUBLE_FEATURE_RUNTIME, pick_double_feature
 from api.services.flic_ordering import fetch_movies_in_rank_order, rank_movie_ids_by_flic
-from api.services.profiles import get_active_profile_id, update_movie_preference
+from api.services.profiles import (
+    ROLE_ADMIN,
+    ROLE_REVIEWER,
+    get_active_profile_id,
+    update_movie_preference,
+)
+from api.services.trusted_movies import trusted_movie_query
 from core.picker import (
     PickerCandidate,
     PickerFilters,
@@ -124,7 +132,7 @@ def get_pick(
         raise HTTPException(status_code=400, detail="year_min cannot be greater than year_max")
 
     query = (
-        db.query(Movie)
+        trusted_movie_query(db)
         .options(selectinload(Movie.genres), selectinload(Movie.moods))
         .order_by(Movie.title.asc())
     )
@@ -440,15 +448,40 @@ def list_flags(
     page: int = Query(default=1, ge=1),
     page_size: int = Query(default=100, ge=1, le=500),
     db: Session = Depends(get_db),
+    _: None = Depends(require_admin),
 ) -> List[MovieFlagRead]:
     flags = (
         db.query(MovieFlag)
-        .order_by(MovieFlag.updated_at.desc())
+        .order_by(MovieFlag.updated_at.desc(), MovieFlag.movie_id.asc())
         .offset((page - 1) * page_size)
         .limit(page_size)
         .all()
     )
     return flags
+
+
+@router.post("/{movie_id}/flag/report", response_model=MovieFlagRead)
+def report_flag(
+    movie_id: int,
+    payload: MovieFlagCreate,
+    request: Request,
+    db: Session = Depends(get_db),
+    _: str = Depends(require_profile_role(ROLE_ADMIN, ROLE_REVIEWER)),
+):
+    movie = db.get(Movie, movie_id)
+    if movie is None:
+        raise HTTPException(status_code=404, detail="Movie not found")
+
+    flag = report_movie_flag(
+        db,
+        movie,
+        reason=payload.reason,
+        notes=payload.notes or None,
+        reported_by_profile_id=get_active_profile_id(request, db),
+    )
+    db.commit()
+    db.refresh(flag)
+    return flag
 
 
 @router.patch("/{movie_id}", response_model=MovieRead)
@@ -499,16 +532,12 @@ def flag_movie(
     if movie is None:
         raise HTTPException(status_code=404, detail="Movie not found")
 
-    flag = db.get(MovieFlag, movie_id)
-    if flag is None:
-        flag = MovieFlag(movie_id=movie_id)
-        db.add(flag)
-
-    flag.reason = payload.reason
-    if payload.notes and len(payload.notes) > 500:
-        raise HTTPException(status_code=400, detail="Notes must be 500 characters or less")
-    flag.notes = payload.notes
-    flag.updated_at = datetime.now(timezone.utc)
+    flag = set_movie_flag(
+        db,
+        movie,
+        reason=payload.reason,
+        notes=payload.notes or None,
+    )
 
     db.commit()
     db.refresh(flag)
@@ -521,10 +550,7 @@ def clear_flag(
     db: Session = Depends(get_db),
     _: None = Depends(require_admin),
 ) -> Response:
-    flag = db.get(MovieFlag, movie_id)
-    if flag is None:
-        return Response(status_code=204)
-    db.delete(flag)
+    clear_movie_flag(db, movie_id)
     db.commit()
     return Response(status_code=204)
 
@@ -627,15 +653,30 @@ def create_movie(
             db.add(m)
         moods.append(m)
 
+    metadata = MovieMetadata.from_mapping(payload.model_dump())
     movie = Movie(
-        title=payload.title,
-        year=payload.year,
-        runtime=payload.runtime,
-        plot=payload.plot,
-        imdb_id=payload.imdb_id,
-        tmdb_id=payload.tmdb_id,
-        poster_url=payload.poster_url,
-        backdrop_url=payload.backdrop_url,
+        vault_id=normalize_vault_id(metadata.vault_id) or next_vault_id(db),
+        title=metadata.title,
+        year=metadata.year,
+        runtime=metadata.runtime,
+        plot=metadata.plot,
+        awards=metadata.awards,
+        certificate=metadata.certificate,
+        keywords=metadata.keywords or None,
+        imdb_id=metadata.imdb_id,
+        tmdb_id=metadata.tmdb_id,
+        imdb_rating=metadata.imdb_rating,
+        imdb_votes=metadata.imdb_votes,
+        metascore=metadata.metascore,
+        tomato_meter=metadata.tomato_meter,
+        tomato_audience=metadata.tomato_audience,
+        rt_score=metadata.rt_score,
+        poster_url=metadata.poster_url,
+        backdrop_url=metadata.backdrop_url,
+        where_to_watch=metadata.where_to_watch or None,
+        languages=metadata.languages or None,
+        countries=metadata.countries or None,
+        collection=metadata.collection,
         genres=genres,
         moods=moods,
     )

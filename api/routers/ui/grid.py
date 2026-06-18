@@ -2,20 +2,24 @@ from __future__ import annotations
 
 from typing import Iterable, Optional, Tuple
 
-from fastapi import APIRouter, Depends, Query, Request
-from fastapi.responses import HTMLResponse
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from fastapi.responses import HTMLResponse, Response
 from sqlalchemy import func, or_
 from sqlalchemy.orm import Session, selectinload
 
 from api.config import settings
 from api.db import get_db
-from api.deps.auth import require_profile_role
+from api.deps.auth import require_profile_role, require_same_origin
 from api.models.movie import Movie
-from api.models.movie_flag import MovieFlag
+from api.models.source_sync import SourceSnapshot
+from api.schemas.movie import MovieFlagCreate, MovieFlagRead
+from api.services.movie_flags import clear_movie_flag, report_movie_flag, set_movie_flag
 from api.services.movies_curated import get_collection_health
+from api.services.source_sync import latest_active_snapshot, snapshot_summary
 from api.services.ui.grid import (
     FILTER_COOKIE_MAX_AGE,
     FILTER_COOKIE_NAME,
+    FILTER_COOKIE_PATH,
     attach_genre_display,
     attach_poster_themes,
     dump_filter_cookie,
@@ -33,12 +37,15 @@ from api.services.ui.templates import TEMPLATES
 from api.services.flic_ordering import fetch_movies_in_rank_order, rank_movie_ids_by_flic
 from api.services.profiles import (
     ROLE_ADMIN,
+    ROLE_REVIEWER,
     ensure_profile_cookie,
+    get_active_profile_role,
     get_active_profile_id,
     get_preferences_for_movies,
     get_profiles,
     get_watchlist_movies,
 )
+from api.routers.ui.review import build_review_context
 from api.services.semantic_search import (
     SemanticSearchError,
     SemanticSearchUnavailable,
@@ -48,7 +55,7 @@ from api.services.semantic_search import (
     semantic_search_enabled,
     semantic_search_movies,
 )
-from api.utils.sampling import reorder_movies_by_id_sequence, sample_movie_ids
+from api.services.trusted_movies import get_untrusted_movie_ids
 from core.movie_filters import (
     MovieFilterParams,
     apply_filters,
@@ -59,7 +66,47 @@ from core.picker import PickerCandidate, PickerFilters, calculate_flic_score
 
 router = APIRouter()
 
-RANDOM_ORDER_LIMIT = 2000
+LIBRARY_PRESETS = {
+    "recently-added",
+    "under-100",
+    "highly-rated",
+    "hidden-gems",
+    "before-2000",
+    "edition-cuts",
+}
+
+LIBRARY_PAGE_SIZE = 36
+
+
+def _apply_library_preset(query, preset: str | None):
+    if preset == "under-100":
+        return query.filter(Movie.runtime.isnot(None), Movie.runtime <= 100)
+    if preset == "highly-rated":
+        return query.filter(
+            or_(
+                (Movie.imdb_rating >= 7.5) & (Movie.imdb_votes >= 10_000),
+                Movie.rt_score >= 85,
+            )
+        )
+    if preset == "hidden-gems":
+        return query.filter(
+            Movie.imdb_rating >= 6.8,
+            Movie.imdb_votes.isnot(None),
+            Movie.imdb_votes < 100_000,
+        )
+    if preset == "before-2000":
+        return query.filter(Movie.year.isnot(None), Movie.year < 2000)
+    if preset == "edition-cuts":
+        markers = (
+            "%(Unrated)%",
+            "%(Extended%",
+            "%Director's Cut%",
+            "%Special Edition%",
+            "%Anniversary Edition%",
+            "%Final Cut%",
+        )
+        return query.filter(or_(*(Movie.title.ilike(marker) for marker in markers)))
+    return query
 
 
 def _build_flic_filters(params: MovieFilterParams) -> Tuple[PickerFilters, bool]:
@@ -143,7 +190,7 @@ def _assign_flic_scores(movies: Iterable[Movie], filters: dict[str, object]) -> 
 @router.get("/ui/movies", response_class=HTMLResponse)
 def movies_grid(
     request: Request,
-    q: Optional[str] = Query(default=None),
+    q: Optional[str] = Query(default=None, max_length=120),
     genres: Optional[str] = Query(default=None),
     moods: Optional[str] = Query(default=None),
     year_min: Optional[str] = Query(default=None),
@@ -151,6 +198,8 @@ def movies_grid(
     runtime_max: Optional[str] = Query(default=None),
     page: int = Query(default=1, ge=1),
     order_by: str = Query(default="title_asc"),
+    view: str = Query(default="grid", pattern="^(grid|list)$"),
+    preset: Optional[str] = Query(default=None, max_length=30),
     semantic: Optional[str] = Query(default=None),
     db: Session = Depends(get_db),
 ):
@@ -161,6 +210,13 @@ def movies_grid(
 
     def resolve(source_value, key):
         return source_value if using_query else cookie_data.get(key)
+
+    resolved_view = resolve(view, "view") or "grid"
+    if resolved_view not in {"grid", "list"}:
+        resolved_view = "grid"
+    resolved_preset = resolve(preset, "preset")
+    if resolved_preset not in LIBRARY_PRESETS:
+        resolved_preset = None
 
     params: MovieFilterParams = parse_movie_filters(
         q=resolve(q, "q"),
@@ -175,18 +231,6 @@ def movies_grid(
 
     semantic_value = resolve(semantic, "semantic")
     semantic_active = str(semantic_value).lower() in {"1", "true", "yes", "on"}
-    filters_active = bool(
-        params.q
-        or params.genres
-        or params.moods
-        or params.year_min is not None
-        or params.year_max is not None
-        or params.runtime_min is not None
-        or params.runtime_max is not None
-        or semantic_active
-        or params.order_by != "title_asc"
-    )
-
     current_page = page
     if not using_query:
         cookie_page = cookie_data.get("page")
@@ -215,7 +259,7 @@ def movies_grid(
         semantic_filters = semantic_intent.params
 
     base_query = db.query(Movie)
-    filtered_query = apply_filters(base_query, params)
+    filtered_query = _apply_library_preset(apply_filters(base_query, params), resolved_preset)
     total = filtered_query.with_entities(func.count(Movie.id)).scalar() or 0
 
     stats = query_library_stats(db)
@@ -227,7 +271,7 @@ def movies_grid(
     decade_options = get_decade_options(db)
     runtime_presets = get_runtime_presets()
 
-    page_size = 30
+    page_size = LIBRARY_PAGE_SIZE
     flic_filters_summary = None
     flic_filters_default = False
     flic_rank_offset = 0
@@ -271,7 +315,10 @@ def movies_grid(
                 total_pages = (total + page_size - 1) // page_size
                 current_page = min(max(current_page, 1), total_pages)
                 offset = (current_page - 1) * page_size
-                clause = ordering_clause(params.order_by)
+                effective_order = (
+                    "id_desc" if resolved_preset == "recently-added" else params.order_by
+                )
+                clause = ordering_clause(effective_order)
                 movies = (
                     filtered_query.options(selectinload(Movie.genres), selectinload(Movie.moods))
                     .order_by(*clause)
@@ -308,7 +355,8 @@ def movies_grid(
                 flic_filters, used_defaults=used_defaults
             )
         else:
-            clause = ordering_clause(params.order_by)
+            effective_order = "id_desc" if resolved_preset == "recently-added" else params.order_by
+            clause = ordering_clause(effective_order)
             movies = (
                 filtered_query.options(selectinload(Movie.genres), selectinload(Movie.moods))
                 .order_by(*clause)
@@ -319,134 +367,16 @@ def movies_grid(
             attach_poster_themes(movies)
             attach_genre_display(movies)
 
-    featured_row_size = 4
-    featured_rows = 3
-    featured_limit = featured_row_size * featured_rows
-    featured_movies: list[Movie] = []
-    featured_query = (
-        apply_filters(base_query, semantic_filters)
-        if semantic_active and params.q
-        else filtered_query
-    )
-    if total and filters_active:
-        featured_movies = movies[:featured_limit]
-        if featured_movies:
-            attach_poster_themes(featured_movies)
-            attach_genre_display(featured_movies)
-            if params.order_by == "flic" and flic_filters_payload:
-                _assign_flic_scores(featured_movies, flic_filters_payload)
-    elif total:
-        if total <= RANDOM_ORDER_LIMIT:
-            base_featured = (
-                featured_query.options(selectinload(Movie.genres), selectinload(Movie.moods))
-                .order_by(func.random())
-                .limit(featured_limit)
-                .all()
-            )
-        else:
-            featured_ids = sample_movie_ids(featured_query, total=total, limit=featured_limit)
-            base_featured_raw = (
-                db.query(Movie)
-                .options(selectinload(Movie.genres), selectinload(Movie.moods))
-                .filter(Movie.id.in_(featured_ids))
-                .all()
-            )
-            base_featured = reorder_movies_by_id_sequence(base_featured_raw, featured_ids)
-        featured_movies.extend(base_featured)
-        featured_ids = {movie.id for movie in featured_movies if movie.id is not None}
-        filler_needed = (
-            featured_row_size - (len(featured_movies) % featured_row_size)
-        ) % featured_row_size
-
-        if filler_needed:
-            filler_movies: list[Movie] = []
-
-            def _append_candidate(candidate: Movie) -> bool:
-                if not candidate or candidate.id is None:
-                    return False
-                if candidate.id in featured_ids:
-                    return False
-                featured_ids.add(candidate.id)
-                filler_movies.append(candidate)
-                return len(filler_movies) >= filler_needed
-
-            for movie in movies:
-                if _append_candidate(movie):
-                    break
-
-            if len(filler_movies) < filler_needed:
-                extra_needed = filler_needed - len(filler_movies)
-                extra_query = featured_query
-                if featured_ids:
-                    extra_query = extra_query.filter(~Movie.id.in_(list(featured_ids)))
-                extra_total = extra_query.with_entities(func.count(Movie.id)).scalar() or 0
-                if extra_total <= RANDOM_ORDER_LIMIT:
-                    extra_candidates = (
-                        extra_query.options(selectinload(Movie.genres), selectinload(Movie.moods))
-                        .order_by(func.random())
-                        .limit(extra_needed)
-                        .all()
-                    )
-                else:
-                    extra_ids = sample_movie_ids(extra_query, total=extra_total, limit=extra_needed)
-                    extra_raw = (
-                        db.query(Movie)
-                        .options(selectinload(Movie.genres), selectinload(Movie.moods))
-                        .filter(Movie.id.in_(extra_ids))
-                        .all()
-                    )
-                    extra_candidates = reorder_movies_by_id_sequence(extra_raw, extra_ids)
-                for candidate in extra_candidates:
-                    if _append_candidate(candidate):
-                        break
-
-            if len(filler_movies) < filler_needed:
-                needed = filler_needed - len(filler_movies)
-                pool = featured_movies or base_featured
-                filler_movies.extend(pool[:needed])
-
-            featured_movies.extend(filler_movies)
-
-        if len(featured_movies) < featured_rows * featured_row_size:
-            shortfall = featured_rows * featured_row_size - len(featured_movies)
-            pool = base_featured or featured_movies
-            featured_movies.extend(pool[:shortfall])
-
-        if featured_movies:
-            attach_poster_themes(featured_movies)
-            attach_genre_display(featured_movies)
-            if params.order_by == "flic" and flic_filters_payload:
-                _assign_flic_scores(featured_movies, flic_filters_payload)
-
-    combined_collections: list[list[Movie]] = []
     if movies:
-        combined_collections.append(movies)
-    if featured_movies:
-        combined_collections.append(featured_movies)
-
-    if combined_collections:
-        movie_ids = {
-            movie.id
-            for collection in combined_collections
-            for movie in collection
-            if movie.id is not None
-        }
+        movie_ids = {movie.id for movie in movies if movie.id is not None}
         if movie_ids:
-            flagged_ids = {
-                row[0]
-                for row in db.query(MovieFlag.movie_id)
-                .filter(MovieFlag.movie_id.in_(movie_ids))
-                .all()
-            }
+            review_ids = get_untrusted_movie_ids(db, movie_ids)
             preferences = get_preferences_for_movies(db, active_profile_id, movie_ids)
-            for collection in combined_collections:
-                for movie in collection:
-                    setattr(movie, "flagged", movie.id in flagged_ids)
-                    pref = preferences.get(movie.id or 0, {})
-                    setattr(movie, "liked", pref.get("liked", False))
-                    setattr(movie, "watchlist", pref.get("watchlist", False))
-
-    table_movies = movies
+            for movie in movies:
+                setattr(movie, "flagged", movie.id in review_ids)
+                pref = preferences.get(movie.id or 0, {})
+                setattr(movie, "liked", pref.get("liked", False))
+                setattr(movie, "watchlist", pref.get("watchlist", False))
 
     genres_value = ", ".join(params.genres)
     runtime_max_value = params.runtime_max if params.runtime_max is not None else ""
@@ -475,9 +405,8 @@ def movies_grid(
         "genre_options": genre_options,
         "decade_options": decade_options,
         "runtime_presets": runtime_presets,
-        "featured_movies": featured_movies,
-        "table_movies": table_movies,
-        "featured_limit": featured_limit,
+        "view": resolved_view,
+        "preset": resolved_preset,
         "mood_options": mood_options,
         "moods": moods_value,
         "flic_filters_summary": flic_filters_summary,
@@ -494,29 +423,114 @@ def movies_grid(
     ensure_profile_cookie(request, response, db)
     cookie_payload = params.to_cookie_payload(page=current_page)
     cookie_payload["semantic"] = 1 if semantic_active else 0
+    cookie_payload["view"] = resolved_view
+    cookie_payload["preset"] = resolved_preset or ""
     response.set_cookie(
         FILTER_COOKIE_NAME,
         dump_filter_cookie(cookie_payload),
         max_age=FILTER_COOKIE_MAX_AGE,
         samesite="lax",
-        path="/ui/movies",
+        path=FILTER_COOKIE_PATH,
     )
     return response
+
+
+@router.post("/ui/movies/{movie_id}/review-flag")
+def flag_movie_for_review(
+    movie_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    _: str = Depends(require_profile_role(ROLE_ADMIN, ROLE_REVIEWER)),
+    __: None = Depends(require_same_origin),
+) -> dict[str, int | bool]:
+    movie = db.get(Movie, movie_id)
+    if movie is None:
+        raise HTTPException(status_code=404, detail="Movie not found")
+
+    report_movie_flag(
+        db,
+        movie,
+        reason="Human review",
+        notes="Flagged for review",
+        reported_by_profile_id=get_active_profile_id(request, db),
+    )
+    db.commit()
+
+    return {"movie_id": movie_id, "flagged": True}
+
+
+@router.put("/ui/movies/{movie_id}/flag", response_model=MovieFlagRead)
+def manage_movie_flag(
+    movie_id: int,
+    payload: MovieFlagCreate,
+    db: Session = Depends(get_db),
+    _: str = Depends(require_profile_role(ROLE_ADMIN)),
+    __: None = Depends(require_same_origin),
+) -> MovieFlagRead:
+    movie = db.get(Movie, movie_id)
+    if movie is None:
+        raise HTTPException(status_code=404, detail="Movie not found")
+
+    flag = set_movie_flag(
+        db,
+        movie,
+        reason=payload.reason,
+        notes=payload.notes or None,
+    )
+    db.commit()
+    db.refresh(flag)
+    return flag
+
+
+@router.delete("/ui/movies/{movie_id}/flag", status_code=204)
+def resolve_movie_flag(
+    movie_id: int,
+    db: Session = Depends(get_db),
+    _: str = Depends(require_profile_role(ROLE_ADMIN)),
+    __: None = Depends(require_same_origin),
+) -> Response:
+    clear_movie_flag(db, movie_id)
+    db.commit()
+    return Response(status_code=204)
 
 
 @router.get("/ui/movies/health", response_class=HTMLResponse)
 def movies_health(
     request: Request,
+    view: str | None = None,
+    row: int | None = Query(default=None, ge=1),
+    movie: int | None = Query(default=None, ge=1),
+    undo_decision: int | None = Query(default=None, ge=1),
     db: Session = Depends(get_db),
     _: str = Depends(require_profile_role(ROLE_ADMIN)),
 ):
     collection_health = get_collection_health(db)
+    source_snapshots = (
+        db.query(SourceSnapshot)
+        .order_by(SourceSnapshot.uploaded_at.desc(), SourceSnapshot.id.desc())
+        .limit(20)
+        .all()
+    )
+    latest_source_snapshot = latest_active_snapshot(db)
     profiles = get_profiles(db)
     active_profile_id = get_active_profile_id(request, db)
+    active_role = get_active_profile_role(request, db)
     context = {
         "collection_health": collection_health,
+        "source_snapshots": source_snapshots,
+        "latest_source_snapshot": latest_source_snapshot,
+        "latest_source_summary": snapshot_summary(db, latest_source_snapshot),
         "profiles": profiles,
         "active_profile_id": active_profile_id,
+        "can_manage_health": active_role == ROLE_ADMIN,
+        **build_review_context(
+            request,
+            db,
+            view=view,
+            row=row,
+            movie=movie,
+            undo_decision=undo_decision,
+        ),
     }
     response = TEMPLATES.TemplateResponse(request, "movies_health.html", context)
     ensure_profile_cookie(request, response, db)

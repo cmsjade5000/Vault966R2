@@ -17,6 +17,7 @@ import sys
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 DATA_DIR = ROOT / "data"
 ETL_SCRIPT = ROOT / "legacy" / "etl" / "etl_seed.py"
+POSTER_CACHE_SCRIPT = ROOT / "scripts" / "cache_posters.py"
 
 
 def parse_args() -> argparse.Namespace:
@@ -93,6 +94,10 @@ def main() -> int:
 
     print(f"$ {_format_cmd(cmd)}")
     subprocess.run(cmd, check=True, cwd=ROOT)
+    if not args.dry_run:
+        cache_cmd = [sys.executable, str(POSTER_CACHE_SCRIPT)]
+        print(f"$ {_format_cmd(cache_cmd)}")
+        subprocess.run(cache_cmd, check=True, cwd=ROOT)
     return 0
 
 

@@ -34,6 +34,11 @@ class CollectionHealth:
     genre_gaps: List[str]
     flags_open: int
     recommendation: str | None = None
+    structural_issues: int = 0
+    source_snapshot_at: datetime | None = None
+    source_rows: int = 0
+    source_conflicts: int = 0
+    identity_review_open: int = 0
 
 
 class RecommendationError(Exception):
@@ -416,6 +421,21 @@ def get_collection_health(db: Session) -> CollectionHealth:
         genre_gaps = [label for label in aspirational if label.lower() not in seen][:3]
 
     recommendation = get_collection_recommendation(db)
+    from api.services.movie_review import get_review_queue
+    from api.services.source_sync import (
+        get_source_review_queue,
+        latest_active_snapshot,
+        snapshot_summary,
+    )
+
+    latest_snapshot = latest_active_snapshot(db)
+    source_summary = snapshot_summary(db, latest_snapshot)
+    source_review = get_source_review_queue(db, snapshot=latest_snapshot)
+    legacy_review, _ = get_review_queue(db)
+    structural_issues = (
+        base_query.filter(or_(Movie.vault_id.is_(None), Movie.vault_id == "")).count()
+        + base_query.filter(or_(Movie.title.is_(None), Movie.title == "")).count()
+    )
 
     return CollectionHealth(
         missing_runtime=missing_runtime,
@@ -424,6 +444,11 @@ def get_collection_health(db: Session) -> CollectionHealth:
         genre_gaps=genre_gaps,
         flags_open=flags_open,
         recommendation=recommendation,
+        structural_issues=structural_issues,
+        source_snapshot_at=latest_snapshot.confirmed_at if latest_snapshot else None,
+        source_rows=source_summary["rows"],
+        source_conflicts=source_summary["conflicts"],
+        identity_review_open=len(source_review) + len(legacy_review),
     )
 
 

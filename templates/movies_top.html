@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block title %}Vault 966 · Top Movies{% endblock %}
 {% block head %}
-<link rel="stylesheet" href="{{ url_for('static', path='css/movies.css') }}" />
+<link rel="stylesheet" href="{{ static_asset('css/movies.css') }}" />
 {% endblock %}
 {% block content %}
   <header class="app-hero">
@@ -36,7 +36,7 @@
         <li class="top-leaderboard__item">
           <span class="top-leaderboard__rank">{{ loop.index }}</span>
           <div class="top-leaderboard__info">
-            <a class="top-leaderboard__title" href="/ui/movies/{{ movie.id }}">{{ movie.title }}</a>
+            <a class="top-leaderboard__title" href="/ui/movies/{{ movie.id }}">{{ movie.title | display_title }}</a>
             <div class="top-leaderboard__meta">
               <span>{% if movie.year %}{{ movie.year }}{% else %}—{% endif %}</span>
               {% if genre_names %}
@@ -63,7 +63,7 @@
         <li class="top-leaderboard__item">
           <span class="top-leaderboard__rank">{{ loop.index }}</span>
           <div class="top-leaderboard__info">
-            <a class="top-leaderboard__title" href="/ui/movies/{{ movie.id }}">{{ movie.title }}</a>
+            <a class="top-leaderboard__title" href="/ui/movies/{{ movie.id }}">{{ movie.title | display_title }}</a>
             <div class="top-leaderboard__meta">
               <span>{% if movie.year %}{{ movie.year }}{% else %}—{% endif %}</span>
               {% if genre_names %}

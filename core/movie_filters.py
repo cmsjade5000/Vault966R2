@@ -6,10 +6,11 @@ from dataclasses import dataclass
 from typing import Iterable, Optional, Sequence, Tuple
 
 from fastapi import HTTPException, status
-from sqlalchemy import or_
+from sqlalchemy import String, cast, or_
 from sqlalchemy.orm import Query
 
 from api.models.movie import Genre, Mood, Movie
+from api.models.person import Person, Role
 from api.utils.query_params import parse_optional_non_negative_int
 from core.genres import search_terms_for_label
 
@@ -134,7 +135,16 @@ def _to_like_pattern(term: str) -> str:
 def apply_filters(query: Query, params: MovieFilterParams) -> Query:
     if params.q:
         pattern = _to_like_pattern(params.q)
-        query = query.filter(Movie.title.ilike(pattern, escape="\\"))
+        query = query.filter(
+            or_(
+                Movie.title.ilike(pattern, escape="\\"),
+                Movie.vault_id.ilike(pattern, escape="\\"),
+                Movie.imdb_id.ilike(pattern, escape="\\"),
+                cast(Movie.year, String).ilike(pattern, escape="\\"),
+                Movie.genres.any(Genre.name.ilike(pattern, escape="\\")),
+                Movie.roles.any(Role.person.has(Person.name.ilike(pattern, escape="\\"))),
+            )
+        )
     for genre_name in params.genres:
         search_terms = search_terms_for_label(genre_name)
         if search_terms:
@@ -159,8 +169,8 @@ def apply_filters(query: Query, params: MovieFilterParams) -> Query:
 
 def ordering_clause(order_by: str):
     mapping = {
-        "id_asc": (Movie.id.asc(),),
-        "id_desc": (Movie.id.desc(),),
+        "id_asc": (Movie.vault_id.asc().nullslast(), Movie.id.asc()),
+        "id_desc": (Movie.vault_id.desc().nullslast(), Movie.id.desc()),
         "title_asc": (Movie.title.asc(), Movie.id.asc()),
         "title_desc": (Movie.title.desc(), Movie.id.asc()),
         "year_asc": (Movie.year.asc().nullslast(), Movie.id.asc()),

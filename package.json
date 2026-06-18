@@ -7,6 +7,7 @@
   },
   "scripts": {
     "fmt": "prettier --write \"static/js/**/*.js\"",
-    "lint": "prettier --check \"static/js/**/*.js\""
+    "lint": "prettier --check \"static/js/**/*.js\" \"tests/js/**/*.js\"",
+    "test:js": "node --test tests/js/**/*.test.js"
   }
 }

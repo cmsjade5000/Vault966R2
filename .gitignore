@@ -6,6 +6,7 @@ __pycache__/
 venv/
 vault.db
 vault.db-journal
+vault.db.*.bak
 dist/
 node_modules/
 # data/report artifacts
@@ -20,3 +21,4 @@ reports/*.jpeg
 legacy/data/
 legacy/reports/
 llm-council/
+.codex-log/

@@ -1,14 +1,50 @@
 (function () {
   document.addEventListener("DOMContentLoaded", () => {
-    const getAdminToken = () =>
-      window.localStorage?.getItem("adminToken") || "";
-    const promptForAdminToken = (message) => {
-      const token = window.prompt(message || "Enter admin token");
-      if (token && window.localStorage) {
-        window.localStorage.setItem("adminToken", token);
-      }
-      return token || "";
-    };
+    const posterFocusButton = document.querySelector("[data-poster-focus]");
+    const posterFocusBackdrop = document.querySelector(
+      "[data-poster-focus-backdrop]",
+    );
+
+    if (posterFocusButton && posterFocusBackdrop) {
+      const movieTitle = posterFocusButton.dataset.movieTitle || "movie";
+
+      const setPosterFocused = (focused) => {
+        posterFocusButton.classList.toggle("is-poster-focused", focused);
+        posterFocusBackdrop.hidden = !focused;
+        posterFocusBackdrop.classList.toggle("is-visible", focused);
+        document.body.classList.toggle("poster-focus-open", focused);
+        posterFocusButton.setAttribute(
+          "aria-pressed",
+          focused ? "true" : "false",
+        );
+        posterFocusButton.setAttribute(
+          "aria-label",
+          `${focused ? "Reduce" : "Enlarge"} ${movieTitle} poster`,
+        );
+      };
+
+      posterFocusButton.addEventListener("click", () => {
+        setPosterFocused(
+          !posterFocusButton.classList.contains("is-poster-focused"),
+        );
+      });
+
+      posterFocusBackdrop.addEventListener("click", () => {
+        setPosterFocused(false);
+        posterFocusButton.focus();
+      });
+
+      document.addEventListener("keydown", (event) => {
+        if (
+          event.key === "Escape" &&
+          posterFocusButton.classList.contains("is-poster-focused")
+        ) {
+          event.preventDefault();
+          setPosterFocused(false);
+          posterFocusButton.focus();
+        }
+      });
+    }
 
     const parseErrorDetail = async (response) => {
       if (!response || typeof response.json !== "function") return null;
@@ -23,180 +59,186 @@
       return null;
     };
 
-    const FLAG_REASONS = [
-      "Metadata cleanup",
-      "Poster/backdrop issue",
-      "Missing poster",
-      "Broken link",
-      "Movie mismatch",
-      "Wrong runtime/year",
-      "Needs runtime",
-      "Other",
-    ];
+    const flagDialog = document.querySelector("[data-flag-dialog]");
+    const flagForm = document.querySelector("[data-flag-form]");
+    const flagReason = document.querySelector("[data-flag-reason]");
+    const flagNotes = document.querySelector("[data-flag-notes]");
+    const flagStatus = document.querySelector("[data-flag-status]");
+    const flagStatusTitle = document.querySelector("[data-flag-status-title]");
+    const flagStatusNotes = document.querySelector("[data-flag-status-notes]");
+    const flagDialogStatus = document.querySelector(
+      "[data-flag-dialog-status]",
+    );
+    const flagDialogTitle = document.getElementById("flag-dialog-title");
+    const flagSave = document.querySelector("[data-flag-save]");
+    const flagResolve = document.querySelector("[data-flag-resolve]");
+    const flagButtons = document.querySelectorAll("[data-flag-button]");
+    const movieId = flagButtons[0]?.dataset.movieId;
+    const flagMode = flagForm?.dataset.flagMode || "manage";
+    const canManageFlags = flagMode === "manage";
+    let resolveArmed = false;
 
-    const openFlagDialog = (defaultReason) =>
-      new Promise((resolve) => {
-        const overlay = document.createElement("div");
-        overlay.className = "flag-dialog-overlay";
-        overlay.setAttribute("role", "dialog");
-        overlay.setAttribute("aria-modal", "true");
-        const dialog = document.createElement("div");
-        dialog.className = "flag-dialog";
-        dialog.innerHTML = `
-          <h3>Flag this movie</h3>
-          <label for="flag-reason">Reason</label>
-          <select id="flag-reason">
-            ${FLAG_REASONS.map((reason) => {
-              const selected = reason === defaultReason ? "selected" : "";
-              return `<option value="${reason}" ${selected}>${reason}</option>`;
-            }).join("")}
-          </select>
-          <label for="flag-notes">Notes (optional)</label>
-          <textarea id="flag-notes" maxlength="500" placeholder="What needs a fix?"></textarea>
-          <div class="flag-dialog__actions">
-            <button type="button" class="button-ghost" data-flag-cancel>Cancel</button>
-            <button type="button" class="button-primary" data-flag-save>Save</button>
-          </div>
-        `;
-        overlay.append(dialog);
-        document.body.append(overlay);
+    const flagDialogController = window.VaultDialog?.bind(flagDialog, {
+      closeSelector: "[data-flag-close]",
+      onClose: () => {
+        resolveArmed = false;
+        if (flagResolve) flagResolve.textContent = "Resolve flag";
+        if (flagDialogStatus) flagDialogStatus.textContent = "";
+      },
+    });
 
-        const cleanup = () => overlay.remove();
-        const close = (value) => {
-          cleanup();
-          resolve(value);
-        };
-
-        overlay.addEventListener("click", (event) => {
-          if (event.target === overlay) {
-            close(null);
-          }
-        });
-        overlay.addEventListener("keydown", (event) => {
-          if (event.key === "Escape") {
-            event.preventDefault();
-            close(null);
-          }
-        });
-        dialog
-          .querySelector("[data-flag-cancel]")
-          ?.addEventListener("click", () => close(null));
-        dialog
-          .querySelector("[data-flag-save]")
-          ?.addEventListener("click", () => {
-            const reason = dialog.querySelector("#flag-reason")?.value || "";
-            const notes =
-              dialog.querySelector("#flag-notes")?.value.trim() || null;
-            close({ reason, notes });
-          });
-        setTimeout(() => {
-          dialog.querySelector("#flag-reason")?.focus();
-        }, 0);
-      });
-
-    const updateFlagButton = (button, flagged) => {
-      button.dataset.flagged = flagged ? "true" : "false";
-      button.classList.toggle("is-flagged", flagged);
-      button.textContent = flagged ? "Resolve flag" : "Flag";
-      button.setAttribute("aria-pressed", flagged ? "true" : "false");
-      if (window.showToast) {
-        window.showToast(flagged ? "Flag saved." : "Flag cleared.");
-      }
+    const setFlagPending = (pending) => {
+      flagSave?.toggleAttribute("disabled", pending);
+      flagResolve?.toggleAttribute("disabled", pending);
+      flagForm?.toggleAttribute("aria-busy", pending);
     };
 
-    const handleFlagClick = async (event) => {
-      const button = event.target.closest("[data-flag-button]");
-      if (!button) return;
+    const updateFlagView = ({ flagged, reason = "", notes = "" }) => {
+      if (flagStatus) {
+        flagStatus.hidden = !flagged;
+        flagStatus.classList.toggle("is-visible", flagged);
+      }
+      if (flagStatusTitle) {
+        flagStatusTitle.textContent = flagged
+          ? `Needs review${reason ? ` · ${reason}` : ""}`
+          : "";
+      }
+      if (flagStatusNotes) {
+        flagStatusNotes.textContent = notes || "No notes were added.";
+      }
+      if (flagDialogTitle) {
+        flagDialogTitle.textContent = canManageFlags
+          ? flagged
+            ? "Manage review flag"
+            : "Flag for review"
+          : "Report issue";
+      }
+      if (flagResolve) flagResolve.hidden = !flagged;
+      flagButtons.forEach((button) => {
+        const inStatus = Boolean(button.closest("[data-flag-status]"));
+        button.textContent = canManageFlags
+          ? flagged
+            ? "Manage flag"
+            : inStatus
+              ? "Manage flag"
+              : "Flag for review"
+          : "Report issue";
+        button.setAttribute(
+          "aria-label",
+          canManageFlags
+            ? flagged
+              ? "Manage review flag"
+              : "Flag for review"
+            : "Report issue",
+        );
+      });
+    };
+
+    flagButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        flagDialogController?.open(button);
+        flagReason?.focus();
+      });
+    });
+
+    flagForm?.addEventListener("submit", async (event) => {
       event.preventDefault();
-      event.stopPropagation();
-      event.stopImmediatePropagation();
-      const movieId = button.dataset.movieId;
-      if (!movieId || button.dataset.flagBusy === "true") return;
-      button.dataset.flagHandlerAttached = "true";
-      button.dataset.flagDetailAttached = "true";
-      const currentlyFlagged = button.dataset.flagged === "true";
-      const baseHeaders = {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      };
-      const withAuth = (token) =>
-        token
-          ? { ...baseHeaders, Authorization: `Bearer ${token}` }
-          : baseHeaders;
-      button.dataset.flagBusy = "true";
+      if (!movieId || !flagReason) return;
+      setFlagPending(true);
+      if (flagDialogStatus) {
+        flagDialogStatus.classList.remove("is-error");
+        flagDialogStatus.textContent = canManageFlags
+          ? "Saving flag…"
+          : "Sending report…";
+      }
       try {
-        if (currentlyFlagged) {
-          let resp = await fetch(`/movies/${movieId}/flag`, {
-            method: "DELETE",
-            headers: withAuth(getAdminToken()),
-          });
-          if (resp.status === 401) {
-            const token = promptForAdminToken(
-              "Admin token required to update flags.",
-            );
-            if (!token) return;
-            resp = await fetch(`/movies/${movieId}/flag`, {
-              method: "DELETE",
-              headers: withAuth(token),
-            });
-          }
-          if (!resp.ok && resp.status !== 204) {
-            const detail =
-              (await parseErrorDetail(resp)) || "Failed to clear flag";
-            throw new Error(detail);
-          }
-          updateFlagButton(button, false);
-        } else {
-          const defaultReason =
-            button.dataset.flagDefault || "Metadata cleanup";
-          const dialogResult = await openFlagDialog(defaultReason);
-          if (!dialogResult) return;
-          const { reason, notes } = dialogResult;
-          const cleanReason = reason ? reason.trim() : "";
-          let resp = await fetch(`/movies/${movieId}/flag`, {
-            method: "POST",
-            headers: withAuth(getAdminToken()),
+        const response = await fetch(
+          canManageFlags
+            ? `/ui/movies/${movieId}/flag`
+            : `/movies/${movieId}/flag/report`,
+          {
+            method: canManageFlags ? "PUT" : "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Accept: "application/json",
+            },
             body: JSON.stringify({
-              reason: cleanReason || null,
-              notes: notes || null,
+              reason: flagReason.value,
+              notes: flagNotes?.value.trim() || null,
             }),
-          });
-          if (resp.status === 401) {
-            const token = promptForAdminToken(
-              "Admin token required to manage flags.",
-            );
-            if (!token) return;
-            resp = await fetch(`/movies/${movieId}/flag`, {
-              method: "POST",
-              headers: withAuth(token),
-              body: JSON.stringify({
-                reason: cleanReason || null,
-                notes: notes || null,
-              }),
-            });
-          }
-          if (!resp.ok) {
-            const detail =
-              (await parseErrorDetail(resp)) || "Failed to flag movie";
-            throw new Error(detail);
-          }
-          updateFlagButton(button, true);
-        }
-      } catch (error) {
-        console.error("Flag toggle failed", error);
-        if (window.showToast) {
-          window.showToast(
-            error && error.message
-              ? error.message
-              : "Could not update that flag—try again soon?",
+          },
+        );
+        if (!response.ok) {
+          throw new Error(
+            (await parseErrorDetail(response)) ||
+              (canManageFlags
+                ? "Could not save that flag."
+                : "Could not send that report."),
           );
         }
+        const savedFlag = await response.json();
+        updateFlagView({
+          flagged: true,
+          reason: savedFlag.reason,
+          notes: savedFlag.notes,
+        });
+        flagDialogController?.close();
+        window.showToast?.(canManageFlags ? "Flag saved." : "Report sent.");
+      } catch (error) {
+        if (flagDialogStatus) {
+          flagDialogStatus.textContent =
+            error?.message ||
+            (canManageFlags
+              ? "Could not save that flag."
+              : "Could not send that report.");
+          flagDialogStatus.classList.add("is-error");
+        }
       } finally {
-        delete button.dataset.flagBusy;
+        setFlagPending(false);
       }
-    };
+    });
 
-    document.addEventListener("click", handleFlagClick, true);
+    flagResolve?.addEventListener("click", async () => {
+      if (!movieId) return;
+      if (!resolveArmed) {
+        resolveArmed = true;
+        flagResolve.textContent = "Confirm resolve";
+        if (flagDialogStatus) {
+          flagDialogStatus.textContent =
+            "Select Confirm resolve again to remove this item from Flags.";
+        }
+        return;
+      }
+
+      setFlagPending(true);
+      if (flagDialogStatus) {
+        flagDialogStatus.classList.remove("is-error");
+        flagDialogStatus.textContent = "Resolving flag…";
+      }
+      try {
+        const response = await fetch(`/ui/movies/${movieId}/flag`, {
+          method: "DELETE",
+          headers: { Accept: "application/json" },
+        });
+        if (!response.ok && response.status !== 204) {
+          throw new Error(
+            (await parseErrorDetail(response)) ||
+              "Could not resolve that flag.",
+          );
+        }
+        updateFlagView({ flagged: false });
+        flagDialogController?.close();
+        window.showToast?.("Flag resolved.");
+      } catch (error) {
+        if (flagDialogStatus) {
+          flagDialogStatus.textContent =
+            error?.message || "Could not resolve that flag.";
+          flagDialogStatus.classList.add("is-error");
+        }
+      } finally {
+        setFlagPending(false);
+      }
+    });
 
     const rail = document.querySelector("[data-similar-rail]");
     const prevButton = document.querySelector('[data-scroll="prev"]');

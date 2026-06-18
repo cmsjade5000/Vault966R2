@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 
 from api.models.movie import Genre, Movie
 from api.schemas.movie import MovieUpdate
+from api.services.movie_review import apply_title_year_authority
 from api.utils.providers import merge_providers
 from core.enriched_csv import normalize_countries, normalize_languages
 from core.genres import split_and_normalize
@@ -79,6 +80,21 @@ def apply_movie_update(db: Session, movie: Movie, payload: MovieUpdate) -> Movie
     if payload.awards is not None:
         _set_attr("awards", _normalize_optional_text(payload.awards))
 
+    if payload.certificate is not None:
+        _set_attr("certificate", _normalize_optional_text(payload.certificate))
+
+    if payload.keywords is not None:
+        keywords = []
+        seen = set()
+        for item in payload.keywords:
+            cleaned = str(item).strip()
+            key = cleaned.casefold()
+            if not cleaned or key in seen:
+                continue
+            seen.add(key)
+            keywords.append(cleaned)
+        _set_attr("keywords", keywords or None)
+
     if payload.imdb_id is not None:
         _set_attr("imdb_id", _normalize_optional_text(payload.imdb_id))
 
@@ -125,7 +141,7 @@ def apply_movie_update(db: Session, movie: Movie, payload: MovieUpdate) -> Movie
 
     if payload.where_to_watch is not None:
         merged = merge_providers(payload.where_to_watch)
-        normalized = "; ".join(merged) if merged else None
+        normalized = merged or None
         _set_attr("where_to_watch", normalized)
 
     if payload.languages is not None:
@@ -174,6 +190,10 @@ def apply_movie_update(db: Session, movie: Movie, payload: MovieUpdate) -> Movie
 
     if payload.resolve_flag and movie.flag is not None:
         db.delete(movie.flag)
+
+    if payload.title is not None:
+        if apply_title_year_authority(db, movie=movie, profile_id=None):
+            has_changes = True
 
     if has_changes and hasattr(movie, "updated_at"):
         movie.updated_at = datetime.now(timezone.utc)

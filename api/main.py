@@ -10,13 +10,14 @@ from typing import Any
 from fastapi import FastAPI, HTTPException, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from api.config import settings
-from api.db import SessionLocal, bootstrap_sqlite_schema, engine
+from api.db import SessionLocal, bootstrap_sqlite_schema, engine, get_db
 from api.models.profile import Profile
 from api.routers import (
     ai,
@@ -30,8 +31,9 @@ from api.routers import (
     search,
     ui,
 )
-from api.services.session import SESSION_COOKIE_NAME, parse_session_token
-from api.services.profiles import ROLE_REVIEWER, get_active_profile_role
+from api.services.session import SESSION_COOKIE_NAME, get_session_secret, parse_session_token
+from api.services.profiles import ROLE_ADMIN, ROLE_REVIEWER
+from api.services.trusted_movies import get_untrusted_movie_ids
 import api.models  # noqa: F401  # ensure all model mappers are registered
 
 
@@ -315,12 +317,21 @@ class AuthRequiredMiddleware(BaseHTTPMiddleware):
         profile_id = getattr(request.state, "session_profile_id", None)
         if not isinstance(profile_id, int) or profile_id <= 0:
             return
-        db = SessionLocal()
+
+        db_override = request.app.dependency_overrides.get(get_db)
+        db_generator = db_override() if db_override else None
+        db = next(db_generator) if db_generator else SessionLocal()
         try:
             profile = db.get(Profile, profile_id)
             request.state.session_profile_role = getattr(profile, "role", None) or ROLE_REVIEWER
         finally:
-            db.close()
+            if db_generator:
+                try:
+                    next(db_generator)
+                except StopIteration:
+                    pass
+            else:
+                db.close()
 
     async def dispatch(self, request: Request, call_next):
         request.state.session_profile_id = None
@@ -329,11 +340,7 @@ class AuthRequiredMiddleware(BaseHTTPMiddleware):
             return await call_next(request)
 
         if settings.disable_auth:
-            db = SessionLocal()
-            try:
-                request.state.session_profile_role = get_active_profile_role(request, db)
-            finally:
-                db.close()
+            request.state.session_profile_role = ROLE_ADMIN
             return await call_next(request)
 
         path = request.url.path
@@ -341,23 +348,20 @@ class AuthRequiredMiddleware(BaseHTTPMiddleware):
             return await call_next(request)
 
         if path in self._assistant_paths:
-            secret = settings.login_session_secret
-            if secret:
-                token = request.cookies.get(SESSION_COOKIE_NAME, "")
-                session = parse_session_token(token, secret=secret)
-                if session:
-                    request.state.session_profile_id = session.profile_id
-                    self._set_session_role(request)
-                    return await call_next(request)
+            secret = get_session_secret(settings.login_session_secret)
+            token = request.cookies.get(SESSION_COOKIE_NAME, "")
+            session = parse_session_token(token, secret=secret)
+            if session:
+                request.state.session_profile_id = session.profile_id
+                self._set_session_role(request)
+                return await call_next(request)
             if self._assistant_token_valid(request):
                 return await call_next(request)
             if not settings.assistant_access_token:
                 return self._reject(request, message="Assistant token not configured.")
             return self._reject(request, message="Assistant token required.")
 
-        secret = settings.login_session_secret
-        if not secret:
-            return self._reject(request, message="Login is not configured.")
+        secret = get_session_secret(settings.login_session_secret)
         token = request.cookies.get(SESSION_COOKIE_NAME, "")
         session = parse_session_token(token, secret=secret)
         if not session:
@@ -387,10 +391,19 @@ async def lifespan(app: FastAPI):
     # Ensure SQLite dev databases have required tables before handling requests.
     if engine.url.get_backend_name() == "sqlite":
         bootstrap_sqlite_schema()
+        if not settings.disable_auth:
+            db = SessionLocal()
+            try:
+                get_untrusted_movie_ids(db)
+            except Exception:
+                logger.exception("trusted_movie_cache_warm_failed")
+            finally:
+                db.close()
     yield
 
 
 app = FastAPI(title=settings.app_name, lifespan=lifespan)
+app.add_middleware(GZipMiddleware, minimum_size=1024)
 app.add_middleware(ObservabilityMiddleware)
 app.add_middleware(SecurityHeadersMiddleware)
 app.add_middleware(AuthRequiredMiddleware)

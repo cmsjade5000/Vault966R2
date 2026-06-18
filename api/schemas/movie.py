@@ -1,7 +1,14 @@
 from datetime import datetime
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Literal, Optional, Union
 
-from pydantic import BaseModel, ConfigDict, Field, computed_field, field_serializer
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    computed_field,
+    field_serializer,
+    model_validator,
+)
 
 from api.models.person import RoleType
 from api.schemas.person import PersonRead
@@ -32,10 +39,13 @@ class MoodRead(BaseModel):
 
 class MovieBase(BaseModel):
     title: str
+    vault_id: Optional[str] = None
     year: Optional[int] = None
     runtime: Optional[int] = None
     plot: Optional[str] = None
     awards: Optional[str] = None
+    certificate: Optional[str] = None
+    keywords: Optional[List[str]] = None
     imdb_id: Optional[str] = None
     tmdb_id: Optional[int] = None
     imdb_rating: Optional[float] = None
@@ -43,6 +53,7 @@ class MovieBase(BaseModel):
     metascore: Optional[int] = None
     tomato_meter: Optional[int] = None
     tomato_audience: Optional[int] = None
+    rt_score: Optional[int] = None
     poster_url: Optional[str] = None
     backdrop_url: Optional[str] = None
     where_to_watch: Optional[Union[str, List[str]]] = None
@@ -136,6 +147,8 @@ class MovieUpdate(BaseModel):
     runtime: Optional[int] = None
     plot: Optional[str] = None
     awards: Optional[str] = None
+    certificate: Optional[str] = None
+    keywords: Optional[List[str]] = None
     imdb_id: Optional[str] = None
     tmdb_id: Optional[int] = None
     imdb_rating: Optional[float] = None
@@ -178,14 +191,44 @@ class MovieLookupCandidate(BaseModel):
     genres: List[str] = Field(default_factory=list)
     source: str = "tmdb"
     vault_id: Optional[int] = None
+    vault_label: Optional[str] = None
     match_confidence: Optional[float] = None
     where_to_watch: List[str] = Field(default_factory=list)
     keywords: List[str] = Field(default_factory=list)
+    certificate: Optional[str] = None
 
 
 class MovieLookupResponse(BaseModel):
     items: List[MovieLookupCandidate] = Field(default_factory=list)
     notice: Optional[str] = None
+
+
+class MovieMatchSelection(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    title: str = Field(min_length=1, max_length=300)
+    year: Optional[int] = Field(default=None, ge=1870, le=2100)
+    source: Literal["tmdb", "omdb"]
+    tmdb_id: Optional[int] = Field(default=None, gt=0)
+    imdb_id: Optional[str] = Field(default=None, pattern=r"^tt\d{5,12}$")
+
+    @model_validator(mode="after")
+    def validate_provider_id(self):
+        if self.source == "tmdb" and self.tmdb_id is None:
+            raise ValueError("tmdb_id is required for a TMDB selection")
+        if self.source == "omdb" and self.imdb_id is None:
+            raise ValueError("imdb_id is required for an OMDb selection")
+        return self
+
+
+class MovieMatchApplyResponse(BaseModel):
+    movie_id: int
+    vault_id: Optional[str] = None
+    title: str
+    imdb_id: Optional[str] = None
+    tmdb_id: Optional[int] = None
+    flag_resolved: bool
+    message: str
 
 
 class MovieSearchResponse(BaseModel):
@@ -210,24 +253,40 @@ class MovieDoubleFeature(BaseModel):
 FLAG_REASONS = (
     "Metadata cleanup",
     "Poster/backdrop issue",
-    "Broken link",
-    "Wrong runtime/year",
     "Missing poster",
+    "Broken link",
+    "Movie mismatch",
+    "Wrong runtime/year",
     "Needs runtime",
-    "Poster",
     "Other",
 )
 
+MovieFlagReason = Literal[
+    "Metadata cleanup",
+    "Poster/backdrop issue",
+    "Missing poster",
+    "Broken link",
+    "Movie mismatch",
+    "Wrong runtime/year",
+    "Needs runtime",
+    "Other",
+    "Human review",
+    "Verify identity",
+]
+
 
 class MovieFlagCreate(BaseModel):
-    reason: Optional[str] = None
-    notes: Optional[str] = None
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+
+    reason: MovieFlagReason = "Metadata cleanup"
+    notes: Optional[str] = Field(default=None, max_length=500)
 
 
 class MovieFlagRead(BaseModel):
     movie_id: int
     reason: Optional[str] = None
     notes: Optional[str] = None
+    reported_by_profile_id: Optional[int] = None
     created_at: datetime
     updated_at: datetime
 

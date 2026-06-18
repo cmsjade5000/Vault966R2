@@ -1,8 +1,9 @@
 {% extends "base.html" %}
-{% block title %}{{ movie.title if movie else "Movie not found" }} · Vault 966{% endblock %}
+{% from "partials/movies/card.html" import movie_card %}
+{% block title %}{{ movie.title | display_title if movie else "Movie not found" }} · Vault 966{% endblock %}
 {% block head %}
-<link rel="stylesheet" href="{{ url_for('static', path='css/movies.css') }}" />
-<link rel="stylesheet" href="{{ url_for('static', path='css/movie_detail.css') }}" />
+<link rel="stylesheet" href="{{ static_asset('css/movies.css') }}" />
+<link rel="stylesheet" href="{{ static_asset('css/movie_detail.css') }}" />
 {% endblock %}
 {% block content %}
   {% if movie %}
@@ -10,20 +11,33 @@
     {% if movie.backdrop_url %}
     <img src="{{ movie.backdrop_url }}" alt="" />
     {% elif movie.poster_url %}
-    <img src="{{ movie.poster_url }}" alt="" />
+    <img src="/ui/posters/{{ movie.id }}/w342" alt="" />
     {% endif %}
   </div>
   <div class="detail-wrapper">
-    <a class="back-link" href="/ui/movies" data-back-link>← Back to results</a>
+    <a
+      class="back-link"
+      href="/ui/movies"
+      data-back-link
+      data-vault-busy-message="Returning to the Library…"
+      >← Back to results</a
+    >
     <div class="hero">
       <div class="poster-shell">
-        <div class="poster-frame{% if spotlight_reason %} poster-frame--spotlight{% endif %}">
+        <button
+          type="button"
+          class="poster-frame{% if spotlight_reason %} poster-frame--spotlight{% endif %}"
+          data-poster-focus
+          data-movie-title="{{ movie.title | display_title }}"
+          aria-label="Enlarge {{ movie.title | display_title }} poster"
+          aria-pressed="false"
+        >
           {% if movie.poster_url %}
-          <img class="poster" src="{{ movie.poster_url }}" alt="{{ movie.title }} poster" />
+          <img class="poster" src="/ui/posters/{{ movie.id }}/w342" alt="{{ movie.title | display_title }} poster" />
           {% else %}
           <div class="poster poster--empty {{ movie.poster_theme or 'poster-theme-default' }}" aria-hidden="true">🍿</div>
           {% endif %}
-        </div>
+        </button>
       </div>
       <div class="hero-meta">
         {% if spotlight_reason %}
@@ -33,17 +47,41 @@
         </div>
         {% endif %}
         <div class="header-meta">
-          <h1>{{ movie.title }}</h1>
+          <h1>{{ movie.title | display_title }}</h1>
+        </div>
+        <div
+          class="flag-status{% if movie.flagged %} is-visible{% endif %}"
+          data-flag-status
+          {% if not movie.flagged %}hidden{% endif %}
+        >
+          <div class="flag-status__copy">
+            <strong data-flag-status-title>
+              Needs review{% if movie.flag_reason %} · {{ movie.flag_reason }}{% endif %}
+            </strong>
+            <span data-flag-status-notes>
+              {{ movie.flag_notes or "No notes were added." }}
+            </span>
+          </div>
+          {% if can_manage_flags %}
+          <button
+            type="button"
+            class="flag-status__manage"
+            data-flag-button
+            data-movie-id="{{ movie.id }}"
+          >
+            Manage flag
+          </button>
+          {% endif %}
         </div>
         <div class="hero-tags">
           <button
             type="button"
             class="chip chip-id"
-            data-vault-id="{{ movie.id }}"
+            data-vault-id="{{ movie.vault_id or ('V%04d'|format(movie.id)) }}"
             data-copy-vault
             aria-label="Copy Vault ID"
           >
-            V{{ "%04d"|format(movie.id) }}
+            {{ movie.vault_id or ("V%04d"|format(movie.id)) }}
           </button>
           {% if movie.runtime %}
           {% set rounded_runtime = ((movie.runtime + 4) // 5) * 5 %}
@@ -85,23 +123,33 @@
         <div class="preference-actions" aria-label="Movie preferences">
           <button
             type="button"
-            class="preference-button{% if movie_liked %} is-active{% endif %}"
+            class="preference-icon{% if movie_liked %} is-active{% endif %}"
             data-preference-button
             data-preference-type="like"
             data-movie-id="{{ movie.id }}"
+            data-movie-title="{{ movie.title | display_title }}"
+            aria-label="{{ 'Unlike' if movie_liked else 'Like' }} {{ movie.title | display_title }}"
+            title="Like"
             aria-pressed="{{ 'true' if movie_liked else 'false' }}"
           >
-            Like
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8l1.1 1.1L12 21.2l7.8-7.7 1.1-1.1a5.5 5.5 0 0 0-.1-7.8z"></path>
+            </svg>
           </button>
           <button
             type="button"
-            class="preference-button{% if movie_watchlist %} is-active{% endif %}"
+            class="preference-icon{% if movie_watchlist %} is-active{% endif %}"
             data-preference-button
             data-preference-type="watchlist"
             data-movie-id="{{ movie.id }}"
+            data-movie-title="{{ movie.title | display_title }}"
+            aria-label="{{ 'Remove' if movie_watchlist else 'Add' }} {{ movie.title | display_title }} {{ 'from' if movie_watchlist else 'to' }} watchlist"
+            title="Watchlist"
             aria-pressed="{{ 'true' if movie_watchlist else 'false' }}"
           >
-            Watchlist
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1z"></path>
+            </svg>
           </button>
         </div>
       </div>
@@ -232,160 +280,95 @@
       </section>
       {% endif %}
 
-    </div>
-    {% if pair_with %}
-    <section class="section-card section-card--wide detail-recs">
-      <header class="detail-recs__header">
-        <h2>Pair with this</h2>
-        <p>Two more picks that complement the tone, pace, or theme.</p>
-      </header>
-      <div class="detail-recs__grid" role="list">
-        {% for rec in pair_with %}
-        {% set pref = similar_preferences.get(rec.id, {}) %}
-        {% set reasons = similar_reasons.get(rec.id, []) %}
-        <article
-          class="detail-rec-card"
-          role="listitem"
-          data-movie-card
-          data-movie-id="{{ rec.id }}"
-          data-liked="{{ 'true' if pref.get('liked') else 'false' }}"
-          data-watchlist="{{ 'true' if pref.get('watchlist') else 'false' }}"
-        >
-          <a class="detail-rec-card__link" href="/ui/movies/{{ rec.id }}">
-            <div class="detail-rec-card__poster">
-              {% if rec.poster_url %}
-              <img src="{{ rec.poster_url }}" alt="{{ rec.title }} poster" loading="lazy" />
-              {% else %}
-              <div class="poster poster--empty {{ rec.poster_theme or 'poster-theme-default' }}" aria-hidden="true">🍿</div>
-              {% endif %}
+      {% if source_provenance and (source_provenance.latest_copy or source_provenance.decisions) %}
+      <details class="section-card section-card--wide provenance-section">
+        <summary class="provenance-section__summary">
+          <span>Vault History</span>
+        </summary>
+        <div class="provenance-section__content">
+          <div class="glance-grid">
+            {% if source_provenance.latest_copy %}
+            <div class="glance-item">
+              <span class="glance-label">Collection confirmed</span>
+              <span>{{ source_provenance.latest_copy.confirmed_at.strftime('%Y-%m-%d') }}</span>
             </div>
-            <div class="detail-rec-card__meta">
-              <h3>{{ rec.title }}</h3>
-              <span>{{ rec.year or "—" }}</span>
+            <div class="glance-item">
+              <span class="glance-label">Owned copy</span>
+              <span>
+                {% if source_provenance.latest_copy.hd is sameas true %}HD
+                {% elif source_provenance.latest_copy.hd is sameas false %}SD
+                {% else %}Quality unknown{% endif %}
+              </span>
             </div>
-          </a>
-          {% if reasons %}
-          <div class="detail-rec-card__reasons">
-            {% for reason in reasons %}
-            <span class="chip chip-reason">{{ reason }}</span>
-            {% endfor %}
+            {% endif %}
+            {% if movie.last_tmdb_fetch_at or movie.last_omdb_fetch_at %}
+            <div class="glance-item">
+              <span class="glance-label">Metadata refreshed</span>
+              <span>
+                {{ (movie.last_tmdb_fetch_at or movie.last_omdb_fetch_at).strftime('%Y-%m-%d') }}
+              </span>
+            </div>
+            {% endif %}
+          </div>
+          {% if source_provenance.decisions %}
+          <div class="provenance-history">
+            <h3>Recent source decisions</h3>
+            <ul>
+              {% for decision in source_provenance.decisions %}
+                <li>
+                  <strong>{{ decision.field_name|title }}</strong>
+                  <span>{{ decision.previous_value or 'Missing' }} → {{ decision.selected_value or 'Missing' }}</span>
+                  <small>
+                    {{ decision.decision|replace('_', ' ')|title }} · {{ decision.decided_at.strftime('%Y-%m-%d') }}
+                    {% if decision.undone_at %} · Undone{% endif %}
+                  </small>
+                </li>
+              {% endfor %}
+            </ul>
           </div>
           {% endif %}
-          <div class="detail-rec-card__actions">
-            <button
-              type="button"
-              class="preference-button{% if pref.get('liked') %} is-active{% endif %}"
-              data-preference-button
-              data-preference-type="like"
-              data-movie-id="{{ rec.id }}"
-              aria-pressed="{{ 'true' if pref.get('liked') else 'false' }}"
-            >
-              Like
-            </button>
-            <button
-              type="button"
-              class="preference-button{% if pref.get('watchlist') %} is-active{% endif %}"
-              data-preference-button
-              data-preference-type="watchlist"
-              data-movie-id="{{ rec.id }}"
-              aria-pressed="{{ 'true' if pref.get('watchlist') else 'false' }}"
-            >
-              Watchlist
-            </button>
-          </div>
-        </article>
-        {% endfor %}
-      </div>
-    </section>
-    {% endif %}
+        </div>
+      </details>
+      {% endif %}
+
+    </div>
     {% if more_like %}
     <section class="section-card section-card--wide detail-recs detail-recs--more">
       <header class="detail-recs__header">
         <h2>
-          {% if movie_liked %}Because you liked {{ movie.title }}{% else %}More like this{% endif %}
+          {% if movie_liked %}Because you liked {{ movie.title | display_title }}{% else %}More like this{% endif %}
         </h2>
         <p>Similar energy from the vault, ready for the queue.</p>
       </header>
-      <div class="detail-recs__grid" role="list">
+      <div class="library-grid" role="list">
         {% for rec in more_like %}
         {% set pref = similar_preferences.get(rec.id, {}) %}
         {% set reasons = similar_reasons.get(rec.id, []) %}
-        <article
-          class="detail-rec-card"
-          role="listitem"
-          data-movie-card
-          data-movie-id="{{ rec.id }}"
-          data-liked="{{ 'true' if pref.get('liked') else 'false' }}"
-          data-watchlist="{{ 'true' if pref.get('watchlist') else 'false' }}"
-        >
-          <a class="detail-rec-card__link" href="/ui/movies/{{ rec.id }}">
-            <div class="detail-rec-card__poster">
-              {% if rec.poster_url %}
-              <img src="{{ rec.poster_url }}" alt="{{ rec.title }} poster" loading="lazy" />
-              {% else %}
-              <div class="poster poster--empty {{ rec.poster_theme or 'poster-theme-default' }}" aria-hidden="true">🍿</div>
-              {% endif %}
-            </div>
-            <div class="detail-rec-card__meta">
-              <h3>{{ rec.title }}</h3>
-              <span>{{ rec.year or "—" }}</span>
-            </div>
-          </a>
-          {% if reasons %}
-          <div class="detail-rec-card__reasons">
-            {% for reason in reasons %}
-            <span class="chip chip-reason">{{ reason }}</span>
-            {% endfor %}
-          </div>
-          {% endif %}
-          <div class="detail-rec-card__actions">
-            <button
-              type="button"
-              class="preference-button{% if pref.get('liked') %} is-active{% endif %}"
-              data-preference-button
-              data-preference-type="like"
-              data-movie-id="{{ rec.id }}"
-              aria-pressed="{{ 'true' if pref.get('liked') else 'false' }}"
-            >
-              Like
-            </button>
-            <button
-              type="button"
-              class="preference-button{% if pref.get('watchlist') %} is-active{% endif %}"
-              data-preference-button
-              data-preference-type="watchlist"
-              data-movie-id="{{ rec.id }}"
-              aria-pressed="{{ 'true' if pref.get('watchlist') else 'false' }}"
-            >
-              Watchlist
-            </button>
-          </div>
-        </article>
+        {{ movie_card(rec, pref.get('liked'), pref.get('watchlist'), reasons, role="listitem", placeholder="🍿", show_rating=false) }}
         {% endfor %}
       </div>
     </section>
     {% endif %}
     <div class="detail-actions detail-actions--footer">
+      {% if can_manage_flags %}
       <button
         type="button"
         class="edit-toggle"
         data-edit-button
         data-movie-id="{{ movie.id }}"
-        aria-label="Edit {{ movie.title }}"
+        aria-label="Edit {{ movie.title | display_title }}"
       >
         Edit
       </button>
+      {% endif %}
       <button
         type="button"
-        class="flag-toggle{% if movie.flagged %} is-flagged{% endif %}"
+        class="flag-toggle"
         data-flag-button
         data-movie-id="{{ movie.id }}"
-        data-flagged="{{ 'true' if movie.flagged else 'false' }}"
-        data-flag-default="Metadata cleanup"
-        aria-pressed="{{ 'true' if movie.flagged else 'false' }}"
-        aria-label="{% if movie.flagged %}Resolve flag{% else %}Flag to fix{% endif %}"
+        aria-label="{% if can_manage_flags %}{% if movie.flagged %}Manage review flag{% else %}Flag for review{% endif %}{% else %}Report issue{% endif %}"
       >
-        {% if movie.flagged %}Resolve flag{% else %}Flag{% endif %}
+        {% if can_manage_flags %}{% if movie.flagged %}Manage flag{% else %}Flag for review{% endif %}{% else %}Report issue{% endif %}
       </button>
     </div>
     {% if review_mode %}
@@ -409,7 +392,79 @@
     </div>
     {% endif %}
   </div>
+  <div class="poster-focus-backdrop" data-poster-focus-backdrop hidden></div>
+  <dialog
+    class="flag-dialog-overlay"
+    data-flag-dialog
+    aria-labelledby="flag-dialog-title"
+    aria-describedby="flag-dialog-description"
+    aria-hidden="true"
+  >
+    <form
+      class="flag-dialog"
+      data-flag-form
+      data-flag-mode="{{ 'manage' if can_manage_flags else 'report' }}"
+    >
+      <header class="flag-dialog__header">
+        <div>
+          <h2 id="flag-dialog-title">
+            {% if can_manage_flags %}{% if movie.flagged %}Manage review flag{% else %}Flag for review{% endif %}{% else %}Report issue{% endif %}
+          </h2>
+          <p id="flag-dialog-description">
+            {% if can_manage_flags %}Record what needs attention so it appears in the Flags queue.{% else %}Send this movie to the admin review queue with a short note.{% endif %}
+          </p>
+        </div>
+        <button
+          type="button"
+          class="flag-dialog__close"
+          data-flag-close
+          aria-label="Close flag dialog"
+        >×</button>
+      </header>
+      <label>
+        <span>Reason</span>
+        <select data-flag-reason required>
+          {% if movie.flag_reason and movie.flag_reason not in flag_reasons %}
+          <option value="{{ movie.flag_reason }}" selected>{{ movie.flag_reason }}</option>
+          {% endif %}
+          {% for reason in flag_reasons %}
+          <option
+            value="{{ reason }}"
+            {% if (movie.flag_reason and movie.flag_reason == reason) or (not movie.flag_reason and reason == "Metadata cleanup") %}selected{% endif %}
+          >{{ reason }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label>
+        <span>Notes <small>(optional)</small></span>
+        <textarea
+          data-flag-notes
+          maxlength="500"
+          placeholder="What needs a fix?"
+        >{{ movie.flag_notes or "" }}</textarea>
+      </label>
+      <p class="flag-dialog__status" data-flag-dialog-status role="status" aria-live="polite"></p>
+      <div class="flag-dialog__actions">
+        {% if can_manage_flags %}
+        <button
+          type="button"
+          class="button-ghost flag-dialog__resolve"
+          data-flag-resolve
+          {% if not movie.flagged %}hidden{% endif %}
+        >
+          Resolve flag
+        </button>
+        {% endif %}
+        <button type="button" class="button-ghost" data-flag-close>Cancel</button>
+        <button type="submit" class="button-primary" data-flag-save>
+          {% if can_manage_flags %}Save changes{% else %}Report issue{% endif %}
+        </button>
+      </div>
+    </form>
+  </dialog>
+  {% if can_manage_flags %}
   {% include "partials/movies/edit_dialog.html" %}
+  {% endif %}
   {% else %}
   <div class="container">
     <div class="not-found">
@@ -422,7 +477,9 @@
 
 {% block scripts %}
   {{ super() }}
-  <script type="application/json" id="movies-page-data">{{ {'pageContext': 'detail'} | tojson }}</script>
-  <script src="{{ url_for('static', path='js/movies_page.js') }}" defer></script>
-  <script src="{{ url_for('static', path='js/movie_detail.js') }}" defer></script>
+  <script src="{{ static_asset('js/movie_preferences.js') }}" defer></script>
+  {% if can_manage_flags %}
+  <script src="{{ static_asset('js/movie_detail_edit.js') }}" defer></script>
+  {% endif %}
+  <script src="{{ static_asset('js/movie_detail.js') }}" defer></script>
 {% endblock %}

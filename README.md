@@ -4,6 +4,9 @@ This is the starter scaffold for migrating Vault 966 from Streamlit to a real AP
 - **FastAPI** backend now, optional **Next.js** frontend later.
 - **SQLite** by default for easy local start; flip to **Postgres** with `DATABASE_URL`.
 
+Start with [PROJECT.md](PROJECT.md) for the current project map, source/deployment
+boundaries, documentation index, and maintenance workflow.
+
 ## Quickstart
 
 ```bash
@@ -22,6 +25,40 @@ make dev          # alias: make devserver; uses .env.local (or .env fallback) au
 ```
 
 Visit http://127.0.0.1:8000/health and http://127.0.0.1:8000/docs
+
+### Always-on Mac Mini service
+
+For the home Mac Mini, install the native macOS background service:
+
+```bash
+scripts/vault_service.sh install
+scripts/vault_service.sh status
+```
+
+The service starts at login, is restarted by macOS if it exits, and checks `/health`
+every 30 seconds. Three consecutive failed checks cause a clean restart. A separate
+launchd watchdog checks health every minute and force-restarts the complete service
+after repeated failures. A daily maintenance job creates a validated online SQLite
+backup at 3:30 AM and keeps the newest seven. Vault runs Uvicorn without development
+reload. The deployed application, canonical SQLite database, Python environment,
+backups, and logs live under
+`~/Library/Application Support/Vault966`; the repository's `vault.db` links to that
+same database so local maintenance tools continue to operate on the live data.
+
+The current service is a per-user LaunchAgent, so it cannot start after a reboot
+until that user logs in. Automatic unattended power-outage recovery also requires
+the macOS restart-after-power-failure setting and, while FileVault remains enabled,
+an authorized disk unlock after a full shutdown. See
+[Power-Outage Recovery](docs/power-outage-recovery.md) for the current limitation,
+recommended architecture, recovery commands, backup checks, and quarterly drill.
+
+The iPad always uses this deployed copy, not files directly from the repository.
+Run `scripts/vault_service.sh restart` after every application change, including
+Python, templates, static CSS/JavaScript, configuration, and dependencies. The
+command waits for the live `/health` endpoint before reporting success. Use
+`scripts/vault_service.sh logs` to follow logs, and
+`scripts/vault_service.sh uninstall` to remove the service. Double-clicking
+`Launch Vault 966.command` installs or refreshes the service and opens the login page.
 
 ### Admin actions
 

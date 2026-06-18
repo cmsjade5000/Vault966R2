@@ -1,0 +1,12 @@
+# Project-scoped Codex defaults. This file is loaded only when the repository is trusted.
+sandbox_mode = "workspace-write"
+approval_policy = "on-request"
+approvals_reviewer = "user"
+project_doc_fallback_filenames = ["agents.md"]
+
+[sandbox_workspace_write]
+network_access = true
+writable_roots = [
+  "/Users/corystoner/Library/Application Support/Vault966",
+  "/Users/corystoner/Library/LaunchAgents",
+]

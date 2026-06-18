@@ -11,6 +11,7 @@ from api.config import settings
 from api.models.movie import Genre, Mood, Movie
 from api.models.person import Role, RoleType
 from api.services.flic_ordering import fetch_movies_in_rank_order, rank_movie_ids_by_flic
+from api.services.trusted_movies import trusted_movie_query
 from core.picker import PickerCandidate, PickerFilters, calculate_flic_score
 
 DEFAULT_DOUBLE_FEATURE_RUNTIME = 240
@@ -297,13 +298,20 @@ def pick_double_feature(
     year_min: Optional[int] = None,
     year_max: Optional[int] = None,
     seed: Optional[int] = None,
+    require_poster: bool = False,
 ) -> Optional[DoubleFeatureSelection]:
     base_query = (
-        db.query(Movie)
+        trusted_movie_query(db)
         .options(selectinload(Movie.genres), selectinload(Movie.moods))
         .filter(Movie.runtime.isnot(None))
         .filter(Movie.runtime <= runtime_cap)
     )
+    if require_poster:
+        base_query = base_query.filter(
+            Movie.poster_url.isnot(None),
+            Movie.poster_url != "",
+            Movie.poster_url != "N/A",
+        )
 
     if genre:
         base_query = base_query.filter(Movie.genres.any(Genre.name == genre))

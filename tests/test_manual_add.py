@@ -3,6 +3,7 @@ from typing import Optional
 
 from fastapi.testclient import TestClient
 
+from api.config import settings
 from api.db import get_db
 from api.models.movie import Movie
 from api.routers.ui.manual_add import ManualMovieCreate, ManualMovieMetadata
@@ -50,6 +51,10 @@ def _fetch_movie(client: TestClient, title: str) -> Optional[dict]:
             "imdb_id": movie.imdb_id,
             "tmdb_id": movie.tmdb_id,
             "where_to_watch": movie.where_to_watch,
+            "imdb_rating": movie.imdb_rating,
+            "rt_score": movie.rt_score,
+            "certificate": movie.certificate,
+            "keywords": movie.keywords,
         }
     finally:
         generator.close()
@@ -68,6 +73,11 @@ def test_manual_add_creates_movie_with_vudu_tag(client: TestClient, admin_header
             backdrop_url="https://example.com/backdrop.jpg",
             genres=["Science Fiction"],
             where_to_watch=["Amazon Prime"],
+            imdb_rating=8.8,
+            imdb_votes=2_500_000,
+            rt_score=87,
+            certificate="PG-13",
+            keywords=["dream", "heist"],
         ),
         vudu=True,
     )
@@ -87,7 +97,64 @@ def test_manual_add_creates_movie_with_vudu_tag(client: TestClient, admin_header
     assert db_movie is not None
     assert db_movie["imdb_id"] == "tt1375666"
     assert db_movie["tmdb_id"] == 27205
-    assert "Vudu" in (db_movie["where_to_watch"] or "")
+    assert "Vudu" in (db_movie["where_to_watch"] or [])
+    assert db_movie["imdb_rating"] == 8.8
+    assert db_movie["rt_score"] == 87
+    assert db_movie["certificate"] == "PG-13"
+    assert db_movie["keywords"] == ["dream", "heist"]
+
+
+def test_manual_add_caches_poster_after_commit(
+    client: TestClient,
+    admin_headers: dict[str, str],
+    monkeypatch,
+) -> None:
+    cached_movie_ids: list[int] = []
+    monkeypatch.setattr(
+        "api.routers.ui.manual_add.cache_movie_posters_safely",
+        cached_movie_ids.append,
+    )
+    monkeypatch.setattr(
+        "api.routers.ui.manual_add.append_movie_to_cleaned_csv",
+        lambda *_args, **_kwargs: True,
+    )
+    monkeypatch.setattr(
+        "api.routers.ui.manual_add.append_movie_to_enriched_csv",
+        lambda *_args, **_kwargs: True,
+    )
+    payload = ManualMovieCreate(
+        title="Poster Cache Test",
+        year=2026,
+        metadata=ManualMovieMetadata(
+            tmdb_id=2_026_001,
+            poster_url="https://image.tmdb.org/t/p/w500/poster-cache-test.jpg",
+        ),
+    )
+
+    response = client.post(
+        "/ui/movies/manual-add",
+        json=payload.model_dump(),
+        headers=admin_headers,
+    )
+
+    assert response.status_code == 201
+    assert cached_movie_ids == [response.json()["id"]]
+
+
+def test_reviewer_cannot_preview_or_submit_manual_add(
+    client: TestClient,
+    monkeypatch,
+) -> None:
+    monkeypatch.setattr(settings, "disable_auth", False)
+    monkeypatch.setattr(settings, "login_session_secret", None)
+    client.post("/login", data={"profile_id": "2"}, follow_redirects=False)
+
+    payload = {"title": "Reviewer Add Attempt", "year": 2026}
+    preview = client.post("/ui/movies/manual-add/preview", json=payload)
+    submit = client.post("/ui/movies/manual-add", json=payload)
+
+    assert preview.status_code == 403
+    assert submit.status_code == 403
 
 
 def test_manual_add_rejects_duplicate_imdb(client: TestClient, admin_headers: dict[str, str]):

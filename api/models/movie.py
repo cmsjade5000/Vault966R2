@@ -71,11 +71,16 @@ class Movie(Base):
     )
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    vault_id: Mapped[Optional[str]] = mapped_column(
+        String(20), nullable=True, unique=True, index=True
+    )
     title: Mapped[str] = mapped_column(String(300), index=True)
     year: Mapped[Optional[int]] = mapped_column(Integer, nullable=True, index=True)
     runtime: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)  # minutes
     plot: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     awards: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    certificate: Mapped[Optional[str]] = mapped_column(String(30), nullable=True)
+    keywords: Mapped[Optional[object]] = mapped_column(JSON, nullable=True)
 
     imdb_id: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
     tmdb_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)

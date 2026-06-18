@@ -1,153 +1,66 @@
 <section class="collection-health" aria-label="Collection health">
-  <header class="collection-health__header">
-    <h2>Collection Health</h2>
-    <p>Quick maintenance snapshot so you know what needs love next.</p>
-  </header>
-  <div class="collection-health__actions">
-    <a class="button-secondary collection-health__review" href="/ui/movies/review">
-      Start Vault Review
+  <header class="collection-health__toolbar">
+    <div>
+      <h2>Vault overview</h2>
+      <p>Integrity, review workload, and metadata coverage.</p>
+    </div>
+    <a class="button-primary collection-health__review" href="#review-workbench">
+      Work {{ total_review_count }} open items
     </a>
-  </div>
-  {% if collection_health.recommendation %}
-  <div class="collection-health__recommendation" role="status" aria-live="polite">
-    <div class="collection-health__recommendation-copy">
-      <span class="chip chip-flic">Flic Recommendation</span>
-      <p data-recommendation-text>{{ collection_health.recommendation }}</p>
-    </div>
-    <button
-      type="button"
-      class="collection-health__refresh"
-      data-recommendation-refresh
-      aria-label="Refresh recommendation"
-      title="Refresh recommendation"
-    >
-      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-        <path
-          d="M20 12a8 8 0 1 1-2.34-5.66"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-          stroke-linecap="round"
-        />
-        <path
-          d="M20 4v6h-6"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-        />
-      </svg>
-    </button>
-  </div>
-  {% endif %}
-  <div class="collection-health__update" role="status" aria-live="polite">
-    <div class="collection-health__update-copy">
-      <span class="chip chip-flic">Vault update</span>
-      <p>Run the vault maintenance scripts and capture the latest results.</p>
-      <p class="collection-health__update-status" data-update-status>
-        Last update: not run yet.
-      </p>
-      <div class="collection-health__update-steps" data-update-steps></div>
-    </div>
-    <button
-      type="button"
-      class="collection-health__update-button"
-      data-update-trigger
-    >
-      Update Vault
-    </button>
-  </div>
-  <details class="manual-add" id="manual-add">
-    <summary>Add a movie</summary>
-    <form class="manual-add__form" id="manual-add-form" autocomplete="off">
-      <div class="manual-add__row">
-        <label for="manual-add-title">
-          <span>Title</span>
-          <input id="manual-add-title" name="title" type="text" required placeholder="e.g. Arrival" />
-        </label>
-        <label for="manual-add-year">
-          <span>Year</span>
-          <input
-            id="manual-add-year"
-            name="year"
-            type="number"
-            inputmode="numeric"
-            min="1888"
-            max="2100"
-            placeholder="e.g. 2016"
-          />
-        </label>
-      </div>
-      <div class="manual-add__actions">
-        <button type="submit" class="button-secondary" id="manual-add-submit">Save</button>
-        <span class="manual-add__status" id="manual-add-status" role="status" aria-live="polite" hidden></span>
-      </div>
-    </form>
-    <div class="manual-add__preview" id="manual-add-preview" hidden>
-      <div class="manual-add-preview__card">
-        <div class="manual-add-preview__layout">
-          <div id="manual-add-preview-poster"></div>
-          <div>
-            <div class="manual-add-preview__header">
-              <h4 class="manual-add-preview__title" id="manual-add-preview-title"></h4>
-              <div class="manual-add-preview__meta" id="manual-add-preview-meta"></div>
-            </div>
-            <div class="manual-add-preview__body" id="manual-add-preview-overview"></div>
-            <div class="manual-add-preview__meta" id="manual-add-preview-genres"></div>
-          </div>
-        </div>
-      </div>
-      <div class="manual-add__preview-actions">
-        <button type="button" class="button-primary" id="manual-add-confirm">Looks good</button>
-        <button type="button" class="button-ghost" id="manual-add-cancel">Cancel</button>
-        <button type="button" class="button-secondary" id="manual-add-confirm-minimal" hidden>Add without metadata</button>
-      </div>
-    </div>
-  </details>
+  </header>
   <div class="collection-health__grid">
     <article class="health-card">
-      <h3>Missing runtime</h3>
-      <p class="health-card__value">{{ collection_health.missing_runtime }}</p>
+      <h3>Structural health</h3>
+      <p class="health-card__value">
+        {% if collection_health.structural_issues == 0 %}Clear{% else %}{{ collection_health.structural_issues }} issues{% endif %}
+      </p>
+      <p class="health-card__hint">Stable IDs and required record structure.</p>
+    </article>
+    <article class="health-card">
+      <h3>Source synchronization</h3>
+      <p class="health-card__value">
+        {% if collection_health.source_snapshot_at %}{{ collection_health.source_rows }} rows{% else %}Not synced{% endif %}
+      </p>
       <p class="health-card__hint">
-        Add runtimes so Flic weights picks correctly.
-        <a href="/ui/movies/health/missing#runtime" class="hero-health-link">Review list →</a>
+        {% if collection_health.source_snapshot_at %}
+          Last confirmed {{ collection_health.source_snapshot_at.strftime('%Y-%m-%d') }}.
+        {% endif %}
+        <a href="#source-synchronization" class="hero-health-link">View sync details →</a>
       </p>
     </article>
     <article class="health-card">
-      <h3>Missing synopsis</h3>
-      <p class="health-card__value">{{ collection_health.missing_plot }}</p>
+      <h3>Identity confidence</h3>
+      <p class="health-card__value">{{ total_review_count }}</p>
       <p class="health-card__hint">
-        A quick blurb makes rediscovery easier.
-        <a href="/ui/movies/health/missing#synopsis" class="hero-health-link">Review list →</a>
+        Open source conflicts and Vault-only checks.
+        <a href="#review-workbench" class="hero-health-link">Open workbench →</a>
       </p>
     </article>
     <article class="health-card">
-      <h3>Needs artwork</h3>
-      <p class="health-card__value">{{ collection_health.missing_poster }}</p>
-      <p class="health-card__hint">
-        Refresh posters to keep the wall vibrant.
-        <a href="/ui/movies/health/missing#artwork" class="hero-health-link">Review list →</a>
-      </p>
-    </article>
-    <article class="health-card">
-      <h3>Genre gaps</h3>
-      {% if collection_health.genre_gaps %}
-      <ul>
-        {% for genre in collection_health.genre_gaps %}
-        <li>{{ genre }}</li>
-        {% endfor %}
-      </ul>
-      {% else %}
-      <p class="health-card__value">Solid spread!</p>
-      {% endif %}
-    </article>
-    <article class="health-card">
-      <h3>Open flags</h3>
-      <p class="health-card__value">{{ collection_health.flags_open or 0 }}</p>
-      <p class="health-card__hint">
-        <a href="/ui/flags" class="hero-health-link">Review flags →</a>
-      </p>
+      <h3>Metadata completeness</h3>
+      <p class="health-card__value">{{ collection_health.missing_runtime + collection_health.missing_plot + collection_health.missing_poster }}</p>
+      <p class="health-card__hint">Combined runtime, synopsis, and artwork gaps.</p>
     </article>
   </div>
+
+  {% if can_manage_health %}
+  <div class="collection-health__tools">
+    <details class="health-tool">
+      <summary>
+        <span>
+          <strong>Vault maintenance</strong>
+          <small data-update-status>Last update: not run yet.</small>
+        </span>
+        <span aria-hidden="true">+</span>
+      </summary>
+      <div class="health-tool__body" role="status" aria-live="polite">
+        <p>Run integrity checks, refresh metadata, and capture the latest results.</p>
+        <div class="collection-health__update-steps" data-update-steps></div>
+        <button type="button" class="collection-health__update-button" data-update-trigger>
+          Update Vault
+        </button>
+      </div>
+    </details>
+  </div>
+  {% endif %}
 </section>

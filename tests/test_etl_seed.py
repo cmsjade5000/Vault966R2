@@ -6,6 +6,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from api.models.movie import Movie
+from api.models.person import RoleType
 
 try:
     from scripts import etl_seed  # type: ignore
@@ -54,6 +55,7 @@ def test_normalize_row_requires_title():
 def test_normalize_row_with_extended_columns():
     raw = {
         "title": "Interstellar",
+        "vault_id": "V966-002",
         "release_year": "2014",
         "runtime_min": "169",
         "plot_summary": "Space epic",
@@ -68,8 +70,21 @@ def test_normalize_row_with_extended_columns():
     assert record["year"] == 2014
     assert record["runtime"] == 169
     assert record["plot"] == "Space epic"
-    assert record["genres"] == ["Sci-Fi", "Adventure"]
+    assert record["genres"] == ["Science Fiction", "Adventure"]
     assert record["moods"] == []
+    assert record["legacy_vault_id"] == "V966-002"
+
+
+def test_legacy_vault_id_is_preferred_for_provenance():
+    record = {
+        "legacy_vault_id": "V966-002",
+        "imdb_id": "tt0816692",
+        "tmdb_id": 157336,
+        "title": "Interstellar",
+        "year": 2014,
+    }
+
+    assert etl_seed.determine_provenance_provider_id(record) == "V966-002"
 
 
 def test_load_rows_csv(tmp_path):
@@ -90,7 +105,8 @@ def test_load_rows_csv_skips_preface_line():
     assert "Table 1" not in rows[0]
 
 
-def test_process_record_insert_and_update(in_memory_session):
+def test_process_record_insert_and_update(in_memory_session, tmp_path):
+    duplicates_path = tmp_path / "duplicates.csv"
     record = {
         "title": "Inception",
         "year": 2010,
@@ -102,12 +118,14 @@ def test_process_record_insert_and_update(in_memory_session):
         "backdrop_url": None,
         "genres": ["Sci-Fi", "Thriller"],
         "moods": ["Mind-bending"],
+        "directors": ["Christopher Nolan"],
+        "cast": ["Leonardo DiCaprio", "Joseph Gordon-Levitt"],
     }
 
     action, reason = etl_seed.process_record(
         record,
         dry_run=False,
-        duplicates_path=pathlib.Path("reports/duplicates.csv"),
+        duplicates_path=duplicates_path,
     )
     assert action == "inserted"
     assert reason is None
@@ -115,7 +133,16 @@ def test_process_record_insert_and_update(in_memory_session):
     with in_memory_session() as session:
         movie = session.execute(select(Movie).where(Movie.imdb_id == "tt1375666")).scalar_one()
         assert movie.title == "Inception"
+        assert movie.vault_id is None
         assert {genre.name for genre in movie.genres} == {"Sci-Fi", "Thriller"}
+        assert {
+            role.person.name for role in movie.roles if role.role_type == RoleType.DIRECTOR
+        } == {"Christopher Nolan"}
+        assert [
+            role.person.name
+            for role in sorted(movie.roles, key=lambda role: role.billing_order or 0)
+            if role.role_type == RoleType.ACTOR
+        ] == ["Leonardo DiCaprio", "Joseph Gordon-Levitt"]
 
     record_update = {
         **record,
@@ -126,7 +153,7 @@ def test_process_record_insert_and_update(in_memory_session):
     action, reason = etl_seed.process_record(
         record_update,
         dry_run=False,
-        duplicates_path=pathlib.Path("reports/duplicates.csv"),
+        duplicates_path=duplicates_path,
     )
     assert action == "updated"
     assert reason is None
@@ -138,7 +165,7 @@ def test_process_record_insert_and_update(in_memory_session):
         assert {mood.name for mood in movie.moods} == {"Thoughtful"}
 
 
-def test_process_record_dry_run_does_not_commit(in_memory_session):
+def test_process_record_dry_run_does_not_commit(in_memory_session, tmp_path):
     record = {
         "title": "Blade Runner 2049",
         "year": 2017,
@@ -155,7 +182,7 @@ def test_process_record_dry_run_does_not_commit(in_memory_session):
     action, reason = etl_seed.process_record(
         record,
         dry_run=True,
-        duplicates_path=pathlib.Path("reports/duplicates.csv"),
+        duplicates_path=tmp_path / "duplicates.csv",
     )
     assert action == "inserted"
     assert reason is None
@@ -167,7 +194,63 @@ def test_process_record_dry_run_does_not_commit(in_memory_session):
         assert result is None
 
 
-def test_process_record_skips_no_changes(in_memory_session):
+def test_process_record_allows_title_year_identity(in_memory_session, tmp_path):
+    record = {
+        "title": "Uncatalogued Short",
+        "year": 1974,
+        "runtime": 22,
+        "plot": None,
+        "imdb_id": None,
+        "tmdb_id": None,
+        "poster_url": None,
+        "backdrop_url": None,
+        "genres": ["Documentary"],
+        "moods": [],
+    }
+
+    assert etl_seed.process_record(
+        record,
+        dry_run=False,
+        duplicates_path=tmp_path / "duplicates.csv",
+    ) == ("inserted", None)
+
+    with in_memory_session() as session:
+        movie = session.execute(
+            select(Movie).where(Movie.title == "Uncatalogued Short")
+        ).scalar_one()
+        assert movie.year == 1974
+        assert movie.imdb_id is None
+        assert movie.tmdb_id is None
+
+
+def test_process_record_preserves_legacy_vault_id(in_memory_session, tmp_path):
+    record = {
+        "title": "Legacy Entry",
+        "year": 1999,
+        "runtime": 100,
+        "plot": None,
+        "imdb_id": "tt1234567",
+        "tmdb_id": 123,
+        "poster_url": None,
+        "backdrop_url": None,
+        "genres": [],
+        "moods": [],
+        "legacy_vault_id": "v42",
+    }
+
+    assert etl_seed.process_record(
+        record,
+        dry_run=False,
+        duplicates_path=tmp_path / "duplicates.csv",
+    ) == ("inserted", None)
+
+    with in_memory_session() as session:
+        movie = session.execute(select(Movie).where(Movie.imdb_id == "tt1234567")).scalar_one()
+        assert movie.vault_id == "V0042"
+
+
+def test_process_record_skips_no_changes(in_memory_session, tmp_path):
+    duplicates_path = tmp_path / "duplicates.csv"
     record = {
         "title": "Moonlight",
         "year": 2016,
@@ -184,17 +267,54 @@ def test_process_record_skips_no_changes(in_memory_session):
     action, _ = etl_seed.process_record(
         record,
         dry_run=False,
-        duplicates_path=pathlib.Path("reports/duplicates.csv"),
+        duplicates_path=duplicates_path,
     )
     assert action == "inserted"
 
     action, reason = etl_seed.process_record(
         record,
         dry_run=False,
-        duplicates_path=pathlib.Path("reports/duplicates.csv"),
+        duplicates_path=duplicates_path,
     )
     assert action == "skipped"
     assert reason == "duplicate_db"
+
+
+def test_process_record_quarantines_conflicting_identifier(in_memory_session, tmp_path):
+    duplicates_path = tmp_path / "duplicates.csv"
+    original = {
+        "title": "The Avengers",
+        "year": 2012,
+        "runtime": 143,
+        "plot": None,
+        "imdb_id": "tt0848228",
+        "tmdb_id": 24428,
+        "poster_url": None,
+        "backdrop_url": None,
+        "genres": ["Action"],
+        "moods": [],
+    }
+    conflict = {
+        **original,
+        "title": "Avengers: Age of Ultron",
+        "year": 2015,
+    }
+
+    assert etl_seed.process_record(
+        original,
+        dry_run=False,
+        duplicates_path=duplicates_path,
+    ) == ("inserted", None)
+    assert etl_seed.process_record(
+        conflict,
+        dry_run=False,
+        duplicates_path=duplicates_path,
+    ) == ("skipped", "identifier_conflict")
+
+    with in_memory_session() as session:
+        movie = session.execute(select(Movie).where(Movie.tmdb_id == 24428)).scalar_one()
+        assert movie.title == "The Avengers"
+        assert movie.year == 2012
 
 
 def test_coerce_int_handles_messy_values():
@@ -219,7 +339,7 @@ def test_normalize_providers_handles_mapping_payload():
     }
 
     normalized = etl_seed.normalize_providers(payload)
-    assert normalized == "Netflix; Hulu"
+    assert normalized == ["Netflix", "Hulu"]
 
 
 def test_merge_where_to_watch_merges_string_and_mapping():
@@ -234,7 +354,7 @@ def test_merge_where_to_watch_merges_string_and_mapping():
     }
 
     merged = etl_seed.merge_where_to_watch(existing, incoming)
-    assert merged == "Netflix; Hulu"
+    assert merged == ["Netflix", "Hulu"]
 
 
 def test_normalize_imdb_id_variants():

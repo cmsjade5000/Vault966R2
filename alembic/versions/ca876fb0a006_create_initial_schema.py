@@ -1,7 +1,7 @@
 """create initial schema
 
 Revision ID: ca876fb0a006
-Revises:
+Revises: 202410101200
 Create Date: 2025-09-26 23:36:49.877617
 
 """
@@ -14,7 +14,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision: str = "ca876fb0a006"
-down_revision: Union[str, None] = None
+down_revision: Union[str, None] = "202410101200"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 

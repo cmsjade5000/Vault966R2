@@ -2,8 +2,6 @@ from __future__ import annotations
 
 from typing import Optional
 
-import hmac
-
 from fastapi import APIRouter, Depends, Form, Query, Request, status
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from sqlalchemy import func
@@ -14,61 +12,31 @@ from api.db import get_db
 from api.models.movie import Movie
 from api.services.profiles import (
     PROFILE_COOKIE_NAME,
-    ROLE_ADMIN,
-    ROLE_REVIEWER,
     ensure_profile_cookie,
     get_profiles,
     set_active_profile_cookie,
 )
-from api.services.session import SESSION_COOKIE_NAME, create_session_token, parse_session_token
+from api.services.session import (
+    SESSION_COOKIE_NAME,
+    create_session_token,
+    get_session_secret,
+    parse_session_token,
+)
+from api.services.ui.grid import FILTER_COOKIE_NAME, FILTER_COOKIE_PATH
 from api.services.ui.templates import TEMPLATES
 
 router = APIRouter()
 
-ACCESS_KEY_MAX_LENGTH = 64
-PASSCODE_MAX_LENGTH = 128
-
-
-def _login_configured() -> bool:
-    if not settings.login_session_secret:
-        return False
-    if settings.login_access_key_user_a and settings.login_passcode_user_a:
-        return True
-    if settings.login_access_key_user_b and settings.login_passcode_user_b:
-        return True
-    return bool(settings.login_access_key and settings.login_passcode)
-
-
-def _validate_access_key(value: Optional[str]) -> bool:
-    if value is None:
-        return False
-    clean = value.strip()
-    if not (3 <= len(clean) <= ACCESS_KEY_MAX_LENGTH):
-        return False
-    return all(char.isalnum() or char in {"-", "_", "."} for char in clean)
-
-
-def _validate_passcode(value: Optional[str]) -> bool:
-    if value is None:
-        return False
-    if not (4 <= len(value) <= PASSCODE_MAX_LENGTH):
-        return False
-    return all(32 <= ord(char) <= 126 for char in value)
+PROFILE_PICKER_LABELS = ("CORY", "DAMIAN")
 
 
 def _session_profile_id(request: Request) -> Optional[int]:
-    secret = settings.login_session_secret
-    if not secret:
-        return None
+    secret = get_session_secret(settings.login_session_secret)
     token = request.cookies.get(SESSION_COOKIE_NAME, "")
     session = parse_session_token(token, secret=secret)
     if session:
         return session.profile_id
     return None
-
-
-def _profile_lookup(profiles):
-    return {profile.id: profile for profile in profiles if profile.id is not None}
 
 
 def _archive_poster_urls(db: Session, *, limit: int = 36) -> list[str]:
@@ -94,65 +62,14 @@ def _wants_json(request: Request) -> bool:
     return "application/json" in accept
 
 
-def _resolve_profile(
-    profiles: list,
-    *,
-    role: str,
-    name_fallback: str,
-) -> Optional[object]:
-    for profile in profiles:
-        if getattr(profile, "role", None) == role:
-            return profile
-    for profile in profiles:
-        if getattr(profile, "name", None) == name_fallback:
-            return profile
-    return profiles[0] if profiles else None
-
-
-def _credential_pairs():
-    pairs = []
-    if settings.login_access_key_user_a and settings.login_passcode_user_a:
-        pairs.append(
-            (
-                ROLE_ADMIN,
-                "User A",
-                settings.login_access_key_user_a,
-                settings.login_passcode_user_a,
-            )
-        )
-    if settings.login_access_key_user_b and settings.login_passcode_user_b:
-        pairs.append(
-            (
-                ROLE_REVIEWER,
-                "User B",
-                settings.login_access_key_user_b,
-                settings.login_passcode_user_b,
-            )
-        )
-    if pairs:
-        return pairs
-    if settings.login_access_key and settings.login_passcode:
-        pairs.append(
-            (
-                ROLE_ADMIN,
-                "User A",
-                settings.login_access_key,
-                settings.login_passcode,
-            )
-        )
-    return pairs
-
-
-def _match_profile_for_credentials(
-    profiles: list,
-    *,
-    access_key: str,
-    passcode: str,
-):
-    for role, name_fallback, key, code in _credential_pairs():
-        if hmac.compare_digest(access_key, key) and hmac.compare_digest(passcode, code):
-            return _resolve_profile(profiles, role=role, name_fallback=name_fallback)
-    return None
+def _profile_picker_options(profiles) -> list[dict[str, int | str]]:
+    options = []
+    for index, profile in enumerate(profiles[:2]):
+        if profile.id is None:
+            continue
+        label = PROFILE_PICKER_LABELS[index] if index < len(PROFILE_PICKER_LABELS) else profile.name
+        options.append({"id": profile.id, "label": label})
+    return options
 
 
 @router.get("/login", response_class=HTMLResponse)
@@ -167,7 +84,7 @@ def login(
 
     unlocked_state = bool(unlocked)
     if _session_profile_id(request) and not unlocked_state:
-        return RedirectResponse(url="/ui/discover", status_code=status.HTTP_302_FOUND)
+        return RedirectResponse(url="/ui/movies", status_code=status.HTTP_302_FOUND)
 
     active_profile_id = None
     if request.cookies.get(PROFILE_COOKIE_NAME):
@@ -175,10 +92,6 @@ def login(
             active_profile_id = int(request.cookies.get(PROFILE_COOKIE_NAME, ""))
         except (TypeError, ValueError):
             active_profile_id = None
-
-    error = None
-    if not _login_configured():
-        error = "Login is not configured yet."
 
     archive_poster_urls = _archive_poster_urls(db)
     archive_tiles = _archive_tiles(archive_poster_urls)
@@ -189,9 +102,10 @@ def login(
         {
             "profiles": profiles,
             "active_profile_id": active_profile_id,
-            "error": error,
+            "error": None,
             "unlocked": unlocked_state,
             "default_profile_id": default_profile_id,
+            "profile_options": _profile_picker_options(profiles),
             "archive_tiles": archive_tiles,
             "archive_poster_urls": archive_poster_urls,
         },
@@ -204,71 +118,22 @@ def login(
 @router.post("/login", response_class=HTMLResponse)
 def login_submit(
     request: Request,
-    access_key: str = Form(..., max_length=ACCESS_KEY_MAX_LENGTH),
-    passcode: str = Form(..., max_length=PASSCODE_MAX_LENGTH),
+    profile_id: Optional[int] = Form(default=None, ge=1),
     db: Session = Depends(get_db),
 ):
     wants_json = _wants_json(request)
     profiles = get_profiles(db)
-    default_profile_id = profiles[0].id if profiles else None
-
-    if not _login_configured():
-        if wants_json:
-            return JSONResponse(
-                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                content={"error": "Login is not configured yet."},
-            )
-        archive_poster_urls = _archive_poster_urls(db)
-        archive_tiles = _archive_tiles(archive_poster_urls)
-        return TEMPLATES.TemplateResponse(
-            request,
-            "login.html",
-            {
-                "profiles": profiles,
-                "active_profile_id": None,
-                "error": "Login is not configured yet.",
-                "unlocked": False,
-                "default_profile_id": default_profile_id,
-                "archive_tiles": archive_tiles,
-                "archive_poster_urls": archive_poster_urls,
-            },
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-        )
-
-    clean_access_key = access_key.strip()
-    if not _validate_access_key(clean_access_key) or not _validate_passcode(passcode):
-        if wants_json:
-            return JSONResponse(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                content={"error": "Invalid credentials."},
-            )
-        archive_poster_urls = _archive_poster_urls(db)
-        archive_tiles = _archive_tiles(archive_poster_urls)
-        return TEMPLATES.TemplateResponse(
-            request,
-            "login.html",
-            {
-                "profiles": profiles,
-                "active_profile_id": None,
-                "error": "Invalid credentials.",
-                "unlocked": False,
-                "default_profile_id": default_profile_id,
-                "archive_tiles": archive_tiles,
-                "archive_poster_urls": archive_poster_urls,
-            },
-            status_code=status.HTTP_401_UNAUTHORIZED,
-        )
-
-    profile = _match_profile_for_credentials(
-        profiles,
-        access_key=clean_access_key,
-        passcode=passcode,
-    )
+    profile_by_id = {profile.id: profile for profile in profiles if profile.id is not None}
+    profile = profile_by_id.get(profile_id) if profile_id is not None else None
     if not profile:
+        if profile_id is None:
+            if wants_json:
+                return JSONResponse(status_code=status.HTTP_200_OK, content={"unlocked": True})
+            return RedirectResponse(url="/login?unlocked=1", status_code=status.HTTP_303_SEE_OTHER)
         if wants_json:
             return JSONResponse(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                content={"error": "Invalid credentials."},
+                status_code=status.HTTP_400_BAD_REQUEST,
+                content={"error": "Unknown profile."},
             )
         archive_poster_urls = _archive_poster_urls(db)
         archive_tiles = _archive_tiles(archive_poster_urls)
@@ -278,23 +143,29 @@ def login_submit(
             {
                 "profiles": profiles,
                 "active_profile_id": None,
-                "error": "Invalid credentials.",
-                "unlocked": False,
-                "default_profile_id": default_profile_id,
+                "error": "Unknown profile.",
+                "unlocked": True,
+                "default_profile_id": None,
+                "profile_options": _profile_picker_options(profiles),
                 "archive_tiles": archive_tiles,
                 "archive_poster_urls": archive_poster_urls,
             },
-            status_code=status.HTTP_401_UNAUTHORIZED,
+            status_code=status.HTTP_400_BAD_REQUEST,
         )
 
     ttl_seconds = settings.login_session_ttl_hours * 60 * 60
     token = create_session_token(
-        profile.id, secret=settings.login_session_secret, ttl_seconds=ttl_seconds
+        profile.id,
+        secret=get_session_secret(settings.login_session_secret),
+        ttl_seconds=ttl_seconds,
     )
     if wants_json:
-        response = JSONResponse(status_code=status.HTTP_200_OK, content={"ok": True})
+        response = JSONResponse(
+            status_code=status.HTTP_200_OK,
+            content={"ok": True, "redirect_url": "/ui/movies"},
+        )
     else:
-        response = RedirectResponse(url="/login?unlocked=1", status_code=status.HTTP_303_SEE_OTHER)
+        response = RedirectResponse(url="/ui/movies", status_code=status.HTTP_303_SEE_OTHER)
     response.set_cookie(
         SESSION_COOKIE_NAME,
         token,
@@ -312,4 +183,5 @@ def logout(request: Request):
     response = RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
     response.delete_cookie(SESSION_COOKIE_NAME)
     response.delete_cookie(PROFILE_COOKIE_NAME)
+    response.delete_cookie(FILTER_COOKIE_NAME, path=FILTER_COOKIE_PATH)
     return response

@@ -1,7 +1,7 @@
 """Add indexes and person constraint
 
 Revision ID: 202410101201
-Revises: 202410101200
+Revises: ca876fb0a006
 Create Date: 2024-10-10 12:00:00
 
 """
@@ -14,7 +14,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision: str = "202410101201"
-down_revision: Union[str, None] = "202410101200"
+down_revision: Union[str, None] = "ca876fb0a006"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 

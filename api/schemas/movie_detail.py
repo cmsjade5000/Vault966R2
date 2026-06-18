@@ -46,6 +46,7 @@ class TopBilledEntry(BaseModel):
 
 class MovieDetail(BaseModel):
     id: int
+    vault_id: Optional[str] = None
     title: str
     year: Optional[int] = None
     runtime: Optional[int] = None
@@ -63,6 +64,8 @@ class MovieDetail(BaseModel):
     tomato_audience: Optional[int] = None
     rt_score: Optional[int] = None
     awards: Optional[str] = None
+    certificate: Optional[str] = None
+    keywords: List[str] = Field(default_factory=list)
     where_to_watch: List[str] = Field(default_factory=list)
     languages: Optional[Union[str, List[str]]] = None
     countries: Optional[Union[str, List[str]]] = None
@@ -80,6 +83,8 @@ class MovieDetail(BaseModel):
     similar: List[SimilarMovie] = Field(default_factory=list)
     poster_theme: Optional[str] = None
     flagged: bool = False
+    flag_reason: Optional[str] = None
+    flag_notes: Optional[str] = None
     top_billed: List[TopBilledEntry] = Field(default_factory=list)
 
     model_config = ConfigDict(from_attributes=True)
