@@ -88,6 +88,8 @@ def test_movie_detail_api(client: TestClient, detail_movie_setup):
     assert payload["where_to_watch"] == ["Netflix", "Prime Video"]
     assert payload["similar"]
     assert payload["flagged"] is False
+    assert payload["flag_reason"] is None
+    assert payload["flag_notes"] is None
     assert payload["top_billed"][0]["name"] == "Case Worker"
     assert payload["top_billed"][0]["character"] == "Dreamer"
 
@@ -120,6 +122,10 @@ def test_movie_detail_template(client: TestClient, detail_movie_setup):
     assert "detail-rec-card" not in html
     assert "Pair with this" not in html
     assert "More like this" in html
+    assert "data-flag-dialog" in html
+    assert "data-flag-form" in html
+    assert "Flag for review" in html
+    assert "adminToken" not in html
 
 
 def test_movie_detail_renders_spotlight_context_when_requested(
@@ -159,12 +165,13 @@ def test_movie_detail_flag_status(
     movie_id = detail_movie_setup
     client.post(
         f"/movies/{movie_id}/flag",
-        json={"reason": "Poster"},
+        json={"reason": "Poster/backdrop issue"},
         headers=admin_headers,
     )
     resp = client.get(f"/movies/{movie_id}/detail")
     assert resp.status_code == 200
     assert resp.json()["flagged"] is True
+    assert resp.json()["flag_reason"] == "Poster/backdrop issue"
 
 
 def test_movie_detail_handles_dict_languages_and_countries(client: TestClient, detail_movie_setup):

@@ -39,14 +39,12 @@ test("builds a minimal update payload", () => {
       plot: "Updated",
       poster_url: "",
       genres: "science fiction, Horror",
-      resolve_flag: true,
     },
   );
 
   assert.deepEqual(JSON.parse(JSON.stringify(payload)), {
     runtime: 116,
     plot: "Updated",
-    resolve_flag: true,
   });
 });
 
@@ -68,7 +66,6 @@ test("rejects an empty title and normalizes genre input", () => {
           plot: "",
           poster_url: "",
           genres: "",
-          resolve_flag: false,
         },
       ),
     /Title cannot be empty/,

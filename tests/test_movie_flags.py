@@ -29,16 +29,16 @@ def test_flag_and_unflag_movie(client: TestClient, admin_headers: dict[str, str]
     assert all(flag["movie_id"] != 1 for flag in flags_after)
 
 
-def test_flag_movie_allows_custom_reason(client: TestClient, admin_headers: dict[str, str]) -> None:
+def test_flag_movie_rejects_unknown_reason(
+    client: TestClient, admin_headers: dict[str, str]
+) -> None:
     movie_id = 1
     resp = client.post(
         f"/movies/{movie_id}/flag",
         json={"reason": "Not a reason"},
         headers=admin_headers,
     )
-    assert resp.status_code == 200
-    body = resp.json()
-    assert body["reason"] == "Not a reason"
+    assert resp.status_code == 422
 
 
 def test_flag_movie_rejects_long_notes(client: TestClient, admin_headers: dict[str, str]) -> None:
@@ -49,8 +49,8 @@ def test_flag_movie_rejects_long_notes(client: TestClient, admin_headers: dict[s
         json={"reason": "Metadata cleanup", "notes": long_notes},
         headers=admin_headers,
     )
-    assert resp.status_code == 400
-    assert "Notes" in resp.json()["message"]
+    assert resp.status_code == 422
+    assert "500 characters" in resp.json()["message"]
 
 
 def test_update_movie_metadata_resolves_flag(
@@ -177,7 +177,7 @@ def test_resolve_flag_without_other_changes(
 ) -> None:
     client.post(
         "/movies/1/flag",
-        json={"reason": "Needs review"},
+        json={"reason": "Metadata cleanup"},
         headers=admin_headers,
     )
 

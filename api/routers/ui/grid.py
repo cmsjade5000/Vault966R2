@@ -1,10 +1,9 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
 from typing import Iterable, Optional, Tuple
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, Response
 from sqlalchemy import func, or_
 from sqlalchemy.orm import Session, selectinload
 
@@ -12,8 +11,9 @@ from api.config import settings
 from api.db import get_db
 from api.deps.auth import require_profile_role, require_same_origin
 from api.models.movie import Movie
-from api.models.movie_flag import MovieFlag
 from api.models.source_sync import SourceSnapshot
+from api.schemas.movie import MovieFlagCreate, MovieFlagRead
+from api.services.movie_flags import clear_movie_flag, set_movie_flag
 from api.services.movies_curated import get_collection_health
 from api.services.source_sync import latest_active_snapshot, snapshot_summary
 from api.services.ui.grid import (
@@ -446,19 +446,51 @@ def flag_movie_for_review(
     if movie is None:
         raise HTTPException(status_code=404, detail="Movie not found")
 
-    flag = db.get(MovieFlag, movie_id)
-    if flag is None:
-        db.add(
-            MovieFlag(
-                movie_id=movie_id,
-                reason="Human review",
-                notes="Flagged for review",
-                updated_at=datetime.now(timezone.utc),
-            )
+    if movie.flag is None:
+        set_movie_flag(
+            db,
+            movie,
+            reason="Human review",
+            notes="Flagged for review",
         )
         db.commit()
 
     return {"movie_id": movie_id, "flagged": True}
+
+
+@router.put("/ui/movies/{movie_id}/flag", response_model=MovieFlagRead)
+def manage_movie_flag(
+    movie_id: int,
+    payload: MovieFlagCreate,
+    db: Session = Depends(get_db),
+    _: str = Depends(require_profile_role(ROLE_ADMIN, ROLE_REVIEWER)),
+    __: None = Depends(require_same_origin),
+) -> MovieFlagRead:
+    movie = db.get(Movie, movie_id)
+    if movie is None:
+        raise HTTPException(status_code=404, detail="Movie not found")
+
+    flag = set_movie_flag(
+        db,
+        movie,
+        reason=payload.reason,
+        notes=payload.notes or None,
+    )
+    db.commit()
+    db.refresh(flag)
+    return flag
+
+
+@router.delete("/ui/movies/{movie_id}/flag", status_code=204)
+def resolve_movie_flag(
+    movie_id: int,
+    db: Session = Depends(get_db),
+    _: str = Depends(require_profile_role(ROLE_ADMIN, ROLE_REVIEWER)),
+    __: None = Depends(require_same_origin),
+) -> Response:
+    clear_movie_flag(db, movie_id)
+    db.commit()
+    return Response(status_code=204)
 
 
 @router.get("/ui/movies/health", response_class=HTMLResponse)

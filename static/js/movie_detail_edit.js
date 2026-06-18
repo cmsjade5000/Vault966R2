@@ -41,7 +41,6 @@
     if (!arraysEqualCaseInsensitive(genres, detail.genres || [])) {
       payload.genres = genres;
     }
-    if (values.resolve_flag) payload.resolve_flag = true;
     return payload;
   };
 
@@ -64,7 +63,6 @@
       posterUrl: document.getElementById("edit-poster"),
       genres: document.getElementById("edit-genres"),
       plot: document.getElementById("edit-plot"),
-      resolveFlag: document.getElementById("edit-resolve-flag"),
     };
     const status = document.getElementById("edit-status");
     const submitButton = document.getElementById("edit-submit");
@@ -169,8 +167,6 @@
       if (fields.posterUrl) fields.posterUrl.value = detail.poster_url || "";
       if (fields.genres) fields.genres.value = (detail.genres || []).join(", ");
       if (fields.plot) fields.plot.value = detail.plot || "";
-      if (fields.resolveFlag)
-        fields.resolveFlag.checked = Boolean(detail.flagged);
     };
 
     const applyCandidate = (candidate) => {
@@ -422,7 +418,6 @@
           poster_url: fields.posterUrl?.value || "",
           genres: fields.genres?.value || "",
           plot: fields.plot?.value || "",
-          resolve_flag: Boolean(fields.resolveFlag?.checked),
         });
       } catch (error) {
         setStatus(error.message, true);

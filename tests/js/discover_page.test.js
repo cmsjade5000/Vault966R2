@@ -53,3 +53,19 @@ test("carousel controls advance most of a viewport with a touch-safe minimum", (
   assert.equal(getScrollDistance(200), 240);
   assert.equal(getScrollDistance(1000), 780);
 });
+
+test("deferred poster hydration promotes data source once", () => {
+  const { hydrateDeferredPoster } = loadSupport();
+  const image = {
+    dataset: { posterSrc: "/ui/posters/42/w185" },
+    removeAttribute(name) {
+      if (name === "data-poster-src") delete this.dataset.posterSrc;
+    },
+  };
+
+  assert.equal(hydrateDeferredPoster(image), true);
+  assert.equal(image.src, "/ui/posters/42/w185");
+  assert.equal(image.dataset.posterHydrated, "true");
+  assert.equal(image.dataset.posterSrc, undefined);
+  assert.equal(hydrateDeferredPoster(image), false);
+});

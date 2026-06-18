@@ -253,18 +253,33 @@ class MovieDoubleFeature(BaseModel):
 FLAG_REASONS = (
     "Metadata cleanup",
     "Poster/backdrop issue",
-    "Broken link",
-    "Wrong runtime/year",
     "Missing poster",
+    "Broken link",
+    "Movie mismatch",
+    "Wrong runtime/year",
     "Needs runtime",
-    "Poster",
     "Other",
 )
 
+MovieFlagReason = Literal[
+    "Metadata cleanup",
+    "Poster/backdrop issue",
+    "Missing poster",
+    "Broken link",
+    "Movie mismatch",
+    "Wrong runtime/year",
+    "Needs runtime",
+    "Other",
+    "Human review",
+    "Verify identity",
+]
+
 
 class MovieFlagCreate(BaseModel):
-    reason: Optional[str] = None
-    notes: Optional[str] = None
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+
+    reason: MovieFlagReason = "Metadata cleanup"
+    notes: Optional[str] = Field(default=None, max_length=500)
 
 
 class MovieFlagRead(BaseModel):

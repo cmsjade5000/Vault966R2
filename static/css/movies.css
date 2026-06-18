@@ -3504,21 +3504,55 @@ body.filters-open {
   display: grid;
   place-items: center;
   z-index: 1400;
+  padding: max(1rem, env(safe-area-inset-top, 0px))
+    max(1rem, env(safe-area-inset-right, 0px))
+    max(1rem, env(safe-area-inset-bottom, 0px))
+    max(1rem, env(safe-area-inset-left, 0px));
 }
 
 .flag-dialog {
+  display: grid;
+  gap: 0.8rem;
   background: #0f172a;
   color: #f8fafc;
   border-radius: 14px;
   padding: 18px;
   width: min(420px, 92vw);
+  max-height: min(90dvh, 640px);
+  overflow-y: auto;
   box-shadow: 0 18px 44px rgba(2, 6, 23, 0.65);
   border: 1px solid rgba(148, 163, 184, 0.25);
 }
 
-.flag-dialog h3 {
-  margin: 0 0 10px 0;
+.flag-dialog__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.flag-dialog h2 {
+  margin: 0;
   font-size: 1.1rem;
+}
+
+.flag-dialog__header p {
+  margin: 0.3rem 0 0;
+  color: rgba(203, 213, 225, 0.82);
+  font-size: 0.85rem;
+}
+
+.flag-dialog__close {
+  width: 2.25rem;
+  height: 2.25rem;
+  flex: 0 0 auto;
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  border-radius: 999px;
+  background: transparent;
+  color: #f8fafc;
+  font: inherit;
+  font-size: 1.2rem;
+  cursor: pointer;
 }
 
 .flag-dialog label {
@@ -3545,6 +3579,7 @@ body.filters-open {
 
 .flag-dialog__actions {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
   justify-content: flex-end;
   margin-top: 12px;
@@ -3566,6 +3601,50 @@ body.filters-open {
   background: transparent;
   color: #f8fafc;
   border: 1px solid rgba(148, 163, 184, 0.35);
+}
+
+.flag-dialog__resolve {
+  margin-right: auto;
+  border-color: rgba(248, 113, 113, 0.45) !important;
+  color: #fecaca !important;
+}
+
+.flag-dialog__status {
+  min-height: 1.25rem;
+  margin: 0;
+  color: rgba(203, 213, 225, 0.85);
+  font-size: 0.82rem;
+}
+
+.flag-dialog__status.is-error {
+  color: #fca5a5;
+}
+
+@media (max-width: 520px) {
+  .flag-dialog-overlay {
+    align-items: end;
+    padding: 0;
+  }
+
+  .flag-dialog {
+    width: 100%;
+    max-height: 90dvh;
+    border-radius: 1rem 1rem 0 0;
+    padding: 1rem 1rem calc(1rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  .flag-dialog__actions {
+    position: sticky;
+    bottom: calc(-1rem - env(safe-area-inset-bottom, 0px));
+    margin: 0 -1rem calc(-1rem - env(safe-area-inset-bottom, 0px));
+    padding: 0.85rem 1rem calc(0.85rem + env(safe-area-inset-bottom, 0px));
+    background: #0f172a;
+    border-top: 1px solid rgba(148, 163, 184, 0.2);
+  }
+
+  .flag-dialog__actions button {
+    min-height: 44px;
+  }
 }
 
 .edit-toggle {

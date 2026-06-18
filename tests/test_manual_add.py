@@ -103,6 +103,43 @@ def test_manual_add_creates_movie_with_vudu_tag(client: TestClient, admin_header
     assert db_movie["keywords"] == ["dream", "heist"]
 
 
+def test_manual_add_caches_poster_after_commit(
+    client: TestClient,
+    admin_headers: dict[str, str],
+    monkeypatch,
+) -> None:
+    cached_movie_ids: list[int] = []
+    monkeypatch.setattr(
+        "api.routers.ui.manual_add.cache_movie_posters_safely",
+        cached_movie_ids.append,
+    )
+    monkeypatch.setattr(
+        "api.routers.ui.manual_add.append_movie_to_cleaned_csv",
+        lambda *_args, **_kwargs: True,
+    )
+    monkeypatch.setattr(
+        "api.routers.ui.manual_add.append_movie_to_enriched_csv",
+        lambda *_args, **_kwargs: True,
+    )
+    payload = ManualMovieCreate(
+        title="Poster Cache Test",
+        year=2026,
+        metadata=ManualMovieMetadata(
+            tmdb_id=2_026_001,
+            poster_url="https://image.tmdb.org/t/p/w500/poster-cache-test.jpg",
+        ),
+    )
+
+    response = client.post(
+        "/ui/movies/manual-add",
+        json=payload.model_dump(),
+        headers=admin_headers,
+    )
+
+    assert response.status_code == 201
+    assert cached_movie_ids == [response.json()["id"]]
+
+
 def test_manual_add_rejects_duplicate_imdb(client: TestClient, admin_headers: dict[str, str]):
     base_payload = ManualMovieCreate(
         title="Edge of Tomorrow",

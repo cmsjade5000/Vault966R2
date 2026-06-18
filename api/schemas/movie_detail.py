@@ -83,6 +83,8 @@ class MovieDetail(BaseModel):
     similar: List[SimilarMovie] = Field(default_factory=list)
     poster_theme: Optional[str] = None
     flagged: bool = False
+    flag_reason: Optional[str] = None
+    flag_notes: Optional[str] = None
     top_billed: List[TopBilledEntry] = Field(default_factory=list)
 
     model_config = ConfigDict(from_attributes=True)

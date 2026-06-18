@@ -10,7 +10,7 @@ def test_manifest_targets_landscape_standalone_mode() -> None:
 
     assert manifest["display"] == "standalone"
     assert manifest["orientation"] == "landscape"
-    assert manifest["start_url"] == "/ui/discover"
+    assert manifest["start_url"] == "/ui/movies"
 
 
 def test_ipad_air_2_landscape_startup_image_is_available() -> None:

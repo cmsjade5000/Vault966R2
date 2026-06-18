@@ -85,13 +85,6 @@
           <nav class="primary-nav" id="primary-nav" data-nav-menu>
             <div class="nav-group" role="menubar">
               <a
-                class="nav-link{% if current_path == '/ui/discover' %} is-active{% endif %}"
-                href="/ui/discover"
-                role="menuitem"
-                {% if current_path == '/ui/discover' %}aria-current="page"{% endif %}
-                >Discover</a
-              >
-              <a
                 class="nav-link{% if current_path == '/ui/movies' %} is-active{% endif %}"
                 href="/ui/movies"
                 role="menuitem"
@@ -131,24 +124,6 @@
       </header>
       {% if current_path != '/login' %}
       <nav class="bottom-nav" aria-label="Primary navigation">
-        <a
-          class="bottom-nav__link{% if current_path == '/ui/discover' %} is-active{% endif %}"
-          href="/ui/discover"
-          {% if current_path == '/ui/discover' %}aria-current="page"{% endif %}
-        >
-          <span class="bottom-nav__icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
-              <path
-                d="M12 3l2.4 5.8L20 11l-5.6 2.2L12 19l-2.4-5.8L4 11l5.6-2.2L12 3z"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="1.5"
-                stroke-linejoin="round"
-              />
-            </svg>
-          </span>
-          <span class="bottom-nav__label">Discover</span>
-        </a>
         <a
           class="bottom-nav__link{% if current_path == '/ui/movies' %} is-active{% endif %}"
           href="/ui/movies"

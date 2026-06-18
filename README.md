@@ -36,11 +36,21 @@ scripts/vault_service.sh status
 ```
 
 The service starts at login, is restarted by macOS if it exits, and checks `/health`
-every 30 seconds. Three consecutive failed checks cause a clean restart. It runs
-Uvicorn without development reload. The deployed application, canonical SQLite
-database, Python environment, and logs live under
+every 30 seconds. Three consecutive failed checks cause a clean restart. A separate
+launchd watchdog checks health every minute and force-restarts the complete service
+after repeated failures. A daily maintenance job creates a validated online SQLite
+backup at 3:30 AM and keeps the newest seven. Vault runs Uvicorn without development
+reload. The deployed application, canonical SQLite database, Python environment,
+backups, and logs live under
 `~/Library/Application Support/Vault966`; the repository's `vault.db` links to that
 same database so local maintenance tools continue to operate on the live data.
+
+The current service is a per-user LaunchAgent, so it cannot start after a reboot
+until that user logs in. Automatic unattended power-outage recovery also requires
+the macOS restart-after-power-failure setting and, while FileVault remains enabled,
+an authorized disk unlock after a full shutdown. See
+[Power-Outage Recovery](docs/power-outage-recovery.md) for the current limitation,
+recommended architecture, recovery commands, backup checks, and quarterly drill.
 
 The iPad always uses this deployed copy, not files directly from the repository.
 Run `scripts/vault_service.sh restart` after every application change, including

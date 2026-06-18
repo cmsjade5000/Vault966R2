@@ -11,9 +11,19 @@
 
   const getScrollDistance = (clientWidth) => Math.max(clientWidth * 0.78, 240);
 
+  const hydrateDeferredPoster = (image) => {
+    const source = image?.dataset?.posterSrc;
+    if (!source || image.dataset.posterHydrated === "true") return false;
+    image.src = source;
+    image.dataset.posterHydrated = "true";
+    image.removeAttribute("data-poster-src");
+    return true;
+  };
+
   window.VaultDiscoverSupport = {
     calculateRailState,
     getScrollDistance,
+    hydrateDeferredPoster,
   };
 
   document.addEventListener("DOMContentLoaded", () => {
@@ -33,29 +43,77 @@
       }).catch(() => {});
     };
 
-    const updateRailState = (rail) => {
-      const track = rail.querySelector(
-        "[data-rail-viewport] .discover-rail__track",
-      );
-      if (!track) return;
+    const onIdle =
+      window.requestIdleCallback ||
+      ((callback) => window.setTimeout(callback, 1));
 
-      const previous = rail.querySelector("[data-rail-previous]");
-      const next = rail.querySelector("[data-rail-next]");
-      const progress = rail.querySelector("[data-rail-progress]");
-      const state = calculateRailState(track);
-
-      if (previous) previous.disabled = state.atStart;
-      if (next) next.disabled = state.atEnd;
-      if (progress) {
-        progress.style.transform = `scaleX(${state.progressScale})`;
+    const schedule = (callback) => {
+      if (window.requestAnimationFrame) {
+        window.requestAnimationFrame(callback);
+      } else {
+        window.setTimeout(callback, 16);
       }
     };
+
+    const updateRailState = (railState) => {
+      const state = calculateRailState(railState.track);
+
+      if (railState.previous) railState.previous.disabled = state.atStart;
+      if (railState.next) railState.next.disabled = state.atEnd;
+      if (railState.progress) {
+        railState.progress.style.transform = `scaleX(${state.progressScale})`;
+      }
+    };
+
+    const scheduleRailStateUpdate = (railState) => {
+      if (railState.pending) return;
+      railState.pending = true;
+      schedule(() => {
+        railState.pending = false;
+        updateRailState(railState);
+      });
+    };
+
+    const setupDeferredPosters = () => {
+      const images = Array.from(
+        document.querySelectorAll("[data-deferred-poster]"),
+      );
+      if (!images.length) return;
+
+      if (!("IntersectionObserver" in window)) {
+        images.forEach(hydrateDeferredPoster);
+        return;
+      }
+
+      const observer = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (!entry.isIntersecting) return;
+            hydrateDeferredPoster(entry.target);
+            observer.unobserve(entry.target);
+          });
+        },
+        { rootMargin: "480px 0px" },
+      );
+      images.forEach((image) => observer.observe(image));
+    };
+
+    const railStates = [];
 
     document.querySelectorAll("[data-discover-rail]").forEach((rail) => {
       const track = rail.querySelector(
         "[data-rail-viewport] .discover-rail__track",
       );
       if (!track) return;
+
+      const railState = {
+        track,
+        previous: rail.querySelector("[data-rail-previous]"),
+        next: rail.querySelector("[data-rail-next]"),
+        progress: rail.querySelector("[data-rail-progress]"),
+        pending: false,
+      };
+      railStates.push(railState);
 
       const scrollRail = (direction) => {
         track.scrollBy({
@@ -73,61 +131,47 @@
       rail
         .querySelector("[data-rail-next]")
         ?.addEventListener("click", () => scrollRail(1));
-      track.addEventListener("scroll", () => updateRailState(rail), {
-        passive: true,
-      });
-      updateRailState(rail);
+      track.addEventListener(
+        "scroll",
+        () => scheduleRailStateUpdate(railState),
+        {
+          passive: true,
+        },
+      );
+      updateRailState(railState);
     });
 
-    const indexLinks = Array.from(
-      document.querySelectorAll(".discover-index a"),
-    );
-    const sections = indexLinks
-      .map((link) => document.querySelector(link.getAttribute("href")))
-      .filter(Boolean);
-    if ("IntersectionObserver" in window && sections.length) {
-      const observer = new IntersectionObserver(
-        (entries) => {
-          const visible = entries
-            .filter((entry) => entry.isIntersecting)
-            .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
-          if (!visible) return;
-          indexLinks.forEach((link) => {
-            link.classList.toggle(
-              "is-active",
-              link.getAttribute("href") === `#${visible.target.id}`,
-            );
-          });
-        },
-        { rootMargin: "-20% 0px -65% 0px", threshold: [0.1, 0.4] },
-      );
-      sections.forEach((section) => observer.observe(section));
-    }
+    setupDeferredPosters();
 
     if (document.querySelector("[data-selected-for-you]")) {
-      recordEvent("personalized_recommendations_shown", {
-        context: "selected_for_you",
+      onIdle(() => {
+        recordEvent("personalized_recommendations_shown", {
+          context: "selected_for_you",
+        });
       });
     }
 
-    document.querySelectorAll("[data-discover-rail-link]").forEach((link) => {
-      link.addEventListener("click", () => {
-        recordEvent("discover_rail_opened", {
-          context: link.dataset.railKey,
-        });
-      });
-    });
+    document.addEventListener("click", (event) => {
+      const target = event.target?.closest ? event.target : null;
+      if (!target) return;
 
-    document.querySelectorAll("[data-movie-detail-link]").forEach((link) => {
-      link.addEventListener("click", () => {
+      const railLink = target.closest("[data-discover-rail-link]");
+      if (railLink) {
+        recordEvent("discover_rail_opened", {
+          context: railLink.dataset.railKey,
+        });
+      }
+
+      const detailLink = target.closest("[data-movie-detail-link]");
+      if (detailLink) {
         recordEvent("movie_details_opened", {
           movie_id: Number(
-            link.dataset.movieId ||
-              link.closest("[data-movie-id]")?.dataset.movieId,
+            detailLink.dataset.movieId ||
+              detailLink.closest("[data-movie-id]")?.dataset.movieId,
           ),
-          context: link.dataset.eventContext,
+          context: detailLink.dataset.eventContext,
         });
-      });
+      }
     });
 
     document.addEventListener("vault:preference-updated", (event) => {
@@ -137,10 +181,14 @@
       });
     });
 
+    let resizePending = false;
     window.addEventListener("resize", () => {
-      document
-        .querySelectorAll("[data-discover-rail]")
-        .forEach(updateRailState);
+      if (resizePending) return;
+      resizePending = true;
+      schedule(() => {
+        resizePending = false;
+        railStates.forEach(updateRailState);
+      });
     });
   });
 })();

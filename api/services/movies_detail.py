@@ -468,6 +468,8 @@ def get_movie_detail(db: Session, movie_id: int) -> Optional[MovieDetail]:
         similar=similar,
         poster_theme=select_poster_theme([genre.name for genre in movie.genres]),
         flagged=movie.flag is not None,
+        flag_reason=movie.flag.reason if movie.flag is not None else None,
+        flag_notes=movie.flag.notes if movie.flag is not None else None,
         top_billed=top_billed,
     )
     return detail

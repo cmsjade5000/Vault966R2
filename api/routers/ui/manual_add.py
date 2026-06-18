@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import List, Optional
 
-from fastapi import APIRouter, Body, Depends, HTTPException, status
+from fastapi import APIRouter, BackgroundTasks, Body, Depends, HTTPException, status
 from pydantic import BaseModel, Field, field_validator
 from sqlalchemy import func
 from sqlalchemy.orm import Session
@@ -19,6 +19,7 @@ from api.services.movie_lookup import (
     MovieLookupUnavailable,
     lookup_movie,
 )
+from api.services.poster_cache import cache_movie_posters_safely
 from api.utils.providers import merge_providers
 from core.genres import split_and_normalize
 from core.movie_metadata import MovieMetadata
@@ -165,6 +166,7 @@ def manual_add_preview(
 
 @router.post("/ui/movies/manual-add", status_code=status.HTTP_201_CREATED)
 def manual_add_movie(
+    background_tasks: BackgroundTasks,
     payload: ManualMovieCreate = Body(...),
     db: Session = Depends(get_db),
     _: None = Depends(require_admin),
@@ -274,6 +276,8 @@ def manual_add_movie(
         metadata.model_dump(mode="json"),
         providers,
     )
+    if movie.poster_url:
+        background_tasks.add_task(cache_movie_posters_safely, movie.id)
 
     return {
         "id": movie.id,

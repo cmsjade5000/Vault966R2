@@ -89,6 +89,47 @@ def test_library_review_flag_rejects_unknown_movie(client: TestClient) -> None:
     assert response.status_code == 404
 
 
+def test_movie_detail_flag_can_be_managed_without_admin_token(
+    client: TestClient, db_session
+) -> None:
+    movie = db_session.query(Movie).filter(Movie.title == "Blade Runner").one()
+
+    create = client.put(
+        f"/ui/movies/{movie.id}/flag",
+        json={
+            "reason": "Wrong runtime/year",
+            "notes": "Runtime appears to be from another release.",
+        },
+    )
+    assert create.status_code == 200
+    assert create.json()["reason"] == "Wrong runtime/year"
+    assert create.json()["notes"] == "Runtime appears to be from another release."
+
+    page = client.get(f"/ui/movies/{movie.id}")
+    assert page.status_code == 200
+    assert "Needs review" in page.text
+    assert "Wrong runtime/year" in page.text
+    assert "Runtime appears to be from another release." in page.text
+    assert "Manage flag" in page.text
+
+    resolve = client.delete(f"/ui/movies/{movie.id}/flag")
+    assert resolve.status_code == 204
+    db_session.expire_all()
+    assert db_session.get(MovieFlag, movie.id) is None
+
+
+def test_movie_detail_flag_rejects_unexpected_input(client: TestClient) -> None:
+    response = client.put(
+        "/ui/movies/1/flag",
+        json={
+            "reason": "Metadata cleanup",
+            "notes": "Check title",
+            "admin_token": "not accepted",
+        },
+    )
+    assert response.status_code == 422
+
+
 def test_movies_grid_paginates_in_complete_36_card_pages(
     client: TestClient, db_session
 ) -> None:

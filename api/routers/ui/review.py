@@ -83,7 +83,7 @@ def build_review_context(
     flags = (
         db.query(MovieFlag)
         .options(joinedload(MovieFlag.movie))
-        .order_by(desc(MovieFlag.updated_at))
+        .order_by(desc(MovieFlag.updated_at), MovieFlag.movie_id.asc())
         .all()
     )
     source_groups = partition_source_review_queue(get_source_review_queue(db))

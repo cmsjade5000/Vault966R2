@@ -10,6 +10,12 @@
   color: inherit;
 }
 
+dialog.filters-dialog:not([open]),
+dialog.edit-dialog:not([open]),
+dialog.flag-dialog-overlay:not([open]) {
+  display: none;
+}
+
 .filters-dialog::backdrop,
 .edit-dialog::backdrop,
 .flag-dialog-overlay::backdrop {

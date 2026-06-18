@@ -11,7 +11,7 @@
     {% if movie.backdrop_url %}
     <img src="{{ movie.backdrop_url }}" alt="" />
     {% elif movie.poster_url %}
-    <img src="{{ movie.poster_url }}" alt="" />
+    <img src="/ui/posters/{{ movie.id }}/w342" alt="" />
     {% endif %}
   </div>
   <div class="detail-wrapper">
@@ -33,7 +33,7 @@
           aria-pressed="false"
         >
           {% if movie.poster_url %}
-          <img class="poster" src="{{ movie.poster_url }}" alt="{{ movie.title | display_title }} poster" />
+          <img class="poster" src="/ui/posters/{{ movie.id }}/w342" alt="{{ movie.title | display_title }} poster" />
           {% else %}
           <div class="poster poster--empty {{ movie.poster_theme or 'poster-theme-default' }}" aria-hidden="true">🍿</div>
           {% endif %}
@@ -48,6 +48,28 @@
         {% endif %}
         <div class="header-meta">
           <h1>{{ movie.title | display_title }}</h1>
+        </div>
+        <div
+          class="flag-status{% if movie.flagged %} is-visible{% endif %}"
+          data-flag-status
+          {% if not movie.flagged %}hidden{% endif %}
+        >
+          <div class="flag-status__copy">
+            <strong data-flag-status-title>
+              Needs review{% if movie.flag_reason %} · {{ movie.flag_reason }}{% endif %}
+            </strong>
+            <span data-flag-status-notes>
+              {{ movie.flag_notes or "No notes were added." }}
+            </span>
+          </div>
+          <button
+            type="button"
+            class="flag-status__manage"
+            data-flag-button
+            data-movie-id="{{ movie.id }}"
+          >
+            Manage flag
+          </button>
         </div>
         <div class="hero-tags">
           <button
@@ -337,15 +359,12 @@
       </button>
       <button
         type="button"
-        class="flag-toggle{% if movie.flagged %} is-flagged{% endif %}"
+        class="flag-toggle"
         data-flag-button
         data-movie-id="{{ movie.id }}"
-        data-flagged="{{ 'true' if movie.flagged else 'false' }}"
-        data-flag-default="Metadata cleanup"
-        aria-pressed="{{ 'true' if movie.flagged else 'false' }}"
-        aria-label="{% if movie.flagged %}Resolve flag{% else %}Flag to fix{% endif %}"
+        aria-label="{% if movie.flagged %}Manage review flag{% else %}Flag for review{% endif %}"
       >
-        {% if movie.flagged %}Resolve flag{% else %}Flag{% endif %}
+        {% if movie.flagged %}Manage flag{% else %}Flag for review{% endif %}
       </button>
     </div>
     {% if review_mode %}
@@ -370,6 +389,69 @@
     {% endif %}
   </div>
   <div class="poster-focus-backdrop" data-poster-focus-backdrop hidden></div>
+  <dialog
+    class="flag-dialog-overlay"
+    data-flag-dialog
+    aria-labelledby="flag-dialog-title"
+    aria-describedby="flag-dialog-description"
+    aria-hidden="true"
+  >
+    <form class="flag-dialog" data-flag-form>
+      <header class="flag-dialog__header">
+        <div>
+          <h2 id="flag-dialog-title">
+            {% if movie.flagged %}Manage review flag{% else %}Flag for review{% endif %}
+          </h2>
+          <p id="flag-dialog-description">
+            Record what needs attention so it appears in the Flags queue.
+          </p>
+        </div>
+        <button
+          type="button"
+          class="flag-dialog__close"
+          data-flag-close
+          aria-label="Close flag dialog"
+        >×</button>
+      </header>
+      <label>
+        <span>Reason</span>
+        <select data-flag-reason required>
+          {% if movie.flag_reason and movie.flag_reason not in flag_reasons %}
+          <option value="{{ movie.flag_reason }}" selected>{{ movie.flag_reason }}</option>
+          {% endif %}
+          {% for reason in flag_reasons %}
+          <option
+            value="{{ reason }}"
+            {% if (movie.flag_reason and movie.flag_reason == reason) or (not movie.flag_reason and reason == "Metadata cleanup") %}selected{% endif %}
+          >{{ reason }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label>
+        <span>Notes <small>(optional)</small></span>
+        <textarea
+          data-flag-notes
+          maxlength="500"
+          placeholder="What needs a fix?"
+        >{{ movie.flag_notes or "" }}</textarea>
+      </label>
+      <p class="flag-dialog__status" data-flag-dialog-status role="status" aria-live="polite"></p>
+      <div class="flag-dialog__actions">
+        <button
+          type="button"
+          class="button-ghost flag-dialog__resolve"
+          data-flag-resolve
+          {% if not movie.flagged %}hidden{% endif %}
+        >
+          Resolve flag
+        </button>
+        <button type="button" class="button-ghost" data-flag-close>Cancel</button>
+        <button type="submit" class="button-primary" data-flag-save>
+          Save changes
+        </button>
+      </div>
+    </form>
+  </dialog>
   {% include "partials/movies/edit_dialog.html" %}
   {% else %}
   <div class="container">

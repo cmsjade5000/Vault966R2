@@ -139,7 +139,7 @@ def _build_discover_rails(
     db: Session,
     *,
     used_ids: set[int],
-    limit: int = 8,
+    limit: int = 5,
     day: Optional[date] = None,
 ) -> list[dict[str, object]]:
     day = day or _discover_day()

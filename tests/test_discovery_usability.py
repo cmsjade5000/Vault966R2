@@ -127,7 +127,7 @@ def test_poster_image_url_uses_one_smaller_tmdb_origin() -> None:
 
 def test_discover_contains_all_collection_rails(client, db_session) -> None:
     for movie in db_session.query(Movie).all():
-        movie.poster_url = f"https://example.com/posters/{movie.id}.jpg"
+        movie.poster_url = f"https://image.tmdb.org/t/p/original/{movie.id}.jpg"
     db_session.commit()
 
     response = client.get("/ui/discover")
@@ -145,20 +145,49 @@ def test_discover_contains_all_collection_rails(client, db_session) -> None:
     assert 'data-preference-type="watchlist"' in response.text
     assert ">♡</button>" not in response.text
     assert ">▯</button>" not in response.text
-    assert 'class="library-card discover-rail-card"' in response.text
+    assert 'library-card discover-rail-card library-card--poster-only' in response.text
     assert 'class="library-card__link"' in response.text
     assert 'class="library-card__media"' in response.text
-    assert 'class="library-card__body"' in response.text
-    assert 'class="library-card__meta"' in response.text
-    assert 'class="library-card__genres"' in response.text
+    assert 'class="library-card__body"' not in response.text
+    assert 'class="library-card__meta"' not in response.text
+    assert 'class="library-card__genres"' not in response.text
+    assert 'class="library-card__reasons"' not in response.text
     assert 'class="library-card__actions"' in response.text
-    assert "Today’s shelves" in response.text
+    assert "Today’s shelves" not in response.text
+    assert 'class="discover-sidebar"' not in response.text
+    assert 'class="discover-index"' not in response.text
     assert 'data-rail-next' in response.text
     assert 'data-rail-progress' in response.text
     assert "Why this" in response.text
-    assert 'rel="preconnect" href="https://image.tmdb.org"' in response.text
     assert 'fetchpriority="high"' in response.text
-    assert 'loading="eager"' in response.text
+    assert 'fetchpriority="auto"' not in response.text
+    assert "image.tmdb.org" not in response.text
+    assert 'src="/ui/posters/' in response.text
+    assert 'data-deferred-poster' in response.text
+    assert 'data-poster-src="/ui/posters/' in response.text
+    eager_poster_sources = response.text.count('src="/ui/posters/') - response.text.count(
+        'data-poster-src="/ui/posters/'
+    )
+    assert eager_poster_sources <= 4
+    assert "/w185" in response.text
+    assert 'loading="eager"' not in response.text
+    assert response.text.count("library-card--poster-only") <= 36
+
+
+def test_discover_rails_default_to_five_movies(db_session) -> None:
+    for movie in db_session.query(Movie).all():
+        movie.poster_url = f"https://example.com/posters/{movie.id}.jpg"
+        movie.imdb_rating = movie.imdb_rating or 8.0
+        movie.imdb_votes = movie.imdb_votes or 20_000
+    db_session.commit()
+
+    rails = _build_discover_rails(
+        db_session,
+        used_ids=set(),
+        day=date(2026, 6, 14),
+    )
+
+    assert all(len(rail["movies"]) <= 5 for rail in rails)
 
 
 def test_discover_rail_order_is_stable_and_rotates_by_day() -> None:

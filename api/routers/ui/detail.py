@@ -5,6 +5,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlalchemy.orm import Session
 
 from api.db import get_db
+from api.schemas.movie import FLAG_REASONS
 from api.services.movies_detail import get_movie_detail, get_review_neighbors
 from api.services.profiles import (
     ensure_profile_cookie,
@@ -118,6 +119,7 @@ def movie_detail(
                 "profiles": get_profiles(db),
                 "active_profile_id": get_active_profile_id(request, db),
                 "source_provenance": None,
+                "flag_reasons": FLAG_REASONS,
             },
             status_code=404,
         )
@@ -169,6 +171,7 @@ def movie_detail(
             "similar_reasons": similar_reasons,
             "more_like": more_like,
             "source_provenance": source_provenance_for_movie(db, detail.id),
+            "flag_reasons": FLAG_REASONS,
         },
     )
     ensure_profile_cookie(request, response, db)

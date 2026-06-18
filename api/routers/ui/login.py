@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Optional
 
-from fastapi import APIRouter, Depends, Query, Request, status
+from fastapi import APIRouter, Depends, Form, Query, Request, status
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from sqlalchemy import func
 from sqlalchemy.orm import Session
@@ -26,6 +26,8 @@ from api.services.ui.grid import FILTER_COOKIE_NAME, FILTER_COOKIE_PATH
 from api.services.ui.templates import TEMPLATES
 
 router = APIRouter()
+
+PROFILE_PICKER_LABELS = ("CORY", "DAMIAN")
 
 
 def _session_profile_id(request: Request) -> Optional[int]:
@@ -60,6 +62,16 @@ def _wants_json(request: Request) -> bool:
     return "application/json" in accept
 
 
+def _profile_picker_options(profiles) -> list[dict[str, int | str]]:
+    options = []
+    for index, profile in enumerate(profiles[:2]):
+        if profile.id is None:
+            continue
+        label = PROFILE_PICKER_LABELS[index] if index < len(PROFILE_PICKER_LABELS) else profile.name
+        options.append({"id": profile.id, "label": label})
+    return options
+
+
 @router.get("/login", response_class=HTMLResponse)
 def login(
     request: Request,
@@ -72,7 +84,7 @@ def login(
 
     unlocked_state = bool(unlocked)
     if _session_profile_id(request) and not unlocked_state:
-        return RedirectResponse(url="/ui/discover", status_code=status.HTTP_302_FOUND)
+        return RedirectResponse(url="/ui/movies", status_code=status.HTTP_302_FOUND)
 
     active_profile_id = None
     if request.cookies.get(PROFILE_COOKIE_NAME):
@@ -93,6 +105,7 @@ def login(
             "error": None,
             "unlocked": unlocked_state,
             "default_profile_id": default_profile_id,
+            "profile_options": _profile_picker_options(profiles),
             "archive_tiles": archive_tiles,
             "archive_poster_urls": archive_poster_urls,
         },
@@ -105,16 +118,22 @@ def login(
 @router.post("/login", response_class=HTMLResponse)
 def login_submit(
     request: Request,
+    profile_id: Optional[int] = Form(default=None, ge=1),
     db: Session = Depends(get_db),
 ):
     wants_json = _wants_json(request)
     profiles = get_profiles(db)
-    profile = profiles[0] if profiles else None
+    profile_by_id = {profile.id: profile for profile in profiles if profile.id is not None}
+    profile = profile_by_id.get(profile_id) if profile_id is not None else None
     if not profile:
+        if profile_id is None:
+            if wants_json:
+                return JSONResponse(status_code=status.HTTP_200_OK, content={"unlocked": True})
+            return RedirectResponse(url="/login?unlocked=1", status_code=status.HTTP_303_SEE_OTHER)
         if wants_json:
             return JSONResponse(
-                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                content={"error": "No default profile is available."},
+                status_code=status.HTTP_400_BAD_REQUEST,
+                content={"error": "Unknown profile."},
             )
         archive_poster_urls = _archive_poster_urls(db)
         archive_tiles = _archive_tiles(archive_poster_urls)
@@ -124,13 +143,14 @@ def login_submit(
             {
                 "profiles": profiles,
                 "active_profile_id": None,
-                "error": "No default profile is available.",
-                "unlocked": False,
+                "error": "Unknown profile.",
+                "unlocked": True,
                 "default_profile_id": None,
+                "profile_options": _profile_picker_options(profiles),
                 "archive_tiles": archive_tiles,
                 "archive_poster_urls": archive_poster_urls,
             },
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            status_code=status.HTTP_400_BAD_REQUEST,
         )
 
     ttl_seconds = settings.login_session_ttl_hours * 60 * 60
@@ -140,9 +160,12 @@ def login_submit(
         ttl_seconds=ttl_seconds,
     )
     if wants_json:
-        response = JSONResponse(status_code=status.HTTP_200_OK, content={"ok": True})
+        response = JSONResponse(
+            status_code=status.HTTP_200_OK,
+            content={"ok": True, "redirect_url": "/ui/movies"},
+        )
     else:
-        response = RedirectResponse(url="/login?unlocked=1", status_code=status.HTTP_303_SEE_OTHER)
+        response = RedirectResponse(url="/ui/movies", status_code=status.HTTP_303_SEE_OTHER)
     response.set_cookie(
         SESSION_COOKIE_NAME,
         token,

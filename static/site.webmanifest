@@ -2,7 +2,7 @@
   "name": "Vault 966",
   "short_name": "Vault966",
   "description": "Curated movie discovery and vault management.",
-  "start_url": "/ui/discover",
+  "start_url": "/ui/movies",
   "scope": "/",
   "icons": [
     {

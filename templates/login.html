@@ -53,7 +53,6 @@
         class="login-form"
         method="post"
         aria-label="Unlock Vault 966"
-        data-vault-busy-message="Unlocking the Vault…"
       >
         <div class="login-card__actions">
           <button class="login-button" type="submit">
@@ -69,6 +68,28 @@
           </button>
         </div>
       </form>
+      <div class="login-profiles" aria-label="Choose profile">
+        {% for profile in profile_options %}
+        <form
+          class="login-profile-form"
+          method="post"
+          action="/login"
+          data-vault-busy-message="Unlocking the Vault…"
+        >
+          <input type="hidden" name="profile_id" value="{{ profile.id }}" />
+          <button class="login-profile" type="submit">
+            <span class="login-profile__avatar" aria-hidden="true">
+              {% if loop.index0 == 0 %}
+              <img src="{{ url_for('static', path='img/cory-profile-icon.png') }}" alt="" decoding="async" draggable="false" />
+              {% else %}
+              <img src="{{ url_for('static', path='img/damian-profile-icon.png') }}" alt="" decoding="async" draggable="false" />
+              {% endif %}
+            </span>
+            <span class="login-profile__name">{{ profile.label }}</span>
+          </button>
+        </form>
+        {% endfor %}
+      </div>
     </div>
   </section>
 {% endblock %}

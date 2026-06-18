@@ -31,6 +31,14 @@ _process_cache_lock = Lock()
 _process_untrusted_cache: tuple[DatabaseRevision, frozenset[int]] | None = None
 
 
+def invalidate_untrusted_movie_cache(db: Session | None = None) -> None:
+    global _process_untrusted_cache
+    if db is not None:
+        db.info.pop("untrusted_movie_ids", None)
+    with _process_cache_lock:
+        _process_untrusted_cache = None
+
+
 def _database_revision(db: Session) -> DatabaseRevision | None:
     bind = db.get_bind()
     if bind.dialect.name != "sqlite":
@@ -225,4 +233,9 @@ def is_trusted_movie(db: Session, movie_id: int) -> bool:
     return movie_id not in get_untrusted_movie_ids(db)
 
 
-__all__ = ["get_untrusted_movie_ids", "is_trusted_movie", "trusted_movie_query"]
+__all__ = [
+    "get_untrusted_movie_ids",
+    "invalidate_untrusted_movie_cache",
+    "is_trusted_movie",
+    "trusted_movie_query",
+]

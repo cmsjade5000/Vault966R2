@@ -14,7 +14,7 @@
         {% for movie in section.movies %}
         <a class="curated-card" role="listitem" href="/ui/movies/{{ movie.id }}">
           {% if movie.poster_url %}
-          <img src="{{ movie.poster_url }}" alt="{{ movie.title | display_title }} poster" loading="lazy" />
+          <img src="/ui/posters/{{ movie.id }}/w185" alt="{{ movie.title | display_title }} poster" loading="lazy" />
           {% else %}
           <div class="curated-card__fallback">🍿</div>
           {% endif %}

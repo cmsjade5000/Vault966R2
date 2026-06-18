@@ -11,10 +11,14 @@
   show_rating=true,
   reason_labels=[],
   image_loading="lazy",
-  fetch_priority="auto"
+  fetch_priority="auto",
+  poster_size="w342",
+  show_details=true,
+  poster_src="",
+  defer_image=false
 ) -%}
 <article
-  class="library-card{% if extra_class %} {{ extra_class }}{% endif %}{% if show_review and movie.flagged %} library-card--review{% endif %}"
+  class="library-card{% if extra_class %} {{ extra_class }}{% endif %}{% if not show_details %} library-card--poster-only{% endif %}{% if show_review and movie.flagged %} library-card--review{% endif %}"
   {% if role %}role="{{ role }}"{% endif %}
   data-movie-card
   data-movie-id="{{ movie.id }}"
@@ -29,18 +33,21 @@
   >
     <div class="library-card__media">
       {% if movie.poster_url %}
+      {% set resolved_poster_src = poster_src or '/ui/posters/' ~ movie.id ~ '/' ~ poster_size %}
       <img
-        src="{{ poster_image_url(movie.poster_url) }}"
+        src="{% if defer_image %}data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw=={% else %}{{ resolved_poster_src }}{% endif %}"
+        {% if defer_image %}data-deferred-poster data-poster-src="{{ resolved_poster_src }}"{% endif %}
         alt="{{ movie.title | display_title }} poster"
         loading="{{ image_loading }}"
         decoding="async"
-        fetchpriority="{{ fetch_priority }}"
+        {% if fetch_priority != "auto" %}fetchpriority="{{ fetch_priority }}"{% endif %}
       />
       {% else %}
       <div class="poster poster--empty {{ movie.poster_theme or 'poster-theme-default' }}" aria-hidden="true">{{ placeholder }}</div>
       {% endif %}
       {% if show_review and movie.flagged %}<span class="library-card__status">Needs review</span>{% endif %}
     </div>
+    {% if show_details %}
     <div class="library-card__body">
       <h2>{{ movie.title | display_title }}</h2>
       <div class="library-card__meta">
@@ -63,6 +70,7 @@
       </div>
       {% endif %}
     </div>
+    {% endif %}
   </a>
   {% if show_review %}
   <button

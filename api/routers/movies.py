@@ -1,4 +1,3 @@
-from datetime import datetime, timezone
 from typing import List, Optional, Sequence
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
@@ -48,6 +47,7 @@ from api.services.llm_filters import (
     generate_llm_filters,
 )
 from api.services.movie_updates import apply_movie_update
+from api.services.movie_flags import clear_movie_flag, set_movie_flag
 from api.services.double_feature import DEFAULT_DOUBLE_FEATURE_RUNTIME, pick_double_feature
 from api.services.flic_ordering import fetch_movies_in_rank_order, rank_movie_ids_by_flic
 from api.services.profiles import get_active_profile_id, update_movie_preference
@@ -446,7 +446,7 @@ def list_flags(
 ) -> List[MovieFlagRead]:
     flags = (
         db.query(MovieFlag)
-        .order_by(MovieFlag.updated_at.desc())
+        .order_by(MovieFlag.updated_at.desc(), MovieFlag.movie_id.asc())
         .offset((page - 1) * page_size)
         .limit(page_size)
         .all()
@@ -502,16 +502,12 @@ def flag_movie(
     if movie is None:
         raise HTTPException(status_code=404, detail="Movie not found")
 
-    flag = db.get(MovieFlag, movie_id)
-    if flag is None:
-        flag = MovieFlag(movie_id=movie_id)
-        db.add(flag)
-
-    flag.reason = payload.reason
-    if payload.notes and len(payload.notes) > 500:
-        raise HTTPException(status_code=400, detail="Notes must be 500 characters or less")
-    flag.notes = payload.notes
-    flag.updated_at = datetime.now(timezone.utc)
+    flag = set_movie_flag(
+        db,
+        movie,
+        reason=payload.reason,
+        notes=payload.notes or None,
+    )
 
     db.commit()
     db.refresh(flag)
@@ -524,10 +520,7 @@ def clear_flag(
     db: Session = Depends(get_db),
     _: None = Depends(require_admin),
 ) -> Response:
-    flag = db.get(MovieFlag, movie_id)
-    if flag is None:
-        return Response(status_code=204)
-    db.delete(flag)
+    clear_movie_flag(db, movie_id)
     db.commit()
     return Response(status_code=204)
 
