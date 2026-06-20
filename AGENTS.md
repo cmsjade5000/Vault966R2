@@ -32,6 +32,12 @@
 - `pytest`
 - Run focused tests while iterating, then run the full suite before completion when the change can affect shared behavior.
 
+## Codex project skills
+- Project skill sources live in `skills/<name>/SKILL.md`.
+- Codex-discoverable links live in `.agents/skills/`; keep them pointed at the matching `skills/` directory.
+- Use `metadata-cleanup`, `poster-backdrop-audit`, `movie-import-review`, `csv-import-guard`, `duplicate-resolution`, `database-health-check`, `test-suite-runner`, and `vault-security-audit` when a task matches their descriptions.
+- Do not duplicate skill instructions in chat or docs; update the canonical `SKILL.md` instead.
+
 ## Live iPad service
 - The iPad uses the deployed macOS service under `~/Library/Application Support/Vault966/app`, not the repository working tree.
 - After any application change (Python, templates, static CSS/JavaScript, configuration, or dependencies), run `scripts/vault_service.sh restart`.
@@ -40,6 +46,9 @@
 ## Linters and formatting
 - `npm run lint` (Prettier check for `static/js/**/*.js`)
 - `npm run fmt` (Prettier write for `static/js/**/*.js`)
+- `make codex.check` (default Codex verification wrapper)
+- `make codex.full` (full lint and test wrapper)
+- `make codex.live` (restart and verify the deployed service)
 
 ## Conventions
 - Python: follow existing FastAPI/SQLAlchemy/Pydantic patterns; keep names `snake_case`.

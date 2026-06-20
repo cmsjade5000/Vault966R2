@@ -32,7 +32,7 @@ HEALTH_URL="http://127.0.0.1:8000/health"
 
 usage() {
   cat <<USAGE
-Usage: scripts/vault_service.sh <install|uninstall|start|stop|restart|status|logs>
+Usage: scripts/vault_service.sh <install|uninstall|start|stop|restart|status|logs|verify> [path]
 
   install    Install, load, and start the macOS background service
   uninstall  Stop and remove the background service
@@ -41,6 +41,7 @@ Usage: scripts/vault_service.sh <install|uninstall|start|stop|restart|status|log
   restart    Reload the service and restart the Vault
   status     Show launchd state and check the HTTP health endpoint
   logs       Follow service output and error logs
+  verify     Check a live route or asset path (default: /health)
 USAGE
 }
 
@@ -189,14 +190,22 @@ deploy_app() {
   mkdir -p "$APP_DIR" "$LOG_DIR"
   rsync -a --delete \
     --exclude '.git/' \
+    --exclude '.agents/' \
+    --exclude '.codex/' \
+    --exclude '.DS_Store' \
     --exclude '.pytest_cache/' \
     --exclude '.ruff_cache/' \
     --exclude '.uv-python/' \
     --exclude '.venv/' \
     --exclude 'node_modules/' \
     --exclude 'reports/' \
+    --exclude 'skills/' \
     --exclude 'data/*.log' \
     --exclude 'data/*.pid' \
+    --exclude '*.bak' \
+    --exclude '* 2.py' \
+    --exclude '* 2.js' \
+    --exclude '* 2.css' \
     --exclude 'vault.db' \
     --exclude 'vault.db-journal' \
     --exclude 'vault.db.*.bak' \
@@ -277,6 +286,44 @@ wait_for_health() {
   echo "Vault service did not become healthy: $HEALTH_URL" >&2
   echo "Check logs with: scripts/vault_service.sh logs" >&2
   exit 1
+}
+
+verify_path() {
+  local path="${1:-/health}"
+  if [[ "$path" != /* ]]; then
+    path="/$path"
+  fi
+
+  local url="http://127.0.0.1:8000$path"
+  local headers
+  headers="$(mktemp "${TMPDIR:-/tmp}/vault966-verify-headers.XXXXXX")"
+  local body
+  body="$(mktemp "${TMPDIR:-/tmp}/vault966-verify-body.XXXXXX")"
+  local status
+
+  if ! status="$(curl --silent --show-error --location --max-time 10 \
+    --dump-header "$headers" \
+    --output "$body" \
+    --write-out '%{http_code}' \
+    "$url")"; then
+    rm -f "$headers" "$body"
+    echo "Live verify failed: $url could not be reached" >&2
+    exit 1
+  fi
+
+  local content_type
+  content_type="$(sed -n '/^[Cc]ontent-[Tt]ype:/ { s/\r$//; p; q; }' "$headers")"
+  rm -f "$headers" "$body"
+
+  if [[ ! "$status" =~ ^[23] ]]; then
+    echo "Live verify failed: $url returned HTTP $status" >&2
+    exit 1
+  fi
+
+  echo "Live verify: $url HTTP $status"
+  if [[ -n "$content_type" ]]; then
+    echo "$content_type"
+  fi
 }
 
 case "${1:-}" in
@@ -368,6 +415,9 @@ case "${1:-}" in
     mkdir -p "$LOG_DIR"
     touch "$STDOUT_LOG" "$STDERR_LOG"
     tail -n 80 -F "$STDOUT_LOG" "$STDERR_LOG"
+    ;;
+  verify)
+    verify_path "${2:-/health}"
     ;;
   *)
     usage

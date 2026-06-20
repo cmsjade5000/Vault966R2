@@ -6,6 +6,8 @@ This is the starter scaffold for migrating Vault 966 from Streamlit to a real AP
 
 Start with [PROJECT.md](PROJECT.md) for the current project map, source/deployment
 boundaries, documentation index, and maintenance workflow.
+For Codex-specific workflow guidance, use [AGENTS.md](AGENTS.md) and
+[docs/codex-runbook.md](docs/codex-runbook.md).
 
 ## Quickstart
 
@@ -135,6 +137,15 @@ The `/ui/movies` page includes a "Semantic search" toggle. The API endpoint is
 make fmt     # auto-format with Black + Ruff
 make lint    # static analysis
 make test    # runs pytest
+```
+
+Codex sessions should prefer the project verification wrappers:
+
+```bash
+make codex.status
+make codex.check
+make codex.full
+make codex.live
 ```
 
 For the small JavaScript helpers under `static/js/`, install Prettier once and

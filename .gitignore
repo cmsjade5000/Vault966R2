@@ -1,14 +1,22 @@
 __pycache__/
 *.pyc
+*.bak
 .env
 .DS_Store
 .venv/
 venv/
+.pytest_cache/
+.ruff_cache/
+.uv-python/
 vault.db
 vault.db-journal
 vault.db.*.bak
 dist/
 node_modules/
+# Finder/editor duplicate artifacts
+* 2.py
+* 2.js
+* 2.css
 # data/report artifacts
 data/*.csv
 data/*.log

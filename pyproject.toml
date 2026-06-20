@@ -25,6 +25,10 @@ extend-exclude = [
 ]
 
 [tool.pytest.ini_options]
+addopts = [
+  "--ignore-glob",
+  "* 2.py",
+]
 markers = [
   "integration: marks tests that require external services (deselect with -m 'not integration')",
 ]
