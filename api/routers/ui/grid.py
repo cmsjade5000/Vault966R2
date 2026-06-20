@@ -501,6 +501,7 @@ def movies_health(
     row: int | None = Query(default=None, ge=1),
     movie: int | None = Query(default=None, ge=1),
     undo_decision: int | None = Query(default=None, ge=1),
+    flag_reason: str | None = Query(default=None, min_length=1, max_length=120),
     db: Session = Depends(get_db),
     _: str = Depends(require_profile_role(ROLE_ADMIN)),
 ):
@@ -530,6 +531,7 @@ def movies_health(
             row=row,
             movie=movie,
             undo_decision=undo_decision,
+            flag_reason=flag_reason,
         ),
     }
     response = TEMPLATES.TemplateResponse(request, "movies_health.html", context)

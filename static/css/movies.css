@@ -2686,6 +2686,38 @@ body.filters-open {
   margin: 0;
 }
 
+.flag-queue-filter {
+  align-items: end;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.flag-queue-filter label {
+  color: var(--flic-muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.flag-queue-filter select {
+  background: rgba(2, 6, 23, 0.52);
+  border: 1px solid rgba(148, 163, 184, 0.32);
+  border-radius: 6px;
+  color: var(--flic-text);
+  font: inherit;
+  min-height: 2.5rem;
+  min-width: min(18rem, 100%);
+  padding: 0.55rem 0.75rem;
+}
+
+.flag-queue-filter select:focus-visible {
+  border-color: var(--flic-accent);
+  outline: 2px solid rgba(96, 165, 250, 0.3);
+  outline-offset: 2px;
+}
+
 .flag-match {
   border-top: 1px solid rgba(148, 163, 184, 0.22);
   margin-top: 1.5rem;
@@ -2898,6 +2930,13 @@ body.filters-open {
   .review-message--action {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .flag-queue-filter,
+  .flag-queue-filter select,
+  .flag-queue-filter button,
+  .flag-queue-filter a {
+    width: 100%;
   }
 
   .review-bulk-action {
