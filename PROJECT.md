@@ -8,7 +8,7 @@ This file is the starting point for understanding and maintaining Vault 966.
 - Live deployed app: `~/Library/Application Support/Vault966/app`
 - Canonical live database: `~/Library/Application Support/Vault966/data/vault.db`
 - Local service: `http://127.0.0.1:8000`
-- Active implementation branch: `codex/unify-metadata-import`
+- Active implementation branch: check with `git branch --show-current`
 
 The repository is the editable source of truth. The deployed app is refreshed by
 `scripts/vault_service.sh restart` and should not be edited directly.
@@ -30,6 +30,7 @@ The repository is the editable source of truth. The deployed app is refreshed by
 | `client_py/`, `client_ts/` | Generated or maintained API clients |
 | `openapi/` | Frozen API specification |
 | `skills/` | Project-specific reusable Codex workflows |
+| `.agents/skills/` | Codex-discoverable symlinks to project skills |
 
 ## Working Rules
 
@@ -46,6 +47,10 @@ The repository is the editable source of truth. The deployed app is refreshed by
 ## Common Commands
 
 ```bash
+make codex.status
+make codex.check
+make codex.full
+make codex.live
 pytest
 npm run lint
 scripts/vault_service.sh status
@@ -57,6 +62,7 @@ scripts/vault_service.sh logs
 
 - `README.md`: setup, runtime, and developer commands
 - `AGENTS.md`: durable Codex and review instructions
+- `docs/codex-runbook.md`: Codex workflow, skills, and verification handoff
 - `docs/README.md`: documentation index and ownership
 - `reports/README.md`: generated-report conventions
 - `CHANGELOG.md`: user-facing release history

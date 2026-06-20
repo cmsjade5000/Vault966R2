@@ -1,7 +1,7 @@
 include Makefile.txt
 
 # ---- README ALIASES ----
-.PHONY: app.up app.down db.up db.down db.migrate db.reset fmt lint test openapi vault.audit
+.PHONY: app.up app.down db.up db.down db.migrate db.reset fmt lint test openapi vault.audit codex.status codex.check codex.full codex.live codex.skills
 
 app.up: up ## Start API + Postgres (Docker)
 
@@ -42,3 +42,18 @@ vault.audit: ## Check structural integrity and imported-source drift
 openapi: ## Freeze OpenAPI + regenerate clients
 	python3 scripts/generate_openapi.py
 	python3 scripts/generate_clients.py
+
+codex.status: ## Show git state, repo skill links, and live service status
+	scripts/codex_check.sh status
+
+codex.check: ## Run the default Codex verification suite
+	scripts/codex_check.sh quick
+
+codex.full: ## Run full lint and test checks for Codex completion
+	scripts/codex_check.sh full
+
+codex.live: ## Restart and verify the deployed macOS service
+	scripts/codex_check.sh live
+
+codex.skills: ## List repo-scoped Codex skill links
+	scripts/codex_check.sh skills
