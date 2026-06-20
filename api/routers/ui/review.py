@@ -26,6 +26,7 @@ from api.services.movie_lookup import (
     lookup_movie_candidates,
     lookup_omdb_candidates,
 )
+from api.services.movie_flags import clear_movie_flag
 from api.services.movie_review import (
     detect_review_issues,
     get_review_queue,
@@ -74,23 +75,31 @@ def build_review_context(
     row: int | None,
     movie: int | None,
     undo_decision: int | None,
+    flag_reason: str | None = None,
 ) -> dict:
     requested_view = view
     view = view or "differences"
     if view not in REVIEW_VIEWS:
         raise HTTPException(status_code=404, detail="Review category not found")
     queue, finding_count = get_review_queue(db)
-    flags = (
+    all_flags = (
         db.query(MovieFlag)
-        .options(joinedload(MovieFlag.movie))
+        .options(joinedload(MovieFlag.movie), joinedload(MovieFlag.reported_by_profile))
         .order_by(desc(MovieFlag.updated_at), MovieFlag.movie_id.asc())
         .all()
     )
+    flag_reasons = sorted({flag.reason for flag in all_flags if flag.reason})
+    selected_flag_reason = flag_reason if flag_reason in flag_reasons else None
+    flags = [
+        flag
+        for flag in all_flags
+        if selected_flag_reason is None or flag.reason == selected_flag_reason
+    ]
     source_groups = partition_source_review_queue(get_source_review_queue(db))
     review_counts = {
         **{name: len(items) for name, items in source_groups.items()},
         "vault": len(queue),
-        "flags": len(flags),
+        "flags": len(all_flags),
     }
     review_tabs = [
         ("differences", "Differences"),
@@ -144,7 +153,10 @@ def build_review_context(
             if view == "vault"
             else item.movie_id if view == "flags" else item.source_row.id
         )
-        return f"/ui/movies/health?view={quote(view)}&{item_param}={item_id}" "#review-workbench"
+        params = [f"view={quote(view)}", f"{item_param}={item_id}"]
+        if view == "flags" and selected_flag_reason:
+            params.append(f"flag_reason={quote(selected_flag_reason, safe='')}")
+        return f"/ui/movies/health?{'&'.join(params)}#review-workbench"
 
     next_nonempty_view = next(
         ((key, label) for key, label in review_tabs if key != view and review_counts[key]),
@@ -161,6 +173,9 @@ def build_review_context(
     return {
         "queue": queue,
         "flags": flags,
+        "all_flags": all_flags,
+        "flag_reasons": flag_reasons,
+        "selected_flag_reason": selected_flag_reason,
         "source_queue": selected_queue if view not in {"vault", "flags"} else [],
         "source_groups": source_groups,
         "source_snapshot": source_snapshot,
@@ -171,7 +186,7 @@ def build_review_context(
             {item.source_row.id for items in source_groups.values() for item in items}
         )
         + len(queue)
-        + len(flags),
+        + len(all_flags),
         "review_view": view,
         "review_view_label": review_view_label,
         "review_item": review_item,
@@ -212,6 +227,16 @@ def _source_action_redirect(
     params = [f"view={quote(view)}", f"message={quote(message)}"]
     if undo_decision is not None:
         params.append(f"undo_decision={undo_decision}")
+    return RedirectResponse(
+        url=f"/ui/movies/health?{'&'.join(params)}#review-workbench",
+        status_code=303,
+    )
+
+
+def _flag_action_redirect(message: str, *, flag_reason: str | None = None) -> RedirectResponse:
+    params = ["view=flags", f"message={quote(message, safe='')}"]
+    if flag_reason:
+        params.append(f"flag_reason={quote(flag_reason, safe='')}")
     return RedirectResponse(
         url=f"/ui/movies/health?{'&'.join(params)}#review-workbench",
         status_code=303,
@@ -391,6 +416,25 @@ def _load_movie(db: Session, movie_id: int) -> Movie:
     if movie is None:
         raise HTTPException(status_code=404, detail="Movie not found")
     return movie
+
+
+@router.post("/ui/movies/health/review/flags/{movie_id}/resolve")
+def resolve_flagged_queue_item(
+    movie_id: int,
+    flag_reason: str | None = Query(default=None, min_length=1, max_length=120),
+    db: Session = Depends(get_db),
+    _: str = Depends(require_profile_role(ROLE_ADMIN)),
+    __: None = Depends(require_same_origin),
+) -> RedirectResponse:
+    movie = _load_movie(db, movie_id)
+    if movie.flag is None:
+        raise HTTPException(status_code=404, detail="Flag not found")
+    clear_movie_flag(db, movie_id)
+    db.commit()
+    return _flag_action_redirect(
+        f"{movie.vault_id or movie.title} removed from Flags.",
+        flag_reason=flag_reason,
+    )
 
 
 def _selected_external_candidate(

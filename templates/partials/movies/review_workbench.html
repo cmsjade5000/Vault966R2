@@ -306,6 +306,20 @@
     {% elif review_view == 'flags' and review_item %}
       {% set flag = review_item %}
       {% set movie = flag.movie %}
+      <form class="flag-queue-filter" method="get" action="/ui/movies/health#review-workbench">
+        <input type="hidden" name="view" value="flags" />
+        <label for="flag-reason-filter">Filter by reason</label>
+        <select id="flag-reason-filter" name="flag_reason">
+          <option value="">All reasons</option>
+          {% for reason in flag_reasons %}
+            <option value="{{ reason }}" {% if selected_flag_reason == reason %}selected{% endif %}>{{ reason }}</option>
+          {% endfor %}
+        </select>
+        <button class="button-secondary" type="submit">Apply</button>
+        {% if selected_flag_reason %}
+          <a class="button-secondary" href="/ui/movies/health?view=flags#review-workbench">Clear</a>
+        {% endif %}
+      </form>
       <nav class="review-queue-nav" aria-label="Flags queue navigation">
         <span>{{ review_position }} of {{ review_queue_count }} in Flags</span>
         <div>
@@ -321,7 +335,7 @@
         <div class="review-card__identity">
           <span class="review-vault-id">{{ movie.vault_id or 'Vault ID pending' }}</span>
           <h2 id="flagged-movie-title">{{ movie.title }}</h2>
-          <p>{{ movie.year or 'Year unknown' }}</p>
+          <p>{{ movie.year or 'Year unknown' }} · Correction queue</p>
         </div>
         <div class="review-reasons">
           <h3>{{ flag.reason or 'Needs follow-up' }}</h3>
@@ -330,6 +344,9 @@
           </div>
         </div>
         <dl class="review-metadata">
+          <div><dt>Reported by</dt><dd>{{ flag.reported_by_profile.name if flag.reported_by_profile else 'Admin flag' }}</dd></div>
+          <div><dt>Opened</dt><dd>{{ flag.created_at.strftime('%Y-%m-%d %H:%M') if flag.created_at else 'Unknown' }}</dd></div>
+          <div><dt>Last updated</dt><dd>{{ flag.updated_at.strftime('%Y-%m-%d %H:%M') if flag.updated_at else 'Unknown' }}</dd></div>
           <div><dt>IMDb</dt><dd>{{ movie.imdb_id or 'Missing' }}</dd></div>
           <div><dt>TMDB</dt><dd>{{ movie.tmdb_id or 'Missing' }}</dd></div>
         </dl>
@@ -376,7 +393,14 @@
           <div class="flag-match__results" data-flag-match-results hidden></div>
         </section>
         <div class="review-actions">
-          <a class="button-primary" href="/ui/movies/{{ movie.id }}">Open details</a>
+          <a class="button-secondary" href="/ui/movies/{{ movie.id }}">Open details</a>
+          <form method="post" action="/ui/movies/health/review/flags/{{ movie.id }}/resolve{% if selected_flag_reason %}?flag_reason={{ selected_flag_reason|urlencode }}{% endif %}">
+            <button
+              class="button-secondary"
+              type="submit"
+              data-confirm="Resolve this flag and remove it from the correction queue?"
+            >Resolve / Dismiss</button>
+          </form>
         </div>
       </section>
     {% else %}

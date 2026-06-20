@@ -10,6 +10,7 @@ from api.services.movie_review import (
     detect_review_issues,
     get_review_queue,
 )
+from api.services.profiles import get_profiles
 from api.services.ui.grid import FILTER_COOKIE_NAME
 
 
@@ -393,6 +394,92 @@ def test_flags_page_lists_flagged_movies(client: TestClient, admin_headers: dict
     assert "Find an external match" in html
     assert "data-flag-match-search" in html
     assert 'value="Blade Runner"' in html
+
+
+def test_flags_queue_shows_reporter_timing_and_reason_filter(
+    client: TestClient,
+    db_session,
+) -> None:
+    profiles = get_profiles(db_session)
+    reviewer = next(profile for profile in profiles if profile.name == "User B")
+    db_session.add(
+        MovieFlag(
+            movie_id=1,
+            reason="Wrong runtime/year",
+            notes="Runtime looks off.",
+            reported_by_profile_id=reviewer.id,
+        )
+    )
+    db_session.add(MovieFlag(movie_id=2, reason="Poster/backdrop issue"))
+    db_session.commit()
+
+    page = client.get(
+        "/ui/movies/health",
+        params={"view": "flags", "flag_reason": "Wrong runtime/year"},
+    )
+
+    assert page.status_code == 200
+    html = page.text
+    assert "Wrong runtime/year" in html
+    assert "Runtime looks off." in html
+    assert "Reported by" in html
+    assert "User B" in html
+    assert "Opened" in html
+    assert "Last updated" in html
+    assert "Resolve / Dismiss" in html
+    assert 'option value="Wrong runtime/year" selected' in html
+    assert "Poster/backdrop issue" in html
+    assert "The Matrix" not in html
+
+
+def test_flags_queue_resolve_action_removes_flag_and_preserves_filter(
+    client: TestClient,
+    db_session,
+) -> None:
+    movie = db_session.get(Movie, 1)
+    movie.vault_id = "V0001"
+    db_session.add(
+        MovieFlag(
+            movie_id=movie.id,
+            reason="Wrong runtime/year",
+            notes="Runtime looks off.",
+        )
+    )
+    db_session.commit()
+
+    response = client.post(
+        f"/ui/movies/health/review/flags/{movie.id}/resolve",
+        params={"flag_reason": "Wrong runtime/year"},
+        follow_redirects=False,
+    )
+
+    assert response.status_code == 303
+    assert "view=flags" in response.headers["location"]
+    assert "flag_reason=Wrong%20runtime%2Fyear" in response.headers["location"]
+    assert "V0001%20removed%20from%20Flags" in response.headers["location"]
+    db_session.expire_all()
+    assert db_session.get(MovieFlag, movie.id) is None
+
+
+def test_reviewer_cannot_resolve_flags_from_review_queue(
+    client: TestClient,
+    db_session,
+    monkeypatch,
+) -> None:
+    db_session.add(MovieFlag(movie_id=1, reason="Wrong runtime/year"))
+    db_session.commit()
+    monkeypatch.setattr(settings, "disable_auth", False)
+    monkeypatch.setattr(settings, "login_session_secret", None)
+    client.post("/login", data={"profile_id": "2"}, follow_redirects=False)
+
+    response = client.post(
+        "/ui/movies/health/review/flags/1/resolve",
+        headers={"Origin": "http://testserver"},
+    )
+
+    assert response.status_code == 403
+    db_session.expire_all()
+    assert db_session.get(MovieFlag, 1) is not None
 
 
 def test_review_route_redirects_to_vault_health_workbench(client: TestClient) -> None:
