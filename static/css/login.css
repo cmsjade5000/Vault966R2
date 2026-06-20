@@ -96,7 +96,6 @@
 
 .login-archive.is-unlocked {
   opacity: 1;
-  transform: scale(1.055);
 }
 
 .login-archive.is-unlocked::after {
@@ -197,7 +196,7 @@
 
 .login-archive.is-unlocked .login-archive__poster {
   opacity: 1;
-  transform: rotate(var(--poster-rotate, 0deg)) scale(1.04);
+  transform: rotate(var(--poster-rotate, 0deg));
   animation-play-state: paused;
 }
 
@@ -288,8 +287,8 @@
 .login-shell {
   position: relative;
   width: min(42rem, 92vw);
+  overflow: clip;
   z-index: 2;
-  animation: loginShellEnter 900ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 .login-ambient {
@@ -341,7 +340,9 @@
 .login-card {
   position: relative;
   display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr);
   gap: clamp(1.4rem, 3vw, 2rem);
+  height: clamp(30rem, 58vh, 35rem);
   overflow: hidden;
   padding: clamp(2rem, 6vw, 4rem);
   border: 1px solid rgba(183, 236, 255, 0.2);
@@ -526,10 +527,8 @@
 }
 
 .login-shell.is-unlocked .login-ticker {
-  border-color: rgba(111, 211, 255, 0.48);
-  box-shadow:
-    inset 0 0 26px rgba(111, 211, 255, 0.12),
-    0 0 28px rgba(111, 211, 255, 0.1);
+  opacity: 0;
+  visibility: hidden;
 }
 
 .login-shell.is-unlocked .login-ticker__group span {
@@ -548,47 +547,64 @@
   display: grid;
 }
 
+.login-form,
+.login-profiles {
+  grid-row: 3;
+  grid-column: 1;
+  align-self: stretch;
+}
+
+.login-form {
+  align-items: center;
+  min-height: 0;
+}
+
+.login-card__actions {
+  align-items: center;
+  min-height: 0;
+}
+
 .login-profiles {
   display: none;
-  grid-template-columns: repeat(2, minmax(9.25rem, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: clamp(1rem, 3vw, 1.4rem);
-  align-items: stretch;
+  align-items: center;
   justify-content: center;
-  opacity: 0;
   pointer-events: none;
-  transform: translateY(0.85rem);
-  transition:
-    opacity 280ms ease,
-    transform 320ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .login-profile-form {
   display: grid;
+  align-items: center;
   min-width: 0;
 }
 
 .login-profile {
   position: relative;
   display: grid;
-  gap: clamp(1rem, 2.4vw, 1.35rem);
-  min-height: clamp(11rem, 24vw, 13.5rem);
+  grid-template-rows: auto auto;
+  gap: clamp(0.72rem, 1.6vw, 0.95rem);
+  width: 100%;
+  height: clamp(10.5rem, 100%, 12.65rem);
   align-content: center;
-  padding: clamp(1.1rem, 3vw, 1.55rem);
+  padding: clamp(0.9rem, 2.2vw, 1.2rem);
   overflow: hidden;
-  border: 1px solid rgba(111, 211, 255, 0.28);
-  border-radius: 1.2rem;
+  border: 1px solid rgba(111, 211, 255, 0.34);
+  border-radius: 1rem;
   color: var(--vault-white);
   background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.055), transparent 34%),
     radial-gradient(
       circle at 50% 0%,
-      rgba(111, 211, 255, 0.18),
+      rgba(111, 211, 255, 0.22),
       transparent 48%
     ),
-    linear-gradient(150deg, rgba(13, 49, 82, 0.9), rgba(5, 15, 31, 0.96));
+    linear-gradient(150deg, rgba(13, 49, 82, 0.86), rgba(5, 15, 31, 0.97));
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.09),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
     inset 0 0 0 1px rgba(255, 255, 255, 0.025),
-    0 18px 46px rgba(0, 0, 0, 0.34);
+    0 14px 34px rgba(0, 0, 0, 0.3),
+    0 0 26px rgba(111, 211, 255, 0.06);
   font: inherit;
   cursor: pointer;
   appearance: none;
@@ -625,9 +641,9 @@
   border-color: rgba(244, 195, 109, 0.72);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.12),
-    0 24px 56px rgba(0, 0, 0, 0.48),
-    0 0 30px rgba(111, 211, 255, 0.12);
-  transform: translateY(-0.2rem);
+    0 18px 42px rgba(0, 0, 0, 0.42),
+    0 0 34px rgba(111, 211, 255, 0.16);
+  transform: translateY(-0.15rem);
 }
 
 .login-profile:hover::before,
@@ -644,18 +660,19 @@
 .login-profile__avatar {
   display: grid;
   justify-self: center;
-  width: clamp(4.75rem, 11vw, 6.4rem);
+  width: clamp(4.25rem, 8vw, 5.55rem);
   aspect-ratio: 1;
   place-items: center;
-  border: 1px solid rgba(183, 236, 255, 0.3);
+  border: 1px solid rgba(183, 236, 255, 0.38);
   border-radius: 50%;
   color: var(--vault-blue-bright);
   background:
-    radial-gradient(circle at 50% 32%, rgba(111, 211, 255, 0.24), transparent 62%),
+    radial-gradient(circle at 50% 32%, rgba(111, 211, 255, 0.3), transparent 62%),
     rgba(3, 12, 27, 0.48);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.1),
-    0 0 28px rgba(111, 211, 255, 0.12);
+    inset 0 1px 0 rgba(255, 255, 255, 0.13),
+    0 0 0 0.4rem rgba(111, 211, 255, 0.045),
+    0 0 28px rgba(111, 211, 255, 0.14);
   pointer-events: none;
 }
 
@@ -682,9 +699,9 @@
 .login-profile__name {
   justify-self: center;
   color: rgba(246, 248, 252, 0.94);
-  font-size: clamp(0.9rem, 2.4vw, 1.08rem);
+  font-size: clamp(0.82rem, 1.8vw, 0.98rem);
   font-weight: 720;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.18em;
   line-height: 1;
   text-transform: uppercase;
   pointer-events: none;
@@ -804,22 +821,13 @@
   opacity: 0.32;
 }
 
-.login-shell.is-unlocked .login-card::after,
-.login-shell.is-unlocked .login-card__label,
-.login-shell.is-unlocked .login-ticker,
 .login-shell.is-unlocked .login-form {
   display: none;
 }
 
 .login-shell.is-unlocked .login-profiles {
   display: grid;
-  opacity: 1;
   pointer-events: auto;
-  transform: translateY(0);
-}
-
-.login-shell.is-unlocked .login-card__label {
-  color: var(--vault-blue-bright);
 }
 
 .login-shell.is-unlocked .login-button {
@@ -899,6 +907,7 @@
   }
 
   .login-card {
+    height: clamp(28rem, 72svh, 34rem);
     padding: 2rem 1.25rem;
     border-radius: 1.5rem;
   }
@@ -935,6 +944,7 @@
 
   .login-card {
     gap: 1rem;
+    height: 28rem;
     padding-block: 1.5rem;
   }
 
