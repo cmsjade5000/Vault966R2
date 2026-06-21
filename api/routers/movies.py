@@ -5,7 +5,12 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session, selectinload
 
 from api.db import get_db
-from api.deps.auth import require_admin, require_profile_role, require_same_origin
+from api.deps.auth import (
+    require_admin,
+    require_admin_or_profile_admin,
+    require_profile_role,
+    require_same_origin,
+)
 from api.models.flic_memory import FlicMemory
 from api.models.movie import Genre, Mood, Movie, movie_genres, movie_moods
 from api.models.movie_flag import MovieFlag
@@ -490,7 +495,7 @@ def update_movie(
     movie_id: int,
     payload: MovieUpdate,
     db: Session = Depends(get_db),
-    _: None = Depends(require_admin),
+    _: None = Depends(require_admin_or_profile_admin),
 ):
     movie = db.get(Movie, movie_id)
     if movie is None:
@@ -512,7 +517,7 @@ def update_movie(
 def delete_movie(
     movie_id: int,
     db: Session = Depends(get_db),
-    _: None = Depends(require_admin),
+    _: None = Depends(require_admin_or_profile_admin),
 ) -> Response:
     movie = db.get(Movie, movie_id)
     if movie is None:

@@ -1,6 +1,4 @@
 (function () {
-  const ADMIN_TOKEN_KEY = "vault966_admin_token";
-
   const parseGenresInput = (value = "") =>
     value
       .split(",")
@@ -91,41 +89,7 @@
       button.toggleAttribute("aria-busy", pending);
     };
 
-    const getAdminToken = () => {
-      try {
-        return sessionStorage.getItem(ADMIN_TOKEN_KEY) || "";
-      } catch {
-        return "";
-      }
-    };
-
-    const setAdminToken = (token) => {
-      try {
-        if (token) sessionStorage.setItem(ADMIN_TOKEN_KEY, token);
-        else sessionStorage.removeItem(ADMIN_TOKEN_KEY);
-      } catch {
-        // Storage can be unavailable in private browsing.
-      }
-    };
-
-    const authFetch = async (url, options, promptMessage) => {
-      const request = (token) =>
-        fetch(url, {
-          ...options,
-          headers: {
-            ...(options.headers || {}),
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          },
-        });
-      let response = await request(getAdminToken());
-      if (response.status !== 401) return response;
-
-      const input = window.prompt(promptMessage, getAdminToken());
-      if (input === null) return response;
-      const token = input.trim();
-      setAdminToken(token);
-      return token ? request(token) : response;
-    };
+    const authFetch = (url, options) => fetch(url, options);
 
     const clearLookup = () => {
       lookupRequestId += 1;
@@ -389,11 +353,9 @@
       setPending(deleteButton, true);
       setStatus("Deleting movie…");
       try {
-        const response = await authFetch(
-          `/movies/${currentMovieId}`,
-          { method: "DELETE" },
-          "Admin token required to delete movies.",
-        );
+        const response = await authFetch(`/movies/${currentMovieId}`, {
+          method: "DELETE",
+        });
         if (!response.ok && response.status !== 204) {
           throw new Error("Delete failed");
         }
@@ -434,15 +396,11 @@
       setPending(submitButton, true);
       setStatus("Saving changes…");
       try {
-        const response = await authFetch(
-          `/movies/${currentMovieId}`,
-          {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload),
-          },
-          "Admin token required to edit movies.",
-        );
+        const response = await authFetch(`/movies/${currentMovieId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
         if (!response.ok) throw new Error("Update failed");
         window.showToast?.("Movie updated.");
         window.location.reload();

@@ -55,6 +55,43 @@ def require_admin(
     return None
 
 
+def require_admin_or_profile_admin(
+    request: Request,
+    credentials: HTTPAuthorizationCredentials = Depends(_bearer_scheme),
+    db: Session = Depends(get_db),
+) -> None:
+    token = settings.admin_token
+    if credentials is not None:
+        if token and credentials.scheme.lower() == "bearer" and credentials.credentials == token:
+            return None
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or missing admin token",
+        )
+
+    require_same_origin(request)
+    profile_id = getattr(request.state, "session_profile_id", None)
+    if not isinstance(profile_id, int) or profile_id <= 0:
+        if settings.disable_auth:
+            role = get_active_profile_role(request, db)
+            if role == ROLE_ADMIN:
+                request.state.session_profile_role = role
+                return None
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin profile session required",
+        )
+
+    profile = db.get(Profile, profile_id)
+    if getattr(profile, "role", None) != ROLE_ADMIN:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin profile session required",
+        )
+    request.state.session_profile_role = ROLE_ADMIN
+    return None
+
+
 def require_profile_role(*allowed_roles: str):
     valid_roles = {ROLE_ADMIN, ROLE_REVIEWER}
     roles = [role for role in allowed_roles if role in valid_roles]

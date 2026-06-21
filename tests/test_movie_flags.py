@@ -3,6 +3,8 @@ from datetime import datetime, timezone
 import pytest
 from fastapi.testclient import TestClient
 
+from api.config import settings
+
 
 def test_flag_and_unflag_movie(client: TestClient, admin_headers: dict[str, str]) -> None:
     payload = {"reason": "Missing poster", "notes": "Need Blu-ray scan"}
@@ -79,6 +81,37 @@ def test_update_movie_metadata_resolves_flag(
 
     detail = client.get("/movies/1/detail").json()
     assert detail["flagged"] is False
+
+
+def test_update_movie_allows_admin_profile_session(client: TestClient, monkeypatch) -> None:
+    monkeypatch.setattr(settings, "disable_auth", False)
+    monkeypatch.setattr(settings, "login_session_secret", None)
+    client.post("/login", data={"profile_id": "1"}, follow_redirects=False)
+
+    missing_origin = client.patch("/movies/1", json={"runtime": 124})
+    response = client.patch(
+        "/movies/1",
+        json={"runtime": 124},
+        headers={"Origin": "http://testserver"},
+    )
+
+    assert missing_origin.status_code == 403
+    assert response.status_code == 200
+    assert response.json()["runtime"] == 124
+
+
+def test_update_movie_rejects_reviewer_profile_session(client: TestClient, monkeypatch) -> None:
+    monkeypatch.setattr(settings, "disable_auth", False)
+    monkeypatch.setattr(settings, "login_session_secret", None)
+    client.post("/login", data={"profile_id": "2"}, follow_redirects=False)
+
+    response = client.patch(
+        "/movies/1",
+        json={"runtime": 124},
+        headers={"Origin": "http://testserver"},
+    )
+
+    assert response.status_code == 403
 
 
 def test_update_movie_metadata_handles_optional_fields(
