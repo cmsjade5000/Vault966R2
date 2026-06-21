@@ -29,6 +29,7 @@ from api.utils.omdb import (
     parse_imdb_rating,
     parse_imdb_votes,
 )  # noqa: E402
+from scripts.backfill_db_backup import backup_active_sqlite_database  # noqa: E402
 
 DEFAULT_REPORT = ROOT_DIR / "reports" / "ratings_backfill.csv"
 
@@ -98,6 +99,10 @@ def main() -> int:
     skipped = 0
     missing = 0
     now = datetime.datetime.now(datetime.timezone.utc)
+
+    if args.apply:
+        backup = backup_active_sqlite_database("ratings backfill", now=now)
+        print(f"backup: {backup.backup}")
 
     with SessionLocal() as db, httpx.Client() as client:
         query = db.query(Movie).filter(

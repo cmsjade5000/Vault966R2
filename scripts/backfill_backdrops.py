@@ -31,6 +31,7 @@ from api.db import SessionLocal  # noqa: E402
 from api.models.movie import Movie  # noqa: E402
 from api.models.person import Role  # noqa: E402,F401  # ensure mapper registration
 from api.services import movie_lookup  # noqa: E402
+from scripts.backfill_db_backup import backup_active_sqlite_database  # noqa: E402
 
 
 def parse_args() -> argparse.Namespace:
@@ -219,6 +220,10 @@ def main() -> int:
     results = []
     updated = 0
     skipped = 0
+
+    if args.apply and not args.dry_run:
+        backup = backup_active_sqlite_database("backdrop backfill")
+        print(f"backup: {backup.backup}")
 
     with SessionLocal() as db, httpx.Client(timeout=10.0) as client:
         query = select(Movie).where(Movie.backdrop_url.is_(None) | (Movie.backdrop_url == ""))
