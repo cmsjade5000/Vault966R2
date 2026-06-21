@@ -157,6 +157,34 @@ def test_reviewer_cannot_preview_or_submit_manual_add(
     assert submit.status_code == 403
 
 
+def test_manual_add_requires_same_origin_for_admin_session(
+    client: TestClient,
+    monkeypatch,
+) -> None:
+    monkeypatch.setattr(settings, "disable_auth", False)
+    monkeypatch.setattr(settings, "login_session_secret", None)
+    client.post("/login", data={"profile_id": "1"}, follow_redirects=False)
+    payload = {"title": "Same Origin Check", "year": 2026}
+
+    preview_missing_origin = client.post("/ui/movies/manual-add/preview", json=payload)
+    preview_cross_origin = client.post(
+        "/ui/movies/manual-add/preview",
+        json=payload,
+        headers={"Origin": "http://evil.test"},
+    )
+    submit_missing_origin = client.post("/ui/movies/manual-add", json=payload)
+    submit_cross_origin = client.post(
+        "/ui/movies/manual-add",
+        json=payload,
+        headers={"Origin": "http://evil.test"},
+    )
+
+    assert preview_missing_origin.status_code == 403
+    assert preview_cross_origin.status_code == 403
+    assert submit_missing_origin.status_code == 403
+    assert submit_cross_origin.status_code == 403
+
+
 def test_manual_add_rejects_duplicate_imdb(client: TestClient, admin_headers: dict[str, str]):
     base_payload = ManualMovieCreate(
         title="Edge of Tomorrow",

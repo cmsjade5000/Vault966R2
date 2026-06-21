@@ -7,7 +7,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlalchemy.orm import Session
 
 from api.db import get_db
-from api.deps.auth import require_profile_role
+from api.deps.auth import require_profile_role, require_same_origin
 from api.models.source_sync import SourceSnapshot
 from api.services.profiles import (
     ROLE_ADMIN,
@@ -48,6 +48,7 @@ async def upload_source_snapshot(
     source_file: UploadFile = File(...),
     db: Session = Depends(get_db),
     _: str = Depends(require_profile_role(ROLE_ADMIN)),
+    __: None = Depends(require_same_origin),
 ) -> RedirectResponse:
     filename = source_file.filename or "collection.csv"
     if len(filename) > 255:
@@ -104,6 +105,7 @@ def confirm_source_snapshot(
     request: Request,
     db: Session = Depends(get_db),
     _: str = Depends(require_profile_role(ROLE_ADMIN)),
+    __: None = Depends(require_same_origin),
 ) -> RedirectResponse:
     snapshot = _snapshot_or_404(db, snapshot_id)
     try:

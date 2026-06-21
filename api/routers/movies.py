@@ -5,7 +5,7 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session, selectinload
 
 from api.db import get_db
-from api.deps.auth import require_admin, require_profile_role
+from api.deps.auth import require_admin, require_profile_role, require_same_origin
 from api.models.flic_memory import FlicMemory
 from api.models.movie import Genre, Mood, Movie, movie_genres, movie_moods
 from api.models.movie_flag import MovieFlag
@@ -467,6 +467,7 @@ def report_flag(
     request: Request,
     db: Session = Depends(get_db),
     _: str = Depends(require_profile_role(ROLE_ADMIN, ROLE_REVIEWER)),
+    __: None = Depends(require_same_origin),
 ):
     movie = db.get(Movie, movie_id)
     if movie is None:
@@ -560,6 +561,7 @@ def like_movie(
     movie_id: int,
     request: Request,
     db: Session = Depends(get_db),
+    _: None = Depends(require_same_origin),
 ) -> dict:
     _ensure_movie_exists(db, movie_id)
     profile_id = get_active_profile_id(request, db)
@@ -577,6 +579,7 @@ def unlike_movie(
     movie_id: int,
     request: Request,
     db: Session = Depends(get_db),
+    _: None = Depends(require_same_origin),
 ) -> dict:
     _ensure_movie_exists(db, movie_id)
     profile_id = get_active_profile_id(request, db)
@@ -594,6 +597,7 @@ def watchlist_movie(
     movie_id: int,
     request: Request,
     db: Session = Depends(get_db),
+    _: None = Depends(require_same_origin),
 ) -> dict:
     _ensure_movie_exists(db, movie_id)
     profile_id = get_active_profile_id(request, db)
@@ -611,6 +615,7 @@ def unwatchlist_movie(
     movie_id: int,
     request: Request,
     db: Session = Depends(get_db),
+    _: None = Depends(require_same_origin),
 ) -> dict:
     _ensure_movie_exists(db, movie_id)
     profile_id = get_active_profile_id(request, db)
