@@ -341,13 +341,13 @@
         >
           <header class="flag-match__header">
             <div>
-              <h3 id="flag-match-title">Find an external match</h3>
-              <p>Search TMDB, compare the OMDb-enriched options, and choose only when one is correct.</p>
+              <h3 id="flag-match-title">Repair by title match</h3>
+              <p>Start with the flagged title, compare poster, year, and source, then apply the right external match.</p>
             </div>
           </header>
-          <form class="flag-match__search" data-flag-match-search>
+          <form class="flag-match__search" data-flag-match-search data-auto-search="true">
             <label>
-              Search title
+              Title to match
               <input
                 type="search"
                 name="title"
@@ -368,10 +368,10 @@
                 inputmode="numeric"
               />
             </label>
-            <button class="button-primary" type="submit">Find matches</button>
+            <button class="button-primary" type="submit">Search matches</button>
           </form>
           <p class="flag-match__status" role="status" aria-live="polite" data-flag-match-status>
-            Nothing changes until you confirm a specific match.
+            A search will run automatically when the title is ready. Nothing changes until you confirm a match.
           </p>
           <div class="flag-match__results" data-flag-match-results hidden></div>
         </section>

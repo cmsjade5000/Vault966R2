@@ -223,6 +223,52 @@ def _ensure_sqlite_movie_columns() -> None:
                 )
             )
 
+        identity_repairs_exists = connection.execute(
+            text(
+                "SELECT name FROM sqlite_master "
+                "WHERE type='table' AND name='movie_identity_repairs'"
+            )
+        ).first()
+        if not identity_repairs_exists:
+            connection.execute(
+                text(
+                    """
+                    CREATE TABLE movie_identity_repairs (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        movie_id INTEGER NOT NULL REFERENCES movies(id) ON DELETE CASCADE,
+                        applied_by_profile_id INTEGER REFERENCES profiles(id)
+                            ON DELETE SET NULL,
+                        source TEXT NOT NULL,
+                        search_title TEXT NOT NULL,
+                        standardized_title TEXT NOT NULL,
+                        selected_title TEXT NOT NULL,
+                        selected_year INTEGER,
+                        selected_imdb_id TEXT,
+                        selected_tmdb_id INTEGER,
+                        before_values JSON,
+                        after_values JSON,
+                        applied_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+                    )
+                    """
+                )
+            )
+            connection.execute(
+                text(
+                    """
+                    CREATE INDEX IF NOT EXISTS ix_movie_identity_repairs_movie_id
+                    ON movie_identity_repairs (movie_id)
+                    """
+                )
+            )
+            connection.execute(
+                text(
+                    """
+                    CREATE INDEX IF NOT EXISTS ix_movie_identity_repairs_applied_at
+                    ON movie_identity_repairs (applied_at)
+                    """
+                )
+            )
+
         movie_cast_exists = connection.execute(
             text("SELECT name FROM sqlite_master WHERE type='table' AND name='movie_cast'")
         ).first()

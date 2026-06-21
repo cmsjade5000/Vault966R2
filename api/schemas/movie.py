@@ -179,6 +179,8 @@ class MovieFacets(BaseModel):
 
 class MovieLookupCandidate(BaseModel):
     title: str
+    standardized_title: Optional[str] = None
+    title_match: Optional[str] = None
     year: Optional[int] = None
     runtime: Optional[int] = None
     synopsis: str = ""

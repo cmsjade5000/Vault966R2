@@ -12,6 +12,7 @@ from api.db import get_db
 from api.deps.auth import require_profile_role, require_same_origin
 from api.models.movie import Movie, MovieIngestProvenance
 from api.models.movie_flag import MovieFlag
+from api.models.movie_repair import MovieIdentityRepair
 from api.models.source_sync import SourceFieldDecision
 from api.schemas.movie import (
     MovieLookupResponse,
@@ -25,6 +26,7 @@ from api.services.movie_lookup import (
     MovieLookupUnavailable,
     lookup_movie_candidates,
     lookup_omdb_candidates,
+    standardize_title_for_identity_search,
 )
 from api.services.movie_review import (
     detect_review_issues,
@@ -402,11 +404,7 @@ def _selected_external_candidate(
     imdb_id: str | None,
 ) -> dict:
     try:
-        candidates = (
-            lookup_movie_candidates(title, year, limit=20)
-            if source == "tmdb"
-            else lookup_omdb_candidates(title, year, limit=10)
-        )
+        candidates = _lookup_flag_repair_candidates(title, year)
     except MovieLookupUnavailable as exc:
         raise HTTPException(status_code=503, detail="External lookup is not configured") from exc
     except MovieLookupNotFound as exc:
@@ -433,6 +431,77 @@ def _selected_external_candidate(
             detail="Selected match is not in the current provider results",
         )
     return candidate
+
+
+def _title_key(value: str | None) -> str:
+    import re
+
+    standardized = standardize_title_for_identity_search(value or "")
+    return re.sub(r"[^a-z0-9]+", " ", standardized.casefold()).strip()
+
+
+def _lookup_flag_repair_candidates(title: str, year: int | None) -> list[dict]:
+    search_title = title.strip()
+    standardized_title = standardize_title_for_identity_search(search_title)
+    if not standardized_title:
+        raise MovieLookupNotFound("No searchable title found")
+
+    requested_key = _title_key(standardized_title)
+    candidates: list[dict] = []
+    provider_errors = 0
+    for lookup, limit in (
+        (lookup_movie_candidates, 12),
+        (lookup_omdb_candidates, 10),
+    ):
+        try:
+            candidates.extend(lookup(standardized_title, None, limit=limit))
+        except (MovieLookupUnavailable, MovieLookupNotFound):
+            continue
+        except MovieLookupError:
+            provider_errors += 1
+
+    deduped: list[dict] = []
+    seen = set()
+    for candidate in candidates:
+        key = (
+            candidate.get("imdb_id")
+            or (f"tmdb:{candidate.get('tmdb_id')}" if candidate.get("tmdb_id") else None)
+            or (
+                _title_key(str(candidate.get("title") or "")),
+                candidate.get("year"),
+                candidate.get("source"),
+            )
+        )
+        if key in seen:
+            continue
+        seen.add(key)
+        candidate_title_key = _title_key(str(candidate.get("title") or ""))
+        candidate["standardized_title"] = standardized_title
+        candidate["title_match"] = (
+            "same_title" if candidate_title_key == requested_key else "near_title"
+        )
+        deduped.append(candidate)
+
+    if deduped:
+
+        def sort_key(candidate: dict) -> tuple[int, int, float, str]:
+            candidate_year = candidate.get("year")
+            if year is None or candidate_year is None:
+                year_delta = 9999
+            else:
+                year_delta = abs(int(candidate_year) - year)
+            confidence = float(candidate.get("match_confidence") or 0)
+            return (
+                0 if candidate.get("title_match") == "same_title" else 1,
+                year_delta,
+                -confidence,
+                str(candidate.get("title") or ""),
+            )
+
+        return sorted(deduped, key=sort_key)[:20]
+    if provider_errors:
+        raise MovieLookupError("External lookup failed")
+    raise MovieLookupNotFound("No provider matches found")
 
 
 def _ensure_external_ids_available(
@@ -526,39 +595,26 @@ def search_flagged_movie_matches(
     movie = _load_movie(db, movie_id)
     if movie.flag is None:
         raise HTTPException(status_code=409, detail="Movie is not currently flagged")
-    candidates = []
-    provider_errors = 0
-    for lookup, limit in (
-        (lookup_movie_candidates, 10),
-        (lookup_omdb_candidates, 10),
-    ):
-        try:
-            candidates.extend(lookup(title.strip(), year, limit=limit))
-        except (MovieLookupUnavailable, MovieLookupNotFound):
-            continue
-        except MovieLookupError:
-            provider_errors += 1
-
-    deduped = []
-    seen = set()
-    for candidate in candidates:
-        key = (
-            candidate.get("imdb_id")
-            or (f"tmdb:{candidate.get('tmdb_id')}" if candidate.get("tmdb_id") else None)
-            or (
-                str(candidate.get("title") or "").casefold(),
-                candidate.get("year"),
-            )
-        )
-        if key in seen:
-            continue
-        seen.add(key)
-        deduped.append(candidate)
-    if deduped:
-        return MovieLookupResponse(items=deduped[:20])
-    if provider_errors:
+    try:
+        return MovieLookupResponse(items=_lookup_flag_repair_candidates(title, year))
+    except (MovieLookupUnavailable, MovieLookupNotFound):
+        raise HTTPException(status_code=404, detail="No provider matches found") from None
+    except MovieLookupError:
         raise HTTPException(status_code=502, detail="External lookup failed")
-    raise HTTPException(status_code=404, detail="No provider matches found")
+
+
+def _repair_snapshot(movie: Movie) -> dict:
+    return {
+        "vault_id": movie.vault_id,
+        "title": movie.title,
+        "year": movie.year,
+        "runtime": movie.runtime,
+        "imdb_id": movie.imdb_id,
+        "tmdb_id": movie.tmdb_id,
+        "poster_url": movie.poster_url,
+        "backdrop_url": movie.backdrop_url,
+        "genres": [genre.name for genre in movie.genres] if movie.genres else [],
+    }
 
 
 @router.post(
@@ -568,6 +624,7 @@ def search_flagged_movie_matches(
 def apply_flagged_movie_match(
     movie_id: int,
     payload: MovieMatchSelection,
+    request: Request,
     db: Session = Depends(get_db),
     _: str = Depends(require_profile_role(ROLE_ADMIN)),
     __: None = Depends(require_same_origin),
@@ -576,6 +633,7 @@ def apply_flagged_movie_match(
     if movie.flag is None:
         raise HTTPException(status_code=409, detail="Movie is not currently flagged")
 
+    profile_id = get_active_profile_id(request, db)
     candidate = _selected_external_candidate(
         title=payload.title.strip(),
         year=payload.year,
@@ -592,6 +650,7 @@ def apply_flagged_movie_match(
         imdb_id=imdb_id,
     )
 
+    before_values = _repair_snapshot(movie)
     update_values = {
         "year": candidate.get("year"),
         "runtime": candidate.get("runtime"),
@@ -621,7 +680,23 @@ def apply_flagged_movie_match(
     )
     apply_movie_update(db, movie, update_payload)
     _record_manual_match_provenance(db, movie=movie, candidate=candidate)
-    db.add(movie)
+    db.flush()
+    after_values = _repair_snapshot(movie)
+    db.add(
+        MovieIdentityRepair(
+            movie_id=movie.id,
+            applied_by_profile_id=profile_id,
+            source=payload.source,
+            search_title=payload.title.strip(),
+            standardized_title=standardize_title_for_identity_search(payload.title),
+            selected_title=str(candidate.get("title") or payload.title).strip(),
+            selected_year=candidate.get("year") or payload.year,
+            selected_imdb_id=imdb_id,
+            selected_tmdb_id=tmdb_id,
+            before_values=before_values,
+            after_values=after_values,
+        )
+    )
     db.commit()
 
     return MovieMatchApplyResponse(
