@@ -1,9 +1,15 @@
-<dialog class="edit-dialog" data-edit-dialog aria-hidden="true">
+<dialog
+  class="edit-dialog"
+  data-edit-dialog
+  aria-hidden="true"
+  aria-labelledby="edit-dialog-title"
+  aria-describedby="edit-dialog-description"
+>
   <div class="edit-dialog__sheet">
     <header class="edit-dialog__header">
       <div>
-        <h2>Edit Movie</h2>
-        <p>Update this movie's metadata.</p>
+        <h2 id="edit-dialog-title">Edit Movie</h2>
+        <p id="edit-dialog-description">Update this movie's metadata.</p>
       </div>
       <button type="button" class="edit-dialog__close" data-edit-close aria-label="Close edit dialog">×</button>
     </header>
