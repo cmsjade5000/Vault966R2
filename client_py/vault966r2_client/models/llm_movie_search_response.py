@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from collections.abc import Mapping
 from typing import TYPE_CHECKING, Any, TypeVar
 
@@ -18,15 +20,15 @@ class LlmMovieSearchResponse:
     Attributes:
         facets (MovieFacets):
         filters (LlmMovieFilters):
-        items (list['MovieRead']):
+        items (list[MovieRead]):
         page (int):
         page_size (int):
         total (int):
     """
 
-    facets: "MovieFacets"
-    filters: "LlmMovieFilters"
-    items: list["MovieRead"]
+    facets: MovieFacets
+    filters: LlmMovieFilters
+    items: list[MovieRead]
     page: int
     page_size: int
     total: int

@@ -1,5 +1,5 @@
 from http import HTTPStatus
-from typing import Any, Optional, Union
+from typing import Any
 
 import httpx
 
@@ -12,8 +12,8 @@ from ...types import UNSET, Response, Unset
 
 def _get_kwargs(
     *,
-    page: Union[Unset, int] = 1,
-    page_size: Union[Unset, int] = 24,
+    page: int | Unset = 1,
+    page_size: int | Unset = 24,
 ) -> dict[str, Any]:
     params: dict[str, Any] = {}
 
@@ -33,8 +33,8 @@ def _get_kwargs(
 
 
 def _parse_response(
-    *, client: Union[AuthenticatedClient, Client], response: httpx.Response
-) -> Optional[Union[HTTPValidationError, PersonListResponse]]:
+    *, client: AuthenticatedClient | Client, response: httpx.Response
+) -> HTTPValidationError | PersonListResponse | None:
     if response.status_code == 200:
         response_200 = PersonListResponse.from_dict(response.json())
 
@@ -52,8 +52,8 @@ def _parse_response(
 
 
 def _build_response(
-    *, client: Union[AuthenticatedClient, Client], response: httpx.Response
-) -> Response[Union[HTTPValidationError, PersonListResponse]]:
+    *, client: AuthenticatedClient | Client, response: httpx.Response
+) -> Response[HTTPValidationError | PersonListResponse]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -64,22 +64,22 @@ def _build_response(
 
 def sync_detailed(
     *,
-    client: Union[AuthenticatedClient, Client],
-    page: Union[Unset, int] = 1,
-    page_size: Union[Unset, int] = 24,
-) -> Response[Union[HTTPValidationError, PersonListResponse]]:
+    client: AuthenticatedClient | Client,
+    page: int | Unset = 1,
+    page_size: int | Unset = 24,
+) -> Response[HTTPValidationError | PersonListResponse]:
     """List People
 
     Args:
-        page (Union[Unset, int]):  Default: 1.
-        page_size (Union[Unset, int]):  Default: 24.
+        page (int | Unset):  Default: 1.
+        page_size (int | Unset):  Default: 24.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[HTTPValidationError, PersonListResponse]]
+        Response[HTTPValidationError | PersonListResponse]
     """
 
     kwargs = _get_kwargs(
@@ -96,22 +96,22 @@ def sync_detailed(
 
 def sync(
     *,
-    client: Union[AuthenticatedClient, Client],
-    page: Union[Unset, int] = 1,
-    page_size: Union[Unset, int] = 24,
-) -> Optional[Union[HTTPValidationError, PersonListResponse]]:
+    client: AuthenticatedClient | Client,
+    page: int | Unset = 1,
+    page_size: int | Unset = 24,
+) -> HTTPValidationError | PersonListResponse | None:
     """List People
 
     Args:
-        page (Union[Unset, int]):  Default: 1.
-        page_size (Union[Unset, int]):  Default: 24.
+        page (int | Unset):  Default: 1.
+        page_size (int | Unset):  Default: 24.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[HTTPValidationError, PersonListResponse]
+        HTTPValidationError | PersonListResponse
     """
 
     return sync_detailed(
@@ -123,22 +123,22 @@ def sync(
 
 async def asyncio_detailed(
     *,
-    client: Union[AuthenticatedClient, Client],
-    page: Union[Unset, int] = 1,
-    page_size: Union[Unset, int] = 24,
-) -> Response[Union[HTTPValidationError, PersonListResponse]]:
+    client: AuthenticatedClient | Client,
+    page: int | Unset = 1,
+    page_size: int | Unset = 24,
+) -> Response[HTTPValidationError | PersonListResponse]:
     """List People
 
     Args:
-        page (Union[Unset, int]):  Default: 1.
-        page_size (Union[Unset, int]):  Default: 24.
+        page (int | Unset):  Default: 1.
+        page_size (int | Unset):  Default: 24.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[HTTPValidationError, PersonListResponse]]
+        Response[HTTPValidationError | PersonListResponse]
     """
 
     kwargs = _get_kwargs(
@@ -153,22 +153,22 @@ async def asyncio_detailed(
 
 async def asyncio(
     *,
-    client: Union[AuthenticatedClient, Client],
-    page: Union[Unset, int] = 1,
-    page_size: Union[Unset, int] = 24,
-) -> Optional[Union[HTTPValidationError, PersonListResponse]]:
+    client: AuthenticatedClient | Client,
+    page: int | Unset = 1,
+    page_size: int | Unset = 24,
+) -> HTTPValidationError | PersonListResponse | None:
     """List People
 
     Args:
-        page (Union[Unset, int]):  Default: 1.
-        page_size (Union[Unset, int]):  Default: 24.
+        page (int | Unset):  Default: 1.
+        page_size (int | Unset):  Default: 24.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[HTTPValidationError, PersonListResponse]
+        HTTPValidationError | PersonListResponse
     """
 
     return (

@@ -1,5 +1,6 @@
 from http import HTTPStatus
-from typing import Any, Optional, Union, cast
+from typing import Any, cast
+from urllib.parse import quote
 
 import httpx
 
@@ -14,15 +15,17 @@ def _get_kwargs(
 ) -> dict[str, Any]:
     _kwargs: dict[str, Any] = {
         "method": "delete",
-        "url": f"/fliclists/{preset_id}",
+        "url": "/fliclists/{preset_id}".format(
+            preset_id=quote(str(preset_id), safe=""),
+        ),
     }
 
     return _kwargs
 
 
 def _parse_response(
-    *, client: Union[AuthenticatedClient, Client], response: httpx.Response
-) -> Optional[Union[Any, HTTPValidationError]]:
+    *, client: AuthenticatedClient | Client, response: httpx.Response
+) -> Any | HTTPValidationError | None:
     if response.status_code == 204:
         response_204 = cast(Any, None)
         return response_204
@@ -39,8 +42,8 @@ def _parse_response(
 
 
 def _build_response(
-    *, client: Union[AuthenticatedClient, Client], response: httpx.Response
-) -> Response[Union[Any, HTTPValidationError]]:
+    *, client: AuthenticatedClient | Client, response: httpx.Response
+) -> Response[Any | HTTPValidationError]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -52,8 +55,8 @@ def _build_response(
 def sync_detailed(
     preset_id: int,
     *,
-    client: Union[AuthenticatedClient, Client],
-) -> Response[Union[Any, HTTPValidationError]]:
+    client: AuthenticatedClient,
+) -> Response[Any | HTTPValidationError]:
     """Delete Preset
 
     Args:
@@ -64,7 +67,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[Any, HTTPValidationError]]
+        Response[Any | HTTPValidationError]
     """
 
     kwargs = _get_kwargs(
@@ -81,8 +84,8 @@ def sync_detailed(
 def sync(
     preset_id: int,
     *,
-    client: Union[AuthenticatedClient, Client],
-) -> Optional[Union[Any, HTTPValidationError]]:
+    client: AuthenticatedClient,
+) -> Any | HTTPValidationError | None:
     """Delete Preset
 
     Args:
@@ -93,7 +96,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[Any, HTTPValidationError]
+        Any | HTTPValidationError
     """
 
     return sync_detailed(
@@ -105,8 +108,8 @@ def sync(
 async def asyncio_detailed(
     preset_id: int,
     *,
-    client: Union[AuthenticatedClient, Client],
-) -> Response[Union[Any, HTTPValidationError]]:
+    client: AuthenticatedClient,
+) -> Response[Any | HTTPValidationError]:
     """Delete Preset
 
     Args:
@@ -117,7 +120,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[Any, HTTPValidationError]]
+        Response[Any | HTTPValidationError]
     """
 
     kwargs = _get_kwargs(
@@ -132,8 +135,8 @@ async def asyncio_detailed(
 async def asyncio(
     preset_id: int,
     *,
-    client: Union[AuthenticatedClient, Client],
-) -> Optional[Union[Any, HTTPValidationError]]:
+    client: AuthenticatedClient,
+) -> Any | HTTPValidationError | None:
     """Delete Preset
 
     Args:
@@ -144,7 +147,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[Any, HTTPValidationError]
+        Any | HTTPValidationError
     """
 
     return (

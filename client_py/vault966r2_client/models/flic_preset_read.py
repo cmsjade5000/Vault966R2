@@ -1,10 +1,11 @@
+from __future__ import annotations
+
 import datetime
 from collections.abc import Mapping
 from typing import TYPE_CHECKING, Any, TypeVar
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
-from dateutil.parser import isoparse
 
 if TYPE_CHECKING:
     from ..models.flic_filters import FlicFilters
@@ -24,7 +25,7 @@ class FlicPresetRead:
     """
 
     created_at: datetime.datetime
-    filters: "FlicFilters"
+    filters: FlicFilters
     id: int
     name: str
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
@@ -56,7 +57,7 @@ class FlicPresetRead:
         from ..models.flic_filters import FlicFilters
 
         d = dict(src_dict)
-        created_at = isoparse(d.pop("created_at"))
+        created_at = datetime.datetime.fromisoformat(d.pop("created_at"))
 
         filters = FlicFilters.from_dict(d.pop("filters"))
 

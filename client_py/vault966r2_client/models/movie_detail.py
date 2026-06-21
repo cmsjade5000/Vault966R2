@@ -1,10 +1,11 @@
+from __future__ import annotations
+
 import datetime
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, Any, TypeVar, Union, cast
+from typing import TYPE_CHECKING, Any, TypeVar, cast
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
-from dateutil.parser import isoparse
 
 from ..types import UNSET, Unset
 
@@ -23,78 +24,88 @@ class MovieDetail:
     Attributes:
         id (int):
         title (str):
-        awards (Union[None, Unset, str]):
-        backdrop_url (Union[None, Unset, str]):
-        collection (Union[None, Unset, str]):
-        countries (Union[None, Unset, list[str], str]):
-        countries_display (Union[Unset, list[str]]):
-        countries_iso (Union[Unset, list[str]]):
-        flagged (Union[Unset, bool]):  Default: False.
-        genres (Union[Unset, list[str]]):
-        imdb_id (Union[None, Unset, str]):
-        imdb_rating (Union[None, Unset, float]):
-        imdb_votes (Union[None, Unset, int]):
-        languages (Union[None, Unset, list[str], str]):
-        languages_display (Union[Unset, list[str]]):
-        languages_iso (Union[Unset, list[str]]):
-        last_omdb_fetch_at (Union[None, Unset, datetime.datetime]):
-        last_tmdb_fetch_at (Union[None, Unset, datetime.datetime]):
-        metascore (Union[None, Unset, int]):
-        moods (Union[Unset, list[str]]):
-        omdb_payload_sha (Union[None, Unset, str]):
-        plot (Union[None, Unset, str]):
-        poster_theme (Union[None, Unset, str]):
-        poster_url (Union[None, Unset, str]):
-        roles (Union[Unset, list['RoleWithPersonRead']]):
-        rt_score (Union[None, Unset, int]):
-        runtime (Union[None, Unset, int]):
-        similar (Union[Unset, list['SimilarMovie']]):
-        tmdb_etag (Union[None, Unset, str]):
-        tmdb_id (Union[None, Unset, int]):
-        tmdb_payload_sha (Union[None, Unset, str]):
-        tomato_audience (Union[None, Unset, int]):
-        tomato_meter (Union[None, Unset, int]):
-        top_billed (Union[Unset, list['TopBilledEntry']]):
-        where_to_watch (Union[Unset, list[str]]):
-        year (Union[None, Unset, int]):
+        awards (None | str | Unset):
+        backdrop_url (None | str | Unset):
+        certificate (None | str | Unset):
+        collection (None | str | Unset):
+        countries (list[str] | None | str | Unset):
+        countries_display (list[str] | Unset):
+        countries_iso (list[str] | Unset):
+        flag_notes (None | str | Unset):
+        flag_reason (None | str | Unset):
+        flagged (bool | Unset):  Default: False.
+        genres (list[str] | Unset):
+        imdb_id (None | str | Unset):
+        imdb_rating (float | None | Unset):
+        imdb_votes (int | None | Unset):
+        keywords (list[str] | Unset):
+        languages (list[str] | None | str | Unset):
+        languages_display (list[str] | Unset):
+        languages_iso (list[str] | Unset):
+        last_omdb_fetch_at (datetime.datetime | None | Unset):
+        last_tmdb_fetch_at (datetime.datetime | None | Unset):
+        metascore (int | None | Unset):
+        moods (list[str] | Unset):
+        omdb_payload_sha (None | str | Unset):
+        plot (None | str | Unset):
+        poster_theme (None | str | Unset):
+        poster_url (None | str | Unset):
+        roles (list[RoleWithPersonRead] | Unset):
+        rt_score (int | None | Unset):
+        runtime (int | None | Unset):
+        similar (list[SimilarMovie] | Unset):
+        tmdb_etag (None | str | Unset):
+        tmdb_id (int | None | Unset):
+        tmdb_payload_sha (None | str | Unset):
+        tomato_audience (int | None | Unset):
+        tomato_meter (int | None | Unset):
+        top_billed (list[TopBilledEntry] | Unset):
+        vault_id (None | str | Unset):
+        where_to_watch (list[str] | Unset):
+        year (int | None | Unset):
     """
 
     id: int
     title: str
-    awards: Union[None, Unset, str] = UNSET
-    backdrop_url: Union[None, Unset, str] = UNSET
-    collection: Union[None, Unset, str] = UNSET
-    countries: Union[None, Unset, list[str], str] = UNSET
-    countries_display: Union[Unset, list[str]] = UNSET
-    countries_iso: Union[Unset, list[str]] = UNSET
-    flagged: Union[Unset, bool] = False
-    genres: Union[Unset, list[str]] = UNSET
-    imdb_id: Union[None, Unset, str] = UNSET
-    imdb_rating: Union[None, Unset, float] = UNSET
-    imdb_votes: Union[None, Unset, int] = UNSET
-    languages: Union[None, Unset, list[str], str] = UNSET
-    languages_display: Union[Unset, list[str]] = UNSET
-    languages_iso: Union[Unset, list[str]] = UNSET
-    last_omdb_fetch_at: Union[None, Unset, datetime.datetime] = UNSET
-    last_tmdb_fetch_at: Union[None, Unset, datetime.datetime] = UNSET
-    metascore: Union[None, Unset, int] = UNSET
-    moods: Union[Unset, list[str]] = UNSET
-    omdb_payload_sha: Union[None, Unset, str] = UNSET
-    plot: Union[None, Unset, str] = UNSET
-    poster_theme: Union[None, Unset, str] = UNSET
-    poster_url: Union[None, Unset, str] = UNSET
-    roles: Union[Unset, list["RoleWithPersonRead"]] = UNSET
-    rt_score: Union[None, Unset, int] = UNSET
-    runtime: Union[None, Unset, int] = UNSET
-    similar: Union[Unset, list["SimilarMovie"]] = UNSET
-    tmdb_etag: Union[None, Unset, str] = UNSET
-    tmdb_id: Union[None, Unset, int] = UNSET
-    tmdb_payload_sha: Union[None, Unset, str] = UNSET
-    tomato_audience: Union[None, Unset, int] = UNSET
-    tomato_meter: Union[None, Unset, int] = UNSET
-    top_billed: Union[Unset, list["TopBilledEntry"]] = UNSET
-    where_to_watch: Union[Unset, list[str]] = UNSET
-    year: Union[None, Unset, int] = UNSET
+    awards: None | str | Unset = UNSET
+    backdrop_url: None | str | Unset = UNSET
+    certificate: None | str | Unset = UNSET
+    collection: None | str | Unset = UNSET
+    countries: list[str] | None | str | Unset = UNSET
+    countries_display: list[str] | Unset = UNSET
+    countries_iso: list[str] | Unset = UNSET
+    flag_notes: None | str | Unset = UNSET
+    flag_reason: None | str | Unset = UNSET
+    flagged: bool | Unset = False
+    genres: list[str] | Unset = UNSET
+    imdb_id: None | str | Unset = UNSET
+    imdb_rating: float | None | Unset = UNSET
+    imdb_votes: int | None | Unset = UNSET
+    keywords: list[str] | Unset = UNSET
+    languages: list[str] | None | str | Unset = UNSET
+    languages_display: list[str] | Unset = UNSET
+    languages_iso: list[str] | Unset = UNSET
+    last_omdb_fetch_at: datetime.datetime | None | Unset = UNSET
+    last_tmdb_fetch_at: datetime.datetime | None | Unset = UNSET
+    metascore: int | None | Unset = UNSET
+    moods: list[str] | Unset = UNSET
+    omdb_payload_sha: None | str | Unset = UNSET
+    plot: None | str | Unset = UNSET
+    poster_theme: None | str | Unset = UNSET
+    poster_url: None | str | Unset = UNSET
+    roles: list[RoleWithPersonRead] | Unset = UNSET
+    rt_score: int | None | Unset = UNSET
+    runtime: int | None | Unset = UNSET
+    similar: list[SimilarMovie] | Unset = UNSET
+    tmdb_etag: None | str | Unset = UNSET
+    tmdb_id: int | None | Unset = UNSET
+    tmdb_payload_sha: None | str | Unset = UNSET
+    tomato_audience: int | None | Unset = UNSET
+    tomato_meter: int | None | Unset = UNSET
+    top_billed: list[TopBilledEntry] | Unset = UNSET
+    vault_id: None | str | Unset = UNSET
+    where_to_watch: list[str] | Unset = UNSET
+    year: int | None | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -102,25 +113,31 @@ class MovieDetail:
 
         title = self.title
 
-        awards: Union[None, Unset, str]
+        awards: None | str | Unset
         if isinstance(self.awards, Unset):
             awards = UNSET
         else:
             awards = self.awards
 
-        backdrop_url: Union[None, Unset, str]
+        backdrop_url: None | str | Unset
         if isinstance(self.backdrop_url, Unset):
             backdrop_url = UNSET
         else:
             backdrop_url = self.backdrop_url
 
-        collection: Union[None, Unset, str]
+        certificate: None | str | Unset
+        if isinstance(self.certificate, Unset):
+            certificate = UNSET
+        else:
+            certificate = self.certificate
+
+        collection: None | str | Unset
         if isinstance(self.collection, Unset):
             collection = UNSET
         else:
             collection = self.collection
 
-        countries: Union[None, Unset, list[str], str]
+        countries: list[str] | None | str | Unset
         if isinstance(self.countries, Unset):
             countries = UNSET
         elif isinstance(self.countries, list):
@@ -129,39 +146,55 @@ class MovieDetail:
         else:
             countries = self.countries
 
-        countries_display: Union[Unset, list[str]] = UNSET
+        countries_display: list[str] | Unset = UNSET
         if not isinstance(self.countries_display, Unset):
             countries_display = self.countries_display
 
-        countries_iso: Union[Unset, list[str]] = UNSET
+        countries_iso: list[str] | Unset = UNSET
         if not isinstance(self.countries_iso, Unset):
             countries_iso = self.countries_iso
 
+        flag_notes: None | str | Unset
+        if isinstance(self.flag_notes, Unset):
+            flag_notes = UNSET
+        else:
+            flag_notes = self.flag_notes
+
+        flag_reason: None | str | Unset
+        if isinstance(self.flag_reason, Unset):
+            flag_reason = UNSET
+        else:
+            flag_reason = self.flag_reason
+
         flagged = self.flagged
 
-        genres: Union[Unset, list[str]] = UNSET
+        genres: list[str] | Unset = UNSET
         if not isinstance(self.genres, Unset):
             genres = self.genres
 
-        imdb_id: Union[None, Unset, str]
+        imdb_id: None | str | Unset
         if isinstance(self.imdb_id, Unset):
             imdb_id = UNSET
         else:
             imdb_id = self.imdb_id
 
-        imdb_rating: Union[None, Unset, float]
+        imdb_rating: float | None | Unset
         if isinstance(self.imdb_rating, Unset):
             imdb_rating = UNSET
         else:
             imdb_rating = self.imdb_rating
 
-        imdb_votes: Union[None, Unset, int]
+        imdb_votes: int | None | Unset
         if isinstance(self.imdb_votes, Unset):
             imdb_votes = UNSET
         else:
             imdb_votes = self.imdb_votes
 
-        languages: Union[None, Unset, list[str], str]
+        keywords: list[str] | Unset = UNSET
+        if not isinstance(self.keywords, Unset):
+            keywords = self.keywords
+
+        languages: list[str] | None | str | Unset
         if isinstance(self.languages, Unset):
             languages = UNSET
         elif isinstance(self.languages, list):
@@ -170,15 +203,15 @@ class MovieDetail:
         else:
             languages = self.languages
 
-        languages_display: Union[Unset, list[str]] = UNSET
+        languages_display: list[str] | Unset = UNSET
         if not isinstance(self.languages_display, Unset):
             languages_display = self.languages_display
 
-        languages_iso: Union[Unset, list[str]] = UNSET
+        languages_iso: list[str] | Unset = UNSET
         if not isinstance(self.languages_iso, Unset):
             languages_iso = self.languages_iso
 
-        last_omdb_fetch_at: Union[None, Unset, str]
+        last_omdb_fetch_at: None | str | Unset
         if isinstance(self.last_omdb_fetch_at, Unset):
             last_omdb_fetch_at = UNSET
         elif isinstance(self.last_omdb_fetch_at, datetime.datetime):
@@ -186,7 +219,7 @@ class MovieDetail:
         else:
             last_omdb_fetch_at = self.last_omdb_fetch_at
 
-        last_tmdb_fetch_at: Union[None, Unset, str]
+        last_tmdb_fetch_at: None | str | Unset
         if isinstance(self.last_tmdb_fetch_at, Unset):
             last_tmdb_fetch_at = UNSET
         elif isinstance(self.last_tmdb_fetch_at, datetime.datetime):
@@ -194,108 +227,114 @@ class MovieDetail:
         else:
             last_tmdb_fetch_at = self.last_tmdb_fetch_at
 
-        metascore: Union[None, Unset, int]
+        metascore: int | None | Unset
         if isinstance(self.metascore, Unset):
             metascore = UNSET
         else:
             metascore = self.metascore
 
-        moods: Union[Unset, list[str]] = UNSET
+        moods: list[str] | Unset = UNSET
         if not isinstance(self.moods, Unset):
             moods = self.moods
 
-        omdb_payload_sha: Union[None, Unset, str]
+        omdb_payload_sha: None | str | Unset
         if isinstance(self.omdb_payload_sha, Unset):
             omdb_payload_sha = UNSET
         else:
             omdb_payload_sha = self.omdb_payload_sha
 
-        plot: Union[None, Unset, str]
+        plot: None | str | Unset
         if isinstance(self.plot, Unset):
             plot = UNSET
         else:
             plot = self.plot
 
-        poster_theme: Union[None, Unset, str]
+        poster_theme: None | str | Unset
         if isinstance(self.poster_theme, Unset):
             poster_theme = UNSET
         else:
             poster_theme = self.poster_theme
 
-        poster_url: Union[None, Unset, str]
+        poster_url: None | str | Unset
         if isinstance(self.poster_url, Unset):
             poster_url = UNSET
         else:
             poster_url = self.poster_url
 
-        roles: Union[Unset, list[dict[str, Any]]] = UNSET
+        roles: list[dict[str, Any]] | Unset = UNSET
         if not isinstance(self.roles, Unset):
             roles = []
             for roles_item_data in self.roles:
                 roles_item = roles_item_data.to_dict()
                 roles.append(roles_item)
 
-        rt_score: Union[None, Unset, int]
+        rt_score: int | None | Unset
         if isinstance(self.rt_score, Unset):
             rt_score = UNSET
         else:
             rt_score = self.rt_score
 
-        runtime: Union[None, Unset, int]
+        runtime: int | None | Unset
         if isinstance(self.runtime, Unset):
             runtime = UNSET
         else:
             runtime = self.runtime
 
-        similar: Union[Unset, list[dict[str, Any]]] = UNSET
+        similar: list[dict[str, Any]] | Unset = UNSET
         if not isinstance(self.similar, Unset):
             similar = []
             for similar_item_data in self.similar:
                 similar_item = similar_item_data.to_dict()
                 similar.append(similar_item)
 
-        tmdb_etag: Union[None, Unset, str]
+        tmdb_etag: None | str | Unset
         if isinstance(self.tmdb_etag, Unset):
             tmdb_etag = UNSET
         else:
             tmdb_etag = self.tmdb_etag
 
-        tmdb_id: Union[None, Unset, int]
+        tmdb_id: int | None | Unset
         if isinstance(self.tmdb_id, Unset):
             tmdb_id = UNSET
         else:
             tmdb_id = self.tmdb_id
 
-        tmdb_payload_sha: Union[None, Unset, str]
+        tmdb_payload_sha: None | str | Unset
         if isinstance(self.tmdb_payload_sha, Unset):
             tmdb_payload_sha = UNSET
         else:
             tmdb_payload_sha = self.tmdb_payload_sha
 
-        tomato_audience: Union[None, Unset, int]
+        tomato_audience: int | None | Unset
         if isinstance(self.tomato_audience, Unset):
             tomato_audience = UNSET
         else:
             tomato_audience = self.tomato_audience
 
-        tomato_meter: Union[None, Unset, int]
+        tomato_meter: int | None | Unset
         if isinstance(self.tomato_meter, Unset):
             tomato_meter = UNSET
         else:
             tomato_meter = self.tomato_meter
 
-        top_billed: Union[Unset, list[dict[str, Any]]] = UNSET
+        top_billed: list[dict[str, Any]] | Unset = UNSET
         if not isinstance(self.top_billed, Unset):
             top_billed = []
             for top_billed_item_data in self.top_billed:
                 top_billed_item = top_billed_item_data.to_dict()
                 top_billed.append(top_billed_item)
 
-        where_to_watch: Union[Unset, list[str]] = UNSET
+        vault_id: None | str | Unset
+        if isinstance(self.vault_id, Unset):
+            vault_id = UNSET
+        else:
+            vault_id = self.vault_id
+
+        where_to_watch: list[str] | Unset = UNSET
         if not isinstance(self.where_to_watch, Unset):
             where_to_watch = self.where_to_watch
 
-        year: Union[None, Unset, int]
+        year: int | None | Unset
         if isinstance(self.year, Unset):
             year = UNSET
         else:
@@ -313,6 +352,8 @@ class MovieDetail:
             field_dict["awards"] = awards
         if backdrop_url is not UNSET:
             field_dict["backdrop_url"] = backdrop_url
+        if certificate is not UNSET:
+            field_dict["certificate"] = certificate
         if collection is not UNSET:
             field_dict["collection"] = collection
         if countries is not UNSET:
@@ -321,6 +362,10 @@ class MovieDetail:
             field_dict["countries_display"] = countries_display
         if countries_iso is not UNSET:
             field_dict["countries_iso"] = countries_iso
+        if flag_notes is not UNSET:
+            field_dict["flag_notes"] = flag_notes
+        if flag_reason is not UNSET:
+            field_dict["flag_reason"] = flag_reason
         if flagged is not UNSET:
             field_dict["flagged"] = flagged
         if genres is not UNSET:
@@ -331,6 +376,8 @@ class MovieDetail:
             field_dict["imdb_rating"] = imdb_rating
         if imdb_votes is not UNSET:
             field_dict["imdb_votes"] = imdb_votes
+        if keywords is not UNSET:
+            field_dict["keywords"] = keywords
         if languages is not UNSET:
             field_dict["languages"] = languages
         if languages_display is not UNSET:
@@ -373,6 +420,8 @@ class MovieDetail:
             field_dict["tomato_meter"] = tomato_meter
         if top_billed is not UNSET:
             field_dict["top_billed"] = top_billed
+        if vault_id is not UNSET:
+            field_dict["vault_id"] = vault_id
         if where_to_watch is not UNSET:
             field_dict["where_to_watch"] = where_to_watch
         if year is not UNSET:
@@ -391,34 +440,43 @@ class MovieDetail:
 
         title = d.pop("title")
 
-        def _parse_awards(data: object) -> Union[None, Unset, str]:
+        def _parse_awards(data: object) -> None | str | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(Union[None, Unset, str], data)
+            return cast(None | str | Unset, data)
 
         awards = _parse_awards(d.pop("awards", UNSET))
 
-        def _parse_backdrop_url(data: object) -> Union[None, Unset, str]:
+        def _parse_backdrop_url(data: object) -> None | str | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(Union[None, Unset, str], data)
+            return cast(None | str | Unset, data)
 
         backdrop_url = _parse_backdrop_url(d.pop("backdrop_url", UNSET))
 
-        def _parse_collection(data: object) -> Union[None, Unset, str]:
+        def _parse_certificate(data: object) -> None | str | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(Union[None, Unset, str], data)
+            return cast(None | str | Unset, data)
+
+        certificate = _parse_certificate(d.pop("certificate", UNSET))
+
+        def _parse_collection(data: object) -> None | str | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(None | str | Unset, data)
 
         collection = _parse_collection(d.pop("collection", UNSET))
 
-        def _parse_countries(data: object) -> Union[None, Unset, list[str], str]:
+        def _parse_countries(data: object) -> list[str] | None | str | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
@@ -429,9 +487,9 @@ class MovieDetail:
                 countries_type_1 = cast(list[str], data)
 
                 return countries_type_1
-            except:  # noqa: E722
+            except (TypeError, ValueError, AttributeError, KeyError):
                 pass
-            return cast(Union[None, Unset, list[str], str], data)
+            return cast(list[str] | None | str | Unset, data)
 
         countries = _parse_countries(d.pop("countries", UNSET))
 
@@ -439,38 +497,58 @@ class MovieDetail:
 
         countries_iso = cast(list[str], d.pop("countries_iso", UNSET))
 
+        def _parse_flag_notes(data: object) -> None | str | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(None | str | Unset, data)
+
+        flag_notes = _parse_flag_notes(d.pop("flag_notes", UNSET))
+
+        def _parse_flag_reason(data: object) -> None | str | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(None | str | Unset, data)
+
+        flag_reason = _parse_flag_reason(d.pop("flag_reason", UNSET))
+
         flagged = d.pop("flagged", UNSET)
 
         genres = cast(list[str], d.pop("genres", UNSET))
 
-        def _parse_imdb_id(data: object) -> Union[None, Unset, str]:
+        def _parse_imdb_id(data: object) -> None | str | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(Union[None, Unset, str], data)
+            return cast(None | str | Unset, data)
 
         imdb_id = _parse_imdb_id(d.pop("imdb_id", UNSET))
 
-        def _parse_imdb_rating(data: object) -> Union[None, Unset, float]:
+        def _parse_imdb_rating(data: object) -> float | None | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(Union[None, Unset, float], data)
+            return cast(float | None | Unset, data)
 
         imdb_rating = _parse_imdb_rating(d.pop("imdb_rating", UNSET))
 
-        def _parse_imdb_votes(data: object) -> Union[None, Unset, int]:
+        def _parse_imdb_votes(data: object) -> int | None | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(Union[None, Unset, int], data)
+            return cast(int | None | Unset, data)
 
         imdb_votes = _parse_imdb_votes(d.pop("imdb_votes", UNSET))
 
-        def _parse_languages(data: object) -> Union[None, Unset, list[str], str]:
+        keywords = cast(list[str], d.pop("keywords", UNSET))
+
+        def _parse_languages(data: object) -> list[str] | None | str | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
@@ -481,9 +559,9 @@ class MovieDetail:
                 languages_type_1 = cast(list[str], data)
 
                 return languages_type_1
-            except:  # noqa: E722
+            except (TypeError, ValueError, AttributeError, KeyError):
                 pass
-            return cast(Union[None, Unset, list[str], str], data)
+            return cast(list[str] | None | str | Unset, data)
 
         languages = _parse_languages(d.pop("languages", UNSET))
 
@@ -491,7 +569,7 @@ class MovieDetail:
 
         languages_iso = cast(list[str], d.pop("languages_iso", UNSET))
 
-        def _parse_last_omdb_fetch_at(data: object) -> Union[None, Unset, datetime.datetime]:
+        def _parse_last_omdb_fetch_at(data: object) -> datetime.datetime | None | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
@@ -499,16 +577,16 @@ class MovieDetail:
             try:
                 if not isinstance(data, str):
                     raise TypeError()
-                last_omdb_fetch_at_type_0 = isoparse(data)
+                last_omdb_fetch_at_type_0 = datetime.datetime.fromisoformat(data)
 
                 return last_omdb_fetch_at_type_0
-            except:  # noqa: E722
+            except (TypeError, ValueError, AttributeError, KeyError):
                 pass
-            return cast(Union[None, Unset, datetime.datetime], data)
+            return cast(datetime.datetime | None | Unset, data)
 
         last_omdb_fetch_at = _parse_last_omdb_fetch_at(d.pop("last_omdb_fetch_at", UNSET))
 
-        def _parse_last_tmdb_fetch_at(data: object) -> Union[None, Unset, datetime.datetime]:
+        def _parse_last_tmdb_fetch_at(data: object) -> datetime.datetime | None | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
@@ -516,154 +594,169 @@ class MovieDetail:
             try:
                 if not isinstance(data, str):
                     raise TypeError()
-                last_tmdb_fetch_at_type_0 = isoparse(data)
+                last_tmdb_fetch_at_type_0 = datetime.datetime.fromisoformat(data)
 
                 return last_tmdb_fetch_at_type_0
-            except:  # noqa: E722
+            except (TypeError, ValueError, AttributeError, KeyError):
                 pass
-            return cast(Union[None, Unset, datetime.datetime], data)
+            return cast(datetime.datetime | None | Unset, data)
 
         last_tmdb_fetch_at = _parse_last_tmdb_fetch_at(d.pop("last_tmdb_fetch_at", UNSET))
 
-        def _parse_metascore(data: object) -> Union[None, Unset, int]:
+        def _parse_metascore(data: object) -> int | None | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(Union[None, Unset, int], data)
+            return cast(int | None | Unset, data)
 
         metascore = _parse_metascore(d.pop("metascore", UNSET))
 
         moods = cast(list[str], d.pop("moods", UNSET))
 
-        def _parse_omdb_payload_sha(data: object) -> Union[None, Unset, str]:
+        def _parse_omdb_payload_sha(data: object) -> None | str | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(Union[None, Unset, str], data)
+            return cast(None | str | Unset, data)
 
         omdb_payload_sha = _parse_omdb_payload_sha(d.pop("omdb_payload_sha", UNSET))
 
-        def _parse_plot(data: object) -> Union[None, Unset, str]:
+        def _parse_plot(data: object) -> None | str | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(Union[None, Unset, str], data)
+            return cast(None | str | Unset, data)
 
         plot = _parse_plot(d.pop("plot", UNSET))
 
-        def _parse_poster_theme(data: object) -> Union[None, Unset, str]:
+        def _parse_poster_theme(data: object) -> None | str | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(Union[None, Unset, str], data)
+            return cast(None | str | Unset, data)
 
         poster_theme = _parse_poster_theme(d.pop("poster_theme", UNSET))
 
-        def _parse_poster_url(data: object) -> Union[None, Unset, str]:
+        def _parse_poster_url(data: object) -> None | str | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(Union[None, Unset, str], data)
+            return cast(None | str | Unset, data)
 
         poster_url = _parse_poster_url(d.pop("poster_url", UNSET))
 
-        roles = []
         _roles = d.pop("roles", UNSET)
-        for roles_item_data in _roles or []:
-            roles_item = RoleWithPersonRead.from_dict(roles_item_data)
+        roles: list[RoleWithPersonRead] | Unset = UNSET
+        if _roles is not UNSET:
+            roles = []
+            for roles_item_data in _roles:
+                roles_item = RoleWithPersonRead.from_dict(roles_item_data)
 
-            roles.append(roles_item)
+                roles.append(roles_item)
 
-        def _parse_rt_score(data: object) -> Union[None, Unset, int]:
+        def _parse_rt_score(data: object) -> int | None | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(Union[None, Unset, int], data)
+            return cast(int | None | Unset, data)
 
         rt_score = _parse_rt_score(d.pop("rt_score", UNSET))
 
-        def _parse_runtime(data: object) -> Union[None, Unset, int]:
+        def _parse_runtime(data: object) -> int | None | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(Union[None, Unset, int], data)
+            return cast(int | None | Unset, data)
 
         runtime = _parse_runtime(d.pop("runtime", UNSET))
 
-        similar = []
         _similar = d.pop("similar", UNSET)
-        for similar_item_data in _similar or []:
-            similar_item = SimilarMovie.from_dict(similar_item_data)
+        similar: list[SimilarMovie] | Unset = UNSET
+        if _similar is not UNSET:
+            similar = []
+            for similar_item_data in _similar:
+                similar_item = SimilarMovie.from_dict(similar_item_data)
 
-            similar.append(similar_item)
+                similar.append(similar_item)
 
-        def _parse_tmdb_etag(data: object) -> Union[None, Unset, str]:
+        def _parse_tmdb_etag(data: object) -> None | str | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(Union[None, Unset, str], data)
+            return cast(None | str | Unset, data)
 
         tmdb_etag = _parse_tmdb_etag(d.pop("tmdb_etag", UNSET))
 
-        def _parse_tmdb_id(data: object) -> Union[None, Unset, int]:
+        def _parse_tmdb_id(data: object) -> int | None | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(Union[None, Unset, int], data)
+            return cast(int | None | Unset, data)
 
         tmdb_id = _parse_tmdb_id(d.pop("tmdb_id", UNSET))
 
-        def _parse_tmdb_payload_sha(data: object) -> Union[None, Unset, str]:
+        def _parse_tmdb_payload_sha(data: object) -> None | str | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(Union[None, Unset, str], data)
+            return cast(None | str | Unset, data)
 
         tmdb_payload_sha = _parse_tmdb_payload_sha(d.pop("tmdb_payload_sha", UNSET))
 
-        def _parse_tomato_audience(data: object) -> Union[None, Unset, int]:
+        def _parse_tomato_audience(data: object) -> int | None | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(Union[None, Unset, int], data)
+            return cast(int | None | Unset, data)
 
         tomato_audience = _parse_tomato_audience(d.pop("tomato_audience", UNSET))
 
-        def _parse_tomato_meter(data: object) -> Union[None, Unset, int]:
+        def _parse_tomato_meter(data: object) -> int | None | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(Union[None, Unset, int], data)
+            return cast(int | None | Unset, data)
 
         tomato_meter = _parse_tomato_meter(d.pop("tomato_meter", UNSET))
 
-        top_billed = []
         _top_billed = d.pop("top_billed", UNSET)
-        for top_billed_item_data in _top_billed or []:
-            top_billed_item = TopBilledEntry.from_dict(top_billed_item_data)
+        top_billed: list[TopBilledEntry] | Unset = UNSET
+        if _top_billed is not UNSET:
+            top_billed = []
+            for top_billed_item_data in _top_billed:
+                top_billed_item = TopBilledEntry.from_dict(top_billed_item_data)
 
-            top_billed.append(top_billed_item)
+                top_billed.append(top_billed_item)
 
-        where_to_watch = cast(list[str], d.pop("where_to_watch", UNSET))
-
-        def _parse_year(data: object) -> Union[None, Unset, int]:
+        def _parse_vault_id(data: object) -> None | str | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(Union[None, Unset, int], data)
+            return cast(None | str | Unset, data)
+
+        vault_id = _parse_vault_id(d.pop("vault_id", UNSET))
+
+        where_to_watch = cast(list[str], d.pop("where_to_watch", UNSET))
+
+        def _parse_year(data: object) -> int | None | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(int | None | Unset, data)
 
         year = _parse_year(d.pop("year", UNSET))
 
@@ -672,15 +765,19 @@ class MovieDetail:
             title=title,
             awards=awards,
             backdrop_url=backdrop_url,
+            certificate=certificate,
             collection=collection,
             countries=countries,
             countries_display=countries_display,
             countries_iso=countries_iso,
+            flag_notes=flag_notes,
+            flag_reason=flag_reason,
             flagged=flagged,
             genres=genres,
             imdb_id=imdb_id,
             imdb_rating=imdb_rating,
             imdb_votes=imdb_votes,
+            keywords=keywords,
             languages=languages,
             languages_display=languages_display,
             languages_iso=languages_iso,
@@ -702,6 +799,7 @@ class MovieDetail:
             tomato_audience=tomato_audience,
             tomato_meter=tomato_meter,
             top_billed=top_billed,
+            vault_id=vault_id,
             where_to_watch=where_to_watch,
             year=year,
         )

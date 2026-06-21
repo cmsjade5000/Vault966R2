@@ -1,5 +1,5 @@
 from http import HTTPStatus
-from typing import Any, Optional, Union
+from typing import Any
 
 import httpx
 
@@ -31,8 +31,8 @@ def _get_kwargs(
 
 
 def _parse_response(
-    *, client: Union[AuthenticatedClient, Client], response: httpx.Response
-) -> Optional[Union[FlicPresetRead, HTTPValidationError]]:
+    *, client: AuthenticatedClient | Client, response: httpx.Response
+) -> FlicPresetRead | HTTPValidationError | None:
     if response.status_code == 201:
         response_201 = FlicPresetRead.from_dict(response.json())
 
@@ -50,8 +50,8 @@ def _parse_response(
 
 
 def _build_response(
-    *, client: Union[AuthenticatedClient, Client], response: httpx.Response
-) -> Response[Union[FlicPresetRead, HTTPValidationError]]:
+    *, client: AuthenticatedClient | Client, response: httpx.Response
+) -> Response[FlicPresetRead | HTTPValidationError]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -62,9 +62,9 @@ def _build_response(
 
 def sync_detailed(
     *,
-    client: Union[AuthenticatedClient, Client],
+    client: AuthenticatedClient,
     body: FlicPresetCreate,
-) -> Response[Union[FlicPresetRead, HTTPValidationError]]:
+) -> Response[FlicPresetRead | HTTPValidationError]:
     """Create Preset
 
     Args:
@@ -75,7 +75,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[FlicPresetRead, HTTPValidationError]]
+        Response[FlicPresetRead | HTTPValidationError]
     """
 
     kwargs = _get_kwargs(
@@ -91,9 +91,9 @@ def sync_detailed(
 
 def sync(
     *,
-    client: Union[AuthenticatedClient, Client],
+    client: AuthenticatedClient,
     body: FlicPresetCreate,
-) -> Optional[Union[FlicPresetRead, HTTPValidationError]]:
+) -> FlicPresetRead | HTTPValidationError | None:
     """Create Preset
 
     Args:
@@ -104,7 +104,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[FlicPresetRead, HTTPValidationError]
+        FlicPresetRead | HTTPValidationError
     """
 
     return sync_detailed(
@@ -115,9 +115,9 @@ def sync(
 
 async def asyncio_detailed(
     *,
-    client: Union[AuthenticatedClient, Client],
+    client: AuthenticatedClient,
     body: FlicPresetCreate,
-) -> Response[Union[FlicPresetRead, HTTPValidationError]]:
+) -> Response[FlicPresetRead | HTTPValidationError]:
     """Create Preset
 
     Args:
@@ -128,7 +128,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[FlicPresetRead, HTTPValidationError]]
+        Response[FlicPresetRead | HTTPValidationError]
     """
 
     kwargs = _get_kwargs(
@@ -142,9 +142,9 @@ async def asyncio_detailed(
 
 async def asyncio(
     *,
-    client: Union[AuthenticatedClient, Client],
+    client: AuthenticatedClient,
     body: FlicPresetCreate,
-) -> Optional[Union[FlicPresetRead, HTTPValidationError]]:
+) -> FlicPresetRead | HTTPValidationError | None:
     """Create Preset
 
     Args:
@@ -155,7 +155,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[FlicPresetRead, HTTPValidationError]
+        FlicPresetRead | HTTPValidationError
     """
 
     return (

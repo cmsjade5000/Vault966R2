@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from collections.abc import Mapping
 from typing import TYPE_CHECKING, Any, TypeVar
 
@@ -17,14 +19,14 @@ class MovieSearchResponse:
     """
     Attributes:
         facets (MovieFacets):
-        items (list['MovieRead']):
+        items (list[MovieRead]):
         page (int):
         page_size (int):
         total (int):
     """
 
-    facets: "MovieFacets"
-    items: list["MovieRead"]
+    facets: MovieFacets
+    items: list[MovieRead]
     page: int
     page_size: int
     total: int

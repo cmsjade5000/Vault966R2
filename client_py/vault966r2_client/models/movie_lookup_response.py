@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, Any, TypeVar, Union
+from typing import TYPE_CHECKING, Any, TypeVar, cast
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
@@ -17,25 +19,35 @@ T = TypeVar("T", bound="MovieLookupResponse")
 class MovieLookupResponse:
     """
     Attributes:
-        items (Union[Unset, list['MovieLookupCandidate']]):
+        items (list[MovieLookupCandidate] | Unset):
+        notice (None | str | Unset):
     """
 
-    items: Union[Unset, list["MovieLookupCandidate"]] = UNSET
+    items: list[MovieLookupCandidate] | Unset = UNSET
+    notice: None | str | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
-        items: Union[Unset, list[dict[str, Any]]] = UNSET
+        items: list[dict[str, Any]] | Unset = UNSET
         if not isinstance(self.items, Unset):
             items = []
             for items_item_data in self.items:
                 items_item = items_item_data.to_dict()
                 items.append(items_item)
 
+        notice: None | str | Unset
+        if isinstance(self.notice, Unset):
+            notice = UNSET
+        else:
+            notice = self.notice
+
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update({})
         if items is not UNSET:
             field_dict["items"] = items
+        if notice is not UNSET:
+            field_dict["notice"] = notice
 
         return field_dict
 
@@ -44,15 +56,27 @@ class MovieLookupResponse:
         from ..models.movie_lookup_candidate import MovieLookupCandidate
 
         d = dict(src_dict)
-        items = []
         _items = d.pop("items", UNSET)
-        for items_item_data in _items or []:
-            items_item = MovieLookupCandidate.from_dict(items_item_data)
+        items: list[MovieLookupCandidate] | Unset = UNSET
+        if _items is not UNSET:
+            items = []
+            for items_item_data in _items:
+                items_item = MovieLookupCandidate.from_dict(items_item_data)
 
-            items.append(items_item)
+                items.append(items_item)
+
+        def _parse_notice(data: object) -> None | str | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(None | str | Unset, data)
+
+        notice = _parse_notice(d.pop("notice", UNSET))
 
         movie_lookup_response = cls(
             items=items,
+            notice=notice,
         )
 
         movie_lookup_response.additional_properties = d

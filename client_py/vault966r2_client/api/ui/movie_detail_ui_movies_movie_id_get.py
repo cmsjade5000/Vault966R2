@@ -1,28 +1,43 @@
 from http import HTTPStatus
-from typing import Any, Optional, Union
+from typing import Any
+from urllib.parse import quote
 
 import httpx
 
 from ... import errors
 from ...client import AuthenticatedClient, Client
 from ...models.http_validation_error import HTTPValidationError
-from ...types import Response
+from ...types import UNSET, Response, Unset
 
 
 def _get_kwargs(
     movie_id: int,
+    *,
+    review: bool | Unset = False,
+    spotlight: bool | Unset = False,
 ) -> dict[str, Any]:
+    params: dict[str, Any] = {}
+
+    params["review"] = review
+
+    params["spotlight"] = spotlight
+
+    params = {k: v for k, v in params.items() if v is not UNSET and v is not None}
+
     _kwargs: dict[str, Any] = {
         "method": "get",
-        "url": f"/ui/movies/{movie_id}",
+        "url": "/ui/movies/{movie_id}".format(
+            movie_id=quote(str(movie_id), safe=""),
+        ),
+        "params": params,
     }
 
     return _kwargs
 
 
 def _parse_response(
-    *, client: Union[AuthenticatedClient, Client], response: httpx.Response
-) -> Optional[Union[HTTPValidationError, str]]:
+    *, client: AuthenticatedClient | Client, response: httpx.Response
+) -> HTTPValidationError | str | None:
     if response.status_code == 200:
         response_200 = response.text
         return response_200
@@ -39,8 +54,8 @@ def _parse_response(
 
 
 def _build_response(
-    *, client: Union[AuthenticatedClient, Client], response: httpx.Response
-) -> Response[Union[HTTPValidationError, str]]:
+    *, client: AuthenticatedClient | Client, response: httpx.Response
+) -> Response[HTTPValidationError | str]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -52,23 +67,29 @@ def _build_response(
 def sync_detailed(
     movie_id: int,
     *,
-    client: Union[AuthenticatedClient, Client],
-) -> Response[Union[HTTPValidationError, str]]:
+    client: AuthenticatedClient | Client,
+    review: bool | Unset = False,
+    spotlight: bool | Unset = False,
+) -> Response[HTTPValidationError | str]:
     """Movie Detail
 
     Args:
         movie_id (int):
+        review (bool | Unset):  Default: False.
+        spotlight (bool | Unset):  Default: False.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[HTTPValidationError, str]]
+        Response[HTTPValidationError | str]
     """
 
     kwargs = _get_kwargs(
         movie_id=movie_id,
+        review=review,
+        spotlight=spotlight,
     )
 
     response = client.get_httpx_client().request(
@@ -81,47 +102,59 @@ def sync_detailed(
 def sync(
     movie_id: int,
     *,
-    client: Union[AuthenticatedClient, Client],
-) -> Optional[Union[HTTPValidationError, str]]:
+    client: AuthenticatedClient | Client,
+    review: bool | Unset = False,
+    spotlight: bool | Unset = False,
+) -> HTTPValidationError | str | None:
     """Movie Detail
 
     Args:
         movie_id (int):
+        review (bool | Unset):  Default: False.
+        spotlight (bool | Unset):  Default: False.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[HTTPValidationError, str]
+        HTTPValidationError | str
     """
 
     return sync_detailed(
         movie_id=movie_id,
         client=client,
+        review=review,
+        spotlight=spotlight,
     ).parsed
 
 
 async def asyncio_detailed(
     movie_id: int,
     *,
-    client: Union[AuthenticatedClient, Client],
-) -> Response[Union[HTTPValidationError, str]]:
+    client: AuthenticatedClient | Client,
+    review: bool | Unset = False,
+    spotlight: bool | Unset = False,
+) -> Response[HTTPValidationError | str]:
     """Movie Detail
 
     Args:
         movie_id (int):
+        review (bool | Unset):  Default: False.
+        spotlight (bool | Unset):  Default: False.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[HTTPValidationError, str]]
+        Response[HTTPValidationError | str]
     """
 
     kwargs = _get_kwargs(
         movie_id=movie_id,
+        review=review,
+        spotlight=spotlight,
     )
 
     response = await client.get_async_httpx_client().request(**kwargs)
@@ -132,24 +165,30 @@ async def asyncio_detailed(
 async def asyncio(
     movie_id: int,
     *,
-    client: Union[AuthenticatedClient, Client],
-) -> Optional[Union[HTTPValidationError, str]]:
+    client: AuthenticatedClient | Client,
+    review: bool | Unset = False,
+    spotlight: bool | Unset = False,
+) -> HTTPValidationError | str | None:
     """Movie Detail
 
     Args:
         movie_id (int):
+        review (bool | Unset):  Default: False.
+        spotlight (bool | Unset):  Default: False.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[HTTPValidationError, str]
+        HTTPValidationError | str
     """
 
     return (
         await asyncio_detailed(
             movie_id=movie_id,
             client=client,
+            review=review,
+            spotlight=spotlight,
         )
     ).parsed

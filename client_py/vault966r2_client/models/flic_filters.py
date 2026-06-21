@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 from collections.abc import Mapping
-from typing import Any, TypeVar, Union, cast
+from typing import Any, TypeVar, cast
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
@@ -13,50 +15,50 @@ T = TypeVar("T", bound="FlicFilters")
 class FlicFilters:
     """
     Attributes:
-        genres (Union[Unset, list[str]]):
-        moods (Union[Unset, list[str]]):
-        q (Union[None, Unset, str]):
-        runtime_max (Union[None, Unset, int]):
-        year_max (Union[None, Unset, int]):
-        year_min (Union[None, Unset, int]):
+        genres (list[str] | Unset):
+        moods (list[str] | Unset):
+        q (None | str | Unset):
+        runtime_max (int | None | Unset):
+        year_max (int | None | Unset):
+        year_min (int | None | Unset):
     """
 
-    genres: Union[Unset, list[str]] = UNSET
-    moods: Union[Unset, list[str]] = UNSET
-    q: Union[None, Unset, str] = UNSET
-    runtime_max: Union[None, Unset, int] = UNSET
-    year_max: Union[None, Unset, int] = UNSET
-    year_min: Union[None, Unset, int] = UNSET
+    genres: list[str] | Unset = UNSET
+    moods: list[str] | Unset = UNSET
+    q: None | str | Unset = UNSET
+    runtime_max: int | None | Unset = UNSET
+    year_max: int | None | Unset = UNSET
+    year_min: int | None | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
-        genres: Union[Unset, list[str]] = UNSET
+        genres: list[str] | Unset = UNSET
         if not isinstance(self.genres, Unset):
             genres = self.genres
 
-        moods: Union[Unset, list[str]] = UNSET
+        moods: list[str] | Unset = UNSET
         if not isinstance(self.moods, Unset):
             moods = self.moods
 
-        q: Union[None, Unset, str]
+        q: None | str | Unset
         if isinstance(self.q, Unset):
             q = UNSET
         else:
             q = self.q
 
-        runtime_max: Union[None, Unset, int]
+        runtime_max: int | None | Unset
         if isinstance(self.runtime_max, Unset):
             runtime_max = UNSET
         else:
             runtime_max = self.runtime_max
 
-        year_max: Union[None, Unset, int]
+        year_max: int | None | Unset
         if isinstance(self.year_max, Unset):
             year_max = UNSET
         else:
             year_max = self.year_max
 
-        year_min: Union[None, Unset, int]
+        year_min: int | None | Unset
         if isinstance(self.year_min, Unset):
             year_min = UNSET
         else:
@@ -87,39 +89,39 @@ class FlicFilters:
 
         moods = cast(list[str], d.pop("moods", UNSET))
 
-        def _parse_q(data: object) -> Union[None, Unset, str]:
+        def _parse_q(data: object) -> None | str | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(Union[None, Unset, str], data)
+            return cast(None | str | Unset, data)
 
         q = _parse_q(d.pop("q", UNSET))
 
-        def _parse_runtime_max(data: object) -> Union[None, Unset, int]:
+        def _parse_runtime_max(data: object) -> int | None | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(Union[None, Unset, int], data)
+            return cast(int | None | Unset, data)
 
         runtime_max = _parse_runtime_max(d.pop("runtime_max", UNSET))
 
-        def _parse_year_max(data: object) -> Union[None, Unset, int]:
+        def _parse_year_max(data: object) -> int | None | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(Union[None, Unset, int], data)
+            return cast(int | None | Unset, data)
 
         year_max = _parse_year_max(d.pop("year_max", UNSET))
 
-        def _parse_year_min(data: object) -> Union[None, Unset, int]:
+        def _parse_year_min(data: object) -> int | None | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(Union[None, Unset, int], data)
+            return cast(int | None | Unset, data)
 
         year_min = _parse_year_min(d.pop("year_min", UNSET))
 

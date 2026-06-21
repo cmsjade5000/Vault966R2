@@ -1,10 +1,28 @@
 [tool.black]
 target-version = ["py312"]
 line-length = 100
+extend-exclude = '''
+/(
+  client_py
+  | openapi
+  | reports
+  | \.venv
+)/
+'''
 
 [tool.ruff]
 target-version = "py312"
 line-length = 100
+extend-exclude = [
+  "client_py/",
+  "openapi/",
+  "reports/",
+  "vault.db*",
+  ".venv/",
+  "__pycache__/",
+]
+
+[tool.ruff.lint]
 # Keep the established Optional[...] style and allow our FastAPI patterns.
 ignore = [
   "UP006",  # prefer builtins list/dict/tuple
@@ -13,15 +31,6 @@ ignore = [
   "B008",   # Depends(...) in defaults (FastAPI)
   "E501",   # long lines (some tests/scripts)
   "E402",   # imports not at top (scripts/tests)
-]
-# Don’t lint generated artifacts & large blobs
-extend-exclude = [
-  "client_py/",
-  "openapi/",
-  "reports/",
-  "vault.db*",
-  ".venv/",
-  "__pycache__/",
 ]
 
 [tool.pytest.ini_options]

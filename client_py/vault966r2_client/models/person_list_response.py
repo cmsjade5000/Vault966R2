@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from collections.abc import Mapping
 from typing import TYPE_CHECKING, Any, TypeVar
 
@@ -15,13 +17,13 @@ T = TypeVar("T", bound="PersonListResponse")
 class PersonListResponse:
     """
     Attributes:
-        items (list['PersonRead']):
+        items (list[PersonRead]):
         page (int):
         page_size (int):
         total (int):
     """
 
-    items: list["PersonRead"]
+    items: list[PersonRead]
     page: int
     page_size: int
     total: int

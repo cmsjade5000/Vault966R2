@@ -21,6 +21,143 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/assistant": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Assistant Reply Get */
+        get: operations["assistant_reply_get_api_assistant_get"];
+        put?: never;
+        /** Assistant Reply */
+        post: operations["assistant_reply_api_assistant_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/collection-health/recommendation/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Refresh Recommendation */
+        post: operations["refresh_recommendation_api_collection_health_recommendation_refresh_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/collection-health/update/run": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Update Run */
+        post: operations["update_run_api_collection_health_update_run_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/collection-health/update/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Update Status */
+        get: operations["update_status_api_collection_health_update_status_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/discover/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Discover Refresh */
+        get: operations["discover_refresh_api_discover_refresh_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/profiles": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Profiles */
+        get: operations["list_profiles_api_profiles_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/profiles/active": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Set Active Profile */
+        post: operations["set_active_profile_api_profiles_active_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/search/semantic": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Semantic Search */
+        post: operations["semantic_search_api_search_semantic_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/fliclists/": {
         parameters: {
             query?: never;
@@ -90,6 +227,44 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/login": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Login
+         * @description Public login landing page (no auth required).
+         */
+        get: operations["login_login_get"];
+        put?: never;
+        /** Login Submit */
+        post: operations["login_submit_login_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/logout": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Logout */
+        post: operations["logout_logout_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/movies/": {
         parameters: {
             query?: never;
@@ -102,6 +277,26 @@ export interface paths {
         put?: never;
         /** Create Movie */
         post: operations["create_movie_movies__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/movies/double-feature": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Double Feature
+         * @description Public endpoint for a complementary double-feature pairing.
+         */
+        get: operations["get_double_feature_movies_double_feature_get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -186,7 +381,8 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        delete?: never;
+        /** Delete Movie */
+        delete: operations["delete_movie_movies__movie_id__delete"];
         options?: never;
         head?: never;
         /** Update Movie */
@@ -228,6 +424,41 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/movies/{movie_id}/flag/report": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Report Flag */
+        post: operations["report_flag_movies__movie_id__flag_report_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/movies/{movie_id}/like": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Like Movie */
+        post: operations["like_movie_movies__movie_id__like_post"];
+        /** Unlike Movie */
+        delete: operations["unlike_movie_movies__movie_id__like_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/movies/{movie_id}/lookup": {
         parameters: {
             query?: never;
@@ -263,6 +494,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/movies/{movie_id}/watchlist": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Watchlist Movie */
+        post: operations["watchlist_movie_movies__movie_id__watchlist_post"];
+        /** Unwatchlist Movie */
+        delete: operations["unwatchlist_movie_movies__movie_id__watchlist_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/people/": {
         parameters: {
             query?: never;
@@ -275,6 +524,57 @@ export interface paths {
         put?: never;
         /** Create Person */
         post: operations["create_person_people__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/ui/discover": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Discover */
+        get: operations["discover_ui_discover_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/ui/events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Record Usage Event */
+        post: operations["record_usage_event_ui_events_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/ui/flags": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Flags Ui */
+        get: operations["list_flags_ui_ui_flags_get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -315,6 +615,244 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/ui/movies/health/missing": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Movies Health Missing */
+        get: operations["movies_health_missing_ui_movies_health_missing_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/ui/movies/health/review/flags/{movie_id}/resolve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Resolve Flagged Queue Item */
+        post: operations["resolve_flagged_queue_item_ui_movies_health_review_flags__movie_id__resolve_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/ui/movies/health/review/source-accept-all": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Accept All Source Review Differences */
+        post: operations["accept_all_source_review_differences_ui_movies_health_review_source_accept_all_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/ui/movies/health/review/source-decision/{decision_id}/undo": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Undo Source Review Field */
+        post: operations["undo_source_review_field_ui_movies_health_review_source_decision__decision_id__undo_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/ui/movies/health/review/source-row/{row_id}/create": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create Source Row Movie */
+        post: operations["create_source_row_movie_ui_movies_health_review_source_row__row_id__create_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/ui/movies/health/review/source-row/{row_id}/defer": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Defer Source Review Movie */
+        post: operations["defer_source_review_movie_ui_movies_health_review_source_row__row_id__defer_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/ui/movies/health/review/source-row/{row_id}/dismiss-duplicate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Dismiss Source Duplicate */
+        post: operations["dismiss_source_duplicate_ui_movies_health_review_source_row__row_id__dismiss_duplicate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/ui/movies/health/review/source-row/{row_id}/field/{field_name}/{decision}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Decide Source Review Field */
+        post: operations["decide_source_review_field_ui_movies_health_review_source_row__row_id__field__field_name___decision__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/ui/movies/health/review/source-row/{row_id}/match/{movie_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Confirm Source Row Match */
+        post: operations["confirm_source_row_match_ui_movies_health_review_source_row__row_id__match__movie_id__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/ui/movies/health/review/vault/needs-fix-all": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Mark All Vault Reviews Needs Fix */
+        post: operations["mark_all_vault_reviews_needs_fix_ui_movies_health_review_vault_needs_fix_all_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/ui/movies/health/review/{movie_id}/checked": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Mark Review Checked */
+        post: operations["mark_review_checked_ui_movies_health_review__movie_id__checked_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/ui/movies/health/review/{movie_id}/matches": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Search Flagged Movie Matches */
+        get: operations["search_flagged_movie_matches_ui_movies_health_review__movie_id__matches_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/ui/movies/health/review/{movie_id}/matches/apply": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Apply Flagged Movie Match */
+        post: operations["apply_flagged_movie_match_ui_movies_health_review__movie_id__matches_apply_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/ui/movies/health/review/{movie_id}/needs-fix": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Mark Review Needs Fix */
+        post: operations["mark_review_needs_fix_ui_movies_health_review__movie_id__needs_fix_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/ui/movies/manual-add": {
         parameters: {
             query?: never;
@@ -343,6 +881,23 @@ export interface paths {
         put?: never;
         /** Manual Add Preview */
         post: operations["manual_add_preview_ui_movies_manual_add_preview_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/ui/movies/review": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Start Review */
+        get: operations["start_review_ui_movies_review_get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -383,10 +938,169 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/ui/movies/{movie_id}/flag": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Manage Movie Flag */
+        put: operations["manage_movie_flag_ui_movies__movie_id__flag_put"];
+        post?: never;
+        /** Resolve Movie Flag */
+        delete: operations["resolve_movie_flag_ui_movies__movie_id__flag_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/ui/movies/{movie_id}/review-flag": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Flag Movie For Review */
+        post: operations["flag_movie_for_review_ui_movies__movie_id__review_flag_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/ui/posters/{movie_id}/{size}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Cached Movie Poster */
+        get: operations["cached_movie_poster_ui_posters__movie_id___size__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/ui/review": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Review Queue Ui */
+        get: operations["review_queue_ui_ui_review_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/ui/source-sync": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Source Sync Ui */
+        get: operations["source_sync_ui_ui_source_sync_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/ui/source-sync/upload": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Upload Source Snapshot */
+        post: operations["upload_source_snapshot_ui_source_sync_upload_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/ui/source-sync/{snapshot_id}/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Confirm Source Snapshot */
+        post: operations["confirm_source_snapshot_ui_source_sync__snapshot_id__confirm_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/ui/source-sync/{snapshot_id}/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Preview Source Snapshot */
+        get: operations["preview_source_snapshot_ui_source_sync__snapshot_id__preview_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/ui/watchlist": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Watchlist */
+        get: operations["watchlist_ui_watchlist_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** ActiveProfileRequest */
+        ActiveProfileRequest: {
+            /** Profile Id */
+            profile_id: number;
+        };
         /** AiSearchRequest */
         AiSearchRequest: {
             /**
@@ -416,6 +1130,55 @@ export interface components {
             plan: components["schemas"]["SearchPlan"];
             /** Total */
             total: number;
+        };
+        /** AssistantMovie */
+        AssistantMovie: {
+            /** Genres */
+            genres?: string[];
+            /** Id */
+            id: number;
+            /** Imdb Rating */
+            imdb_rating?: number | null;
+            /** Moods */
+            moods?: string[];
+            /** Rt Score */
+            rt_score?: number | null;
+            /** Runtime */
+            runtime?: number | null;
+            /** Title */
+            title: string;
+            /** Year */
+            year?: number | null;
+        };
+        /** AssistantRequest */
+        AssistantRequest: {
+            /**
+             * Limit
+             * @default 6
+             */
+            limit: number;
+            /** Query */
+            query: string;
+        };
+        /** AssistantResponse */
+        AssistantResponse: {
+            /** Movies */
+            movies?: components["schemas"]["AssistantMovie"][];
+            /** Reply */
+            reply: string;
+        };
+        /** Body_login_submit_login_post */
+        Body_login_submit_login_post: {
+            /** Profile Id */
+            profile_id?: number | null;
+        };
+        /** Body_upload_source_snapshot_ui_source_sync_upload_post */
+        Body_upload_source_snapshot_ui_source_sync_upload_post: {
+            /**
+             * Source File
+             * Format: binary
+             */
+            source_file: string;
         };
         /** FlicFilters */
         FlicFilters: {
@@ -540,45 +1303,99 @@ export interface components {
         };
         /** ManualMovieMetadata */
         ManualMovieMetadata: {
+            /** Awards */
+            awards?: string | null;
             /** Backdrop Url */
             backdrop_url?: string | null;
+            /** Certificate */
+            certificate?: string | null;
+            /** Collection */
+            collection?: string | null;
+            /** Countries */
+            countries?: string[];
             /** Genres */
             genres?: string[];
             /** Imdb Id */
             imdb_id?: string | null;
+            /** Imdb Rating */
+            imdb_rating?: number | null;
+            /** Imdb Votes */
+            imdb_votes?: number | null;
             /** Keywords */
             keywords?: string[];
+            /** Languages */
+            languages?: string[];
+            /** Last Omdb Fetch At */
+            last_omdb_fetch_at?: string | null;
+            /** Last Tmdb Fetch At */
+            last_tmdb_fetch_at?: string | null;
+            /** Metascore */
+            metascore?: number | null;
+            /** Omdb Payload Sha */
+            omdb_payload_sha?: string | null;
             /** Overview */
             overview?: string | null;
             /** Poster Url */
             poster_url?: string | null;
             /** Release Date */
             release_date?: string | null;
+            /** Rt Score */
+            rt_score?: number | null;
             /** Runtime */
             runtime?: number | null;
             /** Source */
             source?: string | null;
             /** Tmdb Id */
             tmdb_id?: number | null;
+            /** Tmdb Payload Sha */
+            tmdb_payload_sha?: string | null;
+            /** Tomato Audience */
+            tomato_audience?: number | null;
+            /** Tomato Meter */
+            tomato_meter?: number | null;
             /** Where To Watch */
             where_to_watch?: string[];
         };
         /** ManualMoviePreviewResponse */
         ManualMoviePreviewResponse: {
+            /** Awards */
+            awards?: string | null;
             /** Backdrop Url */
             backdrop_url?: string | null;
+            /** Certificate */
+            certificate?: string | null;
+            /** Collection */
+            collection?: string | null;
+            /** Countries */
+            countries?: string[];
             /** Genres */
             genres?: string[];
             /** Imdb Id */
             imdb_id?: string | null;
+            /** Imdb Rating */
+            imdb_rating?: number | null;
+            /** Imdb Votes */
+            imdb_votes?: number | null;
             /** Keywords */
             keywords?: string[];
+            /** Languages */
+            languages?: string[];
+            /** Last Omdb Fetch At */
+            last_omdb_fetch_at?: string | null;
+            /** Last Tmdb Fetch At */
+            last_tmdb_fetch_at?: string | null;
+            /** Metascore */
+            metascore?: number | null;
+            /** Omdb Payload Sha */
+            omdb_payload_sha?: string | null;
             /** Overview */
             overview?: string | null;
             /** Poster Url */
             poster_url?: string | null;
             /** Release Date */
             release_date?: string | null;
+            /** Rt Score */
+            rt_score?: number | null;
             /** Runtime */
             runtime?: number | null;
             /** Source */
@@ -587,6 +1404,12 @@ export interface components {
             title: string;
             /** Tmdb Id */
             tmdb_id?: number | null;
+            /** Tmdb Payload Sha */
+            tmdb_payload_sha?: string | null;
+            /** Tomato Audience */
+            tomato_audience?: number | null;
+            /** Tomato Meter */
+            tomato_meter?: number | null;
             /** Where To Watch */
             where_to_watch?: string[];
             /** Year */
@@ -609,6 +1432,8 @@ export interface components {
             awards?: string | null;
             /** Backdrop Url */
             backdrop_url?: string | null;
+            /** Certificate */
+            certificate?: string | null;
             /** Collection */
             collection?: string | null;
             /** Countries */
@@ -621,6 +1446,8 @@ export interface components {
             imdb_rating?: number | null;
             /** Imdb Votes */
             imdb_votes?: number | null;
+            /** Keywords */
+            keywords?: string[] | null;
             /** Languages */
             languages?: string | string[] | null;
             /** Metascore */
@@ -631,6 +1458,8 @@ export interface components {
             plot?: string | null;
             /** Poster Url */
             poster_url?: string | null;
+            /** Rt Score */
+            rt_score?: number | null;
             /** Runtime */
             runtime?: number | null;
             /** Title */
@@ -641,6 +1470,8 @@ export interface components {
             tomato_audience?: number | null;
             /** Tomato Meter */
             tomato_meter?: number | null;
+            /** Vault Id */
+            vault_id?: string | null;
             /** Where To Watch */
             where_to_watch?: string | string[] | null;
             /** Year */
@@ -652,6 +1483,8 @@ export interface components {
             awards?: string | null;
             /** Backdrop Url */
             backdrop_url?: string | null;
+            /** Certificate */
+            certificate?: string | null;
             /** Collection */
             collection?: string | null;
             /** Countries */
@@ -660,6 +1493,10 @@ export interface components {
             countries_display?: string[];
             /** Countries Iso */
             countries_iso?: string[];
+            /** Flag Notes */
+            flag_notes?: string | null;
+            /** Flag Reason */
+            flag_reason?: string | null;
             /**
              * Flagged
              * @default false
@@ -675,6 +1512,8 @@ export interface components {
             imdb_rating?: number | null;
             /** Imdb Votes */
             imdb_votes?: number | null;
+            /** Keywords */
+            keywords?: string[];
             /** Languages */
             languages?: string | string[] | null;
             /** Languages Display */
@@ -719,10 +1558,21 @@ export interface components {
             tomato_meter?: number | null;
             /** Top Billed */
             top_billed?: components["schemas"]["TopBilledEntry"][];
+            /** Vault Id */
+            vault_id?: string | null;
             /** Where To Watch */
             where_to_watch?: string[];
             /** Year */
             year?: number | null;
+        };
+        /** MovieDoubleFeature */
+        MovieDoubleFeature: {
+            primary: components["schemas"]["MovieRead"];
+            /** Runtime Cap */
+            runtime_cap: number;
+            secondary: components["schemas"]["MovieRead"];
+            /** Total Runtime */
+            total_runtime: number;
         };
         /** MovieFacets */
         MovieFacets: {
@@ -739,8 +1589,12 @@ export interface components {
         MovieFlagCreate: {
             /** Notes */
             notes?: string | null;
-            /** Reason */
-            reason?: string | null;
+            /**
+             * Reason
+             * @default Metadata cleanup
+             * @enum {string}
+             */
+            reason: "Metadata cleanup" | "Poster/backdrop issue" | "Missing poster" | "Broken link" | "Movie mismatch" | "Wrong runtime/year" | "Needs runtime" | "Other" | "Human review" | "Verify identity";
         };
         /** MovieFlagRead */
         MovieFlagRead: {
@@ -755,6 +1609,8 @@ export interface components {
             notes?: string | null;
             /** Reason */
             reason?: string | null;
+            /** Reported By Profile Id */
+            reported_by_profile_id?: number | null;
             /**
              * Updated At
              * Format: date-time
@@ -765,12 +1621,16 @@ export interface components {
         MovieLookupCandidate: {
             /** Backdrop Url */
             backdrop_url?: string | null;
+            /** Certificate */
+            certificate?: string | null;
             /** Genres */
             genres?: string[];
             /** Imdb Id */
             imdb_id?: string | null;
             /** Keywords */
             keywords?: string[];
+            /** Match Confidence */
+            match_confidence?: number | null;
             /**
              * Overview
              * @default
@@ -787,6 +1647,8 @@ export interface components {
              * @default tmdb
              */
             source: string;
+            /** Standardized Title */
+            standardized_title?: string | null;
             /**
              * Synopsis
              * @default
@@ -794,8 +1656,14 @@ export interface components {
             synopsis: string;
             /** Title */
             title: string;
+            /** Title Match */
+            title_match?: string | null;
             /** Tmdb Id */
-            tmdb_id: number;
+            tmdb_id?: number | null;
+            /** Vault Id */
+            vault_id?: number | null;
+            /** Vault Label */
+            vault_label?: string | null;
             /** Where To Watch */
             where_to_watch?: string[];
             /** Year */
@@ -805,6 +1673,41 @@ export interface components {
         MovieLookupResponse: {
             /** Items */
             items?: components["schemas"]["MovieLookupCandidate"][];
+            /** Notice */
+            notice?: string | null;
+        };
+        /** MovieMatchApplyResponse */
+        MovieMatchApplyResponse: {
+            /** Flag Resolved */
+            flag_resolved: boolean;
+            /** Imdb Id */
+            imdb_id?: string | null;
+            /** Message */
+            message: string;
+            /** Movie Id */
+            movie_id: number;
+            /** Title */
+            title: string;
+            /** Tmdb Id */
+            tmdb_id?: number | null;
+            /** Vault Id */
+            vault_id?: string | null;
+        };
+        /** MovieMatchSelection */
+        MovieMatchSelection: {
+            /** Imdb Id */
+            imdb_id?: string | null;
+            /**
+             * Source
+             * @enum {string}
+             */
+            source: "tmdb" | "omdb";
+            /** Title */
+            title: string;
+            /** Tmdb Id */
+            tmdb_id?: number | null;
+            /** Year */
+            year?: number | null;
         };
         /** MovieRead */
         MovieRead: {
@@ -812,6 +1715,8 @@ export interface components {
             awards?: string | null;
             /** Backdrop Url */
             backdrop_url?: string | null;
+            /** Certificate */
+            certificate?: string | null;
             /** Collection */
             collection?: string | null;
             /** Countries */
@@ -833,6 +1738,8 @@ export interface components {
             imdb_rating?: number | null;
             /** Imdb Votes */
             imdb_votes?: number | null;
+            /** Keywords */
+            keywords?: string[] | null;
             /** Languages */
             languages?: string | string[] | null;
             /** Languages Iso */
@@ -851,6 +1758,8 @@ export interface components {
             plot?: string | null;
             /** Poster Url */
             poster_url?: string | null;
+            /** Rt Score */
+            rt_score?: number | null;
             /** Runtime */
             runtime?: number | null;
             /** Title */
@@ -865,6 +1774,8 @@ export interface components {
             tomato_audience?: number | null;
             /** Tomato Meter */
             tomato_meter?: number | null;
+            /** Vault Id */
+            vault_id?: string | null;
             /** Where To Watch */
             where_to_watch?: string | string[] | null;
             /** Where To Watch List */
@@ -890,6 +1801,8 @@ export interface components {
             awards?: string | null;
             /** Backdrop Url */
             backdrop_url?: string | null;
+            /** Certificate */
+            certificate?: string | null;
             /** Collection */
             collection?: string | null;
             /** Countries */
@@ -902,6 +1815,8 @@ export interface components {
             imdb_rating?: number | null;
             /** Imdb Votes */
             imdb_votes?: number | null;
+            /** Keywords */
+            keywords?: string[] | null;
             /** Languages */
             languages?: string | string[] | null;
             /** Last Omdb Fetch At */
@@ -1052,16 +1967,141 @@ export interface components {
             /** Year Min */
             year_min?: number | null;
         };
+        /** SemanticSearchItem */
+        SemanticSearchItem: {
+            /** Awards */
+            awards?: string | null;
+            /** Backdrop Url */
+            backdrop_url?: string | null;
+            /** Certificate */
+            certificate?: string | null;
+            /** Collection */
+            collection?: string | null;
+            /** Countries */
+            countries?: string | string[] | null;
+            /** Countries Iso */
+            readonly countries_iso: string[];
+            /**
+             * Flagged
+             * @default false
+             */
+            flagged: boolean;
+            /** Genres */
+            genres?: components["schemas"]["GenreRead"][];
+            /** Id */
+            id: number;
+            /** Imdb Id */
+            imdb_id?: string | null;
+            /** Imdb Rating */
+            imdb_rating?: number | null;
+            /** Imdb Votes */
+            imdb_votes?: number | null;
+            /** Keywords */
+            keywords?: string[] | null;
+            /** Languages */
+            languages?: string | string[] | null;
+            /** Languages Iso */
+            readonly languages_iso: string[];
+            /** Last Omdb Fetch At */
+            last_omdb_fetch_at?: string | null;
+            /** Last Tmdb Fetch At */
+            last_tmdb_fetch_at?: string | null;
+            /** Metascore */
+            metascore?: number | null;
+            /** Moods */
+            moods?: components["schemas"]["MoodRead"][];
+            /** Omdb Payload Sha */
+            omdb_payload_sha?: string | null;
+            /** Plot */
+            plot?: string | null;
+            /** Poster Url */
+            poster_url?: string | null;
+            /** Rt Score */
+            rt_score?: number | null;
+            /** Runtime */
+            runtime?: number | null;
+            /** Similarity Score */
+            similarity_score: number;
+            /** Title */
+            title: string;
+            /** Tmdb Etag */
+            tmdb_etag?: string | null;
+            /** Tmdb Id */
+            tmdb_id?: number | null;
+            /** Tmdb Payload Sha */
+            tmdb_payload_sha?: string | null;
+            /** Tomato Audience */
+            tomato_audience?: number | null;
+            /** Tomato Meter */
+            tomato_meter?: number | null;
+            /** Vault Id */
+            vault_id?: string | null;
+            /** Where To Watch */
+            where_to_watch?: string | string[] | null;
+            /** Where To Watch List */
+            readonly where_to_watch_list: string[];
+            /** Year */
+            year?: number | null;
+        };
+        /** SemanticSearchRequest */
+        SemanticSearchRequest: {
+            /** Genres */
+            genres?: string[];
+            /** Moods */
+            moods?: string[];
+            /**
+             * Page
+             * @default 1
+             */
+            page: number;
+            /**
+             * Page Size
+             * @default 24
+             */
+            page_size: number;
+            /** Query */
+            query: string;
+            /** Runtime Max */
+            runtime_max?: number | null;
+            /** Runtime Min */
+            runtime_min?: number | null;
+            /** Year Max */
+            year_max?: number | null;
+            /** Year Min */
+            year_min?: number | null;
+        };
+        /** SemanticSearchResponse */
+        SemanticSearchResponse: {
+            facets: components["schemas"]["MovieFacets"];
+            /** Items */
+            items: components["schemas"]["SemanticSearchItem"][];
+            /** Mode */
+            mode: string;
+            /** Notice */
+            notice?: string | null;
+            /** Page */
+            page: number;
+            /** Page Size */
+            page_size: number;
+            /** Total */
+            total: number;
+        };
         /** SimilarMovie */
         SimilarMovie: {
             /** Flic Score */
             flic_score?: number | null;
+            /** Genres */
+            genres?: string[];
             /** Id */
             id: number;
+            /** Imdb Rating */
+            imdb_rating?: number | null;
             /** Poster Theme */
             poster_theme?: string | null;
             /** Poster Url */
             poster_url?: string | null;
+            /** Rt Score */
+            rt_score?: number | null;
             /** Title */
             title: string;
             /** Year */
@@ -1077,6 +2117,23 @@ export interface components {
             name: string;
             /** Person Id */
             person_id?: number | null;
+        };
+        /** UsageEventCreate */
+        UsageEventCreate: {
+            /** Context */
+            context?: string | null;
+            /**
+             * Event Name
+             * @enum {string}
+             */
+            event_name: "library_search_submitted" | "filters_applied" | "view_changed" | "movie_details_opened" | "discover_rail_opened" | "personalized_recommendations_shown" | "random_pick_requested" | "preference_toggled";
+            /** Movie Id */
+            movie_id?: number | null;
+            /**
+             * Page
+             * @enum {string}
+             */
+            page: "library" | "discover" | "detail" | "watchlist";
         };
         /** ValidationError */
         ValidationError: {
@@ -1116,6 +2173,262 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AiSearchResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    assistant_reply_get_api_assistant_get: {
+        parameters: {
+            query: {
+                q: string;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AssistantResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    assistant_reply_api_assistant_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AssistantRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AssistantResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    refresh_recommendation_api_collection_health_recommendation_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+        };
+    };
+    update_run_api_collection_health_update_run_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+        };
+    };
+    update_status_api_collection_health_update_status_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+        };
+    };
+    discover_refresh_api_discover_refresh_get: {
+        parameters: {
+            query?: {
+                seed?: number | null;
+                pairings_limit?: number;
+                genre_limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_profiles_api_profiles_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+        };
+    };
+    set_active_profile_api_profiles_active_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ActiveProfileRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    semantic_search_api_search_semantic_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SemanticSearchRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SemanticSearchResponse"];
                 };
             };
             /** @description Validation Error */
@@ -1251,6 +2564,90 @@ export interface operations {
             };
         };
     };
+    login_login_get: {
+        parameters: {
+            query?: {
+                unlocked?: number | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/html": string;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    login_submit_login_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/x-www-form-urlencoded": components["schemas"]["Body_login_submit_login_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/html": string;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    logout_logout_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
     list_movies_movies__get: {
         parameters: {
             query?: never;
@@ -1304,9 +2701,50 @@ export interface operations {
             };
         };
     };
+    get_double_feature_movies_double_feature_get: {
+        parameters: {
+            query?: {
+                /** @description Restrict to this genre */
+                genre?: string | null;
+                /** @description Desired mood name */
+                mood?: string | null;
+                year_min?: string | null;
+                year_max?: string | null;
+                /** @description Combined runtime cap (minutes) */
+                runtime_max?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MovieDoubleFeature"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_flags_movies_flags_get: {
         parameters: {
-            query?: never;
+            query?: {
+                page?: number;
+                page_size?: number;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -1320,6 +2758,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MovieFlagRead"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -1429,6 +2876,35 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["LlmMovieSearchResponse"];
                 };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_movie_movies__movie_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                movie_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {
@@ -1571,6 +3047,107 @@ export interface operations {
             };
         };
     };
+    report_flag_movies__movie_id__flag_report_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                movie_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MovieFlagCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MovieFlagRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    like_movie_movies__movie_id__like_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                movie_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    unlike_movie_movies__movie_id__like_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                movie_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     movie_lookup_movies__movie_id__lookup_get: {
         parameters: {
             query?: {
@@ -1673,6 +3250,72 @@ export interface operations {
             };
         };
     };
+    watchlist_movie_movies__movie_id__watchlist_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                movie_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    unwatchlist_movie_movies__movie_id__watchlist_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                movie_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_people_people__get: {
         parameters: {
             query?: {
@@ -1738,6 +3381,77 @@ export interface operations {
             };
         };
     };
+    discover_ui_discover_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/html": string;
+                };
+            };
+        };
+    };
+    record_usage_event_ui_events_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UsageEventCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_flags_ui_ui_flags_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
     movies_grid_ui_movies_get: {
         parameters: {
             query?: {
@@ -1749,6 +3463,9 @@ export interface operations {
                 runtime_max?: string | null;
                 page?: number;
                 order_by?: string;
+                view?: string;
+                preset?: string | null;
+                semantic?: string | null;
             };
             header?: never;
             path?: never;
@@ -1778,7 +3495,13 @@ export interface operations {
     };
     movies_health_ui_movies_health_get: {
         parameters: {
-            query?: never;
+            query?: {
+                view?: string | null;
+                row?: number | null;
+                movie?: number | null;
+                undo_decision?: number | null;
+                flag_reason?: string | null;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -1792,6 +3515,455 @@ export interface operations {
                 };
                 content: {
                     "text/html": string;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    movies_health_missing_ui_movies_health_missing_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/html": string;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    resolve_flagged_queue_item_ui_movies_health_review_flags__movie_id__resolve_post: {
+        parameters: {
+            query?: {
+                flag_reason?: string | null;
+            };
+            header?: never;
+            path: {
+                movie_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    accept_all_source_review_differences_ui_movies_health_review_source_accept_all_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    undo_source_review_field_ui_movies_health_review_source_decision__decision_id__undo_post: {
+        parameters: {
+            query?: {
+                view?: string;
+            };
+            header?: never;
+            path: {
+                decision_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_source_row_movie_ui_movies_health_review_source_row__row_id__create_post: {
+        parameters: {
+            query?: {
+                view?: string;
+            };
+            header?: never;
+            path: {
+                row_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    defer_source_review_movie_ui_movies_health_review_source_row__row_id__defer_post: {
+        parameters: {
+            query?: {
+                view?: string;
+            };
+            header?: never;
+            path: {
+                row_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    dismiss_source_duplicate_ui_movies_health_review_source_row__row_id__dismiss_duplicate_post: {
+        parameters: {
+            query?: {
+                view?: string;
+            };
+            header?: never;
+            path: {
+                row_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    decide_source_review_field_ui_movies_health_review_source_row__row_id__field__field_name___decision__post: {
+        parameters: {
+            query?: {
+                view?: string;
+            };
+            header?: never;
+            path: {
+                row_id: number;
+                field_name: string;
+                decision: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    confirm_source_row_match_ui_movies_health_review_source_row__row_id__match__movie_id__post: {
+        parameters: {
+            query?: {
+                view?: string;
+            };
+            header?: never;
+            path: {
+                row_id: number;
+                movie_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    mark_all_vault_reviews_needs_fix_ui_movies_health_review_vault_needs_fix_all_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    mark_review_checked_ui_movies_health_review__movie_id__checked_post: {
+        parameters: {
+            query?: {
+                view?: string;
+            };
+            header?: never;
+            path: {
+                movie_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    search_flagged_movie_matches_ui_movies_health_review__movie_id__matches_get: {
+        parameters: {
+            query: {
+                title: string;
+                year?: number | null;
+            };
+            header?: never;
+            path: {
+                movie_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MovieLookupResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    apply_flagged_movie_match_ui_movies_health_review__movie_id__matches_apply_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                movie_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MovieMatchSelection"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MovieMatchApplyResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    mark_review_needs_fix_ui_movies_health_review__movie_id__needs_fix_post: {
+        parameters: {
+            query?: {
+                view?: string;
+            };
+            header?: never;
+            path: {
+                movie_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -1862,6 +4034,26 @@ export interface operations {
             };
         };
     };
+    start_review_ui_movies_review_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
     movies_top_ui_movies_top_get: {
         parameters: {
             query?: never;
@@ -1884,7 +4076,10 @@ export interface operations {
     };
     movie_detail_ui_movies__movie_id__get: {
         parameters: {
-            query?: never;
+            query?: {
+                review?: boolean;
+                spotlight?: boolean;
+            };
             header?: never;
             path: {
                 movie_id: number;
@@ -1909,6 +4104,288 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    manage_movie_flag_ui_movies__movie_id__flag_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                movie_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MovieFlagCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MovieFlagRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    resolve_movie_flag_ui_movies__movie_id__flag_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                movie_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    flag_movie_for_review_ui_movies__movie_id__review_flag_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                movie_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: number | boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    cached_movie_poster_ui_posters__movie_id___size__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                movie_id: number;
+                size: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    review_queue_ui_ui_review_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    source_sync_ui_ui_source_sync_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/html": string;
+                };
+            };
+        };
+    };
+    upload_source_snapshot_ui_source_sync_upload_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_upload_source_snapshot_ui_source_sync_upload_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    confirm_source_snapshot_ui_source_sync__snapshot_id__confirm_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                snapshot_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    preview_source_snapshot_ui_source_sync__snapshot_id__preview_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                snapshot_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/html": string;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    watchlist_ui_watchlist_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/html": string;
                 };
             };
         };

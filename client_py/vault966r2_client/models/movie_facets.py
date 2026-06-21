@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, Any, TypeVar, Union
+from typing import TYPE_CHECKING, Any, TypeVar
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
@@ -18,20 +20,20 @@ T = TypeVar("T", bound="MovieFacets")
 class MovieFacets:
     """
     Attributes:
-        genres (Union[Unset, MovieFacetsGenres]):
-        moods (Union[Unset, MovieFacetsMoods]):
+        genres (MovieFacetsGenres | Unset):
+        moods (MovieFacetsMoods | Unset):
     """
 
-    genres: Union[Unset, "MovieFacetsGenres"] = UNSET
-    moods: Union[Unset, "MovieFacetsMoods"] = UNSET
+    genres: MovieFacetsGenres | Unset = UNSET
+    moods: MovieFacetsMoods | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
-        genres: Union[Unset, dict[str, Any]] = UNSET
+        genres: dict[str, Any] | Unset = UNSET
         if not isinstance(self.genres, Unset):
             genres = self.genres.to_dict()
 
-        moods: Union[Unset, dict[str, Any]] = UNSET
+        moods: dict[str, Any] | Unset = UNSET
         if not isinstance(self.moods, Unset):
             moods = self.moods.to_dict()
 
@@ -52,14 +54,14 @@ class MovieFacets:
 
         d = dict(src_dict)
         _genres = d.pop("genres", UNSET)
-        genres: Union[Unset, MovieFacetsGenres]
+        genres: MovieFacetsGenres | Unset
         if isinstance(_genres, Unset):
             genres = UNSET
         else:
             genres = MovieFacetsGenres.from_dict(_genres)
 
         _moods = d.pop("moods", UNSET)
-        moods: Union[Unset, MovieFacetsMoods]
+        moods: MovieFacetsMoods | Unset
         if isinstance(_moods, Unset):
             moods = UNSET
         else:

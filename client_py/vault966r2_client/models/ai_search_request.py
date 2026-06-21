@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 from collections.abc import Mapping
-from typing import Any, TypeVar, Union
+from typing import Any, TypeVar
 
 from attrs import define as _attrs_define
 
@@ -13,13 +15,13 @@ class AiSearchRequest:
     """
     Attributes:
         query (str):
-        page (Union[Unset, int]):  Default: 1.
-        page_size (Union[Unset, int]):  Default: 24.
+        page (int | Unset):  Default: 1.
+        page_size (int | Unset):  Default: 24.
     """
 
     query: str
-    page: Union[Unset, int] = 1
-    page_size: Union[Unset, int] = 24
+    page: int | Unset = 1
+    page_size: int | Unset = 24
 
     def to_dict(self) -> dict[str, Any]:
         query = self.query
