@@ -52,13 +52,36 @@
         errorEl.hidden = true;
       }
     };
+    const showError = (message) => {
+      if (!errorEl) return;
+      errorEl.textContent = message;
+      errorEl.hidden = false;
+    };
 
     form?.addEventListener("submit", async (event) => {
       event.preventDefault();
       event.stopPropagation();
       if (form.dataset.submitting === "true") return;
       clearError();
-      applyUnlockVisuals();
+      form.dataset.submitting = "true";
+      try {
+        const response = await fetch(form.action || "/login", {
+          method: "POST",
+          body: new FormData(form),
+          headers: { Accept: "application/json" },
+        });
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok || !payload.unlocked) {
+          showError(payload.error || "Unable to unlock the vault.");
+          return;
+        }
+        form.reset();
+        applyUnlockVisuals();
+      } catch (_error) {
+        showError("Unable to unlock the vault.");
+      } finally {
+        form.dataset.submitting = "false";
+      }
     });
 
     document.querySelectorAll(".login-profile-form").forEach((profileForm) => {

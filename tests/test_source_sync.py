@@ -171,10 +171,8 @@ def test_source_sync_rejects_overlong_identity_fields(client: TestClient) -> Non
     assert "exceeds%20300%20characters" in response.headers["location"]
 
 
-def test_source_sync_mutations_require_same_origin(client: TestClient, monkeypatch) -> None:
-    monkeypatch.setattr(settings, "disable_auth", False)
-    monkeypatch.setattr(settings, "login_session_secret", None)
-    client.post("/login", data={"profile_id": "1"}, follow_redirects=False)
+def test_source_sync_mutations_require_same_origin(client: TestClient, login_profile) -> None:
+    login_profile(1)
     content = _csv("Blade Runner,1:57:00,Ridley Scott,1982,Sci-Fi,PG,6/25/82,1")
 
     missing_origin = client.post(

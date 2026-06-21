@@ -3,8 +3,6 @@ from datetime import datetime, timezone
 import pytest
 from fastapi.testclient import TestClient
 
-from api.config import settings
-
 
 def test_flag_and_unflag_movie(client: TestClient, admin_headers: dict[str, str]) -> None:
     payload = {"reason": "Missing poster", "notes": "Need Blu-ray scan"}
@@ -83,10 +81,8 @@ def test_update_movie_metadata_resolves_flag(
     assert detail["flagged"] is False
 
 
-def test_update_movie_allows_admin_profile_session(client: TestClient, monkeypatch) -> None:
-    monkeypatch.setattr(settings, "disable_auth", False)
-    monkeypatch.setattr(settings, "login_session_secret", None)
-    client.post("/login", data={"profile_id": "1"}, follow_redirects=False)
+def test_update_movie_allows_admin_profile_session(client: TestClient, login_profile) -> None:
+    login_profile(1)
 
     missing_origin = client.patch("/movies/1", json={"runtime": 124})
     response = client.patch(
@@ -100,10 +96,8 @@ def test_update_movie_allows_admin_profile_session(client: TestClient, monkeypat
     assert response.json()["runtime"] == 124
 
 
-def test_update_movie_rejects_reviewer_profile_session(client: TestClient, monkeypatch) -> None:
-    monkeypatch.setattr(settings, "disable_auth", False)
-    monkeypatch.setattr(settings, "login_session_secret", None)
-    client.post("/login", data={"profile_id": "2"}, follow_redirects=False)
+def test_update_movie_rejects_reviewer_profile_session(client: TestClient, login_profile) -> None:
+    login_profile(2)
 
     response = client.patch(
         "/movies/1",

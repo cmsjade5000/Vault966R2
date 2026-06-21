@@ -17,6 +17,7 @@ if str(ROOT_DIR) not in sys.path:
 os.environ.setdefault("ADMIN_TOKEN", "testtoken")
 os.environ.setdefault("DISABLE_AUTH", "true")
 
+from api.config import settings
 from api.db import Base, get_db
 from api.main import app
 from api.models.movie import Genre, Mood, Movie
@@ -138,6 +139,33 @@ def client() -> Generator[TestClient, None, None]:
 @pytest.fixture()
 def admin_headers() -> dict[str, str]:
     return {"Authorization": "Bearer testtoken"}
+
+
+@pytest.fixture()
+def login_profile(client: TestClient, monkeypatch):
+    def _login(profile_id: int = 1):
+        monkeypatch.setattr(settings, "disable_auth", False)
+        monkeypatch.setattr(settings, "login_session_secret", None)
+        monkeypatch.setattr(settings, "login_access_key", "vault")
+        monkeypatch.setattr(settings, "login_passcode", "966")
+
+        unlock = client.post(
+            "/login",
+            data={"access_key": "vault", "passcode": "966"},
+            follow_redirects=False,
+        )
+        assert unlock.status_code == 303
+        assert unlock.headers["location"] == "/login?unlocked=1"
+
+        response = client.post(
+            "/login",
+            data={"profile_id": str(profile_id)},
+            follow_redirects=False,
+        )
+        assert response.status_code == 303
+        return response
+
+    return _login
 
 
 @pytest.fixture()
