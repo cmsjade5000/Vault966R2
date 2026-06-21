@@ -5,11 +5,9 @@ from logging.config import fileConfig
 from alembic import context
 from sqlalchemy import engine_from_config, pool
 
+import api.models  # noqa: F401
 from api.config import settings
 from api.db import Base, DEFAULT_SQLITE
-
-# Import models so that metadata is populated for autogenerate
-from api.models import flic_memory, flic_preset, movie, movie_flag, person  # noqa: F401
 
 config = context.config
 

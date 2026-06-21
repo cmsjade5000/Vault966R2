@@ -345,6 +345,12 @@ def _clean_title_aliases(title: str) -> str:
     return cleaned.strip()
 
 
+def standardize_title_for_identity_search(title: str) -> str:
+    """Return the stable title text used for external identity repair searches."""
+
+    return _clean_title_aliases(title)
+
+
 def iter_tmdb_search_variants(title: str, year: int | None) -> List[Tuple[str, Optional[int], str]]:
     """Generate search retries for TMDb when a strict title+year match fails."""
 

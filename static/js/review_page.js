@@ -27,6 +27,57 @@
     return link;
   };
 
+  const providerLabel = (source) => {
+    if (source === "omdb") return "OMDb";
+    return "TMDB";
+  };
+
+  const canApplyCandidate = (candidate) => {
+    if (!candidate) return false;
+    if (candidate.source === "omdb") return Boolean(candidate.imdb_id);
+    return Boolean(candidate.tmdb_id);
+  };
+
+  const selectionSource = (candidate) =>
+    candidate?.source === "omdb" ? "omdb" : "tmdb";
+
+  const buildApplyPayload = (search, candidate) => ({
+    title: search.title,
+    year: search.year,
+    source: selectionSource(candidate),
+    tmdb_id: candidate.tmdb_id || null,
+    imdb_id: candidate.imdb_id || null,
+  });
+
+  const parseSearchForm = (form) => {
+    const data = new FormData(form);
+    const title = String(data.get("title") || "").trim();
+    const yearText = String(data.get("year") || "").trim();
+    const year = yearText ? Number.parseInt(yearText, 10) : null;
+    if (!title) {
+      throw new Error("Enter a title to search.");
+    }
+    if (
+      year !== null &&
+      (!Number.isInteger(year) || year < 1870 || year > 2100)
+    ) {
+      throw new Error("Year must be between 1870 and 2100, or left blank.");
+    }
+    return {
+      key: `${title}\n${year ?? ""}`,
+      title,
+      year,
+    };
+  };
+
+  window.VaultReviewPageSupport = {
+    buildApplyPayload,
+    canApplyCandidate,
+    parseSearchForm,
+    providerLabel,
+    selectionSource,
+  };
+
   const initFlagMatcher = (root) => {
     const movieId = root.dataset.movieId;
     const form = root.querySelector("[data-flag-match-search]");
@@ -45,6 +96,72 @@
     const setStatus = (message, isError = false) => {
       status.textContent = message;
       status.classList.toggle("is-error", isError);
+    };
+
+    const buildCandidateDetails = (candidate) => {
+      const details = document.createElement("details");
+      details.className = "flag-match-card__details";
+
+      const summary = document.createElement("summary");
+      summary.textContent = "More details";
+      details.appendChild(summary);
+
+      const content = document.createElement("div");
+      content.className = "flag-match-card__details-body";
+
+      const ids = document.createElement("div");
+      ids.className = "flag-match-card__ids";
+      appendMeta(
+        ids,
+        "TMDB",
+        candidate.tmdb_id ? String(candidate.tmdb_id) : "",
+      );
+      appendMeta(ids, "IMDb", candidate.imdb_id || "");
+      content.appendChild(ids);
+
+      if (candidate.runtime || typeof candidate.match_confidence === "number") {
+        const secondary = document.createElement("p");
+        secondary.className = "flag-match-card__secondary";
+        const parts = [];
+        if (candidate.runtime) parts.push(`${candidate.runtime} minutes`);
+        if (typeof candidate.match_confidence === "number") {
+          parts.push(
+            `${Math.round(candidate.match_confidence * 100)}% title/year match`,
+          );
+        }
+        secondary.textContent = parts.join(" · ");
+        content.appendChild(secondary);
+      }
+
+      if (candidate.synopsis) {
+        const synopsis = document.createElement("p");
+        synopsis.className = "flag-match-card__synopsis";
+        synopsis.textContent = candidate.synopsis;
+        content.appendChild(synopsis);
+      }
+
+      const links = document.createElement("div");
+      links.className = "candidate-research-links";
+      if (candidate.tmdb_id) {
+        links.appendChild(
+          providerLink(
+            "View on TMDB",
+            `https://www.themoviedb.org/movie/${candidate.tmdb_id}`,
+          ),
+        );
+      }
+      if (candidate.imdb_id) {
+        links.appendChild(
+          providerLink(
+            "View on IMDb",
+            `https://www.imdb.com/title/${candidate.imdb_id}/`,
+          ),
+        );
+      }
+      if (links.childElementCount) content.appendChild(links);
+
+      details.appendChild(content);
+      return details;
     };
 
     const renderCandidates = (items) => {
@@ -75,55 +192,12 @@
 
         const summary = document.createElement("p");
         summary.className = "flag-match-card__summary";
-        const provider =
-          candidate.source === "omdb" ? "OMDb result" : "TMDB result";
+        const provider = `${providerLabel(candidate.source)} result`;
         const year = candidate.year ? String(candidate.year) : "Year unknown";
-        const runtime = candidate.runtime
-          ? `${candidate.runtime} minutes`
-          : "Runtime unknown";
-        const confidence =
-          typeof candidate.match_confidence === "number"
-            ? `${Math.round(candidate.match_confidence * 100)}% title/year match`
-            : "Unscored match";
-        summary.textContent = `${provider} · ${year} · ${runtime} · ${confidence}`;
+        summary.textContent = `${year} · ${provider}`;
         body.appendChild(summary);
 
-        const ids = document.createElement("div");
-        ids.className = "flag-match-card__ids";
-        appendMeta(
-          ids,
-          "TMDB",
-          candidate.tmdb_id ? String(candidate.tmdb_id) : "",
-        );
-        appendMeta(ids, "IMDb", candidate.imdb_id || "");
-        body.appendChild(ids);
-
-        if (candidate.synopsis) {
-          const synopsis = document.createElement("p");
-          synopsis.className = "flag-match-card__synopsis";
-          synopsis.textContent = candidate.synopsis;
-          body.appendChild(synopsis);
-        }
-
-        const links = document.createElement("div");
-        links.className = "candidate-research-links";
-        if (candidate.tmdb_id) {
-          links.appendChild(
-            providerLink(
-              "View on TMDB",
-              `https://www.themoviedb.org/movie/${candidate.tmdb_id}`,
-            ),
-          );
-        }
-        if (candidate.imdb_id) {
-          links.appendChild(
-            providerLink(
-              "View on IMDb",
-              `https://www.imdb.com/title/${candidate.imdb_id}/`,
-            ),
-          );
-        }
-        body.appendChild(links);
+        body.appendChild(buildCandidateDetails(candidate));
 
         const actions = document.createElement("div");
         actions.className = "flag-match-card__actions";
@@ -131,9 +205,16 @@
         choose.type = "button";
         choose.className = "button-secondary";
         choose.textContent = "Use this match";
-        choose.disabled = !candidate.tmdb_id;
+        choose.disabled = !canApplyCandidate(candidate);
         choose.addEventListener("click", async () => {
-          if (!currentSearch || !candidate.tmdb_id) return;
+          if (!currentSearch) {
+            setStatus(
+              "Search again before selecting from edited results.",
+              true,
+            );
+            return;
+          }
+          if (!canApplyCandidate(candidate)) return;
           const confirmed = window.confirm(
             `Use ${candidate.title || "this movie"} (${candidate.year || "year unknown"}) for this Vault entry?`,
           );
@@ -151,13 +232,9 @@
                   Accept: "application/json",
                   "Content-Type": "application/json",
                 },
-                body: JSON.stringify({
-                  title: currentSearch.title,
-                  year: currentSearch.year,
-                  source: candidate.source === "omdb" ? "omdb" : "tmdb",
-                  tmdb_id: candidate.tmdb_id,
-                  imdb_id: candidate.imdb_id,
-                }),
+                body: JSON.stringify(
+                  buildApplyPayload(currentSearch, candidate),
+                ),
               },
             );
             if (!response.ok) {
@@ -185,29 +262,22 @@
       });
     };
 
-    form.addEventListener("submit", async (event) => {
-      event.preventDefault();
-      const data = new FormData(form);
-      const title = String(data.get("title") || "").trim();
-      const yearText = String(data.get("year") || "").trim();
-      const year = yearText ? Number.parseInt(yearText, 10) : null;
-      if (!title) {
-        setStatus("Enter a title to search.", true);
-        return;
-      }
-      if (
-        year !== null &&
-        (!Number.isInteger(year) || year < 1870 || year > 2100)
-      ) {
-        setStatus("Year must be between 1870 and 2100, or left blank.", true);
+    const search = async () => {
+      let searchState;
+      try {
+        searchState = parseSearchForm(form);
+      } catch (error) {
+        setStatus(error.message, true);
         return;
       }
 
-      currentSearch = { title, year };
+      currentSearch = searchState;
+      submitButton.textContent = "Search again";
+      const { title, year } = searchState;
       const params = new URLSearchParams({ title });
       if (year !== null) params.set("year", String(year));
       setPending(true);
-      setStatus("Searching TMDB and OMDb…");
+      setStatus("Searching TMDB and OMDb...");
       results.hidden = true;
       results.replaceChildren();
 
@@ -238,7 +308,34 @@
       } finally {
         setPending(false);
       }
+    };
+
+    form.addEventListener("submit", (event) => {
+      event.preventDefault();
+      search();
     });
+
+    form.addEventListener("input", () => {
+      if (!currentSearch) return;
+      try {
+        const nextSearch = parseSearchForm(form);
+        if (nextSearch.key === currentSearch.key) return;
+      } catch (error) {
+        // The submit handler will show validation once the user retries.
+      }
+      currentSearch = null;
+      submitButton.textContent = "Search matches";
+      setStatus("Search again to refresh candidates before selecting.");
+    });
+
+    if (form.dataset.autoSearch === "true") {
+      try {
+        parseSearchForm(form);
+        search();
+      } catch (error) {
+        setStatus("Enter a title to search.", true);
+      }
+    }
   };
 
   document.querySelectorAll("[data-flag-match]").forEach(initFlagMatcher);

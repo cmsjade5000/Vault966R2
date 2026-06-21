@@ -2825,12 +2825,44 @@ body.filters-open {
   margin: 0;
 }
 
-.flag-match-card__summary,
+.flag-match-card__summary {
+  color: var(--flic-text);
+  font-size: 0.84rem;
+  font-weight: 650;
+  line-height: 1.45;
+  margin: 0.35rem 0 0;
+}
+
+.flag-match-card__details {
+  margin-top: 0.65rem;
+}
+
+.flag-match-card__details summary {
+  color: var(--flic-muted);
+  cursor: pointer;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.flag-match-card__details summary:hover,
+.flag-match-card__details summary:focus-visible {
+  color: var(--flic-text);
+}
+
+.flag-match-card__details-body {
+  border-top: 1px solid rgba(148, 163, 184, 0.14);
+  display: grid;
+  gap: 0.55rem;
+  margin-top: 0.55rem;
+  padding-top: 0.65rem;
+}
+
+.flag-match-card__secondary,
 .flag-match-card__synopsis {
   color: var(--flic-muted);
   font-size: 0.8rem;
   line-height: 1.45;
-  margin: 0.35rem 0 0;
+  margin: 0;
 }
 
 .flag-match-card__synopsis {
@@ -2845,7 +2877,7 @@ body.filters-open {
   flex-wrap: wrap;
   font-size: 0.75rem;
   gap: 0.75rem;
-  margin-top: 0.45rem;
+  margin: 0;
 }
 
 .flag-match-card__ids strong {
@@ -2853,7 +2885,7 @@ body.filters-open {
 }
 
 .flag-match-card .candidate-research-links {
-  margin-top: 0.65rem;
+  margin-top: 0;
 }
 
 .flag-match-card__actions {

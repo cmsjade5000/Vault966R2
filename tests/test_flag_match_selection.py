@@ -1,5 +1,6 @@
 from api.models.movie import Movie, MovieIngestProvenance
 from api.models.movie_flag import MovieFlag
+from api.models.movie_repair import MovieIdentityRepair
 from api.routers.ui import review
 
 
@@ -36,21 +37,32 @@ def test_flag_match_search_returns_manual_options(
     movie = db_session.get(Movie, 1)
     movie.flag = MovieFlag(reason="Human review", notes="No source IDs")
     db_session.commit()
-    monkeypatch.setattr(
-        review,
-        "lookup_movie_candidates",
-        lambda title, year, limit: [_candidate()],
-    )
-    monkeypatch.setattr(
-        review,
-        "lookup_omdb_candidates",
-        lambda title, year, limit: [
+    tmdb_calls = []
+    omdb_calls = []
+
+    def fake_tmdb_lookup(title, year, limit):
+        tmdb_calls.append((title, year, limit))
+        return [_candidate()]
+
+    def fake_omdb_lookup(title, year, limit):
+        omdb_calls.append((title, year, limit))
+        return [
             {
                 **_candidate(imdb_id="tt9001002"),
                 "source": "omdb",
                 "tmdb_id": None,
             }
-        ],
+        ]
+
+    monkeypatch.setattr(
+        review,
+        "lookup_movie_candidates",
+        fake_tmdb_lookup,
+    )
+    monkeypatch.setattr(
+        review,
+        "lookup_omdb_candidates",
+        fake_omdb_lookup,
     )
 
     response = client.get(
@@ -63,6 +75,9 @@ def test_flag_match_search_returns_manual_options(
     assert payload["items"][0]["tmdb_id"] == 9001
     assert payload["items"][0]["imdb_id"] == "tt9001001"
     assert any(item["source"] == "omdb" for item in payload["items"])
+    assert tmdb_calls == [("Blade Runner", None, 12)]
+    assert omdb_calls == [("Blade Runner", None, 10)]
+    assert payload["items"][0]["standardized_title"] == "Blade Runner"
 
 
 def test_apply_flag_match_updates_metadata_and_resolves_flag(
@@ -81,6 +96,11 @@ def test_apply_flag_match_updates_metadata_and_resolves_flag(
         review,
         "lookup_movie_candidates",
         lambda title, year, limit: [_candidate()],
+    )
+    monkeypatch.setattr(
+        review,
+        "lookup_omdb_candidates",
+        lambda title, year, limit: [],
     )
 
     response = client.post(
@@ -115,6 +135,16 @@ def test_apply_flag_match_updates_metadata_and_resolves_flag(
         .all()
     )
     assert {item.provider for item in provenance} == {"tmdb", "omdb"}
+    repair = db_session.query(MovieIdentityRepair).one()
+    assert repair.movie_id == movie.id
+    assert repair.search_title == "Blade Runner (1982)"
+    assert repair.standardized_title == "Blade Runner"
+    assert repair.selected_title == "Blade Runner"
+    assert repair.selected_tmdb_id == 9001
+    assert repair.before_values["vault_id"] == original_vault_id
+    assert repair.before_values["imdb_id"] is None
+    assert repair.after_values["imdb_id"] == "tt9001001"
+    assert repair.after_values["vault_id"] == original_vault_id
 
 
 def test_apply_flag_match_rejects_duplicate_external_id(
@@ -139,6 +169,11 @@ def test_apply_flag_match_rejects_duplicate_external_id(
                 imdb_id=duplicate_imdb_id,
             )
         ],
+    )
+    monkeypatch.setattr(
+        review,
+        "lookup_omdb_candidates",
+        lambda title, year, limit: [],
     )
 
     response = client.post(
@@ -172,6 +207,11 @@ def test_apply_omdb_only_match_resolves_flag(
         "source": "omdb",
         "tmdb_id": None,
     }
+    monkeypatch.setattr(
+        review,
+        "lookup_movie_candidates",
+        lambda title, year, limit: [],
+    )
     monkeypatch.setattr(
         review,
         "lookup_omdb_candidates",

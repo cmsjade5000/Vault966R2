@@ -419,7 +419,7 @@ def test_flags_page_lists_flagged_movies(client: TestClient, admin_headers: dict
     html = page.text
     assert "Flags" in html
     assert "Metadata cleanup" in html
-    assert "Find an external match" in html
+    assert "Repair by title match" in html
     assert "data-flag-match-search" in html
     assert 'value="Blade Runner"' in html
 
