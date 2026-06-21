@@ -13,7 +13,7 @@ import sys
 from datetime import datetime, timezone
 from typing import Any
 
-from sqlalchemy import create_engine, func
+from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, selectinload
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
@@ -25,6 +25,10 @@ from api.models.movie import Movie, MovieIngestProvenance  # noqa: E402
 from api.models.movie_review import MovieReviewCheck  # noqa: E402
 from api.models.person import Role, RoleType  # noqa: E402
 from api.models.source_sync import SourceFieldDecision  # noqa: E402
+from api.services.collection_integrity import (  # noqa: E402
+    count_structural_issues,
+    get_structural_issues,
+)
 from api.services.source_sync import parse_directors  # noqa: E402
 from api.utils.providers import split_providers  # noqa: E402
 from core.genres import split_and_normalize  # noqa: E402
@@ -171,17 +175,6 @@ def _decision_matches_actual(
     return False
 
 
-def _duplicates(db: Session, column) -> list[dict[str, Any]]:
-    rows = (
-        db.query(column, func.count(Movie.id))
-        .filter(column.isnot(None))
-        .group_by(column)
-        .having(func.count(Movie.id) > 1)
-        .all()
-    )
-    return [{"value": value, "count": count} for value, count in rows]
-
-
 def audit(
     db: Session,
     *,
@@ -213,30 +206,8 @@ def audit(
         .all()
     }
 
-    structural = {
-        "duplicate_imdb_ids": _duplicates(db, Movie.imdb_id),
-        "duplicate_tmdb_ids": _duplicates(db, Movie.tmdb_id),
-        "missing_titles": [movie.id for movie in movies if not str(movie.title or "").strip()],
-        "invalid_years": [
-            movie.id
-            for movie in movies
-            if movie.year is not None and not 1870 <= movie.year <= 2100
-        ],
-        "invalid_runtimes": [
-            movie.id for movie in movies if movie.runtime is not None and movie.runtime <= 0
-        ],
-        "missing_provenance": [movie.id for movie in movies if not movie.ingest_provenance],
-        "duplicate_title_year": [
-            {"title": title, "year": year, "count": count}
-            for title, year, count in (
-                db.query(Movie.title, Movie.year, func.count(Movie.id))
-                .group_by(func.lower(Movie.title), Movie.year)
-                .having(func.count(Movie.id) > 1)
-                .all()
-            )
-        ],
-    }
-    structural_issue_count = sum(len(items) for items in structural.values())
+    structural = get_structural_issues(db)
+    structural_issue_count = count_structural_issues(structural)
     content_review = {
         "title_embedded_year_conflicts": [
             {
