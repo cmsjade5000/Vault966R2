@@ -1169,6 +1169,10 @@ export interface components {
         };
         /** Body_login_submit_login_post */
         Body_login_submit_login_post: {
+            /** Access Key */
+            access_key?: string | null;
+            /** Passcode */
+            passcode?: string | null;
             /** Profile Id */
             profile_id?: number | null;
         };

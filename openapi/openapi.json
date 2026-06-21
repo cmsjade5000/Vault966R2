@@ -208,6 +208,30 @@
       },
       "Body_login_submit_login_post": {
         "properties": {
+          "access_key": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Access Key"
+          },
+          "passcode": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Passcode"
+          },
           "profile_id": {
             "anyOf": [
               {
