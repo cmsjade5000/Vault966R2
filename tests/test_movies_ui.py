@@ -149,6 +149,7 @@ def test_reviewer_can_report_movie_but_cannot_manage_flags(
     report = client.post(
         "/movies/1/flag/report",
         json={"reason": "Wrong runtime/year", "notes": "Runtime looks off."},
+        headers={"Origin": "http://testserver"},
     )
     assert report.status_code == 200
     body = report.json()
@@ -202,6 +203,7 @@ def test_reviewer_report_does_not_overwrite_existing_admin_flag(
     response = client.post(
         "/movies/1/flag/report",
         json={"reason": "Other", "notes": "Reviewer context."},
+        headers={"Origin": "http://testserver"},
     )
 
     assert response.status_code == 200
@@ -213,6 +215,32 @@ def test_reviewer_report_does_not_overwrite_existing_admin_flag(
     assert flag.reason == "Movie mismatch"
     assert flag.notes == "Admin context stays."
     assert flag.reported_by_profile_id == 2
+
+
+def test_reviewer_report_requires_same_origin(
+    client: TestClient,
+    monkeypatch,
+) -> None:
+    monkeypatch.setattr(settings, "disable_auth", False)
+    monkeypatch.setattr(settings, "login_session_secret", None)
+    client.post("/login", data={"profile_id": "2"}, follow_redirects=False)
+
+    payload = {"reason": "Wrong runtime/year", "notes": "Runtime looks off."}
+    missing_origin = client.post("/movies/1/flag/report", json=payload)
+    cross_origin = client.post(
+        "/movies/1/flag/report",
+        json=payload,
+        headers={"Origin": "http://evil.test"},
+    )
+    same_origin = client.post(
+        "/movies/1/flag/report",
+        json=payload,
+        headers={"Origin": "http://testserver"},
+    )
+
+    assert missing_origin.status_code == 403
+    assert cross_origin.status_code == 403
+    assert same_origin.status_code == 200
 
 
 def test_admin_can_manage_movie_detail_flags_with_session(

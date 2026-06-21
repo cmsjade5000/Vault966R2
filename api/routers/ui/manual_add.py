@@ -8,7 +8,7 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from api.db import get_db
-from api.deps.auth import require_profile_role
+from api.deps.auth import require_profile_role, require_same_origin
 from api.models.movie import Genre, Movie, MovieIngestProvenance
 from api.services.manual_add import (
     append_movie_to_cleaned_csv,
@@ -143,6 +143,7 @@ def manual_add_preview(
     payload: ManualMovieCreate = Body(...),
     db: Session = Depends(get_db),
     _: str = Depends(require_profile_role(ROLE_ADMIN)),
+    __: None = Depends(require_same_origin),
 ):
     title = payload.title.strip()
     year = payload.year
@@ -172,6 +173,7 @@ def manual_add_movie(
     payload: ManualMovieCreate = Body(...),
     db: Session = Depends(get_db),
     _: str = Depends(require_profile_role(ROLE_ADMIN)),
+    __: None = Depends(require_same_origin),
 ):
     title = payload.title.strip()
     year = payload.year

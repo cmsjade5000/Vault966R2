@@ -171,6 +171,55 @@ def test_source_sync_rejects_overlong_identity_fields(client: TestClient) -> Non
     assert "exceeds%20300%20characters" in response.headers["location"]
 
 
+def test_source_sync_mutations_require_same_origin(client: TestClient, monkeypatch) -> None:
+    monkeypatch.setattr(settings, "disable_auth", False)
+    monkeypatch.setattr(settings, "login_session_secret", None)
+    client.post("/login", data={"profile_id": "1"}, follow_redirects=False)
+    content = _csv("Blade Runner,1:57:00,Ridley Scott,1982,Sci-Fi,PG,6/25/82,1")
+
+    missing_origin = client.post(
+        "/ui/source-sync/upload",
+        files={"source_file": ("source.csv", content, "text/csv")},
+        follow_redirects=False,
+    )
+    cross_origin = client.post(
+        "/ui/source-sync/upload",
+        files={"source_file": ("source.csv", content, "text/csv")},
+        headers={"Origin": "http://evil.test"},
+        follow_redirects=False,
+    )
+    allowed_upload = client.post(
+        "/ui/source-sync/upload",
+        files={"source_file": ("source.csv", content, "text/csv")},
+        headers={"Origin": "http://testserver"},
+        follow_redirects=False,
+    )
+
+    assert missing_origin.status_code == 403
+    assert cross_origin.status_code == 403
+    assert allowed_upload.status_code == 303
+
+    snapshot_id = int(allowed_upload.headers["location"].split("/")[-2])
+    missing_confirm_origin = client.post(
+        f"/ui/source-sync/{snapshot_id}/confirm",
+        follow_redirects=False,
+    )
+    cross_confirm_origin = client.post(
+        f"/ui/source-sync/{snapshot_id}/confirm",
+        headers={"Origin": "http://evil.test"},
+        follow_redirects=False,
+    )
+    allowed_confirm = client.post(
+        f"/ui/source-sync/{snapshot_id}/confirm",
+        headers={"Origin": "http://testserver"},
+        follow_redirects=False,
+    )
+
+    assert missing_confirm_origin.status_code == 403
+    assert cross_confirm_origin.status_code == 403
+    assert allowed_confirm.status_code == 303
+
+
 def test_unsupported_title_match_remains_ambiguous(client: TestClient, db_session) -> None:
     snapshot_id = _upload_and_confirm(
         client,

@@ -1,3 +1,6 @@
+from api.config import settings
+
+
 def _first_movie_id(client) -> int:
     response = client.get("/movies")
     assert response.status_code == 200
@@ -39,6 +42,30 @@ def test_like_watchlist_is_profile_scoped(client) -> None:
     assert response.status_code == 200
     payload = response.json()
     assert payload["watchlist"] is False
+
+
+def test_preference_mutations_require_same_origin_when_auth_enabled(client, monkeypatch) -> None:
+    monkeypatch.setattr(settings, "disable_auth", False)
+    monkeypatch.setattr(settings, "login_session_secret", None)
+    client.post("/login", data={"profile_id": "1"}, follow_redirects=False)
+    movie_id = _first_movie_id(client)
+
+    mutation_cases = [
+        ("post", f"/movies/{movie_id}/like"),
+        ("delete", f"/movies/{movie_id}/like"),
+        ("post", f"/movies/{movie_id}/watchlist"),
+        ("delete", f"/movies/{movie_id}/watchlist"),
+    ]
+
+    for method, path in mutation_cases:
+        response = getattr(client, method)(path)
+        assert response.status_code == 403
+
+        response = getattr(client, method)(path, headers={"Origin": "http://evil.test"})
+        assert response.status_code == 403
+
+        response = getattr(client, method)(path, headers={"Origin": "http://testserver"})
+        assert response.status_code == 200
 
 
 def test_watchlist_uses_library_movie_cards(client) -> None:
