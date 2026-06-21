@@ -4,11 +4,6 @@
     const updateStatus = document.querySelector("[data-update-status]");
     const updateSteps = document.querySelector("[data-update-steps]");
 
-    const adminToken = window.localStorage?.getItem("vaultAdminToken");
-    const adminHeaders = adminToken
-      ? { Authorization: `Bearer ${adminToken}` }
-      : {};
-
     const setBusy = (isBusy) => {
       if (updateButton) {
         updateButton.classList.toggle("is-busy", isBusy);
@@ -92,13 +87,10 @@
         try {
           const response = await fetch("/api/collection-health/update/run", {
             method: "POST",
-            headers: adminHeaders,
           });
           if (!response.ok) {
-            if (response.status === 401) {
-              throw new Error(
-                "Admin token required. Set localStorage.vaultAdminToken to your ADMIN_TOKEN.",
-              );
+            if (response.status === 401 || response.status === 403) {
+              throw new Error("Admin profile session required.");
             }
             throw new Error("Failed to start vault update");
           }
