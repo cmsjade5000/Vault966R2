@@ -15,6 +15,7 @@ from api.models.movie import Genre, Movie
 from api.models.movie_flag import MovieFlag
 from api.models.semantic_search import AiCache
 from api.config import settings
+from api.services.collection_integrity import get_structural_issue_count
 from core.genres import split_and_normalize
 
 
@@ -432,10 +433,7 @@ def get_collection_health(db: Session) -> CollectionHealth:
     source_summary = snapshot_summary(db, latest_snapshot)
     source_review = get_source_review_queue(db, snapshot=latest_snapshot)
     legacy_review, _ = get_review_queue(db)
-    structural_issues = (
-        base_query.filter(or_(Movie.vault_id.is_(None), Movie.vault_id == "")).count()
-        + base_query.filter(or_(Movie.title.is_(None), Movie.title == "")).count()
-    )
+    structural_issues = get_structural_issue_count(db)
 
     return CollectionHealth(
         missing_runtime=missing_runtime,
