@@ -29,6 +29,19 @@ SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False, futu
 
 logger = logging.getLogger(__name__)
 
+SQLITE_REQUIRED_MOVIE_COLUMNS = {
+    "id",
+    "title",
+    "vault_id",
+    "imdb_id",
+    "tmdb_id",
+}
+SQLITE_REQUIRED_UNIQUE_INDEXES = {
+    "ix_movies_imdb_id",
+    "ix_movies_tmdb_id",
+    "ix_movies_vault_id",
+}
+
 
 class Base(DeclarativeBase):
     pass
@@ -58,6 +71,85 @@ def should_bootstrap_sqlite_schema() -> bool:
     if os.getenv("PYTEST_CURRENT_TEST"):
         return False
     return True
+
+
+def _duplicate_values(connection, column_name: str) -> list[str]:
+    return [
+        str(row[0])
+        for row in connection.execute(
+            text(
+                f"""
+                SELECT {column_name} FROM movies
+                WHERE {column_name} IS NOT NULL
+                GROUP BY {column_name}
+                HAVING COUNT(*) > 1
+                """
+            )
+        )
+    ]
+
+
+def _create_movie_identity_indexes(connection) -> None:
+    try:
+        for index_name, column_name in (
+            ("ix_movies_imdb_id", "imdb_id"),
+            ("ix_movies_tmdb_id", "tmdb_id"),
+            ("ix_movies_vault_id", "vault_id"),
+        ):
+            connection.execute(
+                text(
+                    f"""
+                    CREATE UNIQUE INDEX IF NOT EXISTS {index_name}
+                    ON movies ({column_name})
+                    """
+                )
+            )
+    except IntegrityError as exc:
+        if connection.in_transaction():
+            connection.rollback()
+
+        with engine.connect() as diagnostic_conn:
+            duplicate_summary = {
+                column_name: _duplicate_values(diagnostic_conn, column_name)
+                for column_name in ("tmdb_id", "imdb_id", "vault_id")
+            }
+
+        guidance_message = (
+            "Creating unique indexes on movies identity fields failed due to duplicate values. "
+            "tmdb_id duplicates: {tmdb}; imdb_id duplicates: {imdb}; vault_id duplicates: {vault}."
+        ).format(
+            tmdb=", ".join(duplicate_summary["tmdb_id"]) or "none",
+            imdb=", ".join(duplicate_summary["imdb_id"]) or "none",
+            vault=", ".join(duplicate_summary["vault_id"]) or "none",
+        )
+
+        logger.error(guidance_message)
+        raise IntegrityError(guidance_message, exc.params, exc.orig) from exc
+
+
+def _verify_sqlite_schema_invariants() -> None:
+    if not DB_URL.startswith("sqlite"):
+        return
+    with engine.connect() as connection:
+        table_exists = connection.execute(
+            text("SELECT name FROM sqlite_master WHERE type='table' AND name='movies'")
+        ).first()
+        if not table_exists:
+            return
+
+        columns = {row[1] for row in connection.execute(text("PRAGMA table_info(movies)"))}
+        missing_columns = sorted(SQLITE_REQUIRED_MOVIE_COLUMNS - columns)
+        index_rows = list(connection.execute(text("PRAGMA index_list(movies)")))
+        unique_indexes = {row[1] for row in index_rows if bool(row[2])}
+        missing_indexes = sorted(SQLITE_REQUIRED_UNIQUE_INDEXES - unique_indexes)
+
+    if missing_columns or missing_indexes:
+        raise RuntimeError(
+            "SQLite schema drift detected. "
+            f"Missing movie columns: {missing_columns or 'none'}; "
+            f"missing unique indexes: {missing_indexes or 'none'}. "
+            "Run the migration/bootstrap maintenance workflow before starting Vault 966."
+        )
 
 
 def _ensure_sqlite_movie_columns() -> None:
@@ -98,63 +190,7 @@ def _ensure_sqlite_movie_columns() -> None:
             if column_name not in columns:
                 connection.execute(text(ddl))
 
-        try:
-            connection.execute(
-                text(
-                    """
-                    CREATE UNIQUE INDEX IF NOT EXISTS ix_movies_imdb_id ON movies (imdb_id)
-                    """
-                )
-            )
-            connection.execute(
-                text(
-                    """
-                    CREATE UNIQUE INDEX IF NOT EXISTS ix_movies_tmdb_id ON movies (tmdb_id)
-                    """
-                )
-            )
-        except IntegrityError as exc:
-            if connection.in_transaction():
-                connection.rollback()
-
-            with engine.connect() as diagnostic_conn:
-                tmdb_duplicates = [
-                    row[0]
-                    for row in diagnostic_conn.execute(
-                        text(
-                            """
-                            SELECT tmdb_id FROM movies
-                            WHERE tmdb_id IS NOT NULL
-                            GROUP BY tmdb_id
-                            HAVING COUNT(*) > 1
-                            """
-                        )
-                    )
-                ]
-                imdb_duplicates = [
-                    row[0]
-                    for row in diagnostic_conn.execute(
-                        text(
-                            """
-                            SELECT imdb_id FROM movies
-                            WHERE imdb_id IS NOT NULL
-                            GROUP BY imdb_id
-                            HAVING COUNT(*) > 1
-                            """
-                        )
-                    )
-                ]
-
-            guidance_message = (
-                "Creating unique indexes on movies.imdb_id/movies.tmdb_id failed due to duplicate "
-                "values. tmdb_id duplicates: {tmdb}; imdb_id duplicates: {imdb}."
-            ).format(
-                tmdb=", ".join(map(str, tmdb_duplicates)) or "none",
-                imdb=", ".join(map(str, imdb_duplicates)) or "none",
-            )
-
-            logger.error(guidance_message)
-            raise IntegrityError(guidance_message, exc.params, exc.orig) from exc
+        _create_movie_identity_indexes(connection)
 
         # Minimal boot-strap for legacy SQLite dumps; keep in sync with models.
         flags_exists = connection.execute(
@@ -367,6 +403,7 @@ def bootstrap_sqlite_schema() -> None:
 
     Base.metadata.create_all(bind=engine)
     _ensure_sqlite_movie_columns()
+    _verify_sqlite_schema_invariants()
 
 
 def get_db() -> Generator:
