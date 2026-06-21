@@ -58,31 +58,30 @@ from api.services.profiles import (
 )
 
 router = APIRouter(tags=["ui"])
-REVIEW_VIEWS = {
+SOURCE_REVIEW_VIEWS = {
     "differences",
     "research",
     "ambiguous",
     "new",
     "duplicates",
+}
+REVIEW_VIEWS = {
+    *SOURCE_REVIEW_VIEWS,
     "vault",
     "flags",
 }
+REVIEW_TABS = [
+    ("differences", "Differences"),
+    ("research", "Needs research"),
+    ("ambiguous", "Ambiguous"),
+    ("new", "New movies"),
+    ("duplicates", "Duplicates"),
+    ("vault", "Vault checks"),
+    ("flags", "Flags"),
+]
 
 
-def build_review_context(
-    request: Request,
-    db: Session,
-    *,
-    view: str | None,
-    row: int | None,
-    movie: int | None,
-    undo_decision: int | None,
-    flag_reason: str | None = None,
-) -> dict:
-    requested_view = view
-    view = view or "differences"
-    if view not in REVIEW_VIEWS:
-        raise HTTPException(status_code=404, detail="Review category not found")
+def _load_review_inventory(db: Session, *, flag_reason: str | None = None) -> dict:
     queue, finding_count = get_review_queue(db)
     all_flags = (
         db.query(MovieFlag)
@@ -103,40 +102,57 @@ def build_review_context(
         "vault": len(queue),
         "flags": len(all_flags),
     }
-    review_tabs = [
-        ("differences", "Differences"),
-        ("research", "Needs research"),
-        ("ambiguous", "Ambiguous"),
-        ("new", "New movies"),
-        ("duplicates", "Duplicates"),
-        ("vault", "Vault checks"),
-        ("flags", "Flags"),
-    ]
+    return {
+        "queue": queue,
+        "finding_count": finding_count,
+        "all_flags": all_flags,
+        "flags": flags,
+        "flag_reasons": flag_reasons,
+        "selected_flag_reason": selected_flag_reason,
+        "source_groups": source_groups,
+        "review_counts": review_counts,
+    }
+
+
+def _default_review_view(requested_view: str | None, review_counts: dict[str, int]) -> str:
+    view = requested_view or "differences"
+    if view not in REVIEW_VIEWS:
+        raise HTTPException(status_code=404, detail="Review category not found")
     if requested_view is None and review_counts[view] == 0:
-        view = next(
-            (key for key, _ in review_tabs if review_counts[key]),
-            view,
-        )
-    review_view_label = dict(review_tabs)[view]
+        return next((key for key, _ in REVIEW_TABS if review_counts[key]), view)
+    return view
+
+
+def _selected_review_queue(view: str, inventory: dict) -> list:
     if view == "vault":
-        selected_queue = queue
-    elif view == "flags":
-        selected_queue = flags
-    else:
-        selected_queue = source_groups[view]
+        return inventory["queue"]
+    if view == "flags":
+        return inventory["flags"]
+    return inventory["source_groups"][view]
+
+
+def _review_item_id(view: str, item) -> int:
+    if view == "vault":
+        return item.movie.id
+    if view == "flags":
+        return item.movie_id
+    return item.source_row.id
+
+
+def _review_navigation_context(
+    *,
+    view: str,
+    selected_queue: list,
+    requested_item_id: int | None,
+    selected_flag_reason: str | None,
+) -> dict:
     selected_index = 0
-    requested_item_id = movie if view in {"vault", "flags"} else row
     if requested_item_id is not None:
         selected_index = next(
             (
                 index
                 for index, item in enumerate(selected_queue)
-                if (
-                    item.movie.id
-                    if view == "vault"
-                    else item.movie_id if view == "flags" else item.source_row.id
-                )
-                == requested_item_id
+                if _review_item_id(view, item) == requested_item_id
             ),
             0,
         )
@@ -150,18 +166,45 @@ def build_review_context(
     def item_url(item) -> str | None:
         if item is None:
             return None
-        item_id = (
-            item.movie.id
-            if view == "vault"
-            else item.movie_id if view == "flags" else item.source_row.id
-        )
+        item_id = _review_item_id(view, item)
         params = [f"view={quote(view)}", f"{item_param}={item_id}"]
         if view == "flags" and selected_flag_reason:
             params.append(f"flag_reason={quote(selected_flag_reason, safe='')}")
         return f"/ui/movies/health?{'&'.join(params)}#review-workbench"
 
+    return {
+        "review_item": review_item,
+        "review_position": selected_index + 1 if review_item else 0,
+        "review_queue_count": len(selected_queue),
+        "previous_item_url": item_url(previous_item),
+        "next_item_url": item_url(next_item),
+    }
+
+
+def build_review_context(
+    request: Request,
+    db: Session,
+    *,
+    view: str | None,
+    row: int | None,
+    movie: int | None,
+    undo_decision: int | None,
+    flag_reason: str | None = None,
+) -> dict:
+    inventory = _load_review_inventory(db, flag_reason=flag_reason)
+    review_counts = inventory["review_counts"]
+    view = _default_review_view(view, review_counts)
+    review_view_label = dict(REVIEW_TABS)[view]
+    selected_queue = _selected_review_queue(view, inventory)
+    requested_item_id = movie if view in {"vault", "flags"} else row
+    navigation = _review_navigation_context(
+        view=view,
+        selected_queue=selected_queue,
+        requested_item_id=requested_item_id,
+        selected_flag_reason=inventory["selected_flag_reason"],
+    )
     next_nonempty_view = next(
-        ((key, label) for key, label in review_tabs if key != view and review_counts[key]),
+        ((key, label) for key, label in REVIEW_TABS if key != view and review_counts[key]),
         None,
     )
     source_snapshot = latest_active_snapshot(db)
@@ -173,29 +216,25 @@ def build_review_context(
     if undo_record is not None and undo_record.undone_at is not None:
         undo_record = None
     return {
-        "queue": queue,
-        "flags": flags,
-        "all_flags": all_flags,
-        "flag_reasons": flag_reasons,
-        "selected_flag_reason": selected_flag_reason,
-        "source_queue": selected_queue if view not in {"vault", "flags"} else [],
-        "source_groups": source_groups,
+        "queue": inventory["queue"],
+        "flags": inventory["flags"],
+        "all_flags": inventory["all_flags"],
+        "flag_reasons": inventory["flag_reasons"],
+        "selected_flag_reason": inventory["selected_flag_reason"],
+        "source_queue": selected_queue if view in SOURCE_REVIEW_VIEWS else [],
+        "source_groups": inventory["source_groups"],
         "source_snapshot": source_snapshot,
-        "finding_count": finding_count,
+        "finding_count": inventory["finding_count"],
         "review_counts": review_counts,
-        "review_tabs": review_tabs,
+        "review_tabs": REVIEW_TABS,
         "total_review_count": len(
-            {item.source_row.id for items in source_groups.values() for item in items}
+            {item.source_row.id for items in inventory["source_groups"].values() for item in items}
         )
-        + len(queue)
-        + len(all_flags),
+        + len(inventory["queue"])
+        + len(inventory["all_flags"]),
         "review_view": view,
         "review_view_label": review_view_label,
-        "review_item": review_item,
-        "review_position": selected_index + 1 if review_item else 0,
-        "review_queue_count": len(selected_queue),
-        "previous_item_url": item_url(previous_item),
-        "next_item_url": item_url(next_item),
+        **navigation,
         "next_nonempty_view": next_nonempty_view,
         "undo_record": undo_record,
         "profiles": get_profiles(db),
