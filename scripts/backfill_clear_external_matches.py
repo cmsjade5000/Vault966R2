@@ -7,7 +7,6 @@ import csv
 import hashlib
 import json
 import pathlib
-import shutil
 import sys
 from datetime import datetime, timezone
 from typing import Any
@@ -23,6 +22,7 @@ from api.config import settings  # noqa: E402
 from api.db import SessionLocal  # noqa: E402
 from api.models.movie import Movie, MovieIngestProvenance  # noqa: E402
 from api.services.source_sync import get_source_review_queue  # noqa: E402
+from scripts.backfill_db_backup import backup_active_sqlite_database  # noqa: E402
 from scripts.backfill_posters import normalize_title  # noqa: E402
 
 TMDB_API_BASE = "https://api.themoviedb.org/3"
@@ -219,10 +219,8 @@ def main() -> int:
     now = datetime.now(timezone.utc)
 
     if not args.dry_run:
-        stamp = now.strftime("%Y%m%d-%H%M%S")
-        shutil.copy2(
-            ROOT_DIR / "vault.db", ROOT_DIR / f"vault.db.before-external-sweep-{stamp}.bak"
-        )
+        backup = backup_active_sqlite_database("external-match sweep", now=now)
+        print(f"backup: {backup.backup}")
 
     with SessionLocal() as session, httpx.Client() as client:
         source_review_ids = {

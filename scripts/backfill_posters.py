@@ -42,6 +42,7 @@ from api.models.person import Role  # noqa: E402,F401  # ensure mapper registrat
 from api.services import movie_lookup  # noqa: E402
 from api.services.movie_review import get_review_queue  # noqa: E402
 from api.services.source_sync import get_source_review_queue  # noqa: E402
+from scripts.backfill_db_backup import backup_active_sqlite_database  # noqa: E402
 
 TMDB_IMAGE_HOSTS = {"image.tmdb.org", "media.themoviedb.org"}
 TMDB_IMAGE_PATH_RE = re.compile(r"^/t/p/(?:original|w\d+)/[^/]+\.(?:jpe?g|png|webp)$", re.I)
@@ -308,6 +309,10 @@ def main() -> int:
     report_rows: list[Dict[str, Any]] = []
     attempted = 0
     updated = 0
+
+    if not args.dry_run:
+        backup = backup_active_sqlite_database("poster backfill", now=now)
+        print(f"backup: {backup.backup}")
 
     with SessionLocal() as session, httpx.Client() as client:
         movies = session.execute(select(Movie).order_by(Movie.id)).scalars().all()
