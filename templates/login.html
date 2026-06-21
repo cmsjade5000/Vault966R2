@@ -54,6 +54,28 @@
         method="post"
         aria-label="Unlock Vault 966"
       >
+        <div class="login-fields">
+          <label class="login-field">
+            <span>Access key</span>
+            <input
+              type="text"
+              name="access_key"
+              autocomplete="username"
+              maxlength="128"
+              required
+            />
+          </label>
+          <label class="login-field">
+            <span>Passcode</span>
+            <input
+              type="password"
+              name="passcode"
+              autocomplete="current-password"
+              maxlength="128"
+              required
+            />
+          </label>
+        </div>
         <div class="login-card__actions">
           <button class="login-button" type="submit">
             <span class="login-button__icon" aria-hidden="true">

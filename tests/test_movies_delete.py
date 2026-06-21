@@ -1,7 +1,5 @@
 from fastapi.testclient import TestClient
 
-from api.config import settings
-
 
 def test_delete_movie_removes_detail(client: TestClient, admin_headers: dict[str, str]) -> None:
     resp = client.delete("/movies/1", headers=admin_headers)
@@ -11,10 +9,8 @@ def test_delete_movie_removes_detail(client: TestClient, admin_headers: dict[str
     assert detail.status_code == 404
 
 
-def test_delete_movie_allows_admin_profile_session(client: TestClient, monkeypatch) -> None:
-    monkeypatch.setattr(settings, "disable_auth", False)
-    monkeypatch.setattr(settings, "login_session_secret", None)
-    client.post("/login", data={"profile_id": "1"}, follow_redirects=False)
+def test_delete_movie_allows_admin_profile_session(client: TestClient, login_profile) -> None:
+    login_profile(1)
 
     missing_origin = client.delete("/movies/1")
     resp = client.delete("/movies/1", headers={"Origin": "http://testserver"})

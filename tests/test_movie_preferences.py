@@ -1,6 +1,3 @@
-from api.config import settings
-
-
 def _first_movie_id(client) -> int:
     response = client.get("/movies")
     assert response.status_code == 200
@@ -44,10 +41,8 @@ def test_like_watchlist_is_profile_scoped(client) -> None:
     assert payload["watchlist"] is False
 
 
-def test_preference_mutations_require_same_origin_when_auth_enabled(client, monkeypatch) -> None:
-    monkeypatch.setattr(settings, "disable_auth", False)
-    monkeypatch.setattr(settings, "login_session_secret", None)
-    client.post("/login", data={"profile_id": "1"}, follow_redirects=False)
+def test_preference_mutations_require_same_origin_when_auth_enabled(client, login_profile) -> None:
+    login_profile(1)
     movie_id = _first_movie_id(client)
 
     mutation_cases = [

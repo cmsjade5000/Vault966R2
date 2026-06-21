@@ -1,6 +1,5 @@
 from fastapi.testclient import TestClient
 
-from api.config import settings
 from api.models.movie import Movie
 from api.models.movie_flag import MovieFlag
 from api.models.movie_review import MovieReviewCheck
@@ -133,13 +132,9 @@ def test_movie_detail_flag_rejects_unexpected_input(client: TestClient) -> None:
 def test_reviewer_can_report_movie_but_cannot_manage_flags(
     client: TestClient,
     db_session,
-    monkeypatch,
+    login_profile,
 ) -> None:
-    monkeypatch.setattr(settings, "disable_auth", False)
-    monkeypatch.setattr(settings, "login_session_secret", None)
-
-    login = client.post("/login", data={"profile_id": "2"}, follow_redirects=False)
-    assert login.status_code == 303
+    login_profile(2)
 
     detail = client.get("/ui/movies/1")
     assert detail.status_code == 200
@@ -186,7 +181,7 @@ def test_reviewer_can_report_movie_but_cannot_manage_flags(
 def test_reviewer_report_does_not_overwrite_existing_admin_flag(
     client: TestClient,
     db_session,
-    monkeypatch,
+    login_profile,
 ) -> None:
     db_session.add(
         MovieFlag(
@@ -197,9 +192,7 @@ def test_reviewer_report_does_not_overwrite_existing_admin_flag(
     )
     db_session.commit()
 
-    monkeypatch.setattr(settings, "disable_auth", False)
-    monkeypatch.setattr(settings, "login_session_secret", None)
-    client.post("/login", data={"profile_id": "2"}, follow_redirects=False)
+    login_profile(2)
 
     response = client.post(
         "/movies/1/flag/report",
@@ -220,11 +213,9 @@ def test_reviewer_report_does_not_overwrite_existing_admin_flag(
 
 def test_reviewer_report_requires_same_origin(
     client: TestClient,
-    monkeypatch,
+    login_profile,
 ) -> None:
-    monkeypatch.setattr(settings, "disable_auth", False)
-    monkeypatch.setattr(settings, "login_session_secret", None)
-    client.post("/login", data={"profile_id": "2"}, follow_redirects=False)
+    login_profile(2)
 
     payload = {"reason": "Wrong runtime/year", "notes": "Runtime looks off."}
     missing_origin = client.post("/movies/1/flag/report", json=payload)
@@ -247,13 +238,9 @@ def test_reviewer_report_requires_same_origin(
 def test_admin_can_manage_movie_detail_flags_with_session(
     client: TestClient,
     db_session,
-    monkeypatch,
+    login_profile,
 ) -> None:
-    monkeypatch.setattr(settings, "disable_auth", False)
-    monkeypatch.setattr(settings, "login_session_secret", None)
-
-    login = client.post("/login", data={"profile_id": "1"}, follow_redirects=False)
-    assert login.status_code == 303
+    login_profile(1)
 
     detail = client.get("/ui/movies/1")
     assert detail.status_code == 200
@@ -280,11 +267,9 @@ def test_admin_can_manage_movie_detail_flags_with_session(
 
 def test_reviewer_cannot_open_admin_health_or_review_routes(
     client: TestClient,
-    monkeypatch,
+    login_profile,
 ) -> None:
-    monkeypatch.setattr(settings, "disable_auth", False)
-    monkeypatch.setattr(settings, "login_session_secret", None)
-    client.post("/login", data={"profile_id": "2"}, follow_redirects=False)
+    login_profile(2)
 
     library = client.get("/ui/movies")
     assert library.status_code == 200
@@ -504,13 +489,11 @@ def test_flags_queue_resolve_action_removes_flag_and_preserves_filter(
 def test_reviewer_cannot_resolve_flags_from_review_queue(
     client: TestClient,
     db_session,
-    monkeypatch,
+    login_profile,
 ) -> None:
     db_session.add(MovieFlag(movie_id=1, reason="Wrong runtime/year"))
     db_session.commit()
-    monkeypatch.setattr(settings, "disable_auth", False)
-    monkeypatch.setattr(settings, "login_session_secret", None)
-    client.post("/login", data={"profile_id": "2"}, follow_redirects=False)
+    login_profile(2)
 
     response = client.post(
         "/ui/movies/health/review/flags/1/resolve",

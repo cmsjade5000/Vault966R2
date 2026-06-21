@@ -1,6 +1,3 @@
-from api.config import settings
-
-
 def test_refresh_collection_health_recommendation(client, admin_headers) -> None:
     response = client.post(
         "/api/collection-health/recommendation/refresh",
@@ -13,14 +10,14 @@ def test_refresh_collection_health_recommendation(client, admin_headers) -> None
     assert payload["recommendation"].strip()
 
 
-def test_refresh_collection_health_allows_admin_profile_session(client, monkeypatch) -> None:
-    monkeypatch.setattr(settings, "disable_auth", False)
-    monkeypatch.setattr(settings, "login_session_secret", None)
+def test_refresh_collection_health_allows_admin_profile_session(
+    client, monkeypatch, login_profile
+) -> None:
     monkeypatch.setattr(
         "api.routers.collection_health.get_collection_recommendation",
         lambda db, force=False: "session recommendation",
     )
-    client.post("/login", data={"profile_id": "1"}, follow_redirects=False)
+    login_profile(1)
 
     missing_origin = client.post("/api/collection-health/recommendation/refresh")
     response = client.post(
