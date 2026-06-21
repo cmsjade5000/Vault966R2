@@ -320,6 +320,10 @@ def test_library_search_is_prominent_and_searches_identity_fields(
 
     page = client.get("/ui/movies")
 
+    assert page.text.count("<main ") == 1
+    assert '<main id="main" class="app-main">' in page.text
+    assert '<main class="library-shell page-shell"' not in page.text
+    assert '<div class="library-shell page-shell" id="results" data-results-shell>' in page.text
     assert '<section class="library-search-panel" aria-label="Search your Vault">' in page.text
     assert 'id="library-search-title"' not in page.text
     assert "Find a movie by title" not in page.text
@@ -339,6 +343,14 @@ def test_library_search_is_prominent_and_searches_identity_fields(
     assert "data-filters-summary" in page.text
     assert 'aria-label="Pending filter selections"' in page.text
     assert "data-filters-reset" in page.text
+    assert 'aria-labelledby="filters-dialog-title"' in page.text
+    assert 'aria-describedby="filters-dialog-description"' in page.text
+    assert '<h2 id="filters-dialog-title">Filters</h2>' in page.text
+    assert '<p id="filters-dialog-description">Narrow the collection.</p>' in page.text
+    assert 'aria-labelledby="edit-dialog-title"' in page.text
+    assert 'aria-describedby="edit-dialog-description"' in page.text
+    assert '<h2 id="edit-dialog-title">Edit Movie</h2>' in page.text
+    assert '<p id="edit-dialog-description">Update this movie\'s metadata.</p>' in page.text
     assert 'id="year-custom" hidden' in page.text
     assert 'id="runtime-custom" hidden' in page.text
     assert 'id="fliclists"' not in page.text

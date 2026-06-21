@@ -6,7 +6,7 @@
 {% endblock %}
 {% block body_class %}library-page{% endblock %}
 {% block content %}
-  <main class="library-shell page-shell" id="results" data-results-shell>
+  <div class="library-shell page-shell" id="results" data-results-shell>
     <header class="library-heading">
       <div>
         <h1>Library</h1>
@@ -141,12 +141,18 @@
       </div>
       {% endif %}
 
-      <dialog class="filters-dialog" data-filters-dialog aria-hidden="true">
+      <dialog
+        class="filters-dialog"
+        data-filters-dialog
+        aria-hidden="true"
+        aria-labelledby="filters-dialog-title"
+        aria-describedby="filters-dialog-description"
+      >
         <div class="filters-dialog__sheet">
           <header class="filters-dialog__header">
             <div>
-              <h2>Filters</h2>
-              <p>Narrow the collection.</p>
+              <h2 id="filters-dialog-title">Filters</h2>
+              <p id="filters-dialog-description">Narrow the collection.</p>
             </div>
             <button type="button" class="filters-close" data-filters-close aria-label="Close filters">×</button>
           </header>
@@ -221,7 +227,7 @@
         <a class="button-primary" href="/ui/movies">Clear all</a>
       </div>
     {% endif %}
-  </main>
+  </div>
   {% include "partials/movies/edit_dialog.html" %}
 {% endblock %}
 
