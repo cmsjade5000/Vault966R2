@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 from collections.abc import Mapping
-from typing import Any, TypeVar, Union, cast
+from typing import Any, TypeVar, cast
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
@@ -14,33 +16,33 @@ class TopBilledEntry:
     """
     Attributes:
         name (str):
-        character (Union[None, Unset, str]):
-        imdb_id (Union[None, Unset, str]):
-        person_id (Union[None, Unset, int]):
+        character (None | str | Unset):
+        imdb_id (None | str | Unset):
+        person_id (int | None | Unset):
     """
 
     name: str
-    character: Union[None, Unset, str] = UNSET
-    imdb_id: Union[None, Unset, str] = UNSET
-    person_id: Union[None, Unset, int] = UNSET
+    character: None | str | Unset = UNSET
+    imdb_id: None | str | Unset = UNSET
+    person_id: int | None | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         name = self.name
 
-        character: Union[None, Unset, str]
+        character: None | str | Unset
         if isinstance(self.character, Unset):
             character = UNSET
         else:
             character = self.character
 
-        imdb_id: Union[None, Unset, str]
+        imdb_id: None | str | Unset
         if isinstance(self.imdb_id, Unset):
             imdb_id = UNSET
         else:
             imdb_id = self.imdb_id
 
-        person_id: Union[None, Unset, int]
+        person_id: int | None | Unset
         if isinstance(self.person_id, Unset):
             person_id = UNSET
         else:
@@ -67,30 +69,30 @@ class TopBilledEntry:
         d = dict(src_dict)
         name = d.pop("name")
 
-        def _parse_character(data: object) -> Union[None, Unset, str]:
+        def _parse_character(data: object) -> None | str | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(Union[None, Unset, str], data)
+            return cast(None | str | Unset, data)
 
         character = _parse_character(d.pop("character", UNSET))
 
-        def _parse_imdb_id(data: object) -> Union[None, Unset, str]:
+        def _parse_imdb_id(data: object) -> None | str | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(Union[None, Unset, str], data)
+            return cast(None | str | Unset, data)
 
         imdb_id = _parse_imdb_id(d.pop("imdb_id", UNSET))
 
-        def _parse_person_id(data: object) -> Union[None, Unset, int]:
+        def _parse_person_id(data: object) -> int | None | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(Union[None, Unset, int], data)
+            return cast(int | None | Unset, data)
 
         person_id = _parse_person_id(d.pop("person_id", UNSET))
 

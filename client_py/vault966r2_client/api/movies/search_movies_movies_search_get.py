@@ -1,5 +1,5 @@
 from http import HTTPStatus
-from typing import Any, Optional, Union
+from typing import Any
 
 import httpx
 
@@ -12,69 +12,69 @@ from ...types import UNSET, Response, Unset
 
 def _get_kwargs(
     *,
-    q: Union[None, Unset, str] = UNSET,
-    year_min: Union[None, Unset, str] = UNSET,
-    year_max: Union[None, Unset, str] = UNSET,
-    runtime_min: Union[None, Unset, str] = UNSET,
-    runtime_max: Union[None, Unset, str] = UNSET,
-    genres: Union[None, Unset, str] = UNSET,
-    moods: Union[None, Unset, str] = UNSET,
-    order_by: Union[None, Unset, str] = "title_asc",
-    page: Union[Unset, int] = 1,
-    page_size: Union[Unset, int] = 24,
+    q: None | str | Unset = UNSET,
+    year_min: None | str | Unset = UNSET,
+    year_max: None | str | Unset = UNSET,
+    runtime_min: None | str | Unset = UNSET,
+    runtime_max: None | str | Unset = UNSET,
+    genres: None | str | Unset = UNSET,
+    moods: None | str | Unset = UNSET,
+    order_by: None | str | Unset = "title_asc",
+    page: int | Unset = 1,
+    page_size: int | Unset = 24,
 ) -> dict[str, Any]:
     params: dict[str, Any] = {}
 
-    json_q: Union[None, Unset, str]
+    json_q: None | str | Unset
     if isinstance(q, Unset):
         json_q = UNSET
     else:
         json_q = q
     params["q"] = json_q
 
-    json_year_min: Union[None, Unset, str]
+    json_year_min: None | str | Unset
     if isinstance(year_min, Unset):
         json_year_min = UNSET
     else:
         json_year_min = year_min
     params["year_min"] = json_year_min
 
-    json_year_max: Union[None, Unset, str]
+    json_year_max: None | str | Unset
     if isinstance(year_max, Unset):
         json_year_max = UNSET
     else:
         json_year_max = year_max
     params["year_max"] = json_year_max
 
-    json_runtime_min: Union[None, Unset, str]
+    json_runtime_min: None | str | Unset
     if isinstance(runtime_min, Unset):
         json_runtime_min = UNSET
     else:
         json_runtime_min = runtime_min
     params["runtime_min"] = json_runtime_min
 
-    json_runtime_max: Union[None, Unset, str]
+    json_runtime_max: None | str | Unset
     if isinstance(runtime_max, Unset):
         json_runtime_max = UNSET
     else:
         json_runtime_max = runtime_max
     params["runtime_max"] = json_runtime_max
 
-    json_genres: Union[None, Unset, str]
+    json_genres: None | str | Unset
     if isinstance(genres, Unset):
         json_genres = UNSET
     else:
         json_genres = genres
     params["genres"] = json_genres
 
-    json_moods: Union[None, Unset, str]
+    json_moods: None | str | Unset
     if isinstance(moods, Unset):
         json_moods = UNSET
     else:
         json_moods = moods
     params["moods"] = json_moods
 
-    json_order_by: Union[None, Unset, str]
+    json_order_by: None | str | Unset
     if isinstance(order_by, Unset):
         json_order_by = UNSET
     else:
@@ -97,8 +97,8 @@ def _get_kwargs(
 
 
 def _parse_response(
-    *, client: Union[AuthenticatedClient, Client], response: httpx.Response
-) -> Optional[Union[HTTPValidationError, MovieSearchResponse]]:
+    *, client: AuthenticatedClient | Client, response: httpx.Response
+) -> HTTPValidationError | MovieSearchResponse | None:
     if response.status_code == 200:
         response_200 = MovieSearchResponse.from_dict(response.json())
 
@@ -116,8 +116,8 @@ def _parse_response(
 
 
 def _build_response(
-    *, client: Union[AuthenticatedClient, Client], response: httpx.Response
-) -> Response[Union[HTTPValidationError, MovieSearchResponse]]:
+    *, client: AuthenticatedClient | Client, response: httpx.Response
+) -> Response[HTTPValidationError | MovieSearchResponse]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -128,38 +128,38 @@ def _build_response(
 
 def sync_detailed(
     *,
-    client: Union[AuthenticatedClient, Client],
-    q: Union[None, Unset, str] = UNSET,
-    year_min: Union[None, Unset, str] = UNSET,
-    year_max: Union[None, Unset, str] = UNSET,
-    runtime_min: Union[None, Unset, str] = UNSET,
-    runtime_max: Union[None, Unset, str] = UNSET,
-    genres: Union[None, Unset, str] = UNSET,
-    moods: Union[None, Unset, str] = UNSET,
-    order_by: Union[None, Unset, str] = "title_asc",
-    page: Union[Unset, int] = 1,
-    page_size: Union[Unset, int] = 24,
-) -> Response[Union[HTTPValidationError, MovieSearchResponse]]:
+    client: AuthenticatedClient | Client,
+    q: None | str | Unset = UNSET,
+    year_min: None | str | Unset = UNSET,
+    year_max: None | str | Unset = UNSET,
+    runtime_min: None | str | Unset = UNSET,
+    runtime_max: None | str | Unset = UNSET,
+    genres: None | str | Unset = UNSET,
+    moods: None | str | Unset = UNSET,
+    order_by: None | str | Unset = "title_asc",
+    page: int | Unset = 1,
+    page_size: int | Unset = 24,
+) -> Response[HTTPValidationError | MovieSearchResponse]:
     """Search Movies
 
     Args:
-        q (Union[None, Unset, str]): Case-insensitive search on movie title
-        year_min (Union[None, Unset, str]): Earliest release year to include
-        year_max (Union[None, Unset, str]): Latest release year to include
-        runtime_min (Union[None, Unset, str]): Minimum runtime in minutes
-        runtime_max (Union[None, Unset, str]): Maximum runtime in minutes
-        genres (Union[None, Unset, str]): Comma separated list of genre names
-        moods (Union[None, Unset, str]): Comma separated list of mood names
-        order_by (Union[None, Unset, str]):  Default: 'title_asc'.
-        page (Union[Unset, int]):  Default: 1.
-        page_size (Union[Unset, int]):  Default: 24.
+        q (None | str | Unset): Case-insensitive search on movie title
+        year_min (None | str | Unset): Earliest release year to include
+        year_max (None | str | Unset): Latest release year to include
+        runtime_min (None | str | Unset): Minimum runtime in minutes
+        runtime_max (None | str | Unset): Maximum runtime in minutes
+        genres (None | str | Unset): Comma separated list of genre names
+        moods (None | str | Unset): Comma separated list of mood names
+        order_by (None | str | Unset):  Default: 'title_asc'.
+        page (int | Unset):  Default: 1.
+        page_size (int | Unset):  Default: 24.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[HTTPValidationError, MovieSearchResponse]]
+        Response[HTTPValidationError | MovieSearchResponse]
     """
 
     kwargs = _get_kwargs(
@@ -184,38 +184,38 @@ def sync_detailed(
 
 def sync(
     *,
-    client: Union[AuthenticatedClient, Client],
-    q: Union[None, Unset, str] = UNSET,
-    year_min: Union[None, Unset, str] = UNSET,
-    year_max: Union[None, Unset, str] = UNSET,
-    runtime_min: Union[None, Unset, str] = UNSET,
-    runtime_max: Union[None, Unset, str] = UNSET,
-    genres: Union[None, Unset, str] = UNSET,
-    moods: Union[None, Unset, str] = UNSET,
-    order_by: Union[None, Unset, str] = "title_asc",
-    page: Union[Unset, int] = 1,
-    page_size: Union[Unset, int] = 24,
-) -> Optional[Union[HTTPValidationError, MovieSearchResponse]]:
+    client: AuthenticatedClient | Client,
+    q: None | str | Unset = UNSET,
+    year_min: None | str | Unset = UNSET,
+    year_max: None | str | Unset = UNSET,
+    runtime_min: None | str | Unset = UNSET,
+    runtime_max: None | str | Unset = UNSET,
+    genres: None | str | Unset = UNSET,
+    moods: None | str | Unset = UNSET,
+    order_by: None | str | Unset = "title_asc",
+    page: int | Unset = 1,
+    page_size: int | Unset = 24,
+) -> HTTPValidationError | MovieSearchResponse | None:
     """Search Movies
 
     Args:
-        q (Union[None, Unset, str]): Case-insensitive search on movie title
-        year_min (Union[None, Unset, str]): Earliest release year to include
-        year_max (Union[None, Unset, str]): Latest release year to include
-        runtime_min (Union[None, Unset, str]): Minimum runtime in minutes
-        runtime_max (Union[None, Unset, str]): Maximum runtime in minutes
-        genres (Union[None, Unset, str]): Comma separated list of genre names
-        moods (Union[None, Unset, str]): Comma separated list of mood names
-        order_by (Union[None, Unset, str]):  Default: 'title_asc'.
-        page (Union[Unset, int]):  Default: 1.
-        page_size (Union[Unset, int]):  Default: 24.
+        q (None | str | Unset): Case-insensitive search on movie title
+        year_min (None | str | Unset): Earliest release year to include
+        year_max (None | str | Unset): Latest release year to include
+        runtime_min (None | str | Unset): Minimum runtime in minutes
+        runtime_max (None | str | Unset): Maximum runtime in minutes
+        genres (None | str | Unset): Comma separated list of genre names
+        moods (None | str | Unset): Comma separated list of mood names
+        order_by (None | str | Unset):  Default: 'title_asc'.
+        page (int | Unset):  Default: 1.
+        page_size (int | Unset):  Default: 24.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[HTTPValidationError, MovieSearchResponse]
+        HTTPValidationError | MovieSearchResponse
     """
 
     return sync_detailed(
@@ -235,38 +235,38 @@ def sync(
 
 async def asyncio_detailed(
     *,
-    client: Union[AuthenticatedClient, Client],
-    q: Union[None, Unset, str] = UNSET,
-    year_min: Union[None, Unset, str] = UNSET,
-    year_max: Union[None, Unset, str] = UNSET,
-    runtime_min: Union[None, Unset, str] = UNSET,
-    runtime_max: Union[None, Unset, str] = UNSET,
-    genres: Union[None, Unset, str] = UNSET,
-    moods: Union[None, Unset, str] = UNSET,
-    order_by: Union[None, Unset, str] = "title_asc",
-    page: Union[Unset, int] = 1,
-    page_size: Union[Unset, int] = 24,
-) -> Response[Union[HTTPValidationError, MovieSearchResponse]]:
+    client: AuthenticatedClient | Client,
+    q: None | str | Unset = UNSET,
+    year_min: None | str | Unset = UNSET,
+    year_max: None | str | Unset = UNSET,
+    runtime_min: None | str | Unset = UNSET,
+    runtime_max: None | str | Unset = UNSET,
+    genres: None | str | Unset = UNSET,
+    moods: None | str | Unset = UNSET,
+    order_by: None | str | Unset = "title_asc",
+    page: int | Unset = 1,
+    page_size: int | Unset = 24,
+) -> Response[HTTPValidationError | MovieSearchResponse]:
     """Search Movies
 
     Args:
-        q (Union[None, Unset, str]): Case-insensitive search on movie title
-        year_min (Union[None, Unset, str]): Earliest release year to include
-        year_max (Union[None, Unset, str]): Latest release year to include
-        runtime_min (Union[None, Unset, str]): Minimum runtime in minutes
-        runtime_max (Union[None, Unset, str]): Maximum runtime in minutes
-        genres (Union[None, Unset, str]): Comma separated list of genre names
-        moods (Union[None, Unset, str]): Comma separated list of mood names
-        order_by (Union[None, Unset, str]):  Default: 'title_asc'.
-        page (Union[Unset, int]):  Default: 1.
-        page_size (Union[Unset, int]):  Default: 24.
+        q (None | str | Unset): Case-insensitive search on movie title
+        year_min (None | str | Unset): Earliest release year to include
+        year_max (None | str | Unset): Latest release year to include
+        runtime_min (None | str | Unset): Minimum runtime in minutes
+        runtime_max (None | str | Unset): Maximum runtime in minutes
+        genres (None | str | Unset): Comma separated list of genre names
+        moods (None | str | Unset): Comma separated list of mood names
+        order_by (None | str | Unset):  Default: 'title_asc'.
+        page (int | Unset):  Default: 1.
+        page_size (int | Unset):  Default: 24.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[HTTPValidationError, MovieSearchResponse]]
+        Response[HTTPValidationError | MovieSearchResponse]
     """
 
     kwargs = _get_kwargs(
@@ -289,38 +289,38 @@ async def asyncio_detailed(
 
 async def asyncio(
     *,
-    client: Union[AuthenticatedClient, Client],
-    q: Union[None, Unset, str] = UNSET,
-    year_min: Union[None, Unset, str] = UNSET,
-    year_max: Union[None, Unset, str] = UNSET,
-    runtime_min: Union[None, Unset, str] = UNSET,
-    runtime_max: Union[None, Unset, str] = UNSET,
-    genres: Union[None, Unset, str] = UNSET,
-    moods: Union[None, Unset, str] = UNSET,
-    order_by: Union[None, Unset, str] = "title_asc",
-    page: Union[Unset, int] = 1,
-    page_size: Union[Unset, int] = 24,
-) -> Optional[Union[HTTPValidationError, MovieSearchResponse]]:
+    client: AuthenticatedClient | Client,
+    q: None | str | Unset = UNSET,
+    year_min: None | str | Unset = UNSET,
+    year_max: None | str | Unset = UNSET,
+    runtime_min: None | str | Unset = UNSET,
+    runtime_max: None | str | Unset = UNSET,
+    genres: None | str | Unset = UNSET,
+    moods: None | str | Unset = UNSET,
+    order_by: None | str | Unset = "title_asc",
+    page: int | Unset = 1,
+    page_size: int | Unset = 24,
+) -> HTTPValidationError | MovieSearchResponse | None:
     """Search Movies
 
     Args:
-        q (Union[None, Unset, str]): Case-insensitive search on movie title
-        year_min (Union[None, Unset, str]): Earliest release year to include
-        year_max (Union[None, Unset, str]): Latest release year to include
-        runtime_min (Union[None, Unset, str]): Minimum runtime in minutes
-        runtime_max (Union[None, Unset, str]): Maximum runtime in minutes
-        genres (Union[None, Unset, str]): Comma separated list of genre names
-        moods (Union[None, Unset, str]): Comma separated list of mood names
-        order_by (Union[None, Unset, str]):  Default: 'title_asc'.
-        page (Union[Unset, int]):  Default: 1.
-        page_size (Union[Unset, int]):  Default: 24.
+        q (None | str | Unset): Case-insensitive search on movie title
+        year_min (None | str | Unset): Earliest release year to include
+        year_max (None | str | Unset): Latest release year to include
+        runtime_min (None | str | Unset): Minimum runtime in minutes
+        runtime_max (None | str | Unset): Maximum runtime in minutes
+        genres (None | str | Unset): Comma separated list of genre names
+        moods (None | str | Unset): Comma separated list of mood names
+        order_by (None | str | Unset):  Default: 'title_asc'.
+        page (int | Unset):  Default: 1.
+        page_size (int | Unset):  Default: 24.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[HTTPValidationError, MovieSearchResponse]
+        HTTPValidationError | MovieSearchResponse
     """
 
     return (

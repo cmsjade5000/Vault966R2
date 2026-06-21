@@ -1,5 +1,6 @@
 from http import HTTPStatus
-from typing import Any, Optional, Union
+from typing import Any
+from urllib.parse import quote
 
 import httpx
 
@@ -15,15 +16,17 @@ def _get_kwargs(
 ) -> dict[str, Any]:
     _kwargs: dict[str, Any] = {
         "method": "get",
-        "url": f"/movies/{movie_id}/roles",
+        "url": "/movies/{movie_id}/roles".format(
+            movie_id=quote(str(movie_id), safe=""),
+        ),
     }
 
     return _kwargs
 
 
 def _parse_response(
-    *, client: Union[AuthenticatedClient, Client], response: httpx.Response
-) -> Optional[Union[HTTPValidationError, list["RoleRead"]]]:
+    *, client: AuthenticatedClient | Client, response: httpx.Response
+) -> HTTPValidationError | list[RoleRead] | None:
     if response.status_code == 200:
         response_200 = []
         _response_200 = response.json()
@@ -46,8 +49,8 @@ def _parse_response(
 
 
 def _build_response(
-    *, client: Union[AuthenticatedClient, Client], response: httpx.Response
-) -> Response[Union[HTTPValidationError, list["RoleRead"]]]:
+    *, client: AuthenticatedClient | Client, response: httpx.Response
+) -> Response[HTTPValidationError | list[RoleRead]]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -59,8 +62,8 @@ def _build_response(
 def sync_detailed(
     movie_id: int,
     *,
-    client: Union[AuthenticatedClient, Client],
-) -> Response[Union[HTTPValidationError, list["RoleRead"]]]:
+    client: AuthenticatedClient | Client,
+) -> Response[HTTPValidationError | list[RoleRead]]:
     """List Roles
 
     Args:
@@ -71,7 +74,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[HTTPValidationError, list['RoleRead']]]
+        Response[HTTPValidationError | list[RoleRead]]
     """
 
     kwargs = _get_kwargs(
@@ -88,8 +91,8 @@ def sync_detailed(
 def sync(
     movie_id: int,
     *,
-    client: Union[AuthenticatedClient, Client],
-) -> Optional[Union[HTTPValidationError, list["RoleRead"]]]:
+    client: AuthenticatedClient | Client,
+) -> HTTPValidationError | list[RoleRead] | None:
     """List Roles
 
     Args:
@@ -100,7 +103,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[HTTPValidationError, list['RoleRead']]
+        HTTPValidationError | list[RoleRead]
     """
 
     return sync_detailed(
@@ -112,8 +115,8 @@ def sync(
 async def asyncio_detailed(
     movie_id: int,
     *,
-    client: Union[AuthenticatedClient, Client],
-) -> Response[Union[HTTPValidationError, list["RoleRead"]]]:
+    client: AuthenticatedClient | Client,
+) -> Response[HTTPValidationError | list[RoleRead]]:
     """List Roles
 
     Args:
@@ -124,7 +127,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[HTTPValidationError, list['RoleRead']]]
+        Response[HTTPValidationError | list[RoleRead]]
     """
 
     kwargs = _get_kwargs(
@@ -139,8 +142,8 @@ async def asyncio_detailed(
 async def asyncio(
     movie_id: int,
     *,
-    client: Union[AuthenticatedClient, Client],
-) -> Optional[Union[HTTPValidationError, list["RoleRead"]]]:
+    client: AuthenticatedClient | Client,
+) -> HTTPValidationError | list[RoleRead] | None:
     """List Roles
 
     Args:
@@ -151,7 +154,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[HTTPValidationError, list['RoleRead']]
+        HTTPValidationError | list[RoleRead]
     """
 
     return (

@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, Any, TypeVar, Union, cast
+from typing import TYPE_CHECKING, Any, TypeVar, cast
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
@@ -18,15 +20,15 @@ class ManualMovieCreate:
     """
     Attributes:
         title (str):
-        metadata (Union['ManualMovieMetadata', None, Unset]):
-        vudu (Union[Unset, bool]):  Default: False.
-        year (Union[None, Unset, int]):
+        metadata (ManualMovieMetadata | None | Unset):
+        vudu (bool | Unset):  Default: False.
+        year (int | None | Unset):
     """
 
     title: str
-    metadata: Union["ManualMovieMetadata", None, Unset] = UNSET
-    vudu: Union[Unset, bool] = False
-    year: Union[None, Unset, int] = UNSET
+    metadata: ManualMovieMetadata | None | Unset = UNSET
+    vudu: bool | Unset = False
+    year: int | None | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -34,7 +36,7 @@ class ManualMovieCreate:
 
         title = self.title
 
-        metadata: Union[None, Unset, dict[str, Any]]
+        metadata: dict[str, Any] | None | Unset
         if isinstance(self.metadata, Unset):
             metadata = UNSET
         elif isinstance(self.metadata, ManualMovieMetadata):
@@ -44,7 +46,7 @@ class ManualMovieCreate:
 
         vudu = self.vudu
 
-        year: Union[None, Unset, int]
+        year: int | None | Unset
         if isinstance(self.year, Unset):
             year = UNSET
         else:
@@ -73,7 +75,7 @@ class ManualMovieCreate:
         d = dict(src_dict)
         title = d.pop("title")
 
-        def _parse_metadata(data: object) -> Union["ManualMovieMetadata", None, Unset]:
+        def _parse_metadata(data: object) -> ManualMovieMetadata | None | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
@@ -84,20 +86,20 @@ class ManualMovieCreate:
                 metadata_type_0 = ManualMovieMetadata.from_dict(data)
 
                 return metadata_type_0
-            except:  # noqa: E722
+            except (TypeError, ValueError, AttributeError, KeyError):
                 pass
-            return cast(Union["ManualMovieMetadata", None, Unset], data)
+            return cast(ManualMovieMetadata | None | Unset, data)
 
         metadata = _parse_metadata(d.pop("metadata", UNSET))
 
         vudu = d.pop("vudu", UNSET)
 
-        def _parse_year(data: object) -> Union[None, Unset, int]:
+        def _parse_year(data: object) -> int | None | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(Union[None, Unset, int], data)
+            return cast(int | None | Unset, data)
 
         year = _parse_year(d.pop("year", UNSET))
 

@@ -1,10 +1,12 @@
 """Generate Python and TypeScript API clients from the frozen OpenAPI spec."""
 
 import argparse
+import os
 import pathlib
 import shutil
 import subprocess
 import sys
+import tempfile
 
 ROOT_DIR = pathlib.Path(__file__).resolve().parents[1]
 OPENAPI_PATH = ROOT_DIR / "openapi" / "openapi.json"
@@ -12,7 +14,9 @@ PY_CONFIG = ROOT_DIR / "openapi-client-config.yml"
 
 
 def run(cmd):
-    process = subprocess.run(cmd, cwd=ROOT_DIR)
+    env = os.environ.copy()
+    env.setdefault("NPM_CONFIG_CACHE", str(pathlib.Path(tempfile.gettempdir()) / "vault966-npm"))
+    process = subprocess.run(cmd, cwd=ROOT_DIR, env=env)
     if process.returncode != 0:
         raise SystemExit(process.returncode)
 
@@ -44,6 +48,7 @@ def generate_typescript_client(output_dir: pathlib.Path) -> None:
     run(
         [
             "npx",
+            "--yes",
             "openapi-typescript",
             str(OPENAPI_PATH),
             "--output",

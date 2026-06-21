@@ -1,5 +1,5 @@
 from http import HTTPStatus
-from typing import Any, Optional, Union
+from typing import Any
 
 import httpx
 
@@ -11,53 +11,56 @@ from ...types import UNSET, Response, Unset
 
 def _get_kwargs(
     *,
-    q: Union[None, Unset, str] = UNSET,
-    genres: Union[None, Unset, str] = UNSET,
-    moods: Union[None, Unset, str] = UNSET,
-    year_min: Union[None, Unset, str] = UNSET,
-    year_max: Union[None, Unset, str] = UNSET,
-    runtime_max: Union[None, Unset, str] = UNSET,
-    page: Union[Unset, int] = 1,
-    order_by: Union[Unset, str] = "title_asc",
+    q: None | str | Unset = UNSET,
+    genres: None | str | Unset = UNSET,
+    moods: None | str | Unset = UNSET,
+    year_min: None | str | Unset = UNSET,
+    year_max: None | str | Unset = UNSET,
+    runtime_max: None | str | Unset = UNSET,
+    page: int | Unset = 1,
+    order_by: str | Unset = "title_asc",
+    view: str | Unset = "grid",
+    preset: None | str | Unset = UNSET,
+    semantic: None | str | Unset = UNSET,
 ) -> dict[str, Any]:
     params: dict[str, Any] = {}
 
-    json_q: Union[None, Unset, str]
+    json_q: None | str | Unset
     if isinstance(q, Unset):
         json_q = UNSET
     else:
         json_q = q
     params["q"] = json_q
 
-    json_genres: Union[None, Unset, str]
+    json_genres: None | str | Unset
     if isinstance(genres, Unset):
         json_genres = UNSET
     else:
         json_genres = genres
     params["genres"] = json_genres
 
-    json_moods: Union[None, Unset, str]
+    json_moods: None | str | Unset
     if isinstance(moods, Unset):
         json_moods = UNSET
     else:
         json_moods = moods
     params["moods"] = json_moods
 
-    json_year_min: Union[None, Unset, str]
+    json_year_min: None | str | Unset
     if isinstance(year_min, Unset):
         json_year_min = UNSET
     else:
         json_year_min = year_min
     params["year_min"] = json_year_min
 
-    json_year_max: Union[None, Unset, str]
+    json_year_max: None | str | Unset
     if isinstance(year_max, Unset):
         json_year_max = UNSET
     else:
         json_year_max = year_max
     params["year_max"] = json_year_max
 
-    json_runtime_max: Union[None, Unset, str]
+    json_runtime_max: None | str | Unset
     if isinstance(runtime_max, Unset):
         json_runtime_max = UNSET
     else:
@@ -67,6 +70,22 @@ def _get_kwargs(
     params["page"] = page
 
     params["order_by"] = order_by
+
+    params["view"] = view
+
+    json_preset: None | str | Unset
+    if isinstance(preset, Unset):
+        json_preset = UNSET
+    else:
+        json_preset = preset
+    params["preset"] = json_preset
+
+    json_semantic: None | str | Unset
+    if isinstance(semantic, Unset):
+        json_semantic = UNSET
+    else:
+        json_semantic = semantic
+    params["semantic"] = json_semantic
 
     params = {k: v for k, v in params.items() if v is not UNSET and v is not None}
 
@@ -80,8 +99,8 @@ def _get_kwargs(
 
 
 def _parse_response(
-    *, client: Union[AuthenticatedClient, Client], response: httpx.Response
-) -> Optional[Union[HTTPValidationError, str]]:
+    *, client: AuthenticatedClient | Client, response: httpx.Response
+) -> HTTPValidationError | str | None:
     if response.status_code == 200:
         response_200 = response.text
         return response_200
@@ -98,8 +117,8 @@ def _parse_response(
 
 
 def _build_response(
-    *, client: Union[AuthenticatedClient, Client], response: httpx.Response
-) -> Response[Union[HTTPValidationError, str]]:
+    *, client: AuthenticatedClient | Client, response: httpx.Response
+) -> Response[HTTPValidationError | str]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -110,34 +129,40 @@ def _build_response(
 
 def sync_detailed(
     *,
-    client: Union[AuthenticatedClient, Client],
-    q: Union[None, Unset, str] = UNSET,
-    genres: Union[None, Unset, str] = UNSET,
-    moods: Union[None, Unset, str] = UNSET,
-    year_min: Union[None, Unset, str] = UNSET,
-    year_max: Union[None, Unset, str] = UNSET,
-    runtime_max: Union[None, Unset, str] = UNSET,
-    page: Union[Unset, int] = 1,
-    order_by: Union[Unset, str] = "title_asc",
-) -> Response[Union[HTTPValidationError, str]]:
+    client: AuthenticatedClient | Client,
+    q: None | str | Unset = UNSET,
+    genres: None | str | Unset = UNSET,
+    moods: None | str | Unset = UNSET,
+    year_min: None | str | Unset = UNSET,
+    year_max: None | str | Unset = UNSET,
+    runtime_max: None | str | Unset = UNSET,
+    page: int | Unset = 1,
+    order_by: str | Unset = "title_asc",
+    view: str | Unset = "grid",
+    preset: None | str | Unset = UNSET,
+    semantic: None | str | Unset = UNSET,
+) -> Response[HTTPValidationError | str]:
     """Movies Grid
 
     Args:
-        q (Union[None, Unset, str]):
-        genres (Union[None, Unset, str]):
-        moods (Union[None, Unset, str]):
-        year_min (Union[None, Unset, str]):
-        year_max (Union[None, Unset, str]):
-        runtime_max (Union[None, Unset, str]):
-        page (Union[Unset, int]):  Default: 1.
-        order_by (Union[Unset, str]):  Default: 'title_asc'.
+        q (None | str | Unset):
+        genres (None | str | Unset):
+        moods (None | str | Unset):
+        year_min (None | str | Unset):
+        year_max (None | str | Unset):
+        runtime_max (None | str | Unset):
+        page (int | Unset):  Default: 1.
+        order_by (str | Unset):  Default: 'title_asc'.
+        view (str | Unset):  Default: 'grid'.
+        preset (None | str | Unset):
+        semantic (None | str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[HTTPValidationError, str]]
+        Response[HTTPValidationError | str]
     """
 
     kwargs = _get_kwargs(
@@ -149,6 +174,9 @@ def sync_detailed(
         runtime_max=runtime_max,
         page=page,
         order_by=order_by,
+        view=view,
+        preset=preset,
+        semantic=semantic,
     )
 
     response = client.get_httpx_client().request(
@@ -160,34 +188,40 @@ def sync_detailed(
 
 def sync(
     *,
-    client: Union[AuthenticatedClient, Client],
-    q: Union[None, Unset, str] = UNSET,
-    genres: Union[None, Unset, str] = UNSET,
-    moods: Union[None, Unset, str] = UNSET,
-    year_min: Union[None, Unset, str] = UNSET,
-    year_max: Union[None, Unset, str] = UNSET,
-    runtime_max: Union[None, Unset, str] = UNSET,
-    page: Union[Unset, int] = 1,
-    order_by: Union[Unset, str] = "title_asc",
-) -> Optional[Union[HTTPValidationError, str]]:
+    client: AuthenticatedClient | Client,
+    q: None | str | Unset = UNSET,
+    genres: None | str | Unset = UNSET,
+    moods: None | str | Unset = UNSET,
+    year_min: None | str | Unset = UNSET,
+    year_max: None | str | Unset = UNSET,
+    runtime_max: None | str | Unset = UNSET,
+    page: int | Unset = 1,
+    order_by: str | Unset = "title_asc",
+    view: str | Unset = "grid",
+    preset: None | str | Unset = UNSET,
+    semantic: None | str | Unset = UNSET,
+) -> HTTPValidationError | str | None:
     """Movies Grid
 
     Args:
-        q (Union[None, Unset, str]):
-        genres (Union[None, Unset, str]):
-        moods (Union[None, Unset, str]):
-        year_min (Union[None, Unset, str]):
-        year_max (Union[None, Unset, str]):
-        runtime_max (Union[None, Unset, str]):
-        page (Union[Unset, int]):  Default: 1.
-        order_by (Union[Unset, str]):  Default: 'title_asc'.
+        q (None | str | Unset):
+        genres (None | str | Unset):
+        moods (None | str | Unset):
+        year_min (None | str | Unset):
+        year_max (None | str | Unset):
+        runtime_max (None | str | Unset):
+        page (int | Unset):  Default: 1.
+        order_by (str | Unset):  Default: 'title_asc'.
+        view (str | Unset):  Default: 'grid'.
+        preset (None | str | Unset):
+        semantic (None | str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[HTTPValidationError, str]
+        HTTPValidationError | str
     """
 
     return sync_detailed(
@@ -200,39 +234,48 @@ def sync(
         runtime_max=runtime_max,
         page=page,
         order_by=order_by,
+        view=view,
+        preset=preset,
+        semantic=semantic,
     ).parsed
 
 
 async def asyncio_detailed(
     *,
-    client: Union[AuthenticatedClient, Client],
-    q: Union[None, Unset, str] = UNSET,
-    genres: Union[None, Unset, str] = UNSET,
-    moods: Union[None, Unset, str] = UNSET,
-    year_min: Union[None, Unset, str] = UNSET,
-    year_max: Union[None, Unset, str] = UNSET,
-    runtime_max: Union[None, Unset, str] = UNSET,
-    page: Union[Unset, int] = 1,
-    order_by: Union[Unset, str] = "title_asc",
-) -> Response[Union[HTTPValidationError, str]]:
+    client: AuthenticatedClient | Client,
+    q: None | str | Unset = UNSET,
+    genres: None | str | Unset = UNSET,
+    moods: None | str | Unset = UNSET,
+    year_min: None | str | Unset = UNSET,
+    year_max: None | str | Unset = UNSET,
+    runtime_max: None | str | Unset = UNSET,
+    page: int | Unset = 1,
+    order_by: str | Unset = "title_asc",
+    view: str | Unset = "grid",
+    preset: None | str | Unset = UNSET,
+    semantic: None | str | Unset = UNSET,
+) -> Response[HTTPValidationError | str]:
     """Movies Grid
 
     Args:
-        q (Union[None, Unset, str]):
-        genres (Union[None, Unset, str]):
-        moods (Union[None, Unset, str]):
-        year_min (Union[None, Unset, str]):
-        year_max (Union[None, Unset, str]):
-        runtime_max (Union[None, Unset, str]):
-        page (Union[Unset, int]):  Default: 1.
-        order_by (Union[Unset, str]):  Default: 'title_asc'.
+        q (None | str | Unset):
+        genres (None | str | Unset):
+        moods (None | str | Unset):
+        year_min (None | str | Unset):
+        year_max (None | str | Unset):
+        runtime_max (None | str | Unset):
+        page (int | Unset):  Default: 1.
+        order_by (str | Unset):  Default: 'title_asc'.
+        view (str | Unset):  Default: 'grid'.
+        preset (None | str | Unset):
+        semantic (None | str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[HTTPValidationError, str]]
+        Response[HTTPValidationError | str]
     """
 
     kwargs = _get_kwargs(
@@ -244,6 +287,9 @@ async def asyncio_detailed(
         runtime_max=runtime_max,
         page=page,
         order_by=order_by,
+        view=view,
+        preset=preset,
+        semantic=semantic,
     )
 
     response = await client.get_async_httpx_client().request(**kwargs)
@@ -253,34 +299,40 @@ async def asyncio_detailed(
 
 async def asyncio(
     *,
-    client: Union[AuthenticatedClient, Client],
-    q: Union[None, Unset, str] = UNSET,
-    genres: Union[None, Unset, str] = UNSET,
-    moods: Union[None, Unset, str] = UNSET,
-    year_min: Union[None, Unset, str] = UNSET,
-    year_max: Union[None, Unset, str] = UNSET,
-    runtime_max: Union[None, Unset, str] = UNSET,
-    page: Union[Unset, int] = 1,
-    order_by: Union[Unset, str] = "title_asc",
-) -> Optional[Union[HTTPValidationError, str]]:
+    client: AuthenticatedClient | Client,
+    q: None | str | Unset = UNSET,
+    genres: None | str | Unset = UNSET,
+    moods: None | str | Unset = UNSET,
+    year_min: None | str | Unset = UNSET,
+    year_max: None | str | Unset = UNSET,
+    runtime_max: None | str | Unset = UNSET,
+    page: int | Unset = 1,
+    order_by: str | Unset = "title_asc",
+    view: str | Unset = "grid",
+    preset: None | str | Unset = UNSET,
+    semantic: None | str | Unset = UNSET,
+) -> HTTPValidationError | str | None:
     """Movies Grid
 
     Args:
-        q (Union[None, Unset, str]):
-        genres (Union[None, Unset, str]):
-        moods (Union[None, Unset, str]):
-        year_min (Union[None, Unset, str]):
-        year_max (Union[None, Unset, str]):
-        runtime_max (Union[None, Unset, str]):
-        page (Union[Unset, int]):  Default: 1.
-        order_by (Union[Unset, str]):  Default: 'title_asc'.
+        q (None | str | Unset):
+        genres (None | str | Unset):
+        moods (None | str | Unset):
+        year_min (None | str | Unset):
+        year_max (None | str | Unset):
+        runtime_max (None | str | Unset):
+        page (int | Unset):  Default: 1.
+        order_by (str | Unset):  Default: 'title_asc'.
+        view (str | Unset):  Default: 'grid'.
+        preset (None | str | Unset):
+        semantic (None | str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[HTTPValidationError, str]
+        HTTPValidationError | str
     """
 
     return (
@@ -294,5 +346,8 @@ async def asyncio(
             runtime_max=runtime_max,
             page=page,
             order_by=order_by,
+            view=view,
+            preset=preset,
+            semantic=semantic,
         )
     ).parsed

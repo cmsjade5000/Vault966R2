@@ -1,6 +1,20 @@
 {
   "components": {
     "schemas": {
+      "ActiveProfileRequest": {
+        "properties": {
+          "profile_id": {
+            "minimum": 1.0,
+            "title": "Profile Id",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "profile_id"
+        ],
+        "title": "ActiveProfileRequest",
+        "type": "object"
+      },
       "AiSearchRequest": {
         "additionalProperties": false,
         "properties": {
@@ -71,6 +85,157 @@
           "facets"
         ],
         "title": "AiSearchResponse",
+        "type": "object"
+      },
+      "AssistantMovie": {
+        "properties": {
+          "genres": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Genres",
+            "type": "array"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "imdb_rating": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Imdb Rating"
+          },
+          "moods": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Moods",
+            "type": "array"
+          },
+          "rt_score": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rt Score"
+          },
+          "runtime": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Runtime"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "year": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Year"
+          }
+        },
+        "required": [
+          "id",
+          "title"
+        ],
+        "title": "AssistantMovie",
+        "type": "object"
+      },
+      "AssistantRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "limit": {
+            "default": 6,
+            "maximum": 12.0,
+            "minimum": 1.0,
+            "title": "Limit",
+            "type": "integer"
+          },
+          "query": {
+            "maxLength": 400,
+            "minLength": 2,
+            "title": "Query",
+            "type": "string"
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "title": "AssistantRequest",
+        "type": "object"
+      },
+      "AssistantResponse": {
+        "properties": {
+          "movies": {
+            "items": {
+              "$ref": "#/components/schemas/AssistantMovie"
+            },
+            "title": "Movies",
+            "type": "array"
+          },
+          "reply": {
+            "title": "Reply",
+            "type": "string"
+          }
+        },
+        "required": [
+          "reply"
+        ],
+        "title": "AssistantResponse",
+        "type": "object"
+      },
+      "Body_login_submit_login_post": {
+        "properties": {
+          "profile_id": {
+            "anyOf": [
+              {
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Id"
+          }
+        },
+        "title": "Body_login_submit_login_post",
+        "type": "object"
+      },
+      "Body_upload_source_snapshot_ui_source_sync_upload_post": {
+        "properties": {
+          "source_file": {
+            "format": "binary",
+            "title": "Source File",
+            "type": "string"
+          }
+        },
+        "required": [
+          "source_file"
+        ],
+        "title": "Body_upload_source_snapshot_ui_source_sync_upload_post",
         "type": "object"
       },
       "FlicFilters": {
@@ -426,6 +591,17 @@
       },
       "ManualMovieMetadata": {
         "properties": {
+          "awards": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Awards"
+          },
           "backdrop_url": {
             "anyOf": [
               {
@@ -436,6 +612,35 @@
               }
             ],
             "title": "Backdrop Url"
+          },
+          "certificate": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Certificate"
+          },
+          "collection": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Collection"
+          },
+          "countries": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Countries",
+            "type": "array"
           },
           "genres": {
             "items": {
@@ -455,12 +660,85 @@
             ],
             "title": "Imdb Id"
           },
+          "imdb_rating": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Imdb Rating"
+          },
+          "imdb_votes": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Imdb Votes"
+          },
           "keywords": {
             "items": {
               "type": "string"
             },
             "title": "Keywords",
             "type": "array"
+          },
+          "languages": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Languages",
+            "type": "array"
+          },
+          "last_omdb_fetch_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Omdb Fetch At"
+          },
+          "last_tmdb_fetch_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Tmdb Fetch At"
+          },
+          "metascore": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Metascore"
+          },
+          "omdb_payload_sha": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Omdb Payload Sha"
           },
           "overview": {
             "anyOf": [
@@ -494,6 +772,17 @@
               }
             ],
             "title": "Release Date"
+          },
+          "rt_score": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rt Score"
           },
           "runtime": {
             "anyOf": [
@@ -528,6 +817,39 @@
             ],
             "title": "Tmdb Id"
           },
+          "tmdb_payload_sha": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tmdb Payload Sha"
+          },
+          "tomato_audience": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tomato Audience"
+          },
+          "tomato_meter": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tomato Meter"
+          },
           "where_to_watch": {
             "items": {
               "type": "string"
@@ -541,6 +863,17 @@
       },
       "ManualMoviePreviewResponse": {
         "properties": {
+          "awards": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Awards"
+          },
           "backdrop_url": {
             "anyOf": [
               {
@@ -551,6 +884,35 @@
               }
             ],
             "title": "Backdrop Url"
+          },
+          "certificate": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Certificate"
+          },
+          "collection": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Collection"
+          },
+          "countries": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Countries",
+            "type": "array"
           },
           "genres": {
             "items": {
@@ -570,12 +932,85 @@
             ],
             "title": "Imdb Id"
           },
+          "imdb_rating": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Imdb Rating"
+          },
+          "imdb_votes": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Imdb Votes"
+          },
           "keywords": {
             "items": {
               "type": "string"
             },
             "title": "Keywords",
             "type": "array"
+          },
+          "languages": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Languages",
+            "type": "array"
+          },
+          "last_omdb_fetch_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Omdb Fetch At"
+          },
+          "last_tmdb_fetch_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Tmdb Fetch At"
+          },
+          "metascore": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Metascore"
+          },
+          "omdb_payload_sha": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Omdb Payload Sha"
           },
           "overview": {
             "anyOf": [
@@ -609,6 +1044,17 @@
               }
             ],
             "title": "Release Date"
+          },
+          "rt_score": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rt Score"
           },
           "runtime": {
             "anyOf": [
@@ -646,6 +1092,39 @@
               }
             ],
             "title": "Tmdb Id"
+          },
+          "tmdb_payload_sha": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tmdb Payload Sha"
+          },
+          "tomato_audience": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tomato Audience"
+          },
+          "tomato_meter": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tomato Meter"
           },
           "where_to_watch": {
             "items": {
@@ -736,6 +1215,17 @@
             ],
             "title": "Backdrop Url"
           },
+          "certificate": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Certificate"
+          },
           "collection": {
             "anyOf": [
               {
@@ -804,6 +1294,20 @@
             ],
             "title": "Imdb Votes"
           },
+          "keywords": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Keywords"
+          },
           "languages": {
             "anyOf": [
               {
@@ -861,6 +1365,17 @@
             ],
             "title": "Poster Url"
           },
+          "rt_score": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rt Score"
+          },
           "runtime": {
             "anyOf": [
               {
@@ -908,6 +1423,17 @@
               }
             ],
             "title": "Tomato Meter"
+          },
+          "vault_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Vault Id"
           },
           "where_to_watch": {
             "anyOf": [
@@ -968,6 +1494,17 @@
             ],
             "title": "Backdrop Url"
           },
+          "certificate": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Certificate"
+          },
           "collection": {
             "anyOf": [
               {
@@ -1009,6 +1546,28 @@
             },
             "title": "Countries Iso",
             "type": "array"
+          },
+          "flag_notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Flag Notes"
+          },
+          "flag_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Flag Reason"
           },
           "flagged": {
             "default": false,
@@ -1058,6 +1617,13 @@
               }
             ],
             "title": "Imdb Votes"
+          },
+          "keywords": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Keywords",
+            "type": "array"
           },
           "languages": {
             "anyOf": [
@@ -1278,6 +1844,17 @@
             "title": "Top Billed",
             "type": "array"
           },
+          "vault_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Vault Id"
+          },
           "where_to_watch": {
             "items": {
               "type": "string"
@@ -1304,6 +1881,32 @@
         "title": "MovieDetail",
         "type": "object"
       },
+      "MovieDoubleFeature": {
+        "properties": {
+          "primary": {
+            "$ref": "#/components/schemas/MovieRead"
+          },
+          "runtime_cap": {
+            "title": "Runtime Cap",
+            "type": "integer"
+          },
+          "secondary": {
+            "$ref": "#/components/schemas/MovieRead"
+          },
+          "total_runtime": {
+            "title": "Total Runtime",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "primary",
+          "secondary",
+          "runtime_cap",
+          "total_runtime"
+        ],
+        "title": "MovieDoubleFeature",
+        "type": "object"
+      },
       "MovieFacets": {
         "properties": {
           "genres": {
@@ -1325,10 +1928,12 @@
         "type": "object"
       },
       "MovieFlagCreate": {
+        "additionalProperties": false,
         "properties": {
           "notes": {
             "anyOf": [
               {
+                "maxLength": 500,
                 "type": "string"
               },
               {
@@ -1338,15 +1943,21 @@
             "title": "Notes"
           },
           "reason": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
+            "default": "Metadata cleanup",
+            "enum": [
+              "Metadata cleanup",
+              "Poster/backdrop issue",
+              "Missing poster",
+              "Broken link",
+              "Movie mismatch",
+              "Wrong runtime/year",
+              "Needs runtime",
+              "Other",
+              "Human review",
+              "Verify identity"
             ],
-            "title": "Reason"
+            "title": "Reason",
+            "type": "string"
           }
         },
         "title": "MovieFlagCreate",
@@ -1385,6 +1996,17 @@
             ],
             "title": "Reason"
           },
+          "reported_by_profile_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reported By Profile Id"
+          },
           "updated_at": {
             "format": "date-time",
             "title": "Updated At",
@@ -1412,6 +2034,17 @@
             ],
             "title": "Backdrop Url"
           },
+          "certificate": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Certificate"
+          },
           "genres": {
             "items": {
               "type": "string"
@@ -1436,6 +2069,17 @@
             },
             "title": "Keywords",
             "type": "array"
+          },
+          "match_confidence": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Match Confidence"
           },
           "overview": {
             "default": "",
@@ -1480,6 +2124,17 @@
             "title": "Source",
             "type": "string"
           },
+          "standardized_title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Standardized Title"
+          },
           "synopsis": {
             "default": "",
             "title": "Synopsis",
@@ -1489,9 +2144,49 @@
             "title": "Title",
             "type": "string"
           },
+          "title_match": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title Match"
+          },
           "tmdb_id": {
-            "title": "Tmdb Id",
-            "type": "integer"
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tmdb Id"
+          },
+          "vault_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Vault Id"
+          },
+          "vault_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Vault Label"
           },
           "where_to_watch": {
             "items": {
@@ -1513,8 +2208,7 @@
           }
         },
         "required": [
-          "title",
-          "tmdb_id"
+          "title"
         ],
         "title": "MovieLookupCandidate",
         "type": "object"
@@ -1527,9 +2221,143 @@
             },
             "title": "Items",
             "type": "array"
+          },
+          "notice": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notice"
           }
         },
         "title": "MovieLookupResponse",
+        "type": "object"
+      },
+      "MovieMatchApplyResponse": {
+        "properties": {
+          "flag_resolved": {
+            "title": "Flag Resolved",
+            "type": "boolean"
+          },
+          "imdb_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Imdb Id"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "movie_id": {
+            "title": "Movie Id",
+            "type": "integer"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "tmdb_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tmdb Id"
+          },
+          "vault_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Vault Id"
+          }
+        },
+        "required": [
+          "movie_id",
+          "title",
+          "flag_resolved",
+          "message"
+        ],
+        "title": "MovieMatchApplyResponse",
+        "type": "object"
+      },
+      "MovieMatchSelection": {
+        "additionalProperties": false,
+        "properties": {
+          "imdb_id": {
+            "anyOf": [
+              {
+                "pattern": "^tt\\d{5,12}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Imdb Id"
+          },
+          "source": {
+            "enum": [
+              "tmdb",
+              "omdb"
+            ],
+            "title": "Source",
+            "type": "string"
+          },
+          "title": {
+            "maxLength": 300,
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
+          },
+          "tmdb_id": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tmdb Id"
+          },
+          "year": {
+            "anyOf": [
+              {
+                "maximum": 2100.0,
+                "minimum": 1870.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Year"
+          }
+        },
+        "required": [
+          "title",
+          "source"
+        ],
+        "title": "MovieMatchSelection",
         "type": "object"
       },
       "MovieRead": {
@@ -1555,6 +2383,17 @@
               }
             ],
             "title": "Backdrop Url"
+          },
+          "certificate": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Certificate"
           },
           "collection": {
             "anyOf": [
@@ -1640,6 +2479,20 @@
               }
             ],
             "title": "Imdb Votes"
+          },
+          "keywords": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Keywords"
           },
           "languages": {
             "anyOf": [
@@ -1741,6 +2594,17 @@
             ],
             "title": "Poster Url"
           },
+          "rt_score": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rt Score"
+          },
           "runtime": {
             "anyOf": [
               {
@@ -1810,6 +2674,17 @@
               }
             ],
             "title": "Tomato Meter"
+          },
+          "vault_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Vault Id"
           },
           "where_to_watch": {
             "anyOf": [
@@ -1917,6 +2792,17 @@
             ],
             "title": "Backdrop Url"
           },
+          "certificate": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Certificate"
+          },
           "collection": {
             "anyOf": [
               {
@@ -1991,6 +2877,20 @@
               }
             ],
             "title": "Imdb Votes"
+          },
+          "keywords": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Keywords"
           },
           "languages": {
             "anyOf": [
@@ -2581,6 +3481,531 @@
         "title": "SearchPlan",
         "type": "object"
       },
+      "SemanticSearchItem": {
+        "properties": {
+          "awards": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Awards"
+          },
+          "backdrop_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Backdrop Url"
+          },
+          "certificate": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Certificate"
+          },
+          "collection": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Collection"
+          },
+          "countries": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Countries"
+          },
+          "countries_iso": {
+            "items": {
+              "type": "string"
+            },
+            "readOnly": true,
+            "title": "Countries Iso",
+            "type": "array"
+          },
+          "flagged": {
+            "default": false,
+            "title": "Flagged",
+            "type": "boolean"
+          },
+          "genres": {
+            "items": {
+              "$ref": "#/components/schemas/GenreRead"
+            },
+            "title": "Genres",
+            "type": "array"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "imdb_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Imdb Id"
+          },
+          "imdb_rating": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Imdb Rating"
+          },
+          "imdb_votes": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Imdb Votes"
+          },
+          "keywords": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Keywords"
+          },
+          "languages": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Languages"
+          },
+          "languages_iso": {
+            "items": {
+              "type": "string"
+            },
+            "readOnly": true,
+            "title": "Languages Iso",
+            "type": "array"
+          },
+          "last_omdb_fetch_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Omdb Fetch At"
+          },
+          "last_tmdb_fetch_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Tmdb Fetch At"
+          },
+          "metascore": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Metascore"
+          },
+          "moods": {
+            "items": {
+              "$ref": "#/components/schemas/MoodRead"
+            },
+            "title": "Moods",
+            "type": "array"
+          },
+          "omdb_payload_sha": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Omdb Payload Sha"
+          },
+          "plot": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Plot"
+          },
+          "poster_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Poster Url"
+          },
+          "rt_score": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rt Score"
+          },
+          "runtime": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Runtime"
+          },
+          "similarity_score": {
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Similarity Score",
+            "type": "number"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "tmdb_etag": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tmdb Etag"
+          },
+          "tmdb_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tmdb Id"
+          },
+          "tmdb_payload_sha": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tmdb Payload Sha"
+          },
+          "tomato_audience": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tomato Audience"
+          },
+          "tomato_meter": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tomato Meter"
+          },
+          "vault_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Vault Id"
+          },
+          "where_to_watch": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Where To Watch"
+          },
+          "where_to_watch_list": {
+            "items": {
+              "type": "string"
+            },
+            "readOnly": true,
+            "title": "Where To Watch List",
+            "type": "array"
+          },
+          "year": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Year"
+          }
+        },
+        "required": [
+          "title",
+          "id",
+          "similarity_score",
+          "languages_iso",
+          "countries_iso",
+          "where_to_watch_list"
+        ],
+        "title": "SemanticSearchItem",
+        "type": "object"
+      },
+      "SemanticSearchRequest": {
+        "properties": {
+          "genres": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Genres",
+            "type": "array"
+          },
+          "moods": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Moods",
+            "type": "array"
+          },
+          "page": {
+            "default": 1,
+            "minimum": 1.0,
+            "title": "Page",
+            "type": "integer"
+          },
+          "page_size": {
+            "default": 24,
+            "maximum": 100.0,
+            "minimum": 1.0,
+            "title": "Page Size",
+            "type": "integer"
+          },
+          "query": {
+            "maxLength": 200,
+            "minLength": 2,
+            "title": "Query",
+            "type": "string"
+          },
+          "runtime_max": {
+            "anyOf": [
+              {
+                "maximum": 600.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Runtime Max"
+          },
+          "runtime_min": {
+            "anyOf": [
+              {
+                "maximum": 600.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Runtime Min"
+          },
+          "year_max": {
+            "anyOf": [
+              {
+                "maximum": 2100.0,
+                "minimum": 1800.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Year Max"
+          },
+          "year_min": {
+            "anyOf": [
+              {
+                "maximum": 2100.0,
+                "minimum": 1800.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Year Min"
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "title": "SemanticSearchRequest",
+        "type": "object"
+      },
+      "SemanticSearchResponse": {
+        "properties": {
+          "facets": {
+            "$ref": "#/components/schemas/MovieFacets"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/SemanticSearchItem"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "mode": {
+            "title": "Mode",
+            "type": "string"
+          },
+          "notice": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notice"
+          },
+          "page": {
+            "title": "Page",
+            "type": "integer"
+          },
+          "page_size": {
+            "title": "Page Size",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "page",
+          "page_size",
+          "facets",
+          "mode"
+        ],
+        "title": "SemanticSearchResponse",
+        "type": "object"
+      },
       "SimilarMovie": {
         "properties": {
           "flic_score": {
@@ -2594,9 +4019,27 @@
             ],
             "title": "Flic Score"
           },
+          "genres": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Genres",
+            "type": "array"
+          },
           "id": {
             "title": "Id",
             "type": "integer"
+          },
+          "imdb_rating": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Imdb Rating"
           },
           "poster_theme": {
             "anyOf": [
@@ -2619,6 +4062,17 @@
               }
             ],
             "title": "Poster Url"
+          },
+          "rt_score": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rt Score"
           },
           "title": {
             "title": "Title",
@@ -2687,6 +4141,67 @@
           "name"
         ],
         "title": "TopBilledEntry",
+        "type": "object"
+      },
+      "UsageEventCreate": {
+        "additionalProperties": false,
+        "properties": {
+          "context": {
+            "anyOf": [
+              {
+                "maxLength": 40,
+                "minLength": 1,
+                "pattern": "^[a-z0-9_-]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Context"
+          },
+          "event_name": {
+            "enum": [
+              "library_search_submitted",
+              "filters_applied",
+              "view_changed",
+              "movie_details_opened",
+              "discover_rail_opened",
+              "personalized_recommendations_shown",
+              "random_pick_requested",
+              "preference_toggled"
+            ],
+            "title": "Event Name",
+            "type": "string"
+          },
+          "movie_id": {
+            "anyOf": [
+              {
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Movie Id"
+          },
+          "page": {
+            "enum": [
+              "library",
+              "discover",
+              "detail",
+              "watchlist"
+            ],
+            "title": "Page",
+            "type": "string"
+          }
+        },
+        "required": [
+          "event_name",
+          "page"
+        ],
+        "title": "UsageEventCreate",
         "type": "object"
       },
       "ValidationError": {
@@ -2777,6 +4292,365 @@
         ]
       }
     },
+    "/api/assistant": {
+      "get": {
+        "operationId": "assistant_reply_get_api_assistant_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "q",
+            "required": true,
+            "schema": {
+              "maxLength": 400,
+              "minLength": 2,
+              "title": "Q",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 6,
+              "maximum": 12,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssistantResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Assistant Reply Get",
+        "tags": [
+          "assistant"
+        ]
+      },
+      "post": {
+        "operationId": "assistant_reply_api_assistant_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssistantRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssistantResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Assistant Reply",
+        "tags": [
+          "assistant"
+        ]
+      }
+    },
+    "/api/collection-health/recommendation/refresh": {
+      "post": {
+        "operationId": "refresh_recommendation_api_collection_health_recommendation_refresh_post",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Refresh Recommendation Api Collection Health Recommendation Refresh Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Refresh Recommendation",
+        "tags": [
+          "collection-health"
+        ]
+      }
+    },
+    "/api/collection-health/update/run": {
+      "post": {
+        "operationId": "update_run_api_collection_health_update_run_post",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Update Run Api Collection Health Update Run Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Update Run",
+        "tags": [
+          "collection-health"
+        ]
+      }
+    },
+    "/api/collection-health/update/status": {
+      "get": {
+        "operationId": "update_status_api_collection_health_update_status_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Update Status Api Collection Health Update Status Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Update Status",
+        "tags": [
+          "collection-health"
+        ]
+      }
+    },
+    "/api/discover/refresh": {
+      "get": {
+        "operationId": "discover_refresh_api_discover_refresh_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "seed",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maximum": 2000000000,
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Seed"
+            }
+          },
+          {
+            "in": "query",
+            "name": "pairings_limit",
+            "required": false,
+            "schema": {
+              "default": 2,
+              "maximum": 4,
+              "minimum": 1,
+              "title": "Pairings Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "genre_limit",
+            "required": false,
+            "schema": {
+              "default": 6,
+              "maximum": 12,
+              "minimum": 3,
+              "title": "Genre Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Discover Refresh Api Discover Refresh Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Discover Refresh",
+        "tags": [
+          "ui",
+          "ui"
+        ]
+      }
+    },
+    "/api/profiles": {
+      "get": {
+        "operationId": "list_profiles_api_profiles_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response List Profiles Api Profiles Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Profiles",
+        "tags": [
+          "profiles"
+        ]
+      }
+    },
+    "/api/profiles/active": {
+      "post": {
+        "operationId": "set_active_profile_api_profiles_active_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActiveProfileRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Set Active Profile Api Profiles Active Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Set Active Profile",
+        "tags": [
+          "profiles"
+        ]
+      }
+    },
+    "/api/search/semantic": {
+      "post": {
+        "operationId": "semantic_search_api_search_semantic_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SemanticSearchRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SemanticSearchResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Semantic Search",
+        "tags": [
+          "search"
+        ]
+      }
+    },
     "/fliclists/": {
       "get": {
         "operationId": "list_presets_fliclists__get",
@@ -2835,6 +4709,11 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "Create Preset",
         "tags": [
           "fliclists"
@@ -2895,6 +4774,11 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "Delete Preset",
         "tags": [
           "fliclists"
@@ -2917,6 +4801,118 @@
         "summary": "Health",
         "tags": [
           "health"
+        ]
+      }
+    },
+    "/login": {
+      "get": {
+        "description": "Public login landing page (no auth required).",
+        "operationId": "login_login_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "unlocked",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maximum": 1,
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Unlocked"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Login",
+        "tags": [
+          "ui",
+          "ui"
+        ]
+      },
+      "post": {
+        "operationId": "login_submit_login_post",
+        "requestBody": {
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_login_submit_login_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Login Submit",
+        "tags": [
+          "ui",
+          "ui"
+        ]
+      }
+    },
+    "/logout": {
+      "post": {
+        "operationId": "logout_logout_post",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Logout",
+        "tags": [
+          "ui",
+          "ui"
         ]
       }
     },
@@ -2989,9 +4985,155 @@
         ]
       }
     },
+    "/movies/double-feature": {
+      "get": {
+        "description": "Public endpoint for a complementary double-feature pairing.",
+        "operationId": "get_double_feature_movies_double_feature_get",
+        "parameters": [
+          {
+            "description": "Restrict to this genre",
+            "in": "query",
+            "name": "genre",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Restrict to this genre",
+              "title": "Genre"
+            }
+          },
+          {
+            "description": "Desired mood name",
+            "in": "query",
+            "name": "mood",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Desired mood name",
+              "title": "Mood"
+            }
+          },
+          {
+            "in": "query",
+            "name": "year_min",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Year Min"
+            }
+          },
+          {
+            "in": "query",
+            "name": "year_max",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Year Max"
+            }
+          },
+          {
+            "description": "Combined runtime cap (minutes)",
+            "in": "query",
+            "name": "runtime_max",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": "240",
+              "description": "Combined runtime cap (minutes)",
+              "title": "Runtime Max"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MovieDoubleFeature"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Double Feature",
+        "tags": [
+          "movies"
+        ]
+      }
+    },
     "/movies/flags": {
       "get": {
         "operationId": "list_flags_movies_flags_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "minimum": 1,
+              "title": "Page",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "default": 100,
+              "maximum": 500,
+              "minimum": 1,
+              "title": "Page Size",
+              "type": "integer"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "content": {
@@ -3006,8 +5148,23 @@
               }
             },
             "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "List Flags",
         "tags": [
           "movies"
@@ -3372,6 +5529,44 @@
       }
     },
     "/movies/{movie_id}": {
+      "delete": {
+        "operationId": "delete_movie_movies__movie_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "movie_id",
+            "required": true,
+            "schema": {
+              "title": "Movie Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Delete Movie",
+        "tags": [
+          "movies"
+        ]
+      },
       "patch": {
         "operationId": "update_movie_movies__movie_id__patch",
         "parameters": [
@@ -3417,6 +5612,11 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "Update Movie",
         "tags": [
           "movies"
@@ -3494,6 +5694,11 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "Clear Flag",
         "tags": [
           "movies"
@@ -3544,7 +5749,150 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "Flag Movie",
+        "tags": [
+          "movies"
+        ]
+      }
+    },
+    "/movies/{movie_id}/flag/report": {
+      "post": {
+        "operationId": "report_flag_movies__movie_id__flag_report_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "movie_id",
+            "required": true,
+            "schema": {
+              "title": "Movie Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MovieFlagCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MovieFlagRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Report Flag",
+        "tags": [
+          "movies"
+        ]
+      }
+    },
+    "/movies/{movie_id}/like": {
+      "delete": {
+        "operationId": "unlike_movie_movies__movie_id__like_delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "movie_id",
+            "required": true,
+            "schema": {
+              "title": "Movie Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Unlike Movie Movies  Movie Id  Like Delete",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Unlike Movie",
+        "tags": [
+          "movies"
+        ]
+      },
+      "post": {
+        "operationId": "like_movie_movies__movie_id__like_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "movie_id",
+            "required": true,
+            "schema": {
+              "title": "Movie Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Like Movie Movies  Movie Id  Like Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Like Movie",
         "tags": [
           "movies"
         ]
@@ -3741,6 +6089,92 @@
         ]
       }
     },
+    "/movies/{movie_id}/watchlist": {
+      "delete": {
+        "operationId": "unwatchlist_movie_movies__movie_id__watchlist_delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "movie_id",
+            "required": true,
+            "schema": {
+              "title": "Movie Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Unwatchlist Movie Movies  Movie Id  Watchlist Delete",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Unwatchlist Movie",
+        "tags": [
+          "movies"
+        ]
+      },
+      "post": {
+        "operationId": "watchlist_movie_movies__movie_id__watchlist_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "movie_id",
+            "required": true,
+            "schema": {
+              "title": "Movie Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Watchlist Movie Movies  Movie Id  Watchlist Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Watchlist Movie",
+        "tags": [
+          "movies"
+        ]
+      }
+    },
     "/people/": {
       "get": {
         "operationId": "list_people_people__get",
@@ -3841,6 +6275,84 @@
         ]
       }
     },
+    "/ui/discover": {
+      "get": {
+        "operationId": "discover_ui_discover_get",
+        "responses": {
+          "200": {
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Discover",
+        "tags": [
+          "ui",
+          "ui"
+        ]
+      }
+    },
+    "/ui/events": {
+      "post": {
+        "operationId": "record_usage_event_ui_events_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UsageEventCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Record Usage Event",
+        "tags": [
+          "ui",
+          "ui"
+        ]
+      }
+    },
+    "/ui/flags": {
+      "get": {
+        "operationId": "list_flags_ui_ui_flags_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Flags Ui",
+        "tags": [
+          "ui",
+          "ui",
+          "ui"
+        ]
+      }
+    },
     "/ui/movies": {
       "get": {
         "operationId": "movies_grid_ui_movies_get",
@@ -3852,6 +6364,7 @@
             "schema": {
               "anyOf": [
                 {
+                  "maxLength": 120,
                   "type": "string"
                 },
                 {
@@ -3961,6 +6474,50 @@
               "title": "Order By",
               "type": "string"
             }
+          },
+          {
+            "in": "query",
+            "name": "view",
+            "required": false,
+            "schema": {
+              "default": "grid",
+              "pattern": "^(grid|list)$",
+              "title": "View",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "preset",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 30,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Preset"
+            }
+          },
+          {
+            "in": "query",
+            "name": "semantic",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Semantic"
+            }
           }
         ],
         "responses": {
@@ -3995,6 +6552,93 @@
     "/ui/movies/health": {
       "get": {
         "operationId": "movies_health_ui_movies_health_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "view",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "View"
+            }
+          },
+          {
+            "in": "query",
+            "name": "row",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Row"
+            }
+          },
+          {
+            "in": "query",
+            "name": "movie",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Movie"
+            }
+          },
+          {
+            "in": "query",
+            "name": "undo_decision",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Undo Decision"
+            }
+          },
+          {
+            "in": "query",
+            "name": "flag_reason",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 120,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Flag Reason"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "content": {
@@ -4005,10 +6649,738 @@
               }
             },
             "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
           }
         },
         "summary": "Movies Health",
         "tags": [
+          "ui",
+          "ui"
+        ]
+      }
+    },
+    "/ui/movies/health/missing": {
+      "get": {
+        "operationId": "movies_health_missing_ui_movies_health_missing_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 200,
+              "maximum": 500,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Movies Health Missing",
+        "tags": [
+          "ui",
+          "ui"
+        ]
+      }
+    },
+    "/ui/movies/health/review/flags/{movie_id}/resolve": {
+      "post": {
+        "operationId": "resolve_flagged_queue_item_ui_movies_health_review_flags__movie_id__resolve_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "movie_id",
+            "required": true,
+            "schema": {
+              "title": "Movie Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "flag_reason",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 120,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Flag Reason"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Resolve Flagged Queue Item",
+        "tags": [
+          "ui",
+          "ui",
+          "ui"
+        ]
+      }
+    },
+    "/ui/movies/health/review/source-accept-all": {
+      "post": {
+        "operationId": "accept_all_source_review_differences_ui_movies_health_review_source_accept_all_post",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Accept All Source Review Differences",
+        "tags": [
+          "ui",
+          "ui",
+          "ui"
+        ]
+      }
+    },
+    "/ui/movies/health/review/source-decision/{decision_id}/undo": {
+      "post": {
+        "operationId": "undo_source_review_field_ui_movies_health_review_source_decision__decision_id__undo_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "decision_id",
+            "required": true,
+            "schema": {
+              "title": "Decision Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "view",
+            "required": false,
+            "schema": {
+              "default": "differences",
+              "title": "View",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Undo Source Review Field",
+        "tags": [
+          "ui",
+          "ui",
+          "ui"
+        ]
+      }
+    },
+    "/ui/movies/health/review/source-row/{row_id}/create": {
+      "post": {
+        "operationId": "create_source_row_movie_ui_movies_health_review_source_row__row_id__create_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "row_id",
+            "required": true,
+            "schema": {
+              "title": "Row Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "view",
+            "required": false,
+            "schema": {
+              "default": "new",
+              "title": "View",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Source Row Movie",
+        "tags": [
+          "ui",
+          "ui",
+          "ui"
+        ]
+      }
+    },
+    "/ui/movies/health/review/source-row/{row_id}/defer": {
+      "post": {
+        "operationId": "defer_source_review_movie_ui_movies_health_review_source_row__row_id__defer_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "row_id",
+            "required": true,
+            "schema": {
+              "title": "Row Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "view",
+            "required": false,
+            "schema": {
+              "default": "differences",
+              "title": "View",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Defer Source Review Movie",
+        "tags": [
+          "ui",
+          "ui",
+          "ui"
+        ]
+      }
+    },
+    "/ui/movies/health/review/source-row/{row_id}/dismiss-duplicate": {
+      "post": {
+        "operationId": "dismiss_source_duplicate_ui_movies_health_review_source_row__row_id__dismiss_duplicate_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "row_id",
+            "required": true,
+            "schema": {
+              "title": "Row Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "view",
+            "required": false,
+            "schema": {
+              "default": "duplicates",
+              "title": "View",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Dismiss Source Duplicate",
+        "tags": [
+          "ui",
+          "ui",
+          "ui"
+        ]
+      }
+    },
+    "/ui/movies/health/review/source-row/{row_id}/field/{field_name}/{decision}": {
+      "post": {
+        "operationId": "decide_source_review_field_ui_movies_health_review_source_row__row_id__field__field_name___decision__post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "row_id",
+            "required": true,
+            "schema": {
+              "title": "Row Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "path",
+            "name": "field_name",
+            "required": true,
+            "schema": {
+              "title": "Field Name",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "decision",
+            "required": true,
+            "schema": {
+              "title": "Decision",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "view",
+            "required": false,
+            "schema": {
+              "default": "differences",
+              "title": "View",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Decide Source Review Field",
+        "tags": [
+          "ui",
+          "ui",
+          "ui"
+        ]
+      }
+    },
+    "/ui/movies/health/review/source-row/{row_id}/match/{movie_id}": {
+      "post": {
+        "operationId": "confirm_source_row_match_ui_movies_health_review_source_row__row_id__match__movie_id__post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "row_id",
+            "required": true,
+            "schema": {
+              "title": "Row Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "path",
+            "name": "movie_id",
+            "required": true,
+            "schema": {
+              "title": "Movie Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "view",
+            "required": false,
+            "schema": {
+              "default": "ambiguous",
+              "title": "View",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Confirm Source Row Match",
+        "tags": [
+          "ui",
+          "ui",
+          "ui"
+        ]
+      }
+    },
+    "/ui/movies/health/review/vault/needs-fix-all": {
+      "post": {
+        "operationId": "mark_all_vault_reviews_needs_fix_ui_movies_health_review_vault_needs_fix_all_post",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Mark All Vault Reviews Needs Fix",
+        "tags": [
+          "ui",
+          "ui",
+          "ui"
+        ]
+      }
+    },
+    "/ui/movies/health/review/{movie_id}/checked": {
+      "post": {
+        "operationId": "mark_review_checked_ui_movies_health_review__movie_id__checked_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "movie_id",
+            "required": true,
+            "schema": {
+              "title": "Movie Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "view",
+            "required": false,
+            "schema": {
+              "default": "vault",
+              "title": "View",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Mark Review Checked",
+        "tags": [
+          "ui",
+          "ui",
+          "ui"
+        ]
+      }
+    },
+    "/ui/movies/health/review/{movie_id}/matches": {
+      "get": {
+        "operationId": "search_flagged_movie_matches_ui_movies_health_review__movie_id__matches_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "movie_id",
+            "required": true,
+            "schema": {
+              "title": "Movie Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "title",
+            "required": true,
+            "schema": {
+              "maxLength": 300,
+              "minLength": 1,
+              "title": "Title",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "year",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maximum": 2100,
+                  "minimum": 1870,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Year"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MovieLookupResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Search Flagged Movie Matches",
+        "tags": [
+          "ui",
+          "ui",
+          "ui"
+        ]
+      }
+    },
+    "/ui/movies/health/review/{movie_id}/matches/apply": {
+      "post": {
+        "operationId": "apply_flagged_movie_match_ui_movies_health_review__movie_id__matches_apply_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "movie_id",
+            "required": true,
+            "schema": {
+              "title": "Movie Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MovieMatchSelection"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MovieMatchApplyResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Apply Flagged Movie Match",
+        "tags": [
+          "ui",
+          "ui",
+          "ui"
+        ]
+      }
+    },
+    "/ui/movies/health/review/{movie_id}/needs-fix": {
+      "post": {
+        "operationId": "mark_review_needs_fix_ui_movies_health_review__movie_id__needs_fix_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "movie_id",
+            "required": true,
+            "schema": {
+              "title": "Movie Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "view",
+            "required": false,
+            "schema": {
+              "default": "vault",
+              "title": "View",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Mark Review Needs Fix",
+        "tags": [
+          "ui",
           "ui",
           "ui"
         ]
@@ -4096,6 +7468,26 @@
         ]
       }
     },
+    "/ui/movies/review": {
+      "get": {
+        "operationId": "start_review_ui_movies_review_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Start Review",
+        "tags": [
+          "ui",
+          "ui"
+        ]
+      }
+    },
     "/ui/movies/top": {
       "get": {
         "operationId": "movies_top_ui_movies_top_get",
@@ -4130,6 +7522,26 @@
               "title": "Movie Id",
               "type": "integer"
             }
+          },
+          {
+            "in": "query",
+            "name": "review",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "Review",
+              "type": "boolean"
+            }
+          },
+          {
+            "in": "query",
+            "name": "spotlight",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "Spotlight",
+              "type": "boolean"
+            }
           }
         ],
         "responses": {
@@ -4155,6 +7567,385 @@
           }
         },
         "summary": "Movie Detail",
+        "tags": [
+          "ui",
+          "ui"
+        ]
+      }
+    },
+    "/ui/movies/{movie_id}/flag": {
+      "delete": {
+        "operationId": "resolve_movie_flag_ui_movies__movie_id__flag_delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "movie_id",
+            "required": true,
+            "schema": {
+              "title": "Movie Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Resolve Movie Flag",
+        "tags": [
+          "ui",
+          "ui"
+        ]
+      },
+      "put": {
+        "operationId": "manage_movie_flag_ui_movies__movie_id__flag_put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "movie_id",
+            "required": true,
+            "schema": {
+              "title": "Movie Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MovieFlagCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MovieFlagRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Manage Movie Flag",
+        "tags": [
+          "ui",
+          "ui"
+        ]
+      }
+    },
+    "/ui/movies/{movie_id}/review-flag": {
+      "post": {
+        "operationId": "flag_movie_for_review_ui_movies__movie_id__review_flag_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "movie_id",
+            "required": true,
+            "schema": {
+              "title": "Movie Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "anyOf": [
+                      {
+                        "type": "integer"
+                      },
+                      {
+                        "type": "boolean"
+                      }
+                    ]
+                  },
+                  "title": "Response Flag Movie For Review Ui Movies  Movie Id  Review Flag Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Flag Movie For Review",
+        "tags": [
+          "ui",
+          "ui"
+        ]
+      }
+    },
+    "/ui/posters/{movie_id}/{size}": {
+      "get": {
+        "operationId": "cached_movie_poster_ui_posters__movie_id___size__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "movie_id",
+            "required": true,
+            "schema": {
+              "title": "Movie Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "path",
+            "name": "size",
+            "required": true,
+            "schema": {
+              "title": "Size",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Cached Movie Poster",
+        "tags": [
+          "ui",
+          "ui"
+        ]
+      }
+    },
+    "/ui/review": {
+      "get": {
+        "operationId": "review_queue_ui_ui_review_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Review Queue Ui",
+        "tags": [
+          "ui",
+          "ui",
+          "ui"
+        ]
+      }
+    },
+    "/ui/source-sync": {
+      "get": {
+        "operationId": "source_sync_ui_ui_source_sync_get",
+        "responses": {
+          "200": {
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Source Sync Ui",
+        "tags": [
+          "ui",
+          "ui",
+          "ui"
+        ]
+      }
+    },
+    "/ui/source-sync/upload": {
+      "post": {
+        "operationId": "upload_source_snapshot_ui_source_sync_upload_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_upload_source_snapshot_ui_source_sync_upload_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Upload Source Snapshot",
+        "tags": [
+          "ui",
+          "ui",
+          "ui"
+        ]
+      }
+    },
+    "/ui/source-sync/{snapshot_id}/confirm": {
+      "post": {
+        "operationId": "confirm_source_snapshot_ui_source_sync__snapshot_id__confirm_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "snapshot_id",
+            "required": true,
+            "schema": {
+              "title": "Snapshot Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Confirm Source Snapshot",
+        "tags": [
+          "ui",
+          "ui",
+          "ui"
+        ]
+      }
+    },
+    "/ui/source-sync/{snapshot_id}/preview": {
+      "get": {
+        "operationId": "preview_source_snapshot_ui_source_sync__snapshot_id__preview_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "snapshot_id",
+            "required": true,
+            "schema": {
+              "title": "Snapshot Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Preview Source Snapshot",
+        "tags": [
+          "ui",
+          "ui",
+          "ui"
+        ]
+      }
+    },
+    "/ui/watchlist": {
+      "get": {
+        "operationId": "watchlist_ui_watchlist_get",
+        "responses": {
+          "200": {
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Watchlist",
         "tags": [
           "ui",
           "ui"

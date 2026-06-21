@@ -1,7 +1,7 @@
 include Makefile.txt
 
 # ---- README ALIASES ----
-.PHONY: app.up app.down db.up db.down db.migrate db.reset fmt lint test openapi vault.audit codex.status codex.check codex.full codex.live codex.skills
+.PHONY: app.up app.down db.up db.down db.migrate db.reset fmt lint test openapi openapi.check vault.audit codex.status codex.check codex.full codex.live codex.skills
 
 app.up: up ## Start API + Postgres (Docker)
 
@@ -42,6 +42,9 @@ vault.audit: ## Check structural integrity and imported-source drift
 openapi: ## Freeze OpenAPI + regenerate clients
 	python3 scripts/generate_openapi.py
 	python3 scripts/generate_clients.py
+
+openapi.check: openapi ## Regenerate OpenAPI/clients and fail if generated files drift
+	git diff --exit-code -- openapi/openapi.json client_py client_ts
 
 codex.status: ## Show git state, repo skill links, and live service status
 	scripts/codex_check.sh status

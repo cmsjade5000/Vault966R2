@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, Any, TypeVar, Union, cast
+from typing import TYPE_CHECKING, Any, TypeVar, cast
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
@@ -23,17 +25,17 @@ class RoleRead:
         person (PersonRead):
         person_id (int):
         role_type (RoleType):
-        billing_order (Union[None, Unset, int]):
-        character_name (Union[None, Unset, str]):
+        billing_order (int | None | Unset):
+        character_name (None | str | Unset):
     """
 
     id: int
     movie_id: int
-    person: "PersonRead"
+    person: PersonRead
     person_id: int
     role_type: RoleType
-    billing_order: Union[None, Unset, int] = UNSET
-    character_name: Union[None, Unset, str] = UNSET
+    billing_order: int | None | Unset = UNSET
+    character_name: None | str | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -47,13 +49,13 @@ class RoleRead:
 
         role_type = self.role_type.value
 
-        billing_order: Union[None, Unset, int]
+        billing_order: int | None | Unset
         if isinstance(self.billing_order, Unset):
             billing_order = UNSET
         else:
             billing_order = self.billing_order
 
-        character_name: Union[None, Unset, str]
+        character_name: None | str | Unset
         if isinstance(self.character_name, Unset):
             character_name = UNSET
         else:
@@ -92,21 +94,21 @@ class RoleRead:
 
         role_type = RoleType(d.pop("role_type"))
 
-        def _parse_billing_order(data: object) -> Union[None, Unset, int]:
+        def _parse_billing_order(data: object) -> int | None | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(Union[None, Unset, int], data)
+            return cast(int | None | Unset, data)
 
         billing_order = _parse_billing_order(d.pop("billing_order", UNSET))
 
-        def _parse_character_name(data: object) -> Union[None, Unset, str]:
+        def _parse_character_name(data: object) -> None | str | Unset:
             if data is None:
                 return data
             if isinstance(data, Unset):
                 return data
-            return cast(Union[None, Unset, str], data)
+            return cast(None | str | Unset, data)
 
         character_name = _parse_character_name(d.pop("character_name", UNSET))
 

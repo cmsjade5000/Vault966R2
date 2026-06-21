@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from collections.abc import Mapping
 from typing import TYPE_CHECKING, Any, TypeVar
 
@@ -18,7 +20,7 @@ class AiSearchResponse:
     Attributes:
         explanation (str):
         facets (MovieFacets):
-        items (list['MovieRead']):
+        items (list[MovieRead]):
         page (int):
         page_size (int):
         plan (SearchPlan):
@@ -26,11 +28,11 @@ class AiSearchResponse:
     """
 
     explanation: str
-    facets: "MovieFacets"
-    items: list["MovieRead"]
+    facets: MovieFacets
+    items: list[MovieRead]
     page: int
     page_size: int
-    plan: "SearchPlan"
+    plan: SearchPlan
     total: int
 
     def to_dict(self) -> dict[str, Any]:

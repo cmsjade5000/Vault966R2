@@ -1,5 +1,5 @@
 from http import HTTPStatus
-from typing import Any, Optional, Union
+from typing import Any
 
 import httpx
 
@@ -12,43 +12,43 @@ from ...types import UNSET, Response, Unset
 
 def _get_kwargs(
     *,
-    mood: Union[None, Unset, str] = UNSET,
-    genre: Union[None, Unset, str] = UNSET,
-    year_min: Union[None, Unset, str] = UNSET,
-    year_max: Union[None, Unset, str] = UNSET,
-    runtime_max: Union[None, Unset, str] = UNSET,
+    mood: None | str | Unset = UNSET,
+    genre: None | str | Unset = UNSET,
+    year_min: None | str | Unset = UNSET,
+    year_max: None | str | Unset = UNSET,
+    runtime_max: None | str | Unset = UNSET,
 ) -> dict[str, Any]:
     params: dict[str, Any] = {}
 
-    json_mood: Union[None, Unset, str]
+    json_mood: None | str | Unset
     if isinstance(mood, Unset):
         json_mood = UNSET
     else:
         json_mood = mood
     params["mood"] = json_mood
 
-    json_genre: Union[None, Unset, str]
+    json_genre: None | str | Unset
     if isinstance(genre, Unset):
         json_genre = UNSET
     else:
         json_genre = genre
     params["genre"] = json_genre
 
-    json_year_min: Union[None, Unset, str]
+    json_year_min: None | str | Unset
     if isinstance(year_min, Unset):
         json_year_min = UNSET
     else:
         json_year_min = year_min
     params["year_min"] = json_year_min
 
-    json_year_max: Union[None, Unset, str]
+    json_year_max: None | str | Unset
     if isinstance(year_max, Unset):
         json_year_max = UNSET
     else:
         json_year_max = year_max
     params["year_max"] = json_year_max
 
-    json_runtime_max: Union[None, Unset, str]
+    json_runtime_max: None | str | Unset
     if isinstance(runtime_max, Unset):
         json_runtime_max = UNSET
     else:
@@ -67,8 +67,8 @@ def _get_kwargs(
 
 
 def _parse_response(
-    *, client: Union[AuthenticatedClient, Client], response: httpx.Response
-) -> Optional[Union[HTTPValidationError, MovieRead]]:
+    *, client: AuthenticatedClient | Client, response: httpx.Response
+) -> HTTPValidationError | MovieRead | None:
     if response.status_code == 200:
         response_200 = MovieRead.from_dict(response.json())
 
@@ -86,8 +86,8 @@ def _parse_response(
 
 
 def _build_response(
-    *, client: Union[AuthenticatedClient, Client], response: httpx.Response
-) -> Response[Union[HTTPValidationError, MovieRead]]:
+    *, client: AuthenticatedClient | Client, response: httpx.Response
+) -> Response[HTTPValidationError | MovieRead]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -98,28 +98,28 @@ def _build_response(
 
 def sync_detailed(
     *,
-    client: Union[AuthenticatedClient, Client],
-    mood: Union[None, Unset, str] = UNSET,
-    genre: Union[None, Unset, str] = UNSET,
-    year_min: Union[None, Unset, str] = UNSET,
-    year_max: Union[None, Unset, str] = UNSET,
-    runtime_max: Union[None, Unset, str] = UNSET,
-) -> Response[Union[HTTPValidationError, MovieRead]]:
+    client: AuthenticatedClient | Client,
+    mood: None | str | Unset = UNSET,
+    genre: None | str | Unset = UNSET,
+    year_min: None | str | Unset = UNSET,
+    year_max: None | str | Unset = UNSET,
+    runtime_max: None | str | Unset = UNSET,
+) -> Response[HTTPValidationError | MovieRead]:
     """Get Pick
 
     Args:
-        mood (Union[None, Unset, str]): Desired mood name
-        genre (Union[None, Unset, str]): Restrict to this genre
-        year_min (Union[None, Unset, str]):
-        year_max (Union[None, Unset, str]):
-        runtime_max (Union[None, Unset, str]):
+        mood (None | str | Unset): Desired mood name
+        genre (None | str | Unset): Restrict to this genre
+        year_min (None | str | Unset):
+        year_max (None | str | Unset):
+        runtime_max (None | str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[HTTPValidationError, MovieRead]]
+        Response[HTTPValidationError | MovieRead]
     """
 
     kwargs = _get_kwargs(
@@ -139,28 +139,28 @@ def sync_detailed(
 
 def sync(
     *,
-    client: Union[AuthenticatedClient, Client],
-    mood: Union[None, Unset, str] = UNSET,
-    genre: Union[None, Unset, str] = UNSET,
-    year_min: Union[None, Unset, str] = UNSET,
-    year_max: Union[None, Unset, str] = UNSET,
-    runtime_max: Union[None, Unset, str] = UNSET,
-) -> Optional[Union[HTTPValidationError, MovieRead]]:
+    client: AuthenticatedClient | Client,
+    mood: None | str | Unset = UNSET,
+    genre: None | str | Unset = UNSET,
+    year_min: None | str | Unset = UNSET,
+    year_max: None | str | Unset = UNSET,
+    runtime_max: None | str | Unset = UNSET,
+) -> HTTPValidationError | MovieRead | None:
     """Get Pick
 
     Args:
-        mood (Union[None, Unset, str]): Desired mood name
-        genre (Union[None, Unset, str]): Restrict to this genre
-        year_min (Union[None, Unset, str]):
-        year_max (Union[None, Unset, str]):
-        runtime_max (Union[None, Unset, str]):
+        mood (None | str | Unset): Desired mood name
+        genre (None | str | Unset): Restrict to this genre
+        year_min (None | str | Unset):
+        year_max (None | str | Unset):
+        runtime_max (None | str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[HTTPValidationError, MovieRead]
+        HTTPValidationError | MovieRead
     """
 
     return sync_detailed(
@@ -175,28 +175,28 @@ def sync(
 
 async def asyncio_detailed(
     *,
-    client: Union[AuthenticatedClient, Client],
-    mood: Union[None, Unset, str] = UNSET,
-    genre: Union[None, Unset, str] = UNSET,
-    year_min: Union[None, Unset, str] = UNSET,
-    year_max: Union[None, Unset, str] = UNSET,
-    runtime_max: Union[None, Unset, str] = UNSET,
-) -> Response[Union[HTTPValidationError, MovieRead]]:
+    client: AuthenticatedClient | Client,
+    mood: None | str | Unset = UNSET,
+    genre: None | str | Unset = UNSET,
+    year_min: None | str | Unset = UNSET,
+    year_max: None | str | Unset = UNSET,
+    runtime_max: None | str | Unset = UNSET,
+) -> Response[HTTPValidationError | MovieRead]:
     """Get Pick
 
     Args:
-        mood (Union[None, Unset, str]): Desired mood name
-        genre (Union[None, Unset, str]): Restrict to this genre
-        year_min (Union[None, Unset, str]):
-        year_max (Union[None, Unset, str]):
-        runtime_max (Union[None, Unset, str]):
+        mood (None | str | Unset): Desired mood name
+        genre (None | str | Unset): Restrict to this genre
+        year_min (None | str | Unset):
+        year_max (None | str | Unset):
+        runtime_max (None | str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[HTTPValidationError, MovieRead]]
+        Response[HTTPValidationError | MovieRead]
     """
 
     kwargs = _get_kwargs(
@@ -214,28 +214,28 @@ async def asyncio_detailed(
 
 async def asyncio(
     *,
-    client: Union[AuthenticatedClient, Client],
-    mood: Union[None, Unset, str] = UNSET,
-    genre: Union[None, Unset, str] = UNSET,
-    year_min: Union[None, Unset, str] = UNSET,
-    year_max: Union[None, Unset, str] = UNSET,
-    runtime_max: Union[None, Unset, str] = UNSET,
-) -> Optional[Union[HTTPValidationError, MovieRead]]:
+    client: AuthenticatedClient | Client,
+    mood: None | str | Unset = UNSET,
+    genre: None | str | Unset = UNSET,
+    year_min: None | str | Unset = UNSET,
+    year_max: None | str | Unset = UNSET,
+    runtime_max: None | str | Unset = UNSET,
+) -> HTTPValidationError | MovieRead | None:
     """Get Pick
 
     Args:
-        mood (Union[None, Unset, str]): Desired mood name
-        genre (Union[None, Unset, str]): Restrict to this genre
-        year_min (Union[None, Unset, str]):
-        year_max (Union[None, Unset, str]):
-        runtime_max (Union[None, Unset, str]):
+        mood (None | str | Unset): Desired mood name
+        genre (None | str | Unset): Restrict to this genre
+        year_min (None | str | Unset):
+        year_max (None | str | Unset):
+        runtime_max (None | str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[HTTPValidationError, MovieRead]
+        HTTPValidationError | MovieRead
     """
 
     return (

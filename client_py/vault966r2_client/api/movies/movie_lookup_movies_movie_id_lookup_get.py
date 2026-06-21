@@ -1,5 +1,6 @@
 from http import HTTPStatus
-from typing import Any, Optional, Union
+from typing import Any
+from urllib.parse import quote
 
 import httpx
 
@@ -13,20 +14,20 @@ from ...types import UNSET, Response, Unset
 def _get_kwargs(
     movie_id: int,
     *,
-    title: Union[None, Unset, str] = UNSET,
-    year: Union[None, Unset, int] = UNSET,
-    limit: Union[Unset, int] = 5,
+    title: None | str | Unset = UNSET,
+    year: int | None | Unset = UNSET,
+    limit: int | Unset = 5,
 ) -> dict[str, Any]:
     params: dict[str, Any] = {}
 
-    json_title: Union[None, Unset, str]
+    json_title: None | str | Unset
     if isinstance(title, Unset):
         json_title = UNSET
     else:
         json_title = title
     params["title"] = json_title
 
-    json_year: Union[None, Unset, int]
+    json_year: int | None | Unset
     if isinstance(year, Unset):
         json_year = UNSET
     else:
@@ -39,7 +40,9 @@ def _get_kwargs(
 
     _kwargs: dict[str, Any] = {
         "method": "get",
-        "url": f"/movies/{movie_id}/lookup",
+        "url": "/movies/{movie_id}/lookup".format(
+            movie_id=quote(str(movie_id), safe=""),
+        ),
         "params": params,
     }
 
@@ -47,8 +50,8 @@ def _get_kwargs(
 
 
 def _parse_response(
-    *, client: Union[AuthenticatedClient, Client], response: httpx.Response
-) -> Optional[Union[HTTPValidationError, MovieLookupResponse]]:
+    *, client: AuthenticatedClient | Client, response: httpx.Response
+) -> HTTPValidationError | MovieLookupResponse | None:
     if response.status_code == 200:
         response_200 = MovieLookupResponse.from_dict(response.json())
 
@@ -66,8 +69,8 @@ def _parse_response(
 
 
 def _build_response(
-    *, client: Union[AuthenticatedClient, Client], response: httpx.Response
-) -> Response[Union[HTTPValidationError, MovieLookupResponse]]:
+    *, client: AuthenticatedClient | Client, response: httpx.Response
+) -> Response[HTTPValidationError | MovieLookupResponse]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -79,25 +82,25 @@ def _build_response(
 def sync_detailed(
     movie_id: int,
     *,
-    client: Union[AuthenticatedClient, Client],
-    title: Union[None, Unset, str] = UNSET,
-    year: Union[None, Unset, int] = UNSET,
-    limit: Union[Unset, int] = 5,
-) -> Response[Union[HTTPValidationError, MovieLookupResponse]]:
+    client: AuthenticatedClient | Client,
+    title: None | str | Unset = UNSET,
+    year: int | None | Unset = UNSET,
+    limit: int | Unset = 5,
+) -> Response[HTTPValidationError | MovieLookupResponse]:
     """Movie Lookup
 
     Args:
         movie_id (int):
-        title (Union[None, Unset, str]): Override title to search
-        year (Union[None, Unset, int]):
-        limit (Union[Unset, int]):  Default: 5.
+        title (None | str | Unset): Override title to search
+        year (int | None | Unset):
+        limit (int | Unset):  Default: 5.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[HTTPValidationError, MovieLookupResponse]]
+        Response[HTTPValidationError | MovieLookupResponse]
     """
 
     kwargs = _get_kwargs(
@@ -117,25 +120,25 @@ def sync_detailed(
 def sync(
     movie_id: int,
     *,
-    client: Union[AuthenticatedClient, Client],
-    title: Union[None, Unset, str] = UNSET,
-    year: Union[None, Unset, int] = UNSET,
-    limit: Union[Unset, int] = 5,
-) -> Optional[Union[HTTPValidationError, MovieLookupResponse]]:
+    client: AuthenticatedClient | Client,
+    title: None | str | Unset = UNSET,
+    year: int | None | Unset = UNSET,
+    limit: int | Unset = 5,
+) -> HTTPValidationError | MovieLookupResponse | None:
     """Movie Lookup
 
     Args:
         movie_id (int):
-        title (Union[None, Unset, str]): Override title to search
-        year (Union[None, Unset, int]):
-        limit (Union[Unset, int]):  Default: 5.
+        title (None | str | Unset): Override title to search
+        year (int | None | Unset):
+        limit (int | Unset):  Default: 5.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[HTTPValidationError, MovieLookupResponse]
+        HTTPValidationError | MovieLookupResponse
     """
 
     return sync_detailed(
@@ -150,25 +153,25 @@ def sync(
 async def asyncio_detailed(
     movie_id: int,
     *,
-    client: Union[AuthenticatedClient, Client],
-    title: Union[None, Unset, str] = UNSET,
-    year: Union[None, Unset, int] = UNSET,
-    limit: Union[Unset, int] = 5,
-) -> Response[Union[HTTPValidationError, MovieLookupResponse]]:
+    client: AuthenticatedClient | Client,
+    title: None | str | Unset = UNSET,
+    year: int | None | Unset = UNSET,
+    limit: int | Unset = 5,
+) -> Response[HTTPValidationError | MovieLookupResponse]:
     """Movie Lookup
 
     Args:
         movie_id (int):
-        title (Union[None, Unset, str]): Override title to search
-        year (Union[None, Unset, int]):
-        limit (Union[Unset, int]):  Default: 5.
+        title (None | str | Unset): Override title to search
+        year (int | None | Unset):
+        limit (int | Unset):  Default: 5.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[HTTPValidationError, MovieLookupResponse]]
+        Response[HTTPValidationError | MovieLookupResponse]
     """
 
     kwargs = _get_kwargs(
@@ -186,25 +189,25 @@ async def asyncio_detailed(
 async def asyncio(
     movie_id: int,
     *,
-    client: Union[AuthenticatedClient, Client],
-    title: Union[None, Unset, str] = UNSET,
-    year: Union[None, Unset, int] = UNSET,
-    limit: Union[Unset, int] = 5,
-) -> Optional[Union[HTTPValidationError, MovieLookupResponse]]:
+    client: AuthenticatedClient | Client,
+    title: None | str | Unset = UNSET,
+    year: int | None | Unset = UNSET,
+    limit: int | Unset = 5,
+) -> HTTPValidationError | MovieLookupResponse | None:
     """Movie Lookup
 
     Args:
         movie_id (int):
-        title (Union[None, Unset, str]): Override title to search
-        year (Union[None, Unset, int]):
-        limit (Union[Unset, int]):  Default: 5.
+        title (None | str | Unset): Override title to search
+        year (int | None | Unset):
+        limit (int | Unset):  Default: 5.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[HTTPValidationError, MovieLookupResponse]
+        HTTPValidationError | MovieLookupResponse
     """
 
     return (

@@ -1,5 +1,5 @@
 from http import HTTPStatus
-from typing import Any, Optional, Union
+from typing import Any
 
 import httpx
 
@@ -31,8 +31,8 @@ def _get_kwargs(
 
 
 def _parse_response(
-    *, client: Union[AuthenticatedClient, Client], response: httpx.Response
-) -> Optional[Union[HTTPValidationError, LlmMovieSearchResponse]]:
+    *, client: AuthenticatedClient | Client, response: httpx.Response
+) -> HTTPValidationError | LlmMovieSearchResponse | None:
     if response.status_code == 200:
         response_200 = LlmMovieSearchResponse.from_dict(response.json())
 
@@ -50,8 +50,8 @@ def _parse_response(
 
 
 def _build_response(
-    *, client: Union[AuthenticatedClient, Client], response: httpx.Response
-) -> Response[Union[HTTPValidationError, LlmMovieSearchResponse]]:
+    *, client: AuthenticatedClient | Client, response: httpx.Response
+) -> Response[HTTPValidationError | LlmMovieSearchResponse]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -62,9 +62,9 @@ def _build_response(
 
 def sync_detailed(
     *,
-    client: Union[AuthenticatedClient, Client],
+    client: AuthenticatedClient | Client,
     body: LlmMovieSearchRequest,
-) -> Response[Union[HTTPValidationError, LlmMovieSearchResponse]]:
+) -> Response[HTTPValidationError | LlmMovieSearchResponse]:
     """Llm Search Movies
 
     Args:
@@ -75,7 +75,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[HTTPValidationError, LlmMovieSearchResponse]]
+        Response[HTTPValidationError | LlmMovieSearchResponse]
     """
 
     kwargs = _get_kwargs(
@@ -91,9 +91,9 @@ def sync_detailed(
 
 def sync(
     *,
-    client: Union[AuthenticatedClient, Client],
+    client: AuthenticatedClient | Client,
     body: LlmMovieSearchRequest,
-) -> Optional[Union[HTTPValidationError, LlmMovieSearchResponse]]:
+) -> HTTPValidationError | LlmMovieSearchResponse | None:
     """Llm Search Movies
 
     Args:
@@ -104,7 +104,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[HTTPValidationError, LlmMovieSearchResponse]
+        HTTPValidationError | LlmMovieSearchResponse
     """
 
     return sync_detailed(
@@ -115,9 +115,9 @@ def sync(
 
 async def asyncio_detailed(
     *,
-    client: Union[AuthenticatedClient, Client],
+    client: AuthenticatedClient | Client,
     body: LlmMovieSearchRequest,
-) -> Response[Union[HTTPValidationError, LlmMovieSearchResponse]]:
+) -> Response[HTTPValidationError | LlmMovieSearchResponse]:
     """Llm Search Movies
 
     Args:
@@ -128,7 +128,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[HTTPValidationError, LlmMovieSearchResponse]]
+        Response[HTTPValidationError | LlmMovieSearchResponse]
     """
 
     kwargs = _get_kwargs(
@@ -142,9 +142,9 @@ async def asyncio_detailed(
 
 async def asyncio(
     *,
-    client: Union[AuthenticatedClient, Client],
+    client: AuthenticatedClient | Client,
     body: LlmMovieSearchRequest,
-) -> Optional[Union[HTTPValidationError, LlmMovieSearchResponse]]:
+) -> HTTPValidationError | LlmMovieSearchResponse | None:
     """Llm Search Movies
 
     Args:
@@ -155,7 +155,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[HTTPValidationError, LlmMovieSearchResponse]
+        HTTPValidationError | LlmMovieSearchResponse
     """
 
     return (

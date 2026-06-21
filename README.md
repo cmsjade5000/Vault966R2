@@ -174,7 +174,16 @@ make openapi
 
 This command freezes `openapi/openapi.json`, regenerates the Python client in
 `client_py/`, and emits TypeScript definitions in `client_ts/`. The TypeScript
-step uses `npx openapi-typescript`, so ensure Node.js is installed locally.
+step uses `npx openapi-typescript`, so ensure Node.js is installed locally. CI
+pins `openapi-python-client` to the same generator version used by the drift
+gate.
+
+To verify the committed OpenAPI schema and generated clients are up to date,
+run:
+
+```bash
+make openapi.check
+```
 
 ## Running everything in Docker
 

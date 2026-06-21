@@ -1,5 +1,5 @@
 from http import HTTPStatus
-from typing import Any, Optional, Union
+from typing import Any
 
 import httpx
 
@@ -31,8 +31,8 @@ def _get_kwargs(
 
 
 def _parse_response(
-    *, client: Union[AuthenticatedClient, Client], response: httpx.Response
-) -> Optional[Union[HTTPValidationError, PersonRead]]:
+    *, client: AuthenticatedClient | Client, response: httpx.Response
+) -> HTTPValidationError | PersonRead | None:
     if response.status_code == 201:
         response_201 = PersonRead.from_dict(response.json())
 
@@ -50,8 +50,8 @@ def _parse_response(
 
 
 def _build_response(
-    *, client: Union[AuthenticatedClient, Client], response: httpx.Response
-) -> Response[Union[HTTPValidationError, PersonRead]]:
+    *, client: AuthenticatedClient | Client, response: httpx.Response
+) -> Response[HTTPValidationError | PersonRead]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -64,7 +64,7 @@ def sync_detailed(
     *,
     client: AuthenticatedClient,
     body: PersonCreate,
-) -> Response[Union[HTTPValidationError, PersonRead]]:
+) -> Response[HTTPValidationError | PersonRead]:
     """Create Person
 
     Args:
@@ -75,7 +75,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[HTTPValidationError, PersonRead]]
+        Response[HTTPValidationError | PersonRead]
     """
 
     kwargs = _get_kwargs(
@@ -93,7 +93,7 @@ def sync(
     *,
     client: AuthenticatedClient,
     body: PersonCreate,
-) -> Optional[Union[HTTPValidationError, PersonRead]]:
+) -> HTTPValidationError | PersonRead | None:
     """Create Person
 
     Args:
@@ -104,7 +104,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[HTTPValidationError, PersonRead]
+        HTTPValidationError | PersonRead
     """
 
     return sync_detailed(
@@ -117,7 +117,7 @@ async def asyncio_detailed(
     *,
     client: AuthenticatedClient,
     body: PersonCreate,
-) -> Response[Union[HTTPValidationError, PersonRead]]:
+) -> Response[HTTPValidationError | PersonRead]:
     """Create Person
 
     Args:
@@ -128,7 +128,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Union[HTTPValidationError, PersonRead]]
+        Response[HTTPValidationError | PersonRead]
     """
 
     kwargs = _get_kwargs(
@@ -144,7 +144,7 @@ async def asyncio(
     *,
     client: AuthenticatedClient,
     body: PersonCreate,
-) -> Optional[Union[HTTPValidationError, PersonRead]]:
+) -> HTTPValidationError | PersonRead | None:
     """Create Person
 
     Args:
@@ -155,7 +155,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Union[HTTPValidationError, PersonRead]
+        HTTPValidationError | PersonRead
     """
 
     return (
