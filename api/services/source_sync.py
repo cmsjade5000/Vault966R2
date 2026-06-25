@@ -165,6 +165,19 @@ class FirstImportApplyResult:
     created_movie_ids: tuple[int, ...]
 
 
+@dataclass(frozen=True)
+class FirstImportReport:
+    snapshot: SourceSnapshot
+    created_count: int
+    review_count: int
+    duplicate_conflict_count: int
+    source_only_count: int
+
+    @property
+    def remaining_count(self) -> int:
+        return self.review_count + self.duplicate_conflict_count + self.source_only_count
+
+
 def clean_text(value: object) -> str | None:
     text = str(value or "").strip()
     return text or None
@@ -714,7 +727,7 @@ def snapshot_summary(db: Session, snapshot: SourceSnapshot | None) -> dict[str, 
         .all()
     )
     conflicts = len(get_source_review_queue(db, snapshot=snapshot, include_unmatched=False))
-    auto_matched = counts.get("exact", 0) + counts.get("likely", 0)
+    auto_matched = counts.get("exact", 0) + counts.get("likely", 0) + counts.get("auto_create", 0)
     manually_matched = counts.get("manual", 0)
     return {
         "rows": snapshot.row_count,
@@ -1530,6 +1543,15 @@ def apply_first_import_auto_create(
     analysis = analyze_first_import_snapshot(db, snapshot_id=snapshot_id)
     created_movie_ids: list[int] = []
     try:
+        snapshot = db.get(SourceSnapshot, snapshot_id)
+        if snapshot is None:
+            raise SourceSyncError("Source snapshot was not found")
+        if snapshot.status == "draft":
+            db.query(SourceSnapshot).filter(SourceSnapshot.status == "active").filter(
+                SourceSnapshot.id != snapshot.id
+            ).update({"status": "superseded"}, synchronize_session=False)
+            snapshot.status = "active"
+            snapshot.confirmed_at = datetime.now(timezone.utc)
         for decision in analysis.auto_create:
             if decision.candidate is None:
                 continue
@@ -1541,6 +1563,27 @@ def apply_first_import_auto_create(
                 confidence=decision.confidence,
             )
             created_movie_ids.append(movie.id)
+        for decision in analysis.needs_review:
+            match = decision.row.match or SourceReconciliationMatch(source_row_id=decision.row.id)
+            match.match_type = "ambiguous"
+            match.confidence = decision.confidence
+            match.candidate_movie_ids = None
+            match.resolved_at = None
+            decision.row.match = match
+        for decision in analysis.duplicate_conflict:
+            match = decision.row.match or SourceReconciliationMatch(source_row_id=decision.row.id)
+            match.match_type = "duplicate"
+            match.confidence = decision.confidence
+            match.candidate_movie_ids = None
+            match.resolved_at = None
+            decision.row.match = match
+        for decision in analysis.failed_lookup:
+            match = decision.row.match or SourceReconciliationMatch(source_row_id=decision.row.id)
+            match.match_type = "source_only"
+            match.confidence = decision.confidence
+            match.candidate_movie_ids = None
+            match.resolved_at = None
+            decision.row.match = match
         db.commit()
     except Exception:
         db.rollback()
@@ -1553,6 +1596,26 @@ def apply_first_import_auto_create(
         duplicate_conflict_count=len(analysis.duplicate_conflict),
         failed_lookup_count=len(analysis.failed_lookup),
         created_movie_ids=tuple(created_movie_ids),
+    )
+
+
+def first_import_report(db: Session, *, snapshot_id: int) -> FirstImportReport:
+    snapshot = db.get(SourceSnapshot, snapshot_id)
+    if snapshot is None:
+        raise SourceSyncError("Source snapshot was not found")
+    counts = dict(
+        db.query(SourceReconciliationMatch.match_type, func.count())
+        .join(SourceMovieRow, SourceMovieRow.id == SourceReconciliationMatch.source_row_id)
+        .filter(SourceMovieRow.snapshot_id == snapshot.id)
+        .group_by(SourceReconciliationMatch.match_type)
+        .all()
+    )
+    return FirstImportReport(
+        snapshot=snapshot,
+        created_count=counts.get("auto_create", 0),
+        review_count=counts.get("ambiguous", 0),
+        duplicate_conflict_count=counts.get("duplicate", 0),
+        source_only_count=counts.get("source_only", 0),
     )
 
 
@@ -1641,6 +1704,7 @@ __all__ = [
     "FirstImportAnalysis",
     "FirstImportApplyResult",
     "FirstImportDecision",
+    "FirstImportReport",
     "assign_source_row_match",
     "accept_all_source_differences",
     "analyze_first_import_snapshot",
@@ -1654,6 +1718,7 @@ __all__ = [
     "decide_source_field",
     "defer_source_row_for_research",
     "dismiss_duplicate",
+    "first_import_report",
     "get_source_review_queue",
     "latest_active_snapshot",
     "parse_source_csv",

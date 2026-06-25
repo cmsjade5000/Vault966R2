@@ -211,3 +211,91 @@ def test_first_import_rejects_duplicate_external_id_from_auto_create(
     assert result.created_count == 0
     assert result.duplicate_conflict_count == 1
     assert db_session.query(Movie).filter(Movie.title == "Arrival").count() == 0
+
+
+def test_first_import_auto_create_activates_snapshot_and_routes_remaining_rows(
+    db_session,
+    monkeypatch,
+) -> None:
+    snapshot = source_sync.create_draft_snapshot(
+        db_session,
+        filename="source.csv",
+        content=_csv(
+            "Arrival,1:56:00,Denis Villeneuve,2016,Sci-Fi,PG-13,11/11/16,1",
+            "Solaris,2:46:00,Andrei Tarkovsky,1972,Sci-Fi,PG,09/26/72,1",
+            "Unknown Title,1:30:00,Unknown,2020,Drama,PG,01/01/20,0",
+            "Blade Runner,1:57:00,Ridley Scott,1982,Sci-Fi,R,06/25/82,1",
+        ),
+        profile_id=1,
+    )
+
+    def candidates(title: str, year: int | None, limit: int = 3) -> list[dict]:
+        if title == "Arrival":
+            return [_candidate()]
+        if title == "Solaris":
+            return [
+                _candidate(
+                    title="Solaris",
+                    year=1972,
+                    runtime=166,
+                    tmdb_id=593,
+                    imdb_id="tt0069293",
+                    confidence=0.82,
+                )
+            ]
+        return []
+
+    monkeypatch.setattr(source_sync, "lookup_movie_candidates", candidates)
+
+    result = source_sync.apply_first_import_auto_create(
+        db_session,
+        snapshot_id=snapshot.id,
+        profile_id=1,
+    )
+
+    db_session.refresh(snapshot)
+    report = source_sync.first_import_report(db_session, snapshot_id=snapshot.id)
+    groups = source_sync.partition_source_review_queue(
+        source_sync.get_source_review_queue(db_session, snapshot=snapshot)
+    )
+
+    assert snapshot.status == "active"
+    assert result.created_count == 1
+    assert report.created_count == 1
+    assert report.review_count == 1
+    assert report.duplicate_conflict_count == 1
+    assert report.source_only_count == 1
+    assert report.remaining_count == 3
+    assert len(groups["ambiguous"]) == 1
+    assert len(groups["duplicates"]) == 1
+    assert len(groups["new"]) == 1
+
+
+def test_first_import_auto_create_redirects_to_report(
+    client: TestClient,
+    db_session,
+    monkeypatch,
+) -> None:
+    snapshot = source_sync.create_draft_snapshot(
+        db_session,
+        filename="source.csv",
+        content=_csv("Arrival,1:56:00,Denis Villeneuve,2016,Sci-Fi,PG-13,11/11/16,1"),
+        profile_id=1,
+    )
+    monkeypatch.setattr(
+        source_sync,
+        "lookup_movie_candidates",
+        lambda title, year, limit=3: [_candidate()],
+    )
+
+    response = client.post(
+        f"/ui/first-import/{snapshot.id}/auto-create",
+        follow_redirects=False,
+    )
+    report = client.get(f"/ui/first-import/{snapshot.id}/report")
+
+    assert response.status_code == 303
+    assert response.headers["location"] == f"/ui/first-import/{snapshot.id}/report"
+    assert report.status_code == 200
+    assert "<h1>First import report</h1>" in report.text
+    assert "1 high-confidence movies created" in report.text

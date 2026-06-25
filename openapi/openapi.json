@@ -6520,6 +6520,50 @@
         ]
       }
     },
+    "/ui/first-import/{snapshot_id}/report": {
+      "get": {
+        "operationId": "first_import_report_ui_ui_first_import__snapshot_id__report_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "snapshot_id",
+            "required": true,
+            "schema": {
+              "title": "Snapshot Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "First Import Report Ui",
+        "tags": [
+          "ui",
+          "ui",
+          "ui"
+        ]
+      }
+    },
     "/ui/flags": {
       "get": {
         "operationId": "list_flags_ui_ui_flags_get",

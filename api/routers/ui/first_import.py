@@ -19,6 +19,7 @@ from api.services.source_sync import (
     SourceSyncError,
     apply_first_import_auto_create,
     create_draft_snapshot,
+    first_import_report,
 )
 from api.services.ui.templates import TEMPLATES
 
@@ -103,6 +104,35 @@ def preview_first_import_snapshot(
     return response
 
 
+@router.get("/ui/first-import/{snapshot_id}/report", response_class=HTMLResponse)
+def first_import_report_ui(
+    snapshot_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    _: str = Depends(require_profile_role(ROLE_ADMIN)),
+):
+    _snapshot_or_404(db, snapshot_id)
+    try:
+        report = first_import_report(db, snapshot_id=snapshot_id)
+    except SourceSyncError as exc:
+        return RedirectResponse(
+            url=f"/ui/first-import/{snapshot_id}/preview?error={quote(str(exc))}",
+            status_code=303,
+        )
+    response = TEMPLATES.TemplateResponse(
+        request,
+        "first_import_report.html",
+        {
+            "report": report,
+            "snapshot": report.snapshot,
+            "profiles": get_profiles(db),
+            "active_profile_id": get_active_profile_id(request, db),
+        },
+    )
+    ensure_profile_cookie(request, response, db)
+    return response
+
+
 @router.post("/ui/first-import/{snapshot_id}/auto-create")
 def auto_create_first_import_snapshot(
     snapshot_id: int,
@@ -123,11 +153,7 @@ def auto_create_first_import_snapshot(
             url=f"/ui/first-import/{snapshot_id}/preview?error={quote(str(exc))}",
             status_code=303,
         )
-    message = quote(
-        f"Created {result.created_count} high-confidence movies. "
-        f"{result.review_count + result.duplicate_conflict_count + result.failed_lookup_count} rows remain for review."
-    )
     return RedirectResponse(
-        url=f"/ui/first-import/{snapshot_id}/preview?message={message}",
+        url=f"/ui/first-import/{result.snapshot_id}/report",
         status_code=303,
     )
