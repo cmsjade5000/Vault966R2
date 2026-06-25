@@ -26,24 +26,24 @@ db.reset: ## Drop/recreate POSTGRES_DB then migrate (confirm)
 	else echo "Cancelled."; fi
 
 fmt: ## Format Python (Black + Ruff) and JS (Prettier)
-	"$(PYTHON)" -m black .
-	"$(PYTHON)" -m ruff check --fix .
+	$(PYTHON) -m black .
+	$(PYTHON) -m ruff check --fix .
 	npm run fmt
 
 lint: ## Lint Python (Ruff) and JS (Prettier)
-	"$(PYTHON)" -m ruff check .
-	"$(PYTHON)" -m black --check .
+	$(PYTHON) -m ruff check .
+	$(PYTHON) -m black --check .
 	npm run lint
 
 test: ## Run pytest
-	"$(PYTHON)" -m pytest
+	$(PYTHON) -m pytest
 
 vault.audit: ## Check structural integrity and imported-source drift
-	"$(PYTHON)" scripts/audit_vault_integrity.py
+	$(PYTHON) scripts/audit_vault_integrity.py
 
 openapi: ## Freeze OpenAPI + regenerate clients
-	"$(PYTHON)" scripts/generate_openapi.py
-	"$(PYTHON)" scripts/generate_clients.py
+	$(PYTHON) scripts/generate_openapi.py
+	$(PYTHON) scripts/generate_clients.py
 
 openapi.check: openapi ## Regenerate OpenAPI/clients and fail if generated files drift
 	git diff --exit-code -- openapi/openapi.json client_py client_ts
