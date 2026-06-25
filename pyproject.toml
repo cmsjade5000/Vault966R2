@@ -1,0 +1,43 @@
+[tool.black]
+target-version = ["py312"]
+line-length = 100
+extend-exclude = '''
+/(
+  client_py
+  | openapi
+  | reports
+  | \.venv
+)/
+'''
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+extend-exclude = [
+  "client_py/",
+  "openapi/",
+  "reports/",
+  "vault.db*",
+  ".venv/",
+  "__pycache__/",
+]
+
+[tool.ruff.lint]
+# Keep the established Optional[...] style and allow our FastAPI patterns.
+ignore = [
+  "UP006",  # prefer builtins list/dict/tuple
+  "UP007",  # X | Y syntax (3.10+)
+  "UP035",  # typing.List deprecated
+  "B008",   # Depends(...) in defaults (FastAPI)
+  "E501",   # long lines (some tests/scripts)
+  "E402",   # imports not at top (scripts/tests)
+]
+
+[tool.pytest.ini_options]
+addopts = [
+  "--ignore-glob",
+  "* 2.py",
+]
+markers = [
+  "integration: marks tests that require external services (deselect with -m 'not integration')",
+]

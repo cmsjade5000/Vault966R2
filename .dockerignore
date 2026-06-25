@@ -1,0 +1,17 @@
+__pycache__/
+*.py[cod]
+*.sqlite3
+*.db
+.env
+.env.*
+.vscode/
+.idea/
+.venv/
+client_py/
+client_ts/
+openapi/
+.DS_Store
+pytest_cache/
+.eggs/
+build/
+dist/

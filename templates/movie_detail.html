@@ -1,0 +1,485 @@
+{% extends "base.html" %}
+{% from "partials/movies/card.html" import movie_card %}
+{% block title %}{{ movie.title | display_title if movie else "Movie not found" }} · Vault 966{% endblock %}
+{% block head %}
+<link rel="stylesheet" href="{{ static_asset('css/movies.css') }}" />
+<link rel="stylesheet" href="{{ static_asset('css/movie_detail.css') }}" />
+{% endblock %}
+{% block content %}
+  {% if movie %}
+  <div class="backdrop">
+    {% if movie.backdrop_url %}
+    <img src="{{ movie.backdrop_url }}" alt="" />
+    {% elif movie.poster_url %}
+    <img src="/ui/posters/{{ movie.id }}/w342" alt="" />
+    {% endif %}
+  </div>
+  <div class="detail-wrapper">
+    <a
+      class="back-link"
+      href="/ui/movies"
+      data-back-link
+      data-vault-busy-message="Returning to the Library…"
+      >← Back to results</a
+    >
+    <div class="hero">
+      <div class="poster-shell">
+        <button
+          type="button"
+          class="poster-frame{% if spotlight_reason %} poster-frame--spotlight{% endif %}"
+          data-poster-focus
+          data-movie-title="{{ movie.title | display_title }}"
+          aria-label="Enlarge {{ movie.title | display_title }} poster"
+          aria-pressed="false"
+        >
+          {% if movie.poster_url %}
+          <img class="poster" src="/ui/posters/{{ movie.id }}/w342" alt="{{ movie.title | display_title }} poster" />
+          {% else %}
+          <div class="poster poster--empty {{ movie.poster_theme or 'poster-theme-default' }}" aria-hidden="true">🍿</div>
+          {% endif %}
+        </button>
+      </div>
+      <div class="hero-meta">
+        {% if spotlight_reason %}
+        <div class="spotlight-banner" role="status" aria-live="polite">
+          <span class="spotlight-banner__tag">Spotlight</span>
+          <span class="spotlight-banner__reason">{{ spotlight_reason }}</span>
+        </div>
+        {% endif %}
+        <div class="header-meta">
+          <h1>{{ movie.title | display_title }}</h1>
+        </div>
+        <div
+          class="flag-status{% if movie.flagged %} is-visible{% endif %}"
+          data-flag-status
+          {% if not movie.flagged %}hidden{% endif %}
+        >
+          <div class="flag-status__copy">
+            <strong data-flag-status-title>
+              Needs review{% if movie.flag_reason %} · {{ movie.flag_reason }}{% endif %}
+            </strong>
+            <span data-flag-status-notes>
+              {{ movie.flag_notes or "No notes were added." }}
+            </span>
+          </div>
+          {% if can_manage_flags %}
+          <button
+            type="button"
+            class="flag-status__manage"
+            data-flag-button
+            data-movie-id="{{ movie.id }}"
+          >
+            Manage flag
+          </button>
+          {% endif %}
+        </div>
+        <div class="hero-tags">
+          <button
+            type="button"
+            class="chip chip-id"
+            data-vault-id="{{ movie.vault_id or ('V%04d'|format(movie.id)) }}"
+            data-copy-vault
+            aria-label="Copy Vault ID"
+          >
+            {{ movie.vault_id or ("V%04d"|format(movie.id)) }}
+          </button>
+          {% if movie.runtime %}
+          {% set rounded_runtime = ((movie.runtime + 4) // 5) * 5 %}
+          {% set runtime_hours = rounded_runtime // 60 %}
+          {% set runtime_minutes = rounded_runtime % 60 %}
+          <span class="chip chip-runtime" data-runtime="{{ rounded_runtime }}">
+            {% if runtime_hours > 0 %}
+            {{ runtime_hours }} hour{% if runtime_hours != 1 %}s{% endif %}{% if runtime_minutes %}, {{ runtime_minutes }} minute{% if runtime_minutes != 1 %}s{% endif %}{% endif %}
+            {% else %}
+            {{ runtime_minutes }} minutes
+            {% endif %}
+          </span>
+          {% endif %}
+          {% if movie.year %}<span class="chip chip-year" data-year="{{ movie.year }}">{{ movie.year }}</span>{% endif %}
+          {% for genre in movie.genres %}
+          <span class="chip chip-genre" data-genre="{{ genre }}">{{ genre }}</span>
+          {% endfor %}
+          {% for mood in movie.moods %}
+          <span class="chip chip-mood" data-mood="{{ mood }}">{{ mood }}</span>
+          {% endfor %}
+        </div>
+        <div class="badge-links">
+          {% if movie.imdb_id %}
+          <a
+            class="badge-link"
+            href="https://www.imdb.com/title/{{ movie.imdb_id }}/"
+            target="_blank"
+            rel="noreferrer noopener"
+          >
+            <span>IMDb</span>
+          </a>
+          {% endif %}
+          {% if movie.tmdb_id %}
+          <a class="badge-link" href="https://www.themoviedb.org/movie/{{ movie.tmdb_id }}" target="_blank" rel="noreferrer noopener">
+            <span>TMDb</span>
+          </a>
+          {% endif %}
+        </div>
+        <div class="preference-actions" aria-label="Movie preferences">
+          <button
+            type="button"
+            class="preference-icon{% if movie_liked %} is-active{% endif %}"
+            data-preference-button
+            data-preference-type="like"
+            data-movie-id="{{ movie.id }}"
+            data-movie-title="{{ movie.title | display_title }}"
+            aria-label="{{ 'Unlike' if movie_liked else 'Like' }} {{ movie.title | display_title }}"
+            title="Like"
+            aria-pressed="{{ 'true' if movie_liked else 'false' }}"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8l1.1 1.1L12 21.2l7.8-7.7 1.1-1.1a5.5 5.5 0 0 0-.1-7.8z"></path>
+            </svg>
+          </button>
+          <button
+            type="button"
+            class="preference-icon{% if movie_watchlist %} is-active{% endif %}"
+            data-preference-button
+            data-preference-type="watchlist"
+            data-movie-id="{{ movie.id }}"
+            data-movie-title="{{ movie.title | display_title }}"
+            aria-label="{{ 'Remove' if movie_watchlist else 'Add' }} {{ movie.title | display_title }} {{ 'from' if movie_watchlist else 'to' }} watchlist"
+            title="Watchlist"
+            aria-pressed="{{ 'true' if movie_watchlist else 'false' }}"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1z"></path>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="sections">
+      {% if movie.plot %}
+      <section class="section-card">
+        <h2>Synopsis</h2>
+        <p>{{ movie.plot }}</p>
+      </section>
+      {% endif %}
+
+      {% if movie.imdb_rating or movie.rt_score or movie.languages_display or movie.countries_display or movie.collection or movie.top_billed %}
+      <section class="section-card">
+        <h2>At a glance</h2>
+        <div class="glance-grid">
+          {% if movie.top_billed %}
+          <div class="glance-item">
+            <span class="glance-label">Top billed</span>
+            <span>
+              {% for person in movie.top_billed %}
+                {% if person.imdb_id %}
+                <a href="https://www.imdb.com/name/{{ person.imdb_id }}/" target="_blank" rel="noreferrer">{{ person.name }}</a>
+                {% else %}
+                {{ person.name }}
+                {% endif %}
+                {% if person.character %} ({{ person.character }}){% endif %}
+                {% if not loop.last %}, {% endif %}
+              {% endfor %}
+            </span>
+          </div>
+          {% endif %}
+          {% if movie.imdb_rating %}
+          <div class="glance-item">
+            <span class="glance-label">IMDb</span>
+            <span>{{ '%.1f'|format(movie.imdb_rating) }}/10 {% if movie.imdb_votes %}(votes: {{ movie.imdb_votes }}){% endif %}</span>
+          </div>
+          {% endif %}
+          {% if movie.rt_score %}
+          <div class="glance-item">
+            <span class="glance-label">Rotten Tomatoes</span>
+            <span>{{ movie.rt_score }}%</span>
+          </div>
+          {% endif %}
+          {% if movie.languages_display %}
+          <div class="glance-item">
+            <span class="glance-label">Languages</span>
+            <span>{{ movie.languages_display | join(', ') }}</span>
+          </div>
+          {% endif %}
+          {% if movie.countries_display %}
+          <div class="glance-item">
+            <span class="glance-label">Countries</span>
+            <span>{{ movie.countries_display | join(', ') }}</span>
+          </div>
+          {% endif %}
+          {% if movie.collection %}
+          <div class="glance-item">
+            <span class="glance-label">Collection</span>
+            <span>{{ movie.collection }}</span>
+          </div>
+          {% endif %}
+        </div>
+      </section>
+      {% endif %}
+
+      {% if roles %}
+      <section class="section-card section-card--wide">
+        <h2>Cast &amp; Crew</h2>
+        {% set actors = roles | selectattr('role_type', 'equalto', 'ACTOR') | list %}
+        {% set directors = roles | selectattr('role_type', 'equalto', 'DIRECTOR') | list %}
+        {% set writers = roles | selectattr('role_type', 'equalto', 'WRITER') | list %}
+        <ul class="cast-crew-summary">
+          <li>
+            <span class="cast-crew-summary__label">Cast</span>
+            <span class="cast-crew-summary__value">
+              {% if actors %}
+                {% for role in actors[:8] %}
+                  {% if role.person.imdb_id %}
+                  <a href="https://www.imdb.com/name/{{ role.person.imdb_id }}/" target="_blank" rel="noreferrer">{{ role.person.name }}</a>
+                  {% else %}
+                  {{ role.person.name }}
+                  {% endif %}
+                  {% if role.character_name %} ({{ role.character_name }}){% endif %}{% if not loop.last %}, {% endif %}
+                {% endfor %}
+                {% if actors|length > 8 %}…{% endif %}
+              {% else %}
+                —
+              {% endif %}
+            </span>
+          </li>
+          <li>
+            <span class="cast-crew-summary__label">Director{% if directors|length != 1 %}s{% endif %}</span>
+            <span class="cast-crew-summary__value">
+              {% if directors %}
+                {% for role in directors[:4] %}
+                  {% if role.person.imdb_id %}
+                  <a href="https://www.imdb.com/name/{{ role.person.imdb_id }}/" target="_blank" rel="noreferrer">{{ role.person.name }}</a>
+                  {% else %}
+                  {{ role.person.name }}
+                  {% endif %}{% if not loop.last %}, {% endif %}
+                {% endfor %}
+                {% if directors|length > 4 %}…{% endif %}
+              {% else %}
+                —
+              {% endif %}
+            </span>
+          </li>
+          <li>
+            <span class="cast-crew-summary__label">Writer{% if writers|length != 1 %}s{% endif %}</span>
+            <span class="cast-crew-summary__value">
+              {% if writers %}
+                {% for role in writers[:4] %}
+                  {% if role.person.imdb_id %}
+                  <a href="https://www.imdb.com/name/{{ role.person.imdb_id }}/" target="_blank" rel="noreferrer">{{ role.person.name }}</a>
+                  {% else %}
+                  {{ role.person.name }}
+                  {% endif %}{% if not loop.last %}, {% endif %}
+                {% endfor %}
+                {% if writers|length > 4 %}…{% endif %}
+              {% else %}
+                —
+              {% endif %}
+            </span>
+          </li>
+        </ul>
+      </section>
+      {% endif %}
+
+      {% if source_provenance and (source_provenance.latest_copy or source_provenance.decisions) %}
+      <details class="section-card section-card--wide provenance-section">
+        <summary class="provenance-section__summary">
+          <span>Vault History</span>
+        </summary>
+        <div class="provenance-section__content">
+          <div class="glance-grid">
+            {% if source_provenance.latest_copy %}
+            <div class="glance-item">
+              <span class="glance-label">Collection confirmed</span>
+              <span>{{ source_provenance.latest_copy.confirmed_at.strftime('%Y-%m-%d') }}</span>
+            </div>
+            <div class="glance-item">
+              <span class="glance-label">Owned copy</span>
+              <span>
+                {% if source_provenance.latest_copy.hd is sameas true %}HD
+                {% elif source_provenance.latest_copy.hd is sameas false %}SD
+                {% else %}Quality unknown{% endif %}
+              </span>
+            </div>
+            {% endif %}
+            {% if movie.last_tmdb_fetch_at or movie.last_omdb_fetch_at %}
+            <div class="glance-item">
+              <span class="glance-label">Metadata refreshed</span>
+              <span>
+                {{ (movie.last_tmdb_fetch_at or movie.last_omdb_fetch_at).strftime('%Y-%m-%d') }}
+              </span>
+            </div>
+            {% endif %}
+          </div>
+          {% if source_provenance.decisions %}
+          <div class="provenance-history">
+            <h3>Recent source decisions</h3>
+            <ul>
+              {% for decision in source_provenance.decisions %}
+                <li>
+                  <strong>{{ decision.field_name|title }}</strong>
+                  <span>{{ decision.previous_value or 'Missing' }} → {{ decision.selected_value or 'Missing' }}</span>
+                  <small>
+                    {{ decision.decision|replace('_', ' ')|title }} · {{ decision.decided_at.strftime('%Y-%m-%d') }}
+                    {% if decision.undone_at %} · Undone{% endif %}
+                  </small>
+                </li>
+              {% endfor %}
+            </ul>
+          </div>
+          {% endif %}
+        </div>
+      </details>
+      {% endif %}
+
+    </div>
+    {% if more_like %}
+    <section class="section-card section-card--wide detail-recs detail-recs--more">
+      <header class="detail-recs__header">
+        <h2>
+          {% if movie_liked %}Because you liked {{ movie.title | display_title }}{% else %}More like this{% endif %}
+        </h2>
+        <p>Similar energy from the vault, ready for the queue.</p>
+      </header>
+      <div class="library-grid" role="list">
+        {% for rec in more_like %}
+        {% set pref = similar_preferences.get(rec.id, {}) %}
+        {% set reasons = similar_reasons.get(rec.id, []) %}
+        {{ movie_card(rec, pref.get('liked'), pref.get('watchlist'), reasons, role="listitem", placeholder="🍿", show_rating=false) }}
+        {% endfor %}
+      </div>
+    </section>
+    {% endif %}
+    <div class="detail-actions detail-actions--footer">
+      {% if can_manage_flags %}
+      <button
+        type="button"
+        class="edit-toggle"
+        data-edit-button
+        data-movie-id="{{ movie.id }}"
+        aria-label="Edit {{ movie.title | display_title }}"
+      >
+        Edit
+      </button>
+      {% endif %}
+      <button
+        type="button"
+        class="flag-toggle"
+        data-flag-button
+        data-movie-id="{{ movie.id }}"
+        aria-label="{% if can_manage_flags %}{% if movie.flagged %}Manage review flag{% else %}Flag for review{% endif %}{% else %}Report issue{% endif %}"
+      >
+        {% if can_manage_flags %}{% if movie.flagged %}Manage flag{% else %}Flag for review{% endif %}{% else %}Report issue{% endif %}
+      </button>
+    </div>
+    {% if review_mode %}
+    <div class="review-bar review-bar--top" role="region" aria-label="Review mode">
+      <div class="review-bar__inner">
+        <span class="review-bar__label">Review mode</span>
+        <div class="review-bar__actions">
+          {% if review_prev_id %}
+          <a class="button-ghost review-bar__button" href="/ui/movies/{{ review_prev_id }}?review=1">← Prev</a>
+          {% else %}
+          <span class="review-bar__button is-disabled">← Prev</span>
+          {% endif %}
+          {% if review_next_id %}
+          <a class="button-primary review-bar__button" href="/ui/movies/{{ review_next_id }}?review=1">Next →</a>
+          {% else %}
+          <span class="review-bar__button is-disabled">Done</span>
+          {% endif %}
+          <a class="button-ghost review-bar__button" href="/ui/movies">Exit</a>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+  <div class="poster-focus-backdrop" data-poster-focus-backdrop hidden></div>
+  <dialog
+    class="flag-dialog-overlay"
+    data-flag-dialog
+    aria-labelledby="flag-dialog-title"
+    aria-describedby="flag-dialog-description"
+    aria-hidden="true"
+  >
+    <form
+      class="flag-dialog"
+      data-flag-form
+      data-flag-mode="{{ 'manage' if can_manage_flags else 'report' }}"
+    >
+      <header class="flag-dialog__header">
+        <div>
+          <h2 id="flag-dialog-title">
+            {% if can_manage_flags %}{% if movie.flagged %}Manage review flag{% else %}Flag for review{% endif %}{% else %}Report issue{% endif %}
+          </h2>
+          <p id="flag-dialog-description">
+            {% if can_manage_flags %}Record what needs attention so it appears in the Flags queue.{% else %}Send this movie to the admin review queue with a short note.{% endif %}
+          </p>
+        </div>
+        <button
+          type="button"
+          class="flag-dialog__close"
+          data-flag-close
+          aria-label="Close flag dialog"
+        >×</button>
+      </header>
+      <label>
+        <span>Reason</span>
+        <select data-flag-reason required>
+          {% if movie.flag_reason and movie.flag_reason not in flag_reasons %}
+          <option value="{{ movie.flag_reason }}" selected>{{ movie.flag_reason }}</option>
+          {% endif %}
+          {% for reason in flag_reasons %}
+          <option
+            value="{{ reason }}"
+            {% if (movie.flag_reason and movie.flag_reason == reason) or (not movie.flag_reason and reason == "Metadata cleanup") %}selected{% endif %}
+          >{{ reason }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label>
+        <span>Notes <small>(optional)</small></span>
+        <textarea
+          data-flag-notes
+          maxlength="500"
+          placeholder="What needs a fix?"
+        >{{ movie.flag_notes or "" }}</textarea>
+      </label>
+      <p class="flag-dialog__status" data-flag-dialog-status role="status" aria-live="polite"></p>
+      <div class="flag-dialog__actions">
+        {% if can_manage_flags %}
+        <button
+          type="button"
+          class="button-ghost flag-dialog__resolve"
+          data-flag-resolve
+          {% if not movie.flagged %}hidden{% endif %}
+        >
+          Resolve flag
+        </button>
+        {% endif %}
+        <button type="button" class="button-ghost" data-flag-close>Cancel</button>
+        <button type="submit" class="button-primary" data-flag-save>
+          {% if can_manage_flags %}Save changes{% else %}Report issue{% endif %}
+        </button>
+      </div>
+    </form>
+  </dialog>
+  {% if can_manage_flags %}
+  {% include "partials/movies/edit_dialog.html" %}
+  {% endif %}
+  {% else %}
+  <div class="container">
+    <div class="not-found">
+      <h2>Movie not found</h2>
+      <p>The requested movie could not be located.</p>
+    </div>
+  </div>
+  {% endif %}
+{% endblock %}
+
+{% block scripts %}
+  {{ super() }}
+  <script src="{{ static_asset('js/movie_preferences.js') }}" defer></script>
+  {% if can_manage_flags %}
+  <script src="{{ static_asset('js/movie_detail_edit.js') }}" defer></script>
+  {% endif %}
+  <script src="{{ static_asset('js/movie_detail.js') }}" defer></script>
+{% endblock %}

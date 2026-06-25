@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% from "partials/movies/card.html" import movie_card %}
+{% block title %}Vault 966 · Watchlist{% endblock %}
+{% block head %}
+  <link rel="stylesheet" href="{{ static_asset('css/movies.css') }}" />
+{% endblock %}
+{% block body_class %}watchlist-page{% endblock %}
+{% block content %}
+  <section class="library-shell page-shell" aria-live="polite">
+    <header class="library-heading">
+      <div>
+        <h1>Watchlist</h1>
+        <p><strong>{{ total }}</strong> saved {{ "movie" if total == 1 else "movies" }}</p>
+      </div>
+    </header>
+    {% if movies %}
+      <div class="library-grid" aria-label="Watchlist movies">
+        {% for movie in movies %}
+        {% set genre_labels = movie.genre_display if movie.genre_display is defined else [] %}
+        {{ movie_card(movie, movie.liked, movie.watchlist, genre_labels, event_context="watchlist_grid") }}
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="empty" role="status">
+        <p>No movies in your watchlist yet.</p>
+        <div class="empty-actions">
+          <a class="button-primary" href="/ui/movies">Browse the vault</a>
+        </div>
+      </div>
+    {% endif %}
+  </section>
+{% endblock %}
+
+{% block scripts %}
+  {{ super() }}
+  <script src="{{ static_asset('js/movie_preferences.js') }}" defer></script>
+{% endblock %}
