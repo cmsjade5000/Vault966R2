@@ -9,8 +9,8 @@ Features:
   errors and force a non-zero exit code, while recoverable issues continue processing.
 
 Usage examples:
-    python scripts/etl_seed.py --path scripts/samples/sample_movies.json --format json
-    python scripts/etl_seed.py --path bulk_movies.csv --format csv --dry-run
+    python legacy/etl/etl_seed.py --path legacy/etl/samples/sample_movies.json --format json
+    python legacy/etl/etl_seed.py --path bulk_movies.csv --format csv --dry-run
 """
 
 import argparse

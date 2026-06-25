@@ -3,7 +3,11 @@
   "version": "0.1.0",
   "private": true,
   "devDependencies": {
+    "openapi-typescript": "^7.13.0",
     "prettier": "^3.1.0"
+  },
+  "overrides": {
+    "js-yaml": "^4.2.0"
   },
   "scripts": {
     "fmt": "prettier --write \"static/js/**/*.js\"",

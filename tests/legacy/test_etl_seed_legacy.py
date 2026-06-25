@@ -4,11 +4,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from api.models.movie import Movie
-
-try:
-    from scripts import etl_seed  # type: ignore
-except RuntimeError:  # pragma: no cover - fallback in CI
-    from legacy.etl import etl_seed as etl_seed  # type: ignore
+from legacy.etl import etl_seed
 
 
 @pytest.fixture()

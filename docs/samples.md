@@ -23,7 +23,7 @@ The script will:
 
 ## Example
 
-Input (`scripts/samples/vault966_titles_years.csv`):
+Input (`legacy/etl/samples/vault966_titles_years.csv`):
 ```
 Table 1
 title,year

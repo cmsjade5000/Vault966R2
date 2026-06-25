@@ -16,6 +16,8 @@ PY_CONFIG = ROOT_DIR / "openapi-client-config.yml"
 def run(cmd):
     env = os.environ.copy()
     env.setdefault("NPM_CONFIG_CACHE", str(pathlib.Path(tempfile.gettempdir()) / "vault966-npm"))
+    python_bin = pathlib.Path(sys.executable).resolve().parent
+    env["PATH"] = f"{python_bin}{os.pathsep}{env.get('PATH', '')}"
     process = subprocess.run(cmd, cwd=ROOT_DIR, env=env)
     if process.returncode != 0:
         raise SystemExit(process.returncode)
@@ -39,6 +41,8 @@ def generate_python_client(output_dir: pathlib.Path) -> None:
             "--overwrite",
         ]
     )
+    run([sys.executable, "-m", "ruff", "check", "--fix", str(output_dir)])
+    run([sys.executable, "-m", "ruff", "format", str(output_dir)])
 
 
 def generate_typescript_client(output_dir: pathlib.Path) -> None:
@@ -48,7 +52,7 @@ def generate_typescript_client(output_dir: pathlib.Path) -> None:
     run(
         [
             "npx",
-            "--yes",
+            "--no-install",
             "openapi-typescript",
             str(OPENAPI_PATH),
             "--output",

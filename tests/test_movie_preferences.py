@@ -63,6 +63,27 @@ def test_preference_mutations_require_same_origin_when_auth_enabled(client, logi
         assert response.status_code == 200
 
 
+def test_profile_switch_requires_same_origin_when_auth_enabled(client, login_profile) -> None:
+    login_profile(1)
+
+    response = client.post("/api/profiles/active", json={"profile_id": 1})
+    assert response.status_code == 403
+
+    response = client.post(
+        "/api/profiles/active",
+        json={"profile_id": 1},
+        headers={"Origin": "http://evil.test"},
+    )
+    assert response.status_code == 403
+
+    response = client.post(
+        "/api/profiles/active",
+        json={"profile_id": 1},
+        headers={"Origin": "http://testserver"},
+    )
+    assert response.status_code == 200
+
+
 def test_watchlist_uses_library_movie_cards(client) -> None:
     movie_id = _first_movie_id(client)
     response = client.post(f"/movies/{movie_id}/watchlist")
