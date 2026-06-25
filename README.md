@@ -63,7 +63,10 @@ cp .env.example .env
 make dev          # alias: make devserver; uses .env.local (or .env fallback) automatically
 ```
 
-Visit http://127.0.0.1:8000/health and http://127.0.0.1:8000/docs
+Visit http://127.0.0.1:8000/health and http://127.0.0.1:8000/docs.
+`/health`, `/docs`, `/redoc`, `/openapi.json`, `/login`, `/logout`, and
+`/static/*` are intentionally public; application data routes require a login
+session or admin bearer token.
 
 ### Always-on Mac Mini service
 
@@ -125,7 +128,7 @@ make db.up            # start pgvector-enabled postgres in docker
 make db.migrate
 
 # optional: seed a few movies
-python scripts/etl_postgres.py
+python legacy/etl/etl_seed.py --path legacy/etl/samples/sample_movies.json --format json
 
 # tear everything down when done
 make db.down
@@ -166,7 +169,7 @@ The `/ui/movies` page includes a "Semantic search" toggle. The API endpoint is
 1. Ensure the database is running (`make db.up`).
 2. Confirm `DATABASE_URL` inside `.env` points at Postgres.
 3. Run `make db.migrate` (or `alembic upgrade head`) to apply the latest Alembic revisions.
-4. (Optional) Seed data with `python scripts/etl_postgres.py`.
+4. (Optional) Seed data with `python legacy/etl/etl_seed.py --path legacy/etl/samples/sample_movies.json --format json`.
 
 ## Testing
 
@@ -245,9 +248,9 @@ make openapi
 
 This command freezes `openapi/openapi.json`, regenerates the Python client in
 `client_py/`, and emits TypeScript definitions in `client_ts/`. The TypeScript
-step uses `npx openapi-typescript`, so ensure Node.js is installed locally. CI
-pins `openapi-python-client` to the same generator version used by the drift
-gate.
+step uses the pinned `openapi-typescript` dev dependency, so run `npm install`
+before regenerating clients. CI pins both client generators through the Python
+environment and `package-lock.json`.
 
 To verify the committed OpenAPI schema and generated clients are up to date,
 run:
@@ -274,7 +277,7 @@ configured automatically to talk to the Postgres container.
 - Put your existing picker/filter logic into `core/`.
 - Archived import utilities live under `legacy/etl/` (see `legacy/etl/etl_seed.py` if you still need the CSV importer).
 - Pull richer metadata (posters/genres/providers) with `python legacy/etl/enrich_tmdb.py --output data/enriched_movies.csv` if you still rely on the archived ETL tooling.
-- Optional overrides live in `scripts/overrides/imdb_map.csv`; the importer reads them (title/year keyed) before network lookups and logs usages to `reports/overrides_used.csv`.
+- Optional overrides live in `legacy/etl/overrides/imdb_map.csv`; the importer reads them (title/year keyed) before network lookups and logs usages to `reports/overrides_used.csv`.
 - Save reusable picker presets (“Fliclists”) from the `/ui/movies` page; they’re stored via the new `/fliclists` API and can be reapplied with one tap.
 - `legacy/etl/retry_missing_ids.py` can revisit `reports/missing_imdb_id.csv` / `invalid_imdb_id.csv` and emit a patch file (`--output`) you can replay through the importer once an IMDb ID becomes known.
 - When ready, switch to Postgres by setting `DATABASE_URL` in `.env`.

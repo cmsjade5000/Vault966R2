@@ -7,11 +7,7 @@ from sqlalchemy.pool import StaticPool
 
 from api.models.movie import Movie
 from api.models.person import RoleType
-
-try:
-    from scripts import etl_seed  # type: ignore
-except RuntimeError:
-    from legacy.etl import etl_seed as etl_seed  # type: ignore
+from legacy.etl import etl_seed
 
 
 @pytest.fixture()

@@ -5,6 +5,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from api.db import get_db
+from api.deps.auth import require_same_origin
 from api.services.profiles import get_active_profile_id, get_profiles, set_active_profile_cookie
 
 # Profile endpoints are gated by the login session; profile selection is still
@@ -32,6 +33,7 @@ def set_active_profile(
     request: Request,
     response: Response,
     db: Session = Depends(get_db),
+    _: None = Depends(require_same_origin),
 ) -> dict:
     session_profile_id = getattr(request.state, "session_profile_id", None)
     if isinstance(session_profile_id, int) and payload.profile_id != session_profile_id:

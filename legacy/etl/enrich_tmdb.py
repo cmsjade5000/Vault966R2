@@ -9,7 +9,7 @@ The script is intentionally conservative:
 - network hiccups are recorded and processing continues
 
 Example:
-    python scripts/enrich_tmdb.py --output data/enriched_movies.csv
+    python legacy/etl/enrich_tmdb.py --output data/enriched_movies.csv
 """
 
 from __future__ import annotations
