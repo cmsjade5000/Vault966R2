@@ -6,6 +6,9 @@ on:
     branches: ["main", "master", "public-main", "reliability-hardening"]
   pull_request:
 
+permissions:
+  contents: read
+
 jobs:
   build:
     runs-on: ubuntu-latest

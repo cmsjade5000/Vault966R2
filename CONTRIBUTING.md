@@ -11,6 +11,27 @@ open-source maintenance, so contribution quality and private-data hygiene matter
 4. Preserve local runtime data: never commit `.env`, databases, logs, local
    backups, credentials, or private movie exports.
 
+## First-Time External Contributors
+
+You do not need collaborator access or issue assignment to contribute. Fork the
+repository, create a branch in your fork, and open a pull request that links the
+issue you are addressing.
+
+Maintainers may leave beginner-friendly issues unassigned until a pull request
+is opened. This keeps repository access limited while still allowing public
+contributions.
+
+Before opening a pull request:
+
+- Comment on the issue only if you need clarification.
+- Keep the change narrowly scoped to the issue.
+- Do not modify GitHub Actions workflows, dependency files, security settings,
+  deployment scripts, generated clients, or private-data handling unless the
+  issue specifically asks for that work.
+- Use synthetic test data only.
+- Never ask maintainers for secrets, database files, local logs, production
+  paths, or collaborator access.
+
 ## Development Setup
 
 ```bash

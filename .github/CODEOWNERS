@@ -1,2 +1,12 @@
 # Default ownership for review routing.
 * @cmsjade5000
+
+# Sensitive project surfaces should always route to the maintainer.
+.github/ @cmsjade5000
+scripts/ @cmsjade5000
+api/ @cmsjade5000
+core/ @cmsjade5000
+requirements.txt @cmsjade5000
+package.json @cmsjade5000
+package-lock.json @cmsjade5000
+Dockerfile @cmsjade5000
