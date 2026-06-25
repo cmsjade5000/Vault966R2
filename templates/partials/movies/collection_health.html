@@ -1,0 +1,66 @@
+<section class="collection-health" aria-label="Collection health">
+  <header class="collection-health__toolbar">
+    <div>
+      <h2>Vault overview</h2>
+      <p>Integrity, review workload, and metadata coverage.</p>
+    </div>
+    <a class="button-primary collection-health__review" href="#review-workbench">
+      Work {{ total_review_count }} open items
+    </a>
+  </header>
+  <div class="collection-health__grid">
+    <article class="health-card">
+      <h3>Structural health</h3>
+      <p class="health-card__value">
+        {% if collection_health.structural_issues == 0 %}Clear{% else %}{{ collection_health.structural_issues }} issues{% endif %}
+      </p>
+      <p class="health-card__hint">Stable IDs and required record structure.</p>
+    </article>
+    <article class="health-card">
+      <h3>Source synchronization</h3>
+      <p class="health-card__value">
+        {% if collection_health.source_snapshot_at %}{{ collection_health.source_rows }} rows{% else %}Not synced{% endif %}
+      </p>
+      <p class="health-card__hint">
+        {% if collection_health.source_snapshot_at %}
+          Last confirmed {{ collection_health.source_snapshot_at.strftime('%Y-%m-%d') }}.
+        {% endif %}
+        <a href="#source-synchronization" class="hero-health-link">View sync details →</a>
+      </p>
+    </article>
+    <article class="health-card">
+      <h3>Identity confidence</h3>
+      <p class="health-card__value">{{ total_review_count }}</p>
+      <p class="health-card__hint">
+        Open source conflicts and Vault-only checks.
+        <a href="#review-workbench" class="hero-health-link">Open workbench →</a>
+      </p>
+    </article>
+    <article class="health-card">
+      <h3>Metadata completeness</h3>
+      <p class="health-card__value">{{ collection_health.missing_runtime + collection_health.missing_plot + collection_health.missing_poster }}</p>
+      <p class="health-card__hint">Combined runtime, synopsis, and artwork gaps.</p>
+    </article>
+  </div>
+
+  {% if can_manage_health %}
+  <div class="collection-health__tools">
+    <details class="health-tool">
+      <summary>
+        <span>
+          <strong>Vault maintenance</strong>
+          <small data-update-status>Last update: not run yet.</small>
+        </span>
+        <span aria-hidden="true">+</span>
+      </summary>
+      <div class="health-tool__body" role="status" aria-live="polite">
+        <p>Run integrity checks, refresh metadata, and capture the latest results.</p>
+        <div class="collection-health__update-steps" data-update-steps></div>
+        <button type="button" class="collection-health__update-button" data-update-trigger>
+          Update Vault
+        </button>
+      </div>
+    </details>
+  </div>
+  {% endif %}
+</section>

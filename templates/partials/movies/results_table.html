@@ -1,0 +1,81 @@
+<section class="table-card library-list" id="results-table" data-results-table>
+  <div class="table-card__header">
+    <h2 class="sr-only">Movie results</h2>
+  </div>
+  <div class="table-wrapper">
+    <table class="data-table" id="results-table-table">
+      <thead>
+        <tr>
+          {% set title_sort = 'ascending' if order_by == 'title_asc' else 'descending' if order_by == 'title_desc' else 'none' %}
+          <th
+            scope="col"
+            data-order-by-asc="title_asc"
+            data-order-by-desc="title_desc"
+            aria-sort="{{ title_sort }}"
+            tabindex="0"
+          >
+            Title
+          </th>
+          {% set id_sort = 'ascending' if order_by == 'id_asc' else 'descending' if order_by == 'id_desc' else 'none' %}
+          <th
+            scope="col"
+            data-order-by-asc="id_asc"
+            data-order-by-desc="id_desc"
+            aria-sort="{{ id_sort }}"
+            tabindex="0"
+          >
+            Vault ID
+          </th>
+          <th scope="col" class="data-table__col-details">Details</th>
+          <th scope="col" class="data-table__col-status" hidden>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for movie in movies %}
+        {% set genre_names = movie.genre_display if movie.genre_display is defined and movie.genre_display else [] %}
+        {% if not genre_names and movie.genres %}
+          {% set genre_names = movie.genres | map(attribute='name') | list if movie.genres and movie.genres[0].__class__.__name__ == 'Genre' else movie.genres %}
+        {% endif %}
+        {% set genre_text = genre_names | join(', ') if genre_names else '—' %}
+        {% set year_text = movie.year or '—' %}
+        {% set runtime_text = movie.runtime ~ ' min' if movie.runtime else '—' %}
+        {% set year_runtime_text = year_text ~ ' • ' ~ runtime_text %}
+        {% set imdb_text = 'IMDb ' ~ ('%.1f'|format(movie.imdb_rating)) if movie.imdb_rating is not none else 'IMDb —' %}
+        {% set rt_text = 'RT ' ~ movie.rt_score ~ '%' if movie.rt_score is not none else 'RT —' %}
+        {% set rating_text = imdb_text ~ ' • ' ~ rt_text %}
+        <tr
+          data-title="{{ movie.title | lower }}"
+          data-vault-id="{{ (movie.vault_id or ('V%04d'|format(movie.id)))[1:] }}"
+          data-year="{{ movie.year or '' }}"
+          data-runtime="{{ movie.runtime or '' }}"
+          data-rating="{{ movie.imdb_rating or '' }}"
+          data-movie-row
+          data-movie-id="{{ movie.id }}"
+          data-flagged="{{ 'true' if movie.flagged else 'false' }}"
+          class="{% if movie.flagged %}is-flagged{% endif %}"
+        >
+          <td data-label="Title">
+            <a href="/ui/movies/{{ movie.id }}" data-movie-detail-link data-event-context="library_list">{{ movie.title | display_title }}</a>
+            {% if movie.flagged %}<span class="table-tag table-tag--review">Needs review</span>{% endif %}
+            {% if order_by == 'flic' %}
+            {% set table_rank = flic_rank_offset + loop.index %}
+            <span class="table-tag table-tag--flic">
+              #{{ table_rank }} · Flic {{ "%.0f"|format(movie.flic_score) if movie.flic_score is defined else "—" }}
+            </span>
+            {% endif %}
+          </td>
+          <td data-label="Vault ID">{{ movie.vault_id or ("V%04d"|format(movie.id)) }}</td>
+          <td data-label="Details" class="data-table__cell-details">
+            <div class="table-detail-line">{{ year_runtime_text }}</div>
+            <div class="table-detail-line table-detail-line--muted">{{ rating_text }}</div>
+            <div class="table-detail-line table-detail-line--muted" title="{{ genre_text }}">{{ genre_text }}</div>
+          </td>
+          <td data-label="Status" class="data-table__cell-status" hidden>
+            {% if movie.flagged %}Needs review{% else %}—{% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>

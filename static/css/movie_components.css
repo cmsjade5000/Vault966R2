@@ -1,0 +1,85 @@
+:where(.filters-dialog, .edit-dialog, .flag-dialog-overlay) {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  color: inherit;
+}
+
+dialog.filters-dialog:not([open]),
+dialog.edit-dialog:not([open]),
+dialog.flag-dialog-overlay:not([open]) {
+  display: none;
+}
+
+.filters-dialog::backdrop,
+.edit-dialog::backdrop,
+.flag-dialog-overlay::backdrop {
+  background: transparent;
+}
+
+.preference-icon {
+  width: 2.25rem;
+  height: 2.25rem;
+  display: grid;
+  place-items: center;
+  border: 1px solid transparent;
+  border-radius: 0.35rem;
+  background: rgba(15, 23, 42, 0.35);
+  color: rgba(203, 213, 225, 0.82);
+  cursor: pointer;
+  transition:
+    color 140ms ease,
+    background 140ms ease,
+    border-color 140ms ease,
+    transform 140ms ease;
+}
+
+.preference-icon svg {
+  width: 1.05rem;
+  height: 1.05rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  pointer-events: none;
+}
+
+.preference-icon[data-preference-type="watchlist"] svg {
+  width: 1.2rem;
+  height: 1.2rem;
+}
+
+.preference-icon:hover,
+.preference-icon:focus-visible {
+  color: #f8fafc;
+  border-color: rgba(125, 211, 252, 0.45);
+  background: rgba(30, 41, 59, 0.9);
+  transform: translateY(-1px);
+}
+
+.preference-icon:disabled {
+  cursor: wait;
+  opacity: 0.55;
+}
+
+.preference-icon.is-active {
+  color: #fb7185;
+  border-color: rgba(251, 113, 133, 0.35);
+  background: rgba(136, 19, 55, 0.22);
+}
+
+.preference-icon.is-active svg {
+  fill: currentColor;
+}
+
+.preference-icon[data-preference-type="watchlist"].is-active {
+  color: #facc15;
+  border-color: rgba(250, 204, 21, 0.35);
+  background: rgba(113, 63, 18, 0.24);
+}

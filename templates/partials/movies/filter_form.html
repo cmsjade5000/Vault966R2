@@ -1,0 +1,44 @@
+<div class="filter-controls">
+  <details class="filter-section" open>
+    <summary class="filter-section__summary"><h3>Genres</h3></summary>
+    <div class="filter-section__body">
+      <div class="chip-scroll" data-filter-group="genres">
+        {% for label in genre_options %}
+        <button type="button" class="chip-select" data-filter-value="{{ label }}">{{ label }}</button>
+        {% endfor %}
+      </div>
+    </div>
+  </details>
+
+  <details class="filter-section" open>
+    <summary class="filter-section__summary"><h3>Decade</h3></summary>
+    <div class="filter-section__body">
+      <div class="pills-row" data-year-pills>
+        <button type="button" class="pill-button" data-year-range="">Any year</button>
+        {% for decade in decade_options %}
+        <button type="button" class="pill-button" data-year-range="{{ decade.start }}-{{ decade.end }}" data-year-label="{{ decade.label }}">{{ decade.label }}</button>
+        {% endfor %}
+        <button type="button" class="pill-button pill-button--ghost" data-year-range="custom">Custom</button>
+      </div>
+      <div class="custom-range" id="year-custom" hidden>
+        <label><span>From</span><input id="year-custom-min" type="number" inputmode="numeric" min="1880" max="2200" /></label>
+        <label><span>To</span><input id="year-custom-max" type="number" inputmode="numeric" min="1880" max="2200" /></label>
+      </div>
+    </div>
+  </details>
+
+  <details class="filter-section" open>
+    <summary class="filter-section__summary"><h3>Runtime</h3></summary>
+    <div class="filter-section__body">
+      <div class="pills-row" data-runtime-pills>
+        {% for runtime in runtime_presets %}
+        <button type="button" class="pill-button" data-runtime-max="{{ runtime.value if runtime.value is not none else '' }}">{{ runtime.label }}</button>
+        {% endfor %}
+        <button type="button" class="pill-button pill-button--ghost" data-runtime-max="custom">Custom</button>
+      </div>
+      <div class="custom-range" id="runtime-custom" hidden>
+        <label><span>Max minutes</span><input id="runtime-custom-input" type="number" inputmode="numeric" min="1" max="600" step="5" /></label>
+      </div>
+    </div>
+  </details>
+</div>

@@ -1,0 +1,14 @@
+# Feature Matrix
+
+The Flic-powered movie library is now rendered entirely server-side via FastAPI templates. The `/ui/movies` view anchors the experience with search controls, Fliclists, memory history, and a JS helper that bridges to the `/movies/picks` API for surprise picks.
+
+The `/ui/movies/{id}` detail page reuses the shared shell, layering in hero art, conditional data sections, and cross-links to similar titles. The table below captures the current status of these flows, the surfaces they touch, and the gaps that should be addressed next.
+
+| Feature | Routes / Entry Points | UI Status | States | Gaps / Notes |
+| --- | --- | --- | --- | --- |
+| Library landing & filters | `/ui/movies` | Shipped (server-rendered) | Hero shows rotating tagline and stats; primary search button forces `page=1`; sort dropdown auto-submits; reset buttons clear filters and revert to `title_asc` | Numeric fields accept any values (no client-side guards); form always reloads the entire page instead of using XHR |
+| Fliclists chips | `/ui/movies#fliclists`; `/fliclists` (GET presets) | Partially shipped | Built-in and user chips inject filters and submit; chips keep server-provided names; Save current filters prompts for a name, persists via API, and inserts the chip inline | No UI to delete or rename user presets; chips cannot show preset descriptions; save flow still leans on the native prompt |
+| Flic Memory panel | `/ui/movies#flic-memory`; `/fliclists/history` | Working (fetch on load) | Shows "Loading recent picks..." placeholder until fetch resolves; swaps to list of links with timestamp; empty state copies message when no history; toast-triggered refresh after a successful pick | Panel only refreshes when pick succeeds or page reloads; no manual refresh affordance if fetch fails |
+| Pick for me actions | `#pick-button` inside the filter panel; `/movies/picks` | Functional (library + global fallback) | Success: toast announces queued title then redirects after 600ms; 404: toast prompts widening filters; non-OK: toast reports snag; network error: toast reports hiccup; memory list reloads after success | Library page pick button still stays active while the request is pending; only the first genre token is forwarded |
+| Results grid & pagination | `/ui/movies` | Shipped (server-rendered) | Cards link to detail with lazy posters; pagination links render when pages >1; empty search shows friendly prompt with "Widen filters" reset | No quick "back to top" anchor; grid lacks contextual messaging for active sort beyond select control |
+| Movie detail layout | `/ui/movies/{id}`; `/movies/{id}/detail` service | Shipped | Hero swaps in backdrop or poster with chips; synopsis, at-a-glance, providers, and cast blocks render only when data exists; similar-by-vibe rail links laterally; 404 returns the same template with not-found copy | 404 view lacks navigation back to search or home |

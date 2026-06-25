@@ -1,0 +1,132 @@
+# Vault 966 Makefile (Safe Edition w/ Help)
+# Usage: make <target>
+# Tip: run `make help` to see this menu.
+
+# ---- INTERNAL ----
+.DEFAULT_GOAL := help
+SERVICE ?= api
+PORT ?= 8000
+HOST ?= 0.0.0.0
+UVICORN_APP ?= api.main:app
+RELOAD_DIR ?= api
+ENV_FILE ?= .env.local
+LOG_LEVEL ?= info
+SNAP_BRANCH ?= autosnap
+
+# ---- META / HELP ----
+.PHONY: help
+help: ## Show this help menu
+	@echo "Vault 966 Commands:"; \
+	awk 'BEGIN {FS":.*##"} /^[a-zA-Z0-9_.-]+:.*##/ { printf "  \033[36m%-18s\033[0m %s\n", $$1, $$2 }' $(MAKEFILE_LIST)
+
+# ---- ENVIRONMENT ----
+.PHONY: venv
+venv: ## Activate virtual env (prints hint)
+	@echo "Run: source .venv/bin/activate"
+
+# ---- GIT ----
+.PHONY: status push pull feature pr
+status: ## Show git status
+	git status
+
+push: ## Add, commit (\"update\"), push
+	git add . && git commit -m "update" && git push
+
+pull: ## Pull latest from origin
+	git pull
+
+feature: ## Create a new feature branch (feat/quick-fix)
+	git checkout -b feat/quick-fix
+
+pr: ## Create a GitHub PR (requires gh auth)
+	gh pr create -f
+
+# ---- SERVER (LOCAL) ----
+.PHONY: dev devserver
+dev: ## Run Uvicorn dev server (hot reload, focused logs)
+	@ENV_FLAG=""; \
+	if [ -f "$(ENV_FILE)" ]; then \
+		ENV_FLAG="--env-file $(ENV_FILE)"; \
+	elif [ -f ".env" ]; then \
+		ENV_FLAG="--env-file .env"; \
+	fi; \
+	if command -v lsof >/dev/null 2>&1; then \
+		if lsof -i tcp:$(PORT) | grep -v "COMMAND" >/dev/null 2>&1; then \
+			echo "Port $(PORT) is in use. Either stop the process (lsof -i tcp:$(PORT)) or run: make dev PORT=<free-port>"; \
+			exit 1; \
+		fi; \
+	fi; \
+	if command -v jq >/dev/null 2>&1; then \
+		uvicorn $(UVICORN_APP) \
+		  --host $(HOST) \
+		  --port $(PORT) \
+		  --reload \
+		  --reload-dir $(RELOAD_DIR) \
+		  --log-level $(LOG_LEVEL) \
+		  --access-log \
+		  $$ENV_FLAG | jq; \
+	else \
+		echo "jq not found; streaming raw logs. Install jq for pretty output."; \
+		uvicorn $(UVICORN_APP) \
+		  --host $(HOST) \
+		  --port $(PORT) \
+		  --reload \
+		  --reload-dir $(RELOAD_DIR) \
+		  --log-level $(LOG_LEVEL) \
+		  --access-log \
+		  $$ENV_FLAG; \
+	fi
+
+devserver: dev ## Alias for dev
+
+.PHONY: snapshot
+snapshot: ## Run tests, lint (if present), show status, and create a timestamped commit on SNAP_BRANCH (default: autosnap)
+	@if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then :; else echo "Not a git repo"; exit 1; fi
+	@TIMESTAMP=$$(date +%Y-%m-%d-%H%M); \
+	BRANCH=$${SNAP_BRANCH:-autosnap}; \
+	git checkout -B $$BRANCH && \
+	python3 -m pytest && \
+	if [ -f package.json ]; then npm run lint || true; fi && \
+	git status -sb && \
+	git add -A && \
+	git commit -m "$$TIMESTAMP snapshot" && \
+	echo "Snapshot committed on branch $$BRANCH. Push with: git push origin $$BRANCH"
+
+# ---- DOCKER ----
+.PHONY: up down restart logs db-logs bash ps
+up: ## Build & start containers
+	docker compose up -d --build
+
+down: ## Stop & remove containers (confirm)
+	@read -p "This will stop & remove ALL containers. Continue? (y/N) " ans; \
+	if [ "$$ans" = "y" ]; then docker compose down; else echo "Cancelled."; fi
+
+restart: ## Restart API container only (confirm)
+	@read -p "Restart $(SERVICE) container? (y/N) " ans; \
+	if [ "$$ans" = "y" ]; then docker compose restart $(SERVICE); else echo "Cancelled."; fi
+
+logs: ## Follow API logs
+	docker logs -f vault966-$(SERVICE)
+
+db-logs: ## Follow Postgres logs
+	docker logs -f vault966-postgres
+
+bash: ## Open a shell in API container
+	docker compose exec $(SERVICE) /bin/bash
+
+ps: ## List running containers
+	docker ps
+
+# ---- DATABASE ----
+.PHONY: migrate seed
+migrate: ## Apply latest Alembic migrations
+	docker compose exec $(SERVICE) alembic upgrade head
+
+seed: ## Seed initial data (confirm)
+	@read -p "Seeding can overwrite data. Continue? (y/N) " ans; \
+	if [ "$$ans" = "y" ]; then docker compose exec $(SERVICE) python legacy/etl/etl_seed.py; else echo "Cancelled."; fi
+
+# ---- HEALTH ----
+.PHONY: health
+health: ## Curl the health endpoint
+	curl -sS http://localhost:$(PORT)/health || echo "API not responding on :$(PORT)"
