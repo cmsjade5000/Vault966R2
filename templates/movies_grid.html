@@ -223,8 +223,20 @@
       {% endif %}
     {% else %}
       <div class="empty" role="status" data-results-empty>
-        <p>Nothing matched these filters.</p>
-        <a class="button-primary" href="/ui/movies">Clear all</a>
+        {% if is_library_empty %}
+          <h2>Your library is empty</h2>
+          {% if can_start_first_import %}
+            <p>Import your first movie list to stage rows, find high-confidence TMDb matches, and route exceptions for review.</p>
+            <div class="empty-actions">
+              <a class="button-primary" href="/ui/first-import">First import</a>
+            </div>
+          {% else %}
+            <p>An admin needs to run the first import before movies appear here.</p>
+          {% endif %}
+        {% else %}
+          <p>Nothing matched these filters.</p>
+          <a class="button-primary" href="/ui/movies">Clear all</a>
+        {% endif %}
       </div>
     {% endif %}
   </div>

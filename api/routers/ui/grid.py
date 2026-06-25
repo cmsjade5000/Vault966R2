@@ -259,10 +259,12 @@ def movies_grid(
         semantic_filters = semantic_intent.params
 
     base_query = db.query(Movie)
+    library_total = base_query.with_entities(func.count(Movie.id)).scalar() or 0
     filtered_query = _apply_library_preset(apply_filters(base_query, params), resolved_preset)
     total = filtered_query.with_entities(func.count(Movie.id)).scalar() or 0
 
     stats = query_library_stats(db)
+    active_role = get_active_profile_role(request, db)
     taglines, initial_tagline = get_taglines()
     built_in_presets = get_built_in_presets()
     user_presets = serialize_user_presets(db)
@@ -391,9 +393,12 @@ def movies_grid(
         "genres": genres_value,
         "page": current_page,
         "total": total,
+        "library_total": library_total,
+        "is_library_empty": library_total == 0,
         "total_pages": total_pages,
         "page_size": page_size,
         "stats": stats,
+        "can_start_first_import": active_role == ROLE_ADMIN,
         "taglines": taglines,
         "initial_tagline": initial_tagline,
         "built_in_presets": built_in_presets,

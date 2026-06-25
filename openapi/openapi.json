@@ -248,6 +248,20 @@
         "title": "Body_login_submit_login_post",
         "type": "object"
       },
+      "Body_upload_first_import_snapshot_ui_first_import_upload_post": {
+        "properties": {
+          "source_file": {
+            "format": "binary",
+            "title": "Source File",
+            "type": "string"
+          }
+        },
+        "required": [
+          "source_file"
+        ],
+        "title": "Body_upload_first_import_snapshot_ui_first_import_upload_post",
+        "type": "object"
+      },
       "Body_upload_source_snapshot_ui_source_sync_upload_post": {
         "properties": {
           "source_file": {
@@ -6351,6 +6365,156 @@
         },
         "summary": "Record Usage Event",
         "tags": [
+          "ui",
+          "ui"
+        ]
+      }
+    },
+    "/ui/first-import": {
+      "get": {
+        "operationId": "first_import_ui_ui_first_import_get",
+        "responses": {
+          "200": {
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "First Import Ui",
+        "tags": [
+          "ui",
+          "ui",
+          "ui"
+        ]
+      }
+    },
+    "/ui/first-import/upload": {
+      "post": {
+        "operationId": "upload_first_import_snapshot_ui_first_import_upload_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_upload_first_import_snapshot_ui_first_import_upload_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Upload First Import Snapshot",
+        "tags": [
+          "ui",
+          "ui",
+          "ui"
+        ]
+      }
+    },
+    "/ui/first-import/{snapshot_id}/auto-create": {
+      "post": {
+        "operationId": "auto_create_first_import_snapshot_ui_first_import__snapshot_id__auto_create_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "snapshot_id",
+            "required": true,
+            "schema": {
+              "title": "Snapshot Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Auto Create First Import Snapshot",
+        "tags": [
+          "ui",
+          "ui",
+          "ui"
+        ]
+      }
+    },
+    "/ui/first-import/{snapshot_id}/preview": {
+      "get": {
+        "operationId": "preview_first_import_snapshot_ui_first_import__snapshot_id__preview_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "snapshot_id",
+            "required": true,
+            "schema": {
+              "title": "Snapshot Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Preview First Import Snapshot",
+        "tags": [
+          "ui",
           "ui",
           "ui"
         ]

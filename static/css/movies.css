@@ -809,6 +809,33 @@
   padding-bottom: 4rem;
 }
 
+.first-import-shell {
+  display: grid;
+  gap: 1.25rem;
+  max-width: 960px;
+  min-width: 0;
+  padding-bottom: 4rem;
+  padding-top: 1.5rem;
+}
+
+.first-import-heading {
+  align-items: center;
+}
+
+.first-import-upload h2,
+.first-import-next h2 {
+  margin: 0.25rem 0 1rem;
+}
+
+.first-import-next p {
+  color: var(--flic-muted);
+  margin: 0 0 1rem;
+}
+
+.first-import-steps {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
 .source-health {
   border-bottom: 1px solid rgba(148, 163, 184, 0.16);
   border-top: 1px solid rgba(148, 163, 184, 0.16);
