@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "devDependencies": {
-    "prettier": "^3.1.0"
+    "prettier": "^3.8.4"
   },
   "scripts": {
     "fmt": "prettier --write \"static/js/**/*.js\"",
