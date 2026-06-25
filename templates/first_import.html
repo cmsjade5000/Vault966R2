@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}Vault 966 · First Import{% endblock %}
+{% block head %}
+  <link rel="stylesheet" href="{{ static_asset('css/movies.css') }}" />
+{% endblock %}
+{% block body_class %}first-import-page{% endblock %}
+{% block content %}
+  <div class="page-shell first-import-shell">
+    <header class="library-heading first-import-heading">
+      <div>
+        <h1>First import</h1>
+        <p>Start with a collection CSV, preview the rows, then auto-create only high-confidence matches.</p>
+      </div>
+      <a class="button-secondary" href="/ui/movies">Back to Library</a>
+    </header>
+
+    {% if request.query_params.get('error') %}
+      <p class="source-sync-error" role="alert">{{ request.query_params.get('error') }}</p>
+    {% endif %}
+
+    <section class="source-sync-upload first-import-upload" aria-labelledby="first-import-upload-title">
+      <span class="review-vault-id">Collection source</span>
+      <h2 id="first-import-upload-title">Upload collection CSV</h2>
+      <form method="post" action="/ui/first-import/upload" enctype="multipart/form-data">
+        <label for="source-file">CSV file</label>
+        <input id="source-file" name="source_file" type="file" accept=".csv,text/csv" required />
+        <button class="button-primary" type="submit">Preview import</button>
+      </form>
+      <p>Required: Title, Time, Director, Year. Numbers exports using Name, Total Time, and Artist are accepted.</p>
+    </section>
+
+    <section class="source-sync-summary first-import-next" aria-labelledby="first-import-next-title">
+      <h2 id="first-import-next-title">What happens next</h2>
+      <div class="source-sync-metrics first-import-steps">
+        <div><strong>1</strong><span>Upload source</span></div>
+        <div><strong>2</strong><span>Preview rows</span></div>
+        <div><strong>3</strong><span>Create safe matches</span></div>
+      </div>
+      <p>
+        The first pass auto-creates strict high-confidence matches. Ambiguous rows,
+        duplicate conflicts, and lookup failures remain available for review.
+      </p>
+      {% if library_total %}
+        <a class="button-secondary" href="/ui/movies/health#source-synchronization">Open Source sync</a>
+      {% endif %}
+    </section>
+  </div>
+{% endblock %}

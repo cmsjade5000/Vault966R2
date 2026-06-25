@@ -6,6 +6,7 @@ from . import (
     detail,
     discover,
     events,
+    first_import,
     flags,
     grid,
     login,
@@ -24,6 +25,7 @@ router.include_router(posters.router, tags=["ui"])
 router.include_router(top.router, tags=["ui"])
 router.include_router(detail.router, tags=["ui"])
 router.include_router(manual_add.router, tags=["ui"])
+router.include_router(first_import.router, tags=["ui"])
 router.include_router(flags.router, tags=["ui"])
 router.include_router(review.router, tags=["ui"])
 router.include_router(source_sync.router, tags=["ui"])

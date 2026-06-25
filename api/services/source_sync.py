@@ -21,7 +21,15 @@ from api.models.source_sync import (
     SourceReconciliationMatch,
     SourceSnapshot,
 )
+from api.services.movie_lookup import (
+    MovieLookupError,
+    MovieLookupNotFound,
+    MovieLookupUnavailable,
+    lookup_movie_candidates,
+    standardize_title_for_identity_search,
+)
 from api.services.movie_review import apply_title_year_authority
+from core.movie_metadata import MovieMetadata
 from core.genres import split_and_normalize
 from core.vault_ids import next_vault_id
 
@@ -118,6 +126,43 @@ class BulkSourceDecisionResult:
     movie_count: int
     field_count: int
     skipped_field_count: int
+
+
+@dataclass(frozen=True)
+class FirstImportDecision:
+    row: SourceMovieRow
+    bucket: str
+    reason: str
+    candidate: dict | None = None
+    confidence: float = 0.0
+
+
+@dataclass(frozen=True)
+class FirstImportAnalysis:
+    snapshot_id: int
+    auto_create: tuple[FirstImportDecision, ...]
+    needs_review: tuple[FirstImportDecision, ...]
+    duplicate_conflict: tuple[FirstImportDecision, ...]
+    failed_lookup: tuple[FirstImportDecision, ...]
+
+    @property
+    def total_rows(self) -> int:
+        return (
+            len(self.auto_create)
+            + len(self.needs_review)
+            + len(self.duplicate_conflict)
+            + len(self.failed_lookup)
+        )
+
+
+@dataclass(frozen=True)
+class FirstImportApplyResult:
+    snapshot_id: int
+    created_count: int
+    review_count: int
+    duplicate_conflict_count: int
+    failed_lookup_count: int
+    created_movie_ids: tuple[int, ...]
 
 
 def clean_text(value: object) -> str | None:
@@ -248,6 +293,44 @@ def parse_directors(value: object) -> tuple[str, ...]:
 
 def normalized_directors(value: object) -> tuple[str, ...]:
     return tuple(sorted(normalize_title(name) for name in parse_directors(value)))
+
+
+def _metadata_genres(db: Session, names: list[str]) -> list[Genre]:
+    genres: list[Genre] = []
+    for name in split_and_normalize(names):
+        genre = db.query(Genre).filter(func.lower(Genre.name) == name.casefold()).one_or_none()
+        if genre is None:
+            genre = Genre(name=name)
+            db.add(genre)
+        genres.append(genre)
+    return genres
+
+
+def _standard_title_key(value: object) -> str:
+    return normalize_title(standardize_title_for_identity_search(str(value or "")))
+
+
+def _existing_title_year(db: Session, title: str, year: int | None) -> Movie | None:
+    candidates = db.query(Movie).filter(Movie.year == year).all()
+    title_key = normalize_title(title)
+    return next((movie for movie in candidates if normalize_title(movie.title) == title_key), None)
+
+
+def _external_id_owner(
+    db: Session,
+    *,
+    tmdb_id: int | None,
+    imdb_id: str | None,
+) -> Movie | None:
+    if tmdb_id is not None:
+        owner = db.query(Movie).filter(Movie.tmdb_id == tmdb_id).one_or_none()
+        if owner is not None:
+            return owner
+    if imdb_id:
+        owner = db.query(Movie).filter(Movie.imdb_id == imdb_id).one_or_none()
+        if owner is not None:
+            return owner
+    return None
 
 
 def parse_runtime(value: object) -> int | None:
@@ -1218,6 +1301,261 @@ def assign_source_row_match(
     db.commit()
 
 
+def classify_first_import_row(
+    db: Session,
+    *,
+    row: SourceMovieRow,
+    candidates: list[dict],
+) -> FirstImportDecision:
+    if row.duplicate_group:
+        return FirstImportDecision(row=row, bucket="duplicate_conflict", reason="source_duplicate")
+    if _existing_title_year(db, row.title, row.year) is not None:
+        return FirstImportDecision(row=row, bucket="duplicate_conflict", reason="title_year_exists")
+    if not candidates:
+        return FirstImportDecision(row=row, bucket="failed_lookup", reason="no_candidates")
+
+    strong_candidates = [
+        candidate
+        for candidate in candidates
+        if float(candidate.get("match_confidence") or 0) >= 0.95
+        and "title_only" not in str(candidate.get("match_strategy") or "")
+    ]
+    if not strong_candidates:
+        return FirstImportDecision(
+            row=row,
+            bucket="needs_review",
+            reason="low_confidence",
+            candidate=candidates[0],
+            confidence=float(candidates[0].get("match_confidence") or 0),
+        )
+    if len(strong_candidates) > 1:
+        return FirstImportDecision(
+            row=row,
+            bucket="needs_review",
+            reason="multiple_strong_candidates",
+            candidate=strong_candidates[0],
+            confidence=float(strong_candidates[0].get("match_confidence") or 0),
+        )
+
+    candidate = strong_candidates[0]
+    confidence = float(candidate.get("match_confidence") or 0)
+    metadata = MovieMetadata.from_mapping(candidate)
+    if not metadata.title or metadata.year is None:
+        return FirstImportDecision(
+            row=row,
+            bucket="needs_review",
+            reason="candidate_missing_identity",
+            candidate=candidate,
+            confidence=confidence,
+        )
+    if metadata.tmdb_id is None and not metadata.imdb_id:
+        return FirstImportDecision(
+            row=row,
+            bucket="needs_review",
+            reason="candidate_missing_external_id",
+            candidate=candidate,
+            confidence=confidence,
+        )
+    if row.year is None or abs(row.year - metadata.year) > 1:
+        return FirstImportDecision(
+            row=row,
+            bucket="needs_review",
+            reason="year_mismatch",
+            candidate=candidate,
+            confidence=confidence,
+        )
+    if _standard_title_key(row.title) != _standard_title_key(metadata.title) and confidence < 0.98:
+        return FirstImportDecision(
+            row=row,
+            bucket="needs_review",
+            reason="title_mismatch",
+            candidate=candidate,
+            confidence=confidence,
+        )
+    if row.runtime is not None and metadata.runtime is not None:
+        if abs(row.runtime - metadata.runtime) > 5:
+            return FirstImportDecision(
+                row=row,
+                bucket="needs_review",
+                reason="runtime_mismatch",
+                candidate=candidate,
+                confidence=confidence,
+            )
+    if _external_id_owner(db, tmdb_id=metadata.tmdb_id, imdb_id=metadata.imdb_id) is not None:
+        return FirstImportDecision(
+            row=row,
+            bucket="duplicate_conflict",
+            reason="external_id_exists",
+            candidate=candidate,
+            confidence=confidence,
+        )
+    return FirstImportDecision(
+        row=row,
+        bucket="auto_create",
+        reason="high_confidence",
+        candidate=candidate,
+        confidence=confidence,
+    )
+
+
+def analyze_first_import_snapshot(db: Session, *, snapshot_id: int) -> FirstImportAnalysis:
+    snapshot = db.get(SourceSnapshot, snapshot_id)
+    if snapshot is None:
+        raise SourceSyncError("Source snapshot was not found")
+
+    buckets: dict[str, list[FirstImportDecision]] = {
+        "auto_create": [],
+        "needs_review": [],
+        "duplicate_conflict": [],
+        "failed_lookup": [],
+    }
+    for row in snapshot.rows:
+        candidates: list[dict] = []
+        try:
+            candidates = lookup_movie_candidates(row.title, row.year, limit=3)
+        except (MovieLookupUnavailable, MovieLookupNotFound):
+            decision = FirstImportDecision(
+                row=row, bucket="failed_lookup", reason="lookup_unavailable"
+            )
+        except MovieLookupError:
+            decision = FirstImportDecision(row=row, bucket="failed_lookup", reason="lookup_failed")
+        else:
+            decision = classify_first_import_row(db, row=row, candidates=candidates)
+        buckets[decision.bucket].append(decision)
+
+    return FirstImportAnalysis(
+        snapshot_id=snapshot.id,
+        auto_create=tuple(buckets["auto_create"]),
+        needs_review=tuple(buckets["needs_review"]),
+        duplicate_conflict=tuple(buckets["duplicate_conflict"]),
+        failed_lookup=tuple(buckets["failed_lookup"]),
+    )
+
+
+def create_movie_from_source_row_metadata(
+    db: Session,
+    *,
+    row: SourceMovieRow,
+    metadata: MovieMetadata,
+    profile_id: int | None,
+    confidence: float,
+) -> Movie:
+    if _external_id_owner(db, tmdb_id=metadata.tmdb_id, imdb_id=metadata.imdb_id) is not None:
+        raise SourceSyncError("External ID is already assigned to a Vault entry")
+
+    movie = Movie(
+        vault_id=next_vault_id(db),
+        title=metadata.title or row.title,
+        year=metadata.year if metadata.year is not None else row.year,
+        runtime=metadata.runtime if metadata.runtime is not None else row.runtime,
+        plot=metadata.plot,
+        awards=metadata.awards,
+        certificate=metadata.certificate,
+        keywords=metadata.keywords or None,
+        imdb_id=metadata.imdb_id,
+        tmdb_id=metadata.tmdb_id,
+        imdb_rating=metadata.imdb_rating,
+        imdb_votes=metadata.imdb_votes,
+        metascore=metadata.metascore,
+        tomato_meter=metadata.tomato_meter,
+        tomato_audience=metadata.tomato_audience,
+        rt_score=metadata.rt_score,
+        poster_url=metadata.poster_url,
+        backdrop_url=metadata.backdrop_url,
+        where_to_watch=metadata.where_to_watch or None,
+        languages=metadata.languages or None,
+        countries=metadata.countries or None,
+        collection=metadata.collection,
+        last_tmdb_fetch_at=metadata.last_tmdb_fetch_at,
+        last_omdb_fetch_at=metadata.last_omdb_fetch_at,
+        tmdb_payload_sha=metadata.tmdb_payload_sha,
+        omdb_payload_sha=metadata.omdb_payload_sha,
+    )
+    movie.genres = _metadata_genres(db, metadata.genres)
+    db.add(movie)
+    db.flush()
+
+    director_names = tuple(metadata.directors) or parse_directors(row.director)
+    _set_director_names(db, movie, director_names)
+
+    providers = []
+    if metadata.tmdb_id is not None:
+        providers.append(
+            (
+                "tmdb",
+                str(metadata.tmdb_id),
+                metadata.tmdb_payload_sha,
+                f"https://www.themoviedb.org/movie/{metadata.tmdb_id}",
+            )
+        )
+    if metadata.imdb_id:
+        providers.append(
+            (
+                "omdb",
+                metadata.imdb_id,
+                metadata.omdb_payload_sha,
+                f"https://www.imdb.com/title/{metadata.imdb_id}/",
+            )
+        )
+    providers.append(("collection_source", str(row.id), row.snapshot.file_sha256, None))
+    for provider, provider_id, payload_sha, source_url in providers:
+        db.add(
+            MovieIngestProvenance(
+                movie_id=movie.id,
+                provider=provider,
+                provider_id=provider_id,
+                payload_sha=payload_sha,
+                source_url=source_url,
+                notes=f"Created during first import from source snapshot #{row.snapshot_id}",
+            )
+        )
+
+    if row.match is None:
+        row.match = SourceReconciliationMatch(source_row_id=row.id, match_type="auto_create")
+    row.match.movie_id = movie.id
+    row.match.match_type = "auto_create"
+    row.match.confidence = confidence
+    row.match.candidate_movie_ids = [movie.id]
+    row.match.resolved_at = datetime.now(timezone.utc)
+    _create_owned_copy(db, row, movie.id)
+    return movie
+
+
+def apply_first_import_auto_create(
+    db: Session,
+    *,
+    snapshot_id: int,
+    profile_id: int | None,
+) -> FirstImportApplyResult:
+    analysis = analyze_first_import_snapshot(db, snapshot_id=snapshot_id)
+    created_movie_ids: list[int] = []
+    try:
+        for decision in analysis.auto_create:
+            if decision.candidate is None:
+                continue
+            movie = create_movie_from_source_row_metadata(
+                db,
+                row=decision.row,
+                metadata=MovieMetadata.from_mapping(decision.candidate),
+                profile_id=profile_id,
+                confidence=decision.confidence,
+            )
+            created_movie_ids.append(movie.id)
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise
+
+    return FirstImportApplyResult(
+        snapshot_id=snapshot_id,
+        created_count=len(created_movie_ids),
+        review_count=len(analysis.needs_review),
+        duplicate_conflict_count=len(analysis.duplicate_conflict),
+        failed_lookup_count=len(analysis.failed_lookup),
+        created_movie_ids=tuple(created_movie_ids),
+    )
+
+
 def create_movie_from_source_row(db: Session, *, row_id: int, profile_id: int | None) -> Movie:
     row = db.get(SourceMovieRow, row_id)
     if row is None or row.match is None:
@@ -1300,10 +1638,17 @@ __all__ = [
     "ResearchLinkSet",
     "SourceReviewItem",
     "SourceSyncError",
+    "FirstImportAnalysis",
+    "FirstImportApplyResult",
+    "FirstImportDecision",
     "assign_source_row_match",
     "accept_all_source_differences",
+    "analyze_first_import_snapshot",
+    "apply_first_import_auto_create",
     "build_research_links",
+    "classify_first_import_row",
     "clean_research_title",
+    "create_movie_from_source_row_metadata",
     "create_draft_snapshot",
     "create_movie_from_source_row",
     "decide_source_field",

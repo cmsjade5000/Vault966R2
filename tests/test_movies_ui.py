@@ -281,9 +281,66 @@ def test_reviewer_cannot_open_admin_health_or_review_routes(
         "/ui/flags",
         "/ui/review",
         "/ui/source-sync",
+        "/ui/first-import",
     ):
         response = client.get(path, follow_redirects=False)
         assert response.status_code == 403
+
+
+def test_empty_library_shows_admin_first_import_cta(
+    client: TestClient,
+    db_session,
+) -> None:
+    for movie in db_session.query(Movie).all():
+        db_session.delete(movie)
+    db_session.commit()
+
+    page = client.get("/ui/movies")
+
+    assert page.status_code == 200
+    assert "Your library is empty" in page.text
+    assert 'href="/ui/first-import"' in page.text
+    assert "Nothing matched these filters." not in page.text
+    assert 'href="/ui/movies">Clear all</a>' not in page.text
+
+
+def test_empty_library_hides_first_import_cta_for_reviewer(
+    client: TestClient,
+    db_session,
+    login_profile,
+) -> None:
+    login_profile(2)
+    for movie in db_session.query(Movie).all():
+        db_session.delete(movie)
+    db_session.commit()
+
+    page = client.get("/ui/movies")
+
+    assert page.status_code == 200
+    assert "Your library is empty" in page.text
+    assert 'href="/ui/first-import"' not in page.text
+
+
+def test_filtered_empty_library_state_still_offers_clear_all(client: TestClient) -> None:
+    page = client.get("/ui/movies", params={"q": "not-in-the-vault"})
+
+    assert page.status_code == 200
+    assert "Nothing matched these filters." in page.text
+    assert 'href="/ui/movies">Clear all</a>' in page.text
+    assert 'href="/ui/first-import"' not in page.text
+
+
+def test_first_import_page_reuses_source_sync_upload_flow(client: TestClient) -> None:
+    page = client.get("/ui/first-import")
+
+    assert page.status_code == 200
+    assert "<h1>First import</h1>" in page.text
+    assert (
+        'method="post" action="/ui/first-import/upload" enctype="multipart/form-data"' in page.text
+    )
+    assert 'name="source_file"' in page.text
+    assert 'accept=".csv,text/csv"' in page.text
+    assert "Preview import" in page.text
 
 
 def test_movies_grid_paginates_in_complete_36_card_pages(client: TestClient, db_session) -> None:
