@@ -836,6 +836,39 @@
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
+.first-import-report-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.source-sync-list {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.source-sync-list a {
+  align-items: center;
+  background: rgba(2, 6, 23, 0.45);
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  border-radius: 6px;
+  color: var(--flic-text);
+  display: flex;
+  gap: 0.75rem;
+  justify-content: space-between;
+  padding: 0.85rem;
+  text-decoration: none;
+}
+
+.source-sync-list a:hover,
+.source-sync-list a:focus-visible {
+  border-color: rgba(244, 168, 75, 0.5);
+}
+
+.source-sync-list span {
+  color: var(--flic-muted);
+}
+
 .source-health {
   border-bottom: 1px solid rgba(148, 163, 184, 0.16);
   border-top: 1px solid rgba(148, 163, 184, 0.16);

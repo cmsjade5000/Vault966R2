@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}Vault 966 · First Import Report{% endblock %}
+{% block head %}
+  <link rel="stylesheet" href="{{ static_asset('css/movies.css') }}" />
+{% endblock %}
+{% block body_class %}first-import-page{% endblock %}
+{% block content %}
+  <div class="page-shell first-import-shell">
+    <header class="library-heading first-import-heading">
+      <div>
+        <h1>First import report</h1>
+        <p>{{ snapshot.filename }}</p>
+      </div>
+      <a class="button-secondary" href="/ui/movies">Open library</a>
+    </header>
+
+    <section class="source-sync-summary">
+      <h2>{{ report.created_count }} high-confidence movies created</h2>
+      <p>{{ report.remaining_count }} rows are staged for review in the Review Workbench.</p>
+      <div class="source-sync-metrics source-sync-metrics--health" aria-label="Import outcome counts">
+        <div>
+          <strong>{{ report.created_count }}</strong>
+          <span>Created</span>
+        </div>
+        <div>
+          <strong>{{ report.review_count }}</strong>
+          <span>Needs review</span>
+        </div>
+        <div>
+          <strong>{{ report.duplicate_conflict_count }}</strong>
+          <span>Duplicates</span>
+        </div>
+        <div>
+          <strong>{{ report.source_only_count }}</strong>
+          <span>Manual create</span>
+        </div>
+      </div>
+      <div class="first-import-report-actions">
+        {% if report.review_count %}
+          <a class="button-primary" href="/ui/movies/health?view=ambiguous#review-workbench">Review ambiguous rows</a>
+        {% elif report.duplicate_conflict_count %}
+          <a class="button-primary" href="/ui/movies/health?view=duplicates#review-workbench">Review duplicate rows</a>
+        {% elif report.source_only_count %}
+          <a class="button-primary" href="/ui/movies/health?view=new#review-workbench">Review manual creates</a>
+        {% else %}
+          <a class="button-primary" href="/ui/movies">View imported library</a>
+        {% endif %}
+        <a class="button-secondary" href="/ui/movies/health#review-workbench">Open Review Workbench</a>
+      </div>
+    </section>
+
+    <section class="source-sync-history">
+      <h2>Review queues</h2>
+      <div class="source-sync-list">
+        <a href="/ui/movies/health?view=ambiguous#review-workbench">
+          <strong>{{ report.review_count }}</strong>
+          <span>Low-confidence or ambiguous rows</span>
+        </a>
+        <a href="/ui/movies/health?view=duplicates#review-workbench">
+          <strong>{{ report.duplicate_conflict_count }}</strong>
+          <span>Duplicate or conflicting rows</span>
+        </a>
+        <a href="/ui/movies/health?view=new#review-workbench">
+          <strong>{{ report.source_only_count }}</strong>
+          <span>Rows that need manual creation</span>
+        </a>
+      </div>
+    </section>
+  </div>
+{% endblock %}
