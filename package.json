@@ -1,0 +1,14 @@
+{
+  "name": "vault966",
+  "version": "0.1.0",
+  "private": true,
+  "devDependencies": {
+    "prettier": "^3.1.0"
+  },
+  "scripts": {
+    "fmt": "prettier --write \"static/js/**/*.js\"",
+    "lint": "prettier --check \"static/js/**/*.js\" \"tests/js/**/*.js\"",
+    "test": "npm run test:js",
+    "test:js": "node --test tests/js/*.test.js"
+  }
+}

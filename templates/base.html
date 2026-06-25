@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>{% block title %}Vault 966{% endblock %}</title>
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', path='favicon.ico') }}" />
+    <link rel="apple-touch-icon" href="{{ url_for('static', path='img/apple-touch-icon.png') }}" />
+    <link rel="apple-touch-icon-precomposed" href="{{ url_for('static', path='img/apple-touch-icon-precomposed.png') }}" />
+    <link rel="manifest" href="{{ url_for('static', path='site.webmanifest') }}" />
+    <meta name="theme-color" content="#0b1626" />
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#0b1626" />
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0b1626" />
+    <meta name="apple-mobile-web-app-title" content="Vault 966" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="format-detection" content="telephone=no" />
+    <link
+      rel="apple-touch-startup-image"
+      href="{{ url_for('static', path='img/splash-2048x2732.png') }}"
+      media="(device-width: 1024px) and (device-height: 1366px) and (-webkit-device-pixel-ratio: 2)"
+    />
+    <link
+      rel="apple-touch-startup-image"
+      href="{{ url_for('static', path='img/splash-2732x2048.png') }}"
+      media="(device-width: 1366px) and (device-height: 1024px) and (-webkit-device-pixel-ratio: 2)"
+    />
+    <link
+      rel="apple-touch-startup-image"
+      href="{{ url_for('static', path='img/splash-1668x2388.png') }}"
+      media="(device-width: 834px) and (device-height: 1194px) and (-webkit-device-pixel-ratio: 2)"
+    />
+    <link
+      rel="apple-touch-startup-image"
+      href="{{ url_for('static', path='img/splash-2388x1668.png') }}"
+      media="(device-width: 1194px) and (device-height: 834px) and (-webkit-device-pixel-ratio: 2)"
+    />
+    <link
+      rel="apple-touch-startup-image"
+      href="{{ url_for('static', path='img/splash-1668x2224.png') }}"
+      media="(device-width: 834px) and (device-height: 1112px) and (-webkit-device-pixel-ratio: 2)"
+    />
+    <link
+      rel="apple-touch-startup-image"
+      href="{{ url_for('static', path='img/splash-2224x1668.png') }}"
+      media="(device-width: 1112px) and (device-height: 834px) and (-webkit-device-pixel-ratio: 2)"
+    />
+    <link
+      rel="apple-touch-startup-image"
+      href="{{ url_for('static', path='img/splash-1536x2048.png') }}"
+      media="(device-width: 768px) and (device-height: 1024px) and (-webkit-device-pixel-ratio: 2)"
+    />
+    <link
+      rel="apple-touch-startup-image"
+      href="{{ url_for('static', path='img/splash-2048x1536.png') }}"
+      media="(device-width: 1024px) and (device-height: 768px) and (-webkit-device-pixel-ratio: 2)"
+    />
+    <script src="{{ static_asset('js/install_prompt.js') }}" defer></script>
+    <link rel="stylesheet" href="{{ static_asset('css/base.css') }}" />
+    <link rel="stylesheet" href="{{ static_asset('css/movie_components.css') }}" />
+    {% block head %}{% endblock %}
+  </head>
+  <body
+    class="{% block body_class %}{% endblock %}"
+    {% if request.state.session_profile_id %}
+    data-vault-auto-lock
+    data-vault-auto-lock-ms="1200000"
+    {% endif %}
+  >
+    <a href="#main" class="skip-link">Skip to main content</a>
+    {% set current_path = request.url.path %}
+    <div class="app-shell">
+      <header class="site-nav">
+        <div class="nav-inner">
+          <a
+            class="brand"
+            href="/ui/movies"
+            data-nav-toggle
+            aria-expanded="false"
+            aria-controls="primary-nav"
+          >
+            <span class="brand-mark">Vault 966</span>
+          </a>
+          <nav class="primary-nav" id="primary-nav" data-nav-menu>
+            <div class="nav-group" role="menubar">
+              <a
+                class="nav-link{% if current_path == '/ui/movies' %} is-active{% endif %}"
+                href="/ui/movies"
+                role="menuitem"
+                {% if current_path == '/ui/movies' %}aria-current="page"{% endif %}
+                >Library</a
+              >
+              <a
+                class="nav-link{% if current_path == '/ui/watchlist' %} is-active{% endif %}"
+                href="/ui/watchlist"
+                role="menuitem"
+                {% if current_path == '/ui/watchlist' %}aria-current="page"{% endif %}
+                >Watchlist</a
+              >
+              {% if request.state.session_profile_role == 'admin' %}
+              <a
+                class="nav-link{% if current_path == '/ui/movies/health' or current_path.startswith('/ui/source-sync/') %} is-active{% endif %}"
+                href="/ui/movies/health"
+                role="menuitem"
+                data-vault-busy-message="Checking Vault Health…"
+                {% if current_path == '/ui/movies/health' or current_path.startswith('/ui/source-sync/') %}aria-current="page"{% endif %}
+                >Vault Health</a
+              >
+              {% endif %}
+              {% if request.state.session_profile_id %}
+              <form
+                class="nav-logout"
+                method="post"
+                action="/logout"
+                data-vault-busy-message="Locking the Vault…"
+              >
+                <button class="nav-link nav-link--logout" type="submit">Log out</button>
+              </form>
+              {% endif %}
+            </div>
+          </nav>
+        </div>
+      </header>
+      {% if current_path != '/login' %}
+      <nav class="bottom-nav" aria-label="Primary navigation">
+        <a
+          class="bottom-nav__link{% if current_path == '/ui/movies' %} is-active{% endif %}"
+          href="/ui/movies"
+          {% if current_path == '/ui/movies' %}aria-current="page"{% endif %}
+        >
+          <span class="bottom-nav__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
+              <rect
+                x="4"
+                y="5"
+                width="16"
+                height="14"
+                rx="2"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.5"
+              />
+              <path
+                d="M8 5v14"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.5"
+              />
+            </svg>
+          </span>
+          <span class="bottom-nav__label">Library</span>
+        </a>
+        <a
+          class="bottom-nav__link{% if current_path == '/ui/watchlist' %} is-active{% endif %}"
+          href="/ui/watchlist"
+          {% if current_path == '/ui/watchlist' %}aria-current="page"{% endif %}
+        >
+          <span class="bottom-nav__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
+              <path
+                d="M6 4h12v16l-6-4-6 4z"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.5"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </span>
+          <span class="bottom-nav__label">Watchlist</span>
+        </a>
+        {% if request.state.session_profile_role == 'admin' %}
+        <a
+          class="bottom-nav__link{% if current_path == '/ui/movies/health' or current_path.startswith('/ui/source-sync/') %} is-active{% endif %}"
+          href="/ui/movies/health"
+          data-vault-busy-message="Checking Vault Health…"
+          {% if current_path == '/ui/movies/health' or current_path.startswith('/ui/source-sync/') %}aria-current="page"{% endif %}
+        >
+          <span class="bottom-nav__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
+              <path
+                d="M5 12l4 4L19 6"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </span>
+          <span class="bottom-nav__label">Health</span>
+        </a>
+        {% endif %}
+      </nav>
+      {% endif %}
+      <main id="main" class="app-main">
+        {% block content %}{% endblock %}
+      </main>
+    </div>
+    <div
+      class="vault-busy"
+      data-vault-busy
+      role="status"
+      aria-live="polite"
+      aria-atomic="true"
+      hidden
+    >
+      <span class="vault-busy__spinner" aria-hidden="true"></span>
+      <span data-vault-busy-message>Vault is thinking…</span>
+    </div>
+    <div id="toast-container" aria-live="polite" aria-atomic="true"></div>
+    <script src="{{ static_asset('js/base.js') }}" defer></script>
+    <script src="{{ static_asset('js/dialog.js') }}" defer></script>
+    {% if request.state.session_profile_id %}
+    <script src="{{ static_asset('js/auto_lock.js') }}" defer></script>
+    {% endif %}
+    <script src="{{ static_asset('js/back_link.js') }}" defer></script>
+    {% block scripts %}{% endblock %}
+  </body>
+</html>

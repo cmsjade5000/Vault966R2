@@ -1,0 +1,246 @@
+{% extends "base.html" %}
+{% from "partials/movies/card.html" import movie_card %}
+{% block title %}Vault 966 · Library{% endblock %}
+{% block head %}
+  <link rel="stylesheet" href="{{ static_asset('css/movies.css') }}" />
+{% endblock %}
+{% block body_class %}library-page{% endblock %}
+{% block content %}
+  <div class="library-shell page-shell" id="results" data-results-shell>
+    <header class="library-heading">
+      <div>
+        <h1>Library</h1>
+        <p><strong>{{ total }}</strong> {{ "movie" if total == 1 else "movies" }}</p>
+      </div>
+    </header>
+
+    <form method="get" action="/ui/movies" id="filters-form" data-base-action="/ui/movies">
+      <section class="library-search-panel" aria-label="Search your Vault">
+        {% if q %}
+        <div class="library-search-panel__heading library-search-panel__heading--actions">
+          <button type="button" class="button-ghost" data-clear-search>Clear search</button>
+        </div>
+        {% endif %}
+        <label class="sr-only" for="search-q">Search your Vault</label>
+        <div class="library-search">
+          <input
+            id="search-q"
+            name="q"
+            type="search"
+            inputmode="search"
+            enterkeyhint="search"
+            autocomplete="off"
+            maxlength="120"
+            value="{{ q or '' }}"
+            placeholder="Try “Ben Stiller” “2010” “Titanic” or a Vault ID"
+          />
+          <button type="submit" class="library-search__submit" id="search-button">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="11" cy="11" r="6.5"></circle>
+              <path d="m16 16 4 4"></path>
+            </svg>
+            Search
+          </button>
+        </div>
+      </section>
+
+      <div class="library-toolbar" aria-label="Library controls">
+        <label class="library-sort" for="order-by">
+          <span class="sr-only">Sort movies</span>
+          <select id="order-by" name="order_by" aria-label="Sort movies">
+            <option value="title_asc" {% if order_by == 'title_asc' %}selected{% endif %}>Title A–Z</option>
+            <option value="title_desc" {% if order_by == 'title_desc' %}selected{% endif %}>Title Z–A</option>
+            <option value="id_asc" {% if order_by == 'id_asc' %}selected{% endif %}>Vault ID ↑</option>
+            <option value="id_desc" {% if order_by == 'id_desc' %}selected{% endif %}>Vault ID ↓</option>
+            <option value="year_desc" {% if order_by == 'year_desc' %}selected{% endif %}>Newest</option>
+            <option value="year_asc" {% if order_by == 'year_asc' %}selected{% endif %}>Oldest</option>
+            <option value="runtime_asc" {% if order_by == 'runtime_asc' %}selected{% endif %}>Shortest</option>
+            <option value="runtime_desc" {% if order_by == 'runtime_desc' %}selected{% endif %}>Longest</option>
+            <option value="imdb_desc" {% if order_by == 'imdb_desc' %}selected{% endif %}>IMDb rating</option>
+            <option value="rt_desc" {% if order_by == 'rt_desc' %}selected{% endif %}>RT score</option>
+          </select>
+        </label>
+
+        <div class="view-switcher" role="group" aria-label="Library view">
+          <a
+            href="{{ request.url.include_query_params(view='grid', page=1) }}"
+            class="view-switcher__button{% if view == 'grid' %} is-active{% endif %}"
+            aria-label="Grid view"
+            title="Grid view"
+            data-view-change="grid"
+            {% if view == 'grid' %}aria-current="true"{% endif %}
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <rect x="3" y="3" width="7" height="7" rx="1"></rect>
+              <rect x="14" y="3" width="7" height="7" rx="1"></rect>
+              <rect x="3" y="14" width="7" height="7" rx="1"></rect>
+              <rect x="14" y="14" width="7" height="7" rx="1"></rect>
+            </svg>
+          </a>
+          <a
+            href="{{ request.url.include_query_params(view='list', page=1) }}"
+            class="view-switcher__button{% if view == 'list' %} is-active{% endif %}"
+            aria-label="List view"
+            title="List view"
+            data-view-change="list"
+            {% if view == 'list' %}aria-current="true"{% endif %}
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <line x1="8" y1="6" x2="21" y2="6"></line>
+              <line x1="8" y1="12" x2="21" y2="12"></line>
+              <line x1="8" y1="18" x2="21" y2="18"></line>
+              <line x1="3" y1="6" x2="3.01" y2="6"></line>
+              <line x1="3" y1="12" x2="3.01" y2="12"></line>
+              <line x1="3" y1="18" x2="3.01" y2="18"></line>
+            </svg>
+          </a>
+        </div>
+
+        <button type="button" class="library-filter-button" data-filters-open aria-label="Open filters" title="Filters">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M4 5h16l-6.5 7.4v5.1l-3 1.5v-6.6L4 5z"></path>
+          </svg>
+          {% if genres or year_min or year_max or runtime_max or preset %}<span class="library-control-badge" aria-label="Filters active"></span>{% endif %}
+        </button>
+        <button type="button" class="library-icon-button" id="pick-button" aria-label="Random trusted movie" title="Random pick">
+          <svg viewBox="0 0 24 24" aria-hidden="true" data-action-label>
+            <rect x="3" y="3" width="18" height="18" rx="3"></rect>
+            <circle cx="8" cy="8" r="1"></circle>
+            <circle cx="16" cy="8" r="1"></circle>
+            <circle cx="12" cy="12" r="1"></circle>
+            <circle cx="8" cy="16" r="1"></circle>
+            <circle cx="16" cy="16" r="1"></circle>
+          </svg>
+        </button>
+      </div>
+
+      {% set active_filters = [] %}
+      {% if q %}{% set active_filters = active_filters + [{'key':'q','label':'Search: ' ~ q, 'value': q}] %}{% endif %}
+      {% if preset %}{% set active_filters = active_filters + [{'key':'preset','label': preset | replace('-', ' ') | title, 'value': preset}] %}{% endif %}
+      {% set genre_list = genres.split(',') if genres else [] %}
+      {% for label in genre_list %}
+        {% set clean = label | trim %}
+        {% if clean %}{% set active_filters = active_filters + [{'key':'genre','label':clean,'value':clean}] %}{% endif %}
+      {% endfor %}
+      {% if year_min or year_max %}
+        {% set active_filters = active_filters + [{'key':'year','label':(year_min or 'Any') ~ '–' ~ (year_max or 'Now'),'value':''}] %}
+      {% endif %}
+      {% if runtime_max %}
+        {% set active_filters = active_filters + [{'key':'runtime','label':'≤ ' ~ runtime_max ~ ' min','value':runtime_max}] %}
+      {% endif %}
+      {% if active_filters %}
+      <div class="active-filters" data-active-filters>
+        <div class="active-filters__chips">
+          {% for item in active_filters %}
+          <button type="button" class="chip chip-active" data-clear-filter="{{ item.key }}" data-filter-value="{{ item.value }}">
+            {{ item.label }} <span aria-hidden="true">×</span>
+          </button>
+          {% endfor %}
+        </div>
+        <button type="button" class="button-ghost" id="clear-active-filters">Clear all</button>
+      </div>
+      {% endif %}
+
+      <dialog
+        class="filters-dialog"
+        data-filters-dialog
+        aria-hidden="true"
+        aria-labelledby="filters-dialog-title"
+        aria-describedby="filters-dialog-description"
+      >
+        <div class="filters-dialog__sheet">
+          <header class="filters-dialog__header">
+            <div>
+              <h2 id="filters-dialog-title">Filters</h2>
+              <p id="filters-dialog-description">Narrow the collection.</p>
+            </div>
+            <button type="button" class="filters-close" data-filters-close aria-label="Close filters">×</button>
+          </header>
+          <div class="filters-dialog__body">
+            {% include "partials/movies/filter_form.html" %}
+            <footer class="filters-dialog__footer" data-filters-footer>
+              <div class="filters-pending">
+                <div class="filters-pending__heading">
+                  <span>Pending filters</span>
+                  <button type="button" class="filters-reset" data-filters-reset>Reset</button>
+                </div>
+                <div
+                  class="filters-pending__chips"
+                  data-filters-summary
+                  aria-live="polite"
+                  aria-label="Pending filter selections"
+                ></div>
+                <p class="filters-pending__empty" data-filters-summary-empty>No filters selected.</p>
+              </div>
+              <button type="submit" class="filters-apply" data-filters-apply>Show results</button>
+            </footer>
+          </div>
+        </div>
+      </dialog>
+
+      <input type="hidden" name="view" value="{{ view }}" />
+      <input type="hidden" name="preset" id="preset-input" value="{{ preset or '' }}" />
+      <input type="hidden" name="genres" id="genres-input" value="{{ genres or '' }}" />
+      <input type="hidden" name="year_min" id="year-min-input" value="{{ year_min or '' }}" />
+      <input type="hidden" name="year_max" id="year-max-input" value="{{ year_max or '' }}" />
+      <input type="hidden" name="runtime_max" id="runtime-max-input" value="{{ runtime_max or '' }}" />
+      <input type="hidden" name="_filters" value="1" />
+      <input type="hidden" name="page" value="1" />
+    </form>
+
+    {% if movies %}
+      {% if view == 'grid' %}
+      <div class="library-grid" data-results-grid aria-label="Movie results">
+        {% for movie in movies %}
+        {% set genre_labels = movie.genre_display if movie.genre_display is defined else [] %}
+        {{ movie_card(movie, movie.liked, movie.watchlist, genre_labels, event_context="library_grid", show_review=true) }}
+        {% endfor %}
+      </div>
+      {% else %}
+        {% include "partials/movies/results_table.html" %}
+      {% endif %}
+
+      {% if total_pages > 1 %}
+      <nav class="pager" aria-label="Pagination" data-results-pager>
+        <a
+          class="pager-link"
+          href="{{ request.url.include_query_params(page=page - 1 if page > 1 else 1) }}#results"
+          aria-disabled="{{ 'true' if page <= 1 else 'false' }}"
+          data-disabled="{{ 'true' if page <= 1 else 'false' }}"
+          data-goto-page="{{ page - 1 if page > 1 else 1 }}"
+          {% if page <= 1 %}tabindex="-1"{% endif %}
+        >Previous</a>
+        <span>Page {{ page }} of {{ total_pages }}</span>
+        <a
+          class="pager-link"
+          href="{{ request.url.include_query_params(page=page + 1 if page < total_pages else total_pages) }}#results"
+          aria-disabled="{{ 'true' if page >= total_pages else 'false' }}"
+          data-disabled="{{ 'true' if page >= total_pages else 'false' }}"
+          data-goto-page="{{ page + 1 if page < total_pages else total_pages }}"
+          {% if page >= total_pages %}tabindex="-1"{% endif %}
+        >Next</a>
+      </nav>
+      {% endif %}
+    {% else %}
+      <div class="empty" role="status" data-results-empty>
+        <p>Nothing matched these filters.</p>
+        <a class="button-primary" href="/ui/movies">Clear all</a>
+      </div>
+    {% endif %}
+  </div>
+  {% include "partials/movies/edit_dialog.html" %}
+{% endblock %}
+
+{% block scripts %}
+  {{ super() }}
+  <script type="application/json" id="movies-page-data">{{ {
+    'total': total,
+    'totalPages': total_pages,
+    'page': page,
+    'pageContext': 'library',
+    'view': view
+  } | tojson }}</script>
+  <script src="{{ static_asset('js/card_review_flag.js') }}" defer></script>
+  <script src="{{ static_asset('js/movie_preferences.js') }}" defer></script>
+  <script src="{{ static_asset('js/library_page.js') }}" defer></script>
+{% endblock %}

@@ -1,0 +1,36 @@
+<section class="overview" data-hero-stats aria-label="Vault highlights">
+  <article class="overview-card">
+    <span class="overview-icon" aria-hidden="true">🎞️</span>
+    <div class="overview-copy">
+      <span class="overview-label">Movies in Vault</span>
+      <span class="overview-value" data-total-entries>{{ stats.total }}</span>
+    </div>
+  </article>
+  <article class="overview-card">
+    <span class="overview-icon" aria-hidden="true">🗓️</span>
+    <div class="overview-copy">
+      <span class="overview-label">Average release year</span>
+      <span class="overview-value">{{ stats.average_year or "—" }}</span>
+    </div>
+  </article>
+  <article class="overview-card">
+    <span class="overview-icon" aria-hidden="true">⏱️</span>
+    <div class="overview-copy">
+      <span class="overview-label">Average runtime</span>
+      <span class="overview-value">
+        {% if stats.average_runtime %}
+        {{ stats.average_runtime }} <span class="overview-unit">min</span>
+        {% else %}
+        —
+        {% endif %}
+      </span>
+    </div>
+  </article>
+  <article class="overview-card">
+    <span class="overview-icon" aria-hidden="true">⭐️</span>
+    <div class="overview-copy">
+      <span class="overview-label">Most popular genre</span>
+      <span class="overview-value">{{ stats.top_genre }}</span>
+    </div>
+  </article>
+</section>

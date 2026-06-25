@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+{% block title %}Vault 966 · Login{% endblock %}
+{% block head %}
+<link rel="stylesheet" href="{{ static_asset('css/login.css') }}" />
+<script src="{{ static_asset('js/login.js') }}" defer></script>
+<script src="{{ static_asset('js/login_archive.js') }}" defer></script>
+{% endblock %}
+{% block body_class %}auth-page{% if unlocked %} auth-page--unlocked{% endif %}{% endblock %}
+{% block content %}
+  <div class="login-archive{% if unlocked %} is-unlocked{% endif %}" aria-hidden="true">
+    {% for poster_url in archive_tiles %}
+    <span class="login-archive__poster">
+      {% if poster_url %}
+      <img
+        src="{{ poster_url }}"
+        alt=""
+        loading="lazy"
+        decoding="async"
+        draggable="false"
+        data-archive-img
+      />
+      {% endif %}
+    </span>
+    {% endfor %}
+  </div>
+  <section
+    class="login-shell{% if unlocked %} is-unlocked{% endif %}"
+    aria-label="Vault 966 login"
+    data-unlocked="{{ '1' if unlocked else '0' }}"
+  >
+    <div class="login-ambient" aria-hidden="true">
+      <span class="login-ambient__beam login-ambient__beam--one"></span>
+      <span class="login-ambient__beam login-ambient__beam--two"></span>
+    </div>
+    <div class="login-card">
+      <header class="login-card__header">
+        <span class="login-card__label">Archive Terminal</span>
+        <h1>Vault 966</h1>
+      </header>
+      <div class="login-ticker" aria-hidden="true">
+        <div class="login-ticker__belt">
+          {% for duplicate in range(2) %}
+          <div class="login-ticker__group"{% if duplicate %} aria-hidden="true"{% endif %}>
+            {% for item in range(6) %}
+            <span>{{ "Vault Unlocked" if unlocked else "Vault Secured" }}</span>
+            {% endfor %}
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      <p class="login-card__error" role="alert" {% if not error %}hidden{% endif %}>{{ error or "" }}</p>
+      <form
+        class="login-form"
+        method="post"
+        aria-label="Unlock Vault 966"
+      >
+        <div class="login-fields">
+          <label class="login-field">
+            <span>Access key</span>
+            <input
+              type="text"
+              name="access_key"
+              autocomplete="username"
+              maxlength="128"
+              required
+            />
+          </label>
+          <label class="login-field">
+            <span>Passcode</span>
+            <input
+              type="password"
+              name="passcode"
+              autocomplete="current-password"
+              maxlength="128"
+              required
+            />
+          </label>
+        </div>
+        <div class="login-card__actions">
+          <button class="login-button" type="submit">
+            <span class="login-button__icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" focusable="false">
+                <path d="M7.5 10V7.5a4.5 4.5 0 0 1 8.8-1.35" />
+                <rect x="5" y="10" width="14" height="10" rx="3" />
+                <path d="M12 14v2" />
+              </svg>
+            </span>
+            <span class="login-button__value">Unlock the vault</span>
+            <span class="login-button__arrow" aria-hidden="true">→</span>
+          </button>
+        </div>
+      </form>
+      <div class="login-profiles" aria-label="Choose profile">
+        {% for profile in profile_options %}
+        <form
+          class="login-profile-form"
+          method="post"
+          action="/login"
+          data-vault-busy-message="Unlocking the Vault…"
+        >
+          <input type="hidden" name="profile_id" value="{{ profile.id }}" />
+          <button class="login-profile" type="submit">
+            <span class="login-profile__avatar" aria-hidden="true">
+              {% if loop.index0 == 0 %}
+              <img src="{{ url_for('static', path='img/profile-user-a.png') }}" alt="" decoding="async" draggable="false" />
+              {% else %}
+              <img src="{{ url_for('static', path='img/profile-user-b.png') }}" alt="" decoding="async" draggable="false" />
+              {% endif %}
+            </span>
+            <span class="login-profile__name">{{ profile.label }}</span>
+          </button>
+        </form>
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+{% endblock %}
+
+{% block scripts %}
+  {{ super() }}
+  <script type="application/json" id="login-archive-data">{{ {
+    'posters': archive_poster_urls
+  } | tojson }}</script>
+{% endblock %}

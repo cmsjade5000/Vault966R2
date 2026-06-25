@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% block title %}Vault 966 · Missing Details{% endblock %}
+{% block head %}
+<link rel="stylesheet" href="{{ static_asset('css/movies.css') }}" />
+{% endblock %}
+{% block content %}
+  <section class="page-hero">
+    <div class="hero-header">
+      <div class="hero-title">
+        <h1>Missing Details</h1>
+        <span class="chip chip-flic">Collection health</span>
+      </div>
+      <p class="tagline">Review titles that need runtimes, synopses, or artwork.</p>
+    </div>
+    <div class="hero-health-links">
+      <a class="hero-health-link" href="/ui/movies/health">← Back to Vault Health</a>
+    </div>
+  </section>
+
+  <main class="page-shell">
+    <section class="section-card" id="runtime">
+      <h2 class="section-card__title">Missing runtime ({{ missing_runtime|length }})</h2>
+      {% if not missing_runtime %}
+        <p class="section-card__subtitle">All set on runtimes.</p>
+      {% else %}
+        <div class="table-wrapper">
+          <table class="data-table data-table--compact">
+            <thead>
+              <tr>
+                <th scope="col">Movie</th>
+                <th scope="col">Year</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for movie in missing_runtime %}
+              <tr>
+                <td data-label="Movie"><a href="/ui/movies/{{ movie.id }}">#{{ movie.id }} · {{ movie.title }}</a></td>
+                <td data-label="Year">{{ movie.year if movie.year else '—' }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% endif %}
+    </section>
+
+    <section class="section-card" id="synopsis">
+      <h2 class="section-card__title">Missing synopsis ({{ missing_plot|length }})</h2>
+      {% if not missing_plot %}
+        <p class="section-card__subtitle">Every title has a synopsis.</p>
+      {% else %}
+        <div class="table-wrapper">
+          <table class="data-table data-table--compact">
+            <thead>
+              <tr>
+                <th scope="col">Movie</th>
+                <th scope="col">Year</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for movie in missing_plot %}
+              <tr>
+                <td data-label="Movie"><a href="/ui/movies/{{ movie.id }}">#{{ movie.id }} · {{ movie.title }}</a></td>
+                <td data-label="Year">{{ movie.year if movie.year else '—' }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% endif %}
+    </section>
+
+    <section class="section-card" id="artwork">
+      <h2 class="section-card__title">Missing artwork ({{ missing_poster|length }})</h2>
+      {% if not missing_poster %}
+        <p class="section-card__subtitle">All titles have posters.</p>
+      {% else %}
+        <div class="table-wrapper">
+          <table class="data-table data-table--compact">
+            <thead>
+              <tr>
+                <th scope="col">Movie</th>
+                <th scope="col">Year</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for movie in missing_poster %}
+              <tr>
+                <td data-label="Movie"><a href="/ui/movies/{{ movie.id }}">#{{ movie.id }} · {{ movie.title }}</a></td>
+                <td data-label="Year">{{ movie.year if movie.year else '—' }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% endif %}
+    </section>
+  </main>
+{% endblock %}

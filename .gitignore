@@ -1,0 +1,42 @@
+__pycache__/
+*.pyc
+*.bak
+.env
+.DS_Store
+design-qa.md
+second-user-permissions-plan.md
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+.uv-python/
+vault.db
+vault.db-journal
+vault.db.*.bak
+dist/
+node_modules/
+# Finder/editor duplicate artifacts
+* 2.py
+* 2.js
+* 2.css
+# data/report artifacts
+data/*.csv
+data/*.log
+data/*.pid
+data/*_status.json
+data/import/legacy/*.csv
+data/import/legacy/*.json
+reports/*.csv
+reports/*.png
+reports/*.jpg
+reports/*.jpeg
+reports/**/*.csv
+reports/**/*.png
+reports/**/*.jpg
+reports/**/*.jpeg
+reports/**/*.md
+!reports/README.md
+legacy/data/
+legacy/reports/
+llm-council/
+.codex-log/
