@@ -10,6 +10,8 @@ Dated measurements, screenshots, audits, and generated CSVs belong in `reports/`
 - `feature_matrix.md`: implemented UI capabilities and known gaps
 - `codex-for-oss.md`: Codex for Open Source positioning, application narrative,
   and public-readiness checklist
+- `codex-skill-examples.md`: contributor examples for choosing and verifying
+  repo-scoped Codex skills
 - `legacy-vault-review.md`: migration status and ideas retained from the original Vault
 - `nextjs_frontend_plan.md`: historical optional frontend migration plan
 - `public-launch.md`: checklist for publishing the repository without exposing
