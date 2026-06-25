@@ -23,6 +23,9 @@ Project skills live in `skills/` and are exposed to Codex through
 - `test-suite-runner`: full test execution summaries.
 - `vault-security-audit`: security scan summaries.
 
+For contributor-facing examples and expected outputs, see
+[Codex Skill Examples](codex-skill-examples.md).
+
 ## Verification Commands
 
 Use these Make targets instead of assembling ad hoc command sequences:
