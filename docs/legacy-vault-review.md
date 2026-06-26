@@ -1,11 +1,10 @@
 # Legacy Vault Review
 
-Reviewed repository: `cmsjade5000/Vault-966`
-
 Canonical repository: `cmsjade5000/Vault966R2`
 
-The old repository should remain separate and receive an archive notice only after the
-useful behavior below is either present in R2 or recorded for deliberate follow-up.
+A previous private implementation should remain separate and receive an archive
+notice only after the useful behavior below is either present in R2 or recorded
+for deliberate follow-up.
 
 ## Already Superseded In R2
 
@@ -38,19 +37,10 @@ useful behavior below is either present in R2 or recorded for deliberate follow-
 
 ## Integrity Baseline
 
-The first database audit reported:
-
-- 969 movies
-- 0 structural issues
-- 0 changes from the staged source
-- 11 intentional source exclusions
-- 90 content-review items
-
-Browser spot checks found source-level identity problems that a source-drift check alone
-cannot detect. Examples include `Smile` carrying a 1975 year with the IMDb identity for the
-2022 film, and `Resident Evil` combining the 2002 IMDb identity with the TMDb identity for
-`Resident Evil: Damnation` (2012). These should be corrected through a review queue, not an
-automatic overwrite.
+The first database audit confirmed the import path worked and identified a small
+set of source-level identity problems that a source-drift check alone cannot
+detect. Those should be corrected through a review queue, not an automatic
+overwrite.
 
 ## Ideas To Keep, Not Code To Copy
 
