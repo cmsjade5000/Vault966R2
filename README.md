@@ -27,6 +27,8 @@ For the Codex for Open Source application narrative, see
 [docs/codex-for-oss.md](docs/codex-for-oss.md).
 For contributor-friendly next steps, see [ROADMAP.md](ROADMAP.md). For safe
 public examples, see [docs/demo-data.md](docs/demo-data.md).
+For the supported lifecycle of archived import tooling, see
+[docs/legacy-etl.md](docs/legacy-etl.md).
 Before changing repository visibility, follow
 [docs/public-launch.md](docs/public-launch.md).
 
@@ -127,7 +129,7 @@ make db.up            # start pgvector-enabled postgres in docker
 # once the container reports healthy, run migrations
 make db.migrate
 
-# optional: seed a few movies
+# optional: seed a few movies through the archived-but-supported ETL importer
 python legacy/etl/etl_seed.py --path legacy/etl/samples/sample_movies.json --format json
 
 # tear everything down when done
@@ -169,7 +171,7 @@ The `/ui/movies` page includes a "Semantic search" toggle. The API endpoint is
 1. Ensure the database is running (`make db.up`).
 2. Confirm `DATABASE_URL` inside `.env` points at Postgres.
 3. Run `make db.migrate` (or `alembic upgrade head`) to apply the latest Alembic revisions.
-4. (Optional) Seed data with `python legacy/etl/etl_seed.py --path legacy/etl/samples/sample_movies.json --format json`.
+4. (Optional) Seed data through the archived-but-supported ETL importer with `python legacy/etl/etl_seed.py --path legacy/etl/samples/sample_movies.json --format json`.
 
 ## Testing
 
@@ -273,10 +275,31 @@ The API container mounts the project directory for live code edits and uses the
 same `.env` values (including `ADMIN_TOKEN`). The database connection is
 configured automatically to talk to the Postgres container.
 
+## Legacy ETL maintenance
+
+`legacy/etl/` is archived-but-supported maintenance code. It is kept for
+historical CSV/JSON imports, TMDb enrichment, retry files, samples, and recovery
+tasks used by maintainer scripts. New import features should prefer modern
+scripts under `scripts/` and shared validation in `core/`, but compatibility and
+data-safety fixes may still touch `legacy/etl/`.
+
+Active callers are intentionally allowed to use the legacy importer while this
+lifecycle remains supported:
+
+- `scripts/import_latest_enriched_csv.py` calls `legacy/etl/etl_seed.py`.
+- `scripts/enriched_csv_orchestrator.py` can call `legacy/etl/enrich_tmdb.py`
+  and delegates final import to `scripts/import_latest_enriched_csv.py`.
+
+Tests under `tests/legacy/` and the public samples under `legacy/etl/samples/`
+are retained to protect this supported maintenance path. If the legacy ETL is
+retired later, remove or replace the callers, tests, samples, and docs in one
+coordinated change. See [docs/legacy-etl.md](docs/legacy-etl.md) for the full
+support contract.
+
 ## Next steps
 - Put your existing picker/filter logic into `core/`.
-- Archived import utilities live under `legacy/etl/` (see `legacy/etl/etl_seed.py` if you still need the CSV importer).
-- Pull richer metadata (posters/genres/providers) with `python legacy/etl/enrich_tmdb.py --output data/enriched_movies.csv` if you still rely on the archived ETL tooling.
+- Archived-but-supported import utilities live under `legacy/etl/` (see `legacy/etl/etl_seed.py` if you still need the CSV importer).
+- Pull richer metadata (posters/genres/providers) with `python legacy/etl/enrich_tmdb.py --output data/enriched_movies.csv` if you still rely on the supported legacy ETL tooling.
 - Optional overrides live in `legacy/etl/overrides/imdb_map.csv`; the importer reads them (title/year keyed) before network lookups and logs usages to `reports/overrides_used.csv`.
 - Save reusable picker presets (“Fliclists”) from the `/ui/movies` page; they’re stored via the new `/fliclists` API and can be reapplied with one tap.
 - `legacy/etl/retry_missing_ids.py` can revisit `reports/missing_imdb_id.csv` / `invalid_imdb_id.csv` and emit a patch file (`--output`) you can replay through the importer once an IMDb ID becomes known.
