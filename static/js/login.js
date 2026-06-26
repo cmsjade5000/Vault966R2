@@ -15,11 +15,6 @@
       buttonValue.textContent = "Vault unlocked";
     }
     document.dispatchEvent(new CustomEvent("vault:unlocked"));
-
-    const firstProfile = document.querySelector(".login-profile");
-    window.setTimeout(() => {
-      firstProfile?.focus();
-    }, 260);
   };
 
   const initLogin = () => {
@@ -88,13 +83,27 @@
       const message =
         profileForm.dataset.vaultBusyMessage || "Unlocking the Vault…";
       const profileButton = profileForm.querySelector(".login-profile");
+      let hasIntentionalProfileAction = false;
+      const markIntentionalProfileAction = () => {
+        hasIntentionalProfileAction = true;
+      };
       ["pointerdown", "touchstart", "click"].forEach((eventName) => {
         profileButton?.addEventListener(eventName, () => {
+          markIntentionalProfileAction();
           showProfileBusy(message);
         });
       });
+      profileButton?.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          markIntentionalProfileAction();
+        }
+      });
       profileForm.addEventListener("submit", (event) => {
         event.stopPropagation();
+        if (!hasIntentionalProfileAction) {
+          event.preventDefault();
+          return;
+        }
         showProfileBusy(message);
       });
     });

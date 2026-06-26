@@ -456,6 +456,8 @@ def test_health_page_uses_vault_health_title_and_prioritizes_metrics(
     assert response.text.count('data-vault-busy-message="Checking Vault Health…"') == 2
     assert "Vault overview" in response.text
     assert "Review workbench" in response.text
+    assert 'href="/ui/movies/health/missing"' in response.text
+    assert "View missing details" in response.text
     assert "Source synchronization" in response.text
     assert 'href="#metadata-gaps"' not in response.text
     assert 'href="/ui/review"' not in response.text
@@ -711,3 +713,5 @@ def test_missing_details_page_renders(client: TestClient) -> None:
     assert "Missing runtime" in html
     assert "Missing synopsis" in html
     assert "Missing artwork" in html
+    assert 'href="/ui/movies/health"' in html
+    assert html.count('aria-current="page"') >= 1

@@ -1,6 +1,30 @@
 from fastapi.testclient import TestClient
 
 
+def test_client_request_id_is_preserved(client: TestClient) -> None:
+    request_id = "client-req_123.abc:trace"
+    response = client.get("/does-not-exist", headers={"X-Request-ID": request_id})
+    data = response.json()
+    assert response.headers["X-Request-ID"] == request_id
+    assert data["request_id"] == request_id
+
+
+def test_invalid_client_request_id_is_replaced(client: TestClient) -> None:
+    request_id = "bad request id"
+    response = client.get("/does-not-exist", headers={"X-Request-ID": request_id})
+    data = response.json()
+    assert response.headers["X-Request-ID"] != request_id
+    assert data["request_id"] == response.headers["X-Request-ID"]
+
+
+def test_too_long_client_request_id_is_replaced(client: TestClient) -> None:
+    request_id = "a" * 129
+    response = client.get("/does-not-exist", headers={"X-Request-ID": request_id})
+    data = response.json()
+    assert response.headers["X-Request-ID"] != request_id
+    assert data["request_id"] == response.headers["X-Request-ID"]
+
+
 def test_error_response_includes_request_id_and_shape(client: TestClient) -> None:
     response = client.get("/movies/picks", params={"year_min": 2020, "year_max": 2000})
     assert response.status_code == 400

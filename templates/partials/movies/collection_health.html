@@ -39,7 +39,10 @@
     <article class="health-card">
       <h3>Metadata completeness</h3>
       <p class="health-card__value">{{ collection_health.missing_runtime + collection_health.missing_plot + collection_health.missing_poster }}</p>
-      <p class="health-card__hint">Combined runtime, synopsis, and artwork gaps.</p>
+      <p class="health-card__hint">
+        Combined runtime, synopsis, and artwork gaps.
+        <a href="/ui/movies/health/missing" class="hero-health-link">View missing details →</a>
+      </p>
     </article>
   </div>
 
