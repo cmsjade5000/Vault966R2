@@ -116,7 +116,7 @@ software.
 - [x] Choose and commit a license.
 - [ ] Make the GitHub repository public after private-data review.
 - [x] Add repository description and topics.
-- [ ] Confirm GitHub private vulnerability reporting in the repository security
+- [x] Confirm GitHub private vulnerability reporting in the repository security
       settings after the repository is public.
 - [x] Review tracked `data/` and `reports/` artifacts for public suitability.
 - [x] Add initial `good first issue` and `help wanted` issues.

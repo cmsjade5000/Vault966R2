@@ -12,12 +12,12 @@ windows.
 
 ## Reporting a Vulnerability
 
-Preferred reporting path: GitHub private vulnerability reporting. The repository
-has been prepared for that flow, but maintainers should confirm it in GitHub's
-security settings after the repository is public. Until that is confirmed, please
-avoid opening public issues that include exploit details, credentials, private
-logs, database rows, or other sensitive data. Open a minimal public issue asking
-for a maintainer contact path, or contact the repository owner through GitHub.
+Preferred reporting path: GitHub private vulnerability reporting, available from
+the repository's Security tab. Please avoid opening public issues that include
+exploit details, credentials, private logs, database rows, or other sensitive
+data. If the private reporting flow is unavailable, open a minimal public issue
+asking for a maintainer contact path, or contact the repository owner through
+GitHub.
 
 Include:
 
