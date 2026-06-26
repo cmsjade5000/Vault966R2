@@ -142,11 +142,7 @@ def _safe_message(detail: Any) -> str:
 
 
 def _request_id_from_header(value: str | None) -> str:
-    if (
-        value
-        and len(value) <= REQUEST_ID_MAX_LENGTH
-        and REQUEST_ID_PATTERN.fullmatch(value)
-    ):
+    if value and len(value) <= REQUEST_ID_MAX_LENGTH and REQUEST_ID_PATTERN.fullmatch(value):
         return value
     return str(uuid.uuid4())
 
