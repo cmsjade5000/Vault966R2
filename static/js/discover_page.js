@@ -1,4 +1,15 @@
 (function () {
+  const RAIL_PROGRESS_CLASSES = [
+    "is-progress-32",
+    "is-progress-40",
+    "is-progress-50",
+    "is-progress-60",
+    "is-progress-70",
+    "is-progress-80",
+    "is-progress-90",
+    "is-progress-100",
+  ];
+
   const calculateRailState = ({ clientWidth, scrollLeft, scrollWidth }) => {
     const maxScroll = Math.max(0, scrollWidth - clientWidth);
     const ratio = maxScroll > 0 ? scrollLeft / maxScroll : 0;
@@ -11,6 +22,24 @@
 
   const getScrollDistance = (clientWidth) => Math.max(clientWidth * 0.78, 240);
 
+  const getProgressClass = (progressScale) => {
+    const progressPercent = Math.round(progressScale * 100);
+    if (progressPercent >= 95) return "is-progress-100";
+    if (progressPercent >= 85) return "is-progress-90";
+    if (progressPercent >= 75) return "is-progress-80";
+    if (progressPercent >= 65) return "is-progress-70";
+    if (progressPercent >= 55) return "is-progress-60";
+    if (progressPercent >= 45) return "is-progress-50";
+    if (progressPercent >= 36) return "is-progress-40";
+    return "is-progress-32";
+  };
+
+  const applyRailProgress = (progress, progressScale) => {
+    if (!progress) return;
+    progress.classList.remove(...RAIL_PROGRESS_CLASSES);
+    progress.classList.add(getProgressClass(progressScale));
+  };
+
   const hydrateDeferredPoster = (image) => {
     const source = image?.dataset?.posterSrc;
     if (!source || image.dataset.posterHydrated === "true") return false;
@@ -21,7 +50,9 @@
   };
 
   window.VaultDiscoverSupport = {
+    applyRailProgress,
     calculateRailState,
+    getProgressClass,
     getScrollDistance,
     hydrateDeferredPoster,
   };
@@ -60,9 +91,7 @@
 
       if (railState.previous) railState.previous.disabled = state.atStart;
       if (railState.next) railState.next.disabled = state.atEnd;
-      if (railState.progress) {
-        railState.progress.style.transform = `scaleX(${state.progressScale})`;
-      }
+      applyRailProgress(railState.progress, state.progressScale);
     };
 
     const scheduleRailStateUpdate = (railState) => {

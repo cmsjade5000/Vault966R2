@@ -54,6 +54,34 @@ test("carousel controls advance most of a viewport with a touch-safe minimum", (
   assert.equal(getScrollDistance(1000), 780);
 });
 
+test("carousel progress updates through classes without inline style mutation", () => {
+  const { applyRailProgress } = loadSupport();
+  const classes = new Set(["is-progress-32"]);
+  const progress = {
+    classList: {
+      add(...names) {
+        names.forEach((name) => classes.add(name));
+      },
+      remove(...names) {
+        names.forEach((name) => classes.delete(name));
+      },
+    },
+    style: new Proxy(
+      {},
+      {
+        set() {
+          throw new Error("inline style mutation is blocked by CSP");
+        },
+      },
+    ),
+  };
+
+  applyRailProgress(progress, 0.8);
+
+  assert.equal(classes.has("is-progress-32"), false);
+  assert.equal(classes.has("is-progress-80"), true);
+});
+
 test("deferred poster hydration promotes data source once", () => {
   const { hydrateDeferredPoster } = loadSupport();
   const image = {

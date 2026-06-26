@@ -386,11 +386,44 @@
 
 .discover-rail-progress span {
   display: block;
-  width: 32%;
+  width: 100%;
   height: 100%;
   border-radius: inherit;
   background: #38bdf8;
   transform-origin: left center;
+  transform: scaleX(0.32);
+}
+
+.discover-rail-progress span.is-progress-32 {
+  transform: scaleX(0.32);
+}
+
+.discover-rail-progress span.is-progress-40 {
+  transform: scaleX(0.4);
+}
+
+.discover-rail-progress span.is-progress-50 {
+  transform: scaleX(0.5);
+}
+
+.discover-rail-progress span.is-progress-60 {
+  transform: scaleX(0.6);
+}
+
+.discover-rail-progress span.is-progress-70 {
+  transform: scaleX(0.7);
+}
+
+.discover-rail-progress span.is-progress-80 {
+  transform: scaleX(0.8);
+}
+
+.discover-rail-progress span.is-progress-90 {
+  transform: scaleX(0.9);
+}
+
+.discover-rail-progress span.is-progress-100 {
+  transform: scaleX(1);
 }
 
 .discover-topic-rails {

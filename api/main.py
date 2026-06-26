@@ -2,6 +2,7 @@ import json
 import logging
 import logging.config
 import pathlib
+import re
 import time
 import uuid
 from contextlib import asynccontextmanager
@@ -102,6 +103,8 @@ configure_logging()
 logger = logging.getLogger("vault966")
 LOG_STYLE = settings.log_style.lower()
 LOG_COLOR = settings.log_color
+REQUEST_ID_MAX_LENGTH = 128
+REQUEST_ID_PATTERN = re.compile(r"^[A-Za-z0-9._:-]+$")
 
 
 def _profile_label_for_id(profile_id: Any) -> str:
@@ -138,6 +141,12 @@ def _safe_message(detail: Any) -> str:
     return str(detail) if detail is not None else "Unexpected error"
 
 
+def _request_id_from_header(value: str | None) -> str:
+    if value and len(value) <= REQUEST_ID_MAX_LENGTH and REQUEST_ID_PATTERN.fullmatch(value):
+        return value
+    return str(uuid.uuid4())
+
+
 def _json_error(
     status_code: int, *, error_code: str, message: str, request_id: str
 ) -> JSONResponse:
@@ -153,7 +162,7 @@ def _json_error(
 
 class ObservabilityMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
-        request_id = request.headers.get("X-Request-ID") or str(uuid.uuid4())
+        request_id = _request_id_from_header(request.headers.get("X-Request-ID"))
         request.state.request_id = request_id
         start = time.perf_counter()
         response = None

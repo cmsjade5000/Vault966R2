@@ -100,11 +100,11 @@
               >
               {% if request.state.session_profile_role == 'admin' %}
               <a
-                class="nav-link{% if current_path == '/ui/movies/health' or current_path.startswith('/ui/source-sync/') %} is-active{% endif %}"
+                class="nav-link{% if current_path.startswith('/ui/movies/health') or current_path.startswith('/ui/source-sync/') %} is-active{% endif %}"
                 href="/ui/movies/health"
                 role="menuitem"
                 data-vault-busy-message="Checking Vault Health…"
-                {% if current_path == '/ui/movies/health' or current_path.startswith('/ui/source-sync/') %}aria-current="page"{% endif %}
+                {% if current_path.startswith('/ui/movies/health') or current_path.startswith('/ui/source-sync/') %}aria-current="page"{% endif %}
                 >Vault Health</a
               >
               {% endif %}
@@ -171,10 +171,10 @@
         </a>
         {% if request.state.session_profile_role == 'admin' %}
         <a
-          class="bottom-nav__link{% if current_path == '/ui/movies/health' or current_path.startswith('/ui/source-sync/') %} is-active{% endif %}"
+          class="bottom-nav__link{% if current_path.startswith('/ui/movies/health') or current_path.startswith('/ui/source-sync/') %} is-active{% endif %}"
           href="/ui/movies/health"
           data-vault-busy-message="Checking Vault Health…"
-          {% if current_path == '/ui/movies/health' or current_path.startswith('/ui/source-sync/') %}aria-current="page"{% endif %}
+          {% if current_path.startswith('/ui/movies/health') or current_path.startswith('/ui/source-sync/') %}aria-current="page"{% endif %}
         >
           <span class="bottom-nav__icon" aria-hidden="true">
             <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
