@@ -13,6 +13,7 @@ Dated measurements, screenshots, audits, and generated CSVs belong in `reports/`
 - `codex-skill-examples.md`: contributor examples for choosing and verifying
   repo-scoped Codex skills
 - `legacy-vault-review.md`: migration status and ideas retained from the original Vault
+- `legacy-etl.md`: lifecycle and support contract for archived-but-supported ETL tooling
 - `nextjs_frontend_plan.md`: historical optional frontend migration plan
 - `public-launch.md`: checklist for publishing the repository without exposing
   private history or runtime artifacts
@@ -20,7 +21,7 @@ Dated measurements, screenshots, audits, and generated CSVs belong in `reports/`
 ## Operations and Integrations
 
 - `siri-shortcut.md`: local Siri Shortcut integration
-- `samples.md`: archived CSV preparation workflow
+- `samples.md`: archived-but-supported CSV preparation workflow
 
 ## Maintenance
 

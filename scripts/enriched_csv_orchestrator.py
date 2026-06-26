@@ -4,6 +4,9 @@ Related skills: `csv-import-guard`, `movie-import-review`.
 
 Defaults to the most recently modified enriched_movies*.csv in data/.
 Outputs are timestamped to avoid overwriting existing files.
+
+This maintainer workflow may call the archived-but-supported legacy ETL tooling;
+see docs/legacy-etl.md for the support contract.
 """
 
 from __future__ import annotations

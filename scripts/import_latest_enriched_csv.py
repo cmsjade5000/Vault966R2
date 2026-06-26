@@ -2,7 +2,8 @@
 
 Related skill: `csv-import-guard`.
 
-Uses legacy/etl/etl_seed.py and defaults to the newest CSV in data/.
+Uses the archived-but-supported legacy/etl/etl_seed.py importer and defaults to
+the newest CSV in data/. See docs/legacy-etl.md for the support contract.
 """
 
 from __future__ import annotations
