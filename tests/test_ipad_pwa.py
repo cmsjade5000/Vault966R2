@@ -1,8 +1,14 @@
 import json
 from pathlib import Path
 
+from scripts.generate_brand_assets import ICON_TARGETS, SPLASH_TARGETS
+
 
 ROOT = Path(__file__).resolve().parents[1]
+GENERATED_ICON_FILES = {filename for filename, _ in ICON_TARGETS}
+GENERATED_SPLASH_FILES = {filename for filename, _ in SPLASH_TARGETS}
+PWA_SOURCE_FILES = {"app-icon.png", "splash-1024.png"}
+PROFILE_IMAGE_FILES = {"profile-user-a.png", "profile-user-b.png"}
 
 
 def test_manifest_targets_landscape_standalone_mode() -> None:
@@ -20,6 +26,30 @@ def test_ipad_air_2_landscape_startup_image_is_available() -> None:
     assert image.is_file()
     assert "splash-2048x1536.png" in template
     assert "(device-width: 1024px) and (device-height: 768px)" in template
+
+
+def test_generated_pwa_asset_set_matches_policy() -> None:
+    image_files = {path.name for path in (ROOT / "static/img").glob("*.png")}
+
+    assert image_files == (
+        GENERATED_ICON_FILES | GENERATED_SPLASH_FILES | PWA_SOURCE_FILES | PROFILE_IMAGE_FILES
+    )
+
+
+def test_manifest_icons_match_generated_policy() -> None:
+    manifest = json.loads((ROOT / "static/site.webmanifest").read_text(encoding="utf-8"))
+
+    assert {Path(icon["src"]).name for icon in manifest["icons"]} == {
+        "android-chrome-192x192.png",
+        "android-chrome-512x512.png",
+    }
+
+
+def test_ipad_startup_images_match_generated_policy() -> None:
+    template = (ROOT / "templates/base.html").read_text(encoding="utf-8")
+
+    for filename in GENERATED_SPLASH_FILES:
+        assert filename in template
 
 
 def test_library_script_keeps_filter_handlers_inside_initializer() -> None:

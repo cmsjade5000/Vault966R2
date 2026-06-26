@@ -6,6 +6,9 @@ Usage:
         --splash-source static/img/splash-1024.png \
         --output-dir static/img
 
+The checked-in generated targets intentionally match docs/pwa-assets.md.
+Keep that support matrix, this script, and tests/test_ipad_pwa.py in sync.
+
 Requires Pillow. Install with ``pip install Pillow``.
 """
 
@@ -23,54 +26,19 @@ except ImportError as exc:  # pragma: no cover - import guard
 ICON_TARGETS = [
     ("android-chrome-192x192.png", (192, 192)),
     ("android-chrome-512x512.png", (512, 512)),
-    ("app-icon.png", (1024, 1024)),
-    ("app-icon-76.png", (76, 76)),
-    ("app-icon-120.png", (120, 120)),
-    ("app-icon-152.png", (152, 152)),
-    ("app-icon-167.png", (167, 167)),
-    ("app-icon-180.png", (180, 180)),
-    ("app-icon-512.png", (512, 512)),
     ("apple-touch-icon.png", (180, 180)),
     ("apple-touch-icon-precomposed.png", (180, 180)),
-    ("logo-48.png", (48, 48)),
-    ("logo-72.png", (72, 72)),
-    ("logo-180.png", (180, 180)),
 ]
 
 SPLASH_TARGETS = [
-    ("splash-512.png", (512, 512)),
-    ("splash-640x640.png", (640, 640)),
-    ("splash-1024.png", (1024, 1024)),
-    ("splash-1024x1024.png", (1024, 1024)),
-    ("splash-1125x2436.png", (1125, 2436)),
-    ("splash-1136x640.png", (1136, 640)),
-    ("splash-1170x2532.png", (1170, 2532)),
-    ("splash-1242x2688.png", (1242, 2688)),
-    ("splash-1280x1920.png", (1280, 1920)),
-    ("splash-1284x2778.png", (1284, 2778)),
-    ("splash-1334x750.png", (1334, 750)),
     ("splash-1536x2048.png", (1536, 2048)),
-    ("splash-1600x960.png", (1600, 960)),
-    ("splash-1620x2160.png", (1620, 2160)),
     ("splash-1668x2224.png", (1668, 2224)),
     ("splash-1668x2388.png", (1668, 2388)),
-    ("splash-1792x828.png", (1792, 828)),
-    ("splash-1920x1280.png", (1920, 1280)),
     ("splash-2048x1536.png", (2048, 1536)),
     ("splash-2048x2732.png", (2048, 2732)),
-    ("splash-2160x1620.png", (2160, 1620)),
     ("splash-2224x1668.png", (2224, 1668)),
     ("splash-2388x1668.png", (2388, 1668)),
-    ("splash-2436x1125.png", (2436, 1125)),
-    ("splash-2532x1170.png", (2532, 1170)),
-    ("splash-2688x1242.png", (2688, 1242)),
     ("splash-2732x2048.png", (2732, 2048)),
-    ("splash-2778x1284.png", (2778, 1284)),
-    ("splash-640x1136.png", (640, 1136)),
-    ("splash-750x1334.png", (750, 1334)),
-    ("splash-828x828.png", (828, 828)),
-    ("splash-828x1792.png", (828, 1792)),
-    ("splash-960x1600.png", (960, 1600)),
 ]
 
 

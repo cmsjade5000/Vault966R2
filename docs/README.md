@@ -16,6 +16,8 @@ Dated measurements, screenshots, audits, and generated CSVs belong in `reports/`
 - `nextjs_frontend_plan.md`: historical optional frontend migration plan
 - `public-launch.md`: checklist for publishing the repository without exposing
   private history or runtime artifacts
+- `pwa-assets.md`: source-of-truth policy for generated PWA icons and iPad
+  startup images
 
 ## Operations and Integrations
 
