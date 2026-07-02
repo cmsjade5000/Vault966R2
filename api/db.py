@@ -440,6 +440,59 @@ def _ensure_sqlite_movie_columns() -> None:
                 )
             )
 
+        maintenance_jobs_exists = connection.execute(
+            text(
+                "SELECT name FROM sqlite_master "
+                "WHERE type='table' AND name='maintenance_jobs'"
+            )
+        ).first()
+        if not maintenance_jobs_exists:
+            connection.execute(
+                text(
+                    """
+                    CREATE TABLE maintenance_jobs (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        run_id TEXT NOT NULL,
+                        task_id TEXT NOT NULL,
+                        state TEXT NOT NULL,
+                        started_by_profile_id INTEGER REFERENCES profiles(id)
+                            ON DELETE SET NULL,
+                        started_at TIMESTAMP NOT NULL,
+                        finished_at TIMESTAMP,
+                        last_error TEXT,
+                        steps JSON,
+                        reports JSON,
+                        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                        updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+                    )
+                    """
+                )
+            )
+            connection.execute(
+                text(
+                    """
+                    CREATE UNIQUE INDEX IF NOT EXISTS ix_maintenance_jobs_run_id
+                    ON maintenance_jobs (run_id)
+                    """
+                )
+            )
+            connection.execute(
+                text(
+                    """
+                    CREATE INDEX IF NOT EXISTS ix_maintenance_jobs_task_started
+                    ON maintenance_jobs (task_id, started_at)
+                    """
+                )
+            )
+            connection.execute(
+                text(
+                    """
+                    CREATE INDEX IF NOT EXISTS ix_maintenance_jobs_state
+                    ON maintenance_jobs (state)
+                    """
+                )
+            )
+
 
 def bootstrap_sqlite_schema() -> None:
     """Best-effort bootstrap for SQLite local dev and legacy `vault.db` dumps."""

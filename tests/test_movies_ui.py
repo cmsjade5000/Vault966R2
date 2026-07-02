@@ -454,7 +454,24 @@ def test_health_page_uses_vault_health_title_and_prioritizes_metrics(
     assert "items need" in response.text
     assert "Back to movies" not in response.text
     assert response.text.count('data-vault-busy-message="Checking Vault Health…"') == 2
-    assert "Vault overview" in response.text
+    assert "Vault dashboard" in response.text
+    assert "What changed, what needs decisions, and what is incomplete." in response.text
+    assert "Open decisions" in response.text
+    assert "New additions" in response.text
+    assert "Outdated fields" in response.text
+    assert "Metadata maintenance" in response.text
+    assert "Run full metadata maintenance" in response.text
+    assert "This does not accept source rows" in response.text
+    assert "Preview counts are read-only" in response.text
+    assert 'href="#metadata-maintenance"' in response.text
+    assert 'id="metadata-maintenance"' in response.text
+    assert 'data-maintenance-history' in response.text
+    assert 'data-maintenance-latest="genres"' in response.text
+    assert 'data-maintenance-latest="posters"' in response.text
+    assert 'data-update-cancel' in response.text
+    assert "Cancel queued maintenance" in response.text
+    assert "Normalize genres" in response.text
+    assert "Find missing posters" in response.text
     assert "Review workbench" in response.text
     assert 'href="/ui/movies/health/missing"' in response.text
     assert "View missing details" in response.text

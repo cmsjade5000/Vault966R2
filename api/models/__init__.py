@@ -4,6 +4,7 @@ Import key models here so SQLAlchemy registers all mappers at import time.
 
 # Importing these ensures the classes exist when relationships use string names
 # like relationship("MovieFlag") inside Movie.
+from .maintenance import MaintenanceJob  # noqa: F401
 from .movie import Movie, MovieIngestProvenance  # noqa: F401
 from .movie_flag import MovieFlag  # noqa: F401
 from .movie_repair import MovieIdentityRepair  # noqa: F401
@@ -22,6 +23,7 @@ from .usage_event import UsageEvent  # noqa: F401
 
 __all__ = [
     "Movie",
+    "MaintenanceJob",
     "MovieFlag",
     "MovieIngestProvenance",
     "MovieIdentityRepair",

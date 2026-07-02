@@ -95,6 +95,9 @@
             <div><strong>{{ latest_source_summary.source_only }}</strong><span>New candidates</span></div>
           </div>
           <a class="button-secondary" href="#review-workbench">Open review workbench</a>
+          {% if latest_source_summary.auto_created %}
+            <a class="button-secondary" href="/ui/source-sync/{{ latest_source_snapshot.id }}/new-additions.csv">Download new additions CSV</a>
+          {% endif %}
         </section>
       {% else %}
         <div class="source-health__empty">

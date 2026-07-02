@@ -3295,6 +3295,146 @@ body.filters-open {
   margin: 0;
 }
 
+.maintenance-task-list {
+  display: grid;
+  gap: 0.5rem;
+  grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+}
+
+.maintenance-task-list > div {
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: 6px;
+  display: grid;
+  gap: 0.42rem;
+  padding: 0.65rem 0.75rem;
+}
+
+.maintenance-task-list strong {
+  color: rgba(248, 250, 252, 0.94);
+  font-size: 0.86rem;
+}
+
+.maintenance-task-list span {
+  color: var(--flic-muted);
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
+.maintenance-task-list small {
+  color: rgba(226, 232, 240, 0.78);
+  font-size: 0.74rem;
+  line-height: 1.35;
+  min-height: 2rem;
+}
+
+.maintenance-task-list small[data-maintenance-latest] {
+  color: rgba(191, 219, 254, 0.9);
+}
+
+.maintenance-task-list small.is-success {
+  color: rgba(187, 247, 208, 0.9);
+}
+
+.maintenance-task-list small.is-failed {
+  color: rgba(254, 202, 202, 0.92);
+}
+
+.maintenance-task-list small.is-running {
+  color: rgba(253, 230, 138, 0.92);
+}
+
+.maintenance-task-list small a {
+  color: inherit;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.maintenance-task-list small a:hover {
+  text-decoration: underline;
+}
+
+.maintenance-task-list button {
+  align-items: center;
+  background: rgba(248, 250, 252, 0.08);
+  border: 1px solid rgba(248, 250, 252, 0.16);
+  border-radius: 6px;
+  color: rgba(248, 250, 252, 0.92);
+  cursor: pointer;
+  display: inline-flex;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 700;
+  justify-content: center;
+  min-height: 2rem;
+  padding: 0.4rem 0.65rem;
+}
+
+.maintenance-task-list button:disabled {
+  cursor: not-allowed;
+  opacity: 0.48;
+}
+
+.maintenance-task-list button:not(:disabled):hover {
+  background: rgba(248, 250, 252, 0.14);
+}
+
+.maintenance-warning {
+  border-left: 3px solid rgba(251, 191, 36, 0.72);
+  color: rgba(254, 243, 199, 0.88);
+  font-size: 0.82rem;
+  line-height: 1.45;
+  margin: 0;
+  padding: 0.2rem 0 0.2rem 0.7rem;
+}
+
+.maintenance-run-history {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.maintenance-run-history__item {
+  align-items: center;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: 6px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem 0.7rem;
+  justify-content: space-between;
+  padding: 0.58rem 0.75rem;
+}
+
+.maintenance-run-history__item strong {
+  color: rgba(248, 250, 252, 0.94);
+  font-size: 0.82rem;
+}
+
+.maintenance-run-history__item > div:first-child {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.maintenance-run-history__item span {
+  color: var(--flic-muted);
+  font-size: 0.76rem;
+}
+
+.maintenance-run-history__reports {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.maintenance-run-history__reports a {
+  color: rgba(191, 219, 254, 0.95);
+  font-size: 0.76rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.maintenance-run-history__reports a:hover {
+  text-decoration: underline;
+}
+
 .collection-health__update-steps {
   display: flex;
   flex-wrap: wrap;
@@ -3325,6 +3465,29 @@ body.filters-open {
 .collection-health__update-button.is-busy {
   opacity: 0.7;
   cursor: default;
+}
+
+.collection-health__cancel-button {
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(248, 113, 113, 0.35);
+  border-radius: 6px;
+  color: rgba(254, 226, 226, 0.95);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 800;
+  justify-self: start;
+  padding: 0.55rem 1.2rem;
+}
+
+.collection-health__cancel-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.42;
+}
+
+.collection-health__cancel-button:not(:disabled):hover,
+.collection-health__cancel-button:not(:disabled):focus-visible {
+  background: rgba(239, 68, 68, 0.18);
 }
 
 .collection-health__refresh {
