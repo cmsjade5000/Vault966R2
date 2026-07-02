@@ -218,6 +218,19 @@ def _parse_float(value: Any) -> float | None:
     return number
 
 
+def _parse_integer_value(value: Any) -> int | None:
+    text = _strip_value(value)
+    if not text:
+        return None
+    try:
+        number = float(text)
+    except ValueError:
+        return None
+    if math.isnan(number) or math.isinf(number) or not number.is_integer():
+        return None
+    return int(number)
+
+
 def _is_valid_year(value: Any) -> bool:
     text = _strip_value(value)
     if not text:
@@ -253,7 +266,7 @@ def _validate_numeric_field(
     text = _strip_value(value)
     if not text:
         return
-    parsed = parse_int(text)
+    parsed = _parse_integer_value(text)
     if parsed is None:
         raise EnrichedCsvContractError(f"Row {row_number}: {field} is not an integer")
     if min_value is not None and parsed < min_value:
@@ -374,11 +387,17 @@ def _imdb_votes_implausibly_low(row: Dict[str, Any], config: GateConfig) -> bool
 
 
 def _languages_unmapped(row: Dict[str, Any], config: GateConfig) -> bool:
+    if "_languages_unmapped" in row:
+        return bool(row.get("_languages_unmapped"))
     languages = normalize_languages(str(row.get("languages") or ""))
     return bool(languages.unmapped)
 
 
 def _countries_unmapped(row: Dict[str, Any], config: GateConfig) -> bool:
+    if "_countries_unmapped" in row:
+        unmapped = row.get("_countries_unmapped")
+        iso = row.get("_countries_iso")
+        return bool(unmapped) and not iso
     countries = normalize_countries(str(row.get("countries") or ""))
     return bool(countries.unmapped) and not countries.iso
 
@@ -436,11 +455,17 @@ def normalize_row(row: Dict[str, Any], config: GateConfig) -> Dict[str, Any]:
         normalized.setdefault(col, "")
 
     legacy_watch = str(normalized.get("where_to_watch") or "")
-    has_provider_columns = any(
-        str(normalized.get(column) or "").strip()
-        for column in ("providers_stream", "providers_rent", "providers_buy")
+    has_structured_watch = any(
+        column in row
+        for column in (
+            "watch_region",
+            "providers_stream",
+            "providers_rent",
+            "providers_buy",
+            "tmdb_watch_url",
+        )
     )
-    if has_provider_columns:
+    if has_structured_watch:
         normalized["watch_region"] = str(normalized.get("watch_region") or config.region).upper()
         normalized["providers_stream"] = str(normalized.get("providers_stream") or "")
         normalized["providers_rent"] = str(normalized.get("providers_rent") or "")
@@ -456,6 +481,7 @@ def normalize_row(row: Dict[str, Any], config: GateConfig) -> Dict[str, Any]:
     normalized.pop("where_to_watch", None)
 
     langs = normalize_languages(str(normalized.get("languages") or ""))
+    normalized["_languages_unmapped"] = langs.unmapped
     normalized["languages_iso"] = join_csv_tokens(langs.iso)
     normalized["languages"] = join_csv_tokens(langs.iso)
     normalized["languages_display"] = join_csv_tokens(
@@ -463,6 +489,8 @@ def normalize_row(row: Dict[str, Any], config: GateConfig) -> Dict[str, Any]:
     )
 
     ctries = normalize_countries(str(normalized.get("countries") or ""))
+    normalized["_countries_unmapped"] = ctries.unmapped
+    normalized["_countries_iso"] = ctries.iso
     normalized["countries_iso"] = join_csv_tokens(ctries.iso)
     normalized["countries"] = join_csv_tokens(ctries.iso)
     normalized["countries_display"] = join_csv_tokens(
@@ -472,6 +500,9 @@ def normalize_row(row: Dict[str, Any], config: GateConfig) -> Dict[str, Any]:
     flags = quality_flags(normalized, config)
     normalized["quality_flags"] = "; ".join(flags)
     normalized["quality_quarantined"] = "true" if flags else "false"
+    normalized.pop("_languages_unmapped", None)
+    normalized.pop("_countries_unmapped", None)
+    normalized.pop("_countries_iso", None)
 
     return normalized
 

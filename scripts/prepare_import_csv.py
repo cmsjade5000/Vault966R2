@@ -68,10 +68,28 @@ def sanitize_year(value: str) -> Optional[int]:
     return year
 
 
+def _normalized_header(columns: List[str]) -> set[str]:
+    return {str(column or "").strip().casefold() for column in columns}
+
+
+def _canonical_header(columns: List[str]) -> List[str]:
+    canonical: List[str] = []
+    for column in columns:
+        label = str(column or "").strip()
+        folded = label.casefold()
+        canonical.append(folded if folded in {"title", "year"} else label)
+    return canonical
+
+
 def load_rows(path: pathlib.Path) -> List[Dict[str, Any]]:
-    with path.open("r", encoding="utf-8") as fh:
-        reader = csv.DictReader(fh)
-        return [dict(row) for row in reader]
+    with path.open("r", encoding="utf-8-sig", newline="") as fh:
+        reader = csv.reader(fh)
+        for columns in reader:
+            header = _normalized_header(columns)
+            if "title" in header:
+                dict_reader = csv.DictReader(fh, fieldnames=_canonical_header(columns))
+                return [dict(row) for row in dict_reader]
+    return []
 
 
 def clean_rows(rows: List[Dict[str, Any]], summary: Summary) -> List[Dict[str, Any]]:
@@ -83,7 +101,7 @@ def clean_rows(rows: List[Dict[str, Any]], summary: Summary) -> List[Dict[str, A
             summary.log_skipped(idx)
             continue
 
-        raw_title = row["title"].strip()
+        raw_title = str(row["title"] or "").strip()
         cleaned_title = sanitize_title(raw_title)
         if cleaned_title != raw_title:
             summary.cleaned_titles += 1
