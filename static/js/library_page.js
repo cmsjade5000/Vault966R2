@@ -31,6 +31,45 @@
     return url.toString();
   };
 
+  const applyFormValuesToUrl = (url, values = {}) => {
+    [
+      "q",
+      "preset",
+      "genres",
+      "moods",
+      "year_min",
+      "year_max",
+      "runtime_min",
+      "runtime_max",
+      "semantic",
+      "view",
+    ].forEach((key) => {
+      const value = values[key];
+      if (value) {
+        url.searchParams.set(key, value);
+      } else {
+        url.searchParams.delete(key);
+      }
+    });
+  };
+
+  const buildTableSortUrl = (
+    href,
+    { asc = "", currentOrder = "", desc = "", values = {} } = {},
+  ) => {
+    const url = new URL(href);
+    if (Object.keys(values).length > 0) {
+      applyFormValuesToUrl(url, values);
+    }
+    const activeOrder = currentOrder || url.searchParams.get("order_by") || "";
+    const nextOrder = activeOrder === asc ? desc : asc;
+    if (nextOrder) url.searchParams.set("order_by", nextOrder);
+    url.searchParams.set("view", "list");
+    url.searchParams.set("_filters", "1");
+    url.searchParams.set("page", "1");
+    return url.toString();
+  };
+
   const parseCsv = (value = "") =>
     value
       .split(",")
@@ -84,6 +123,7 @@
   window.VaultLibrarySupport = {
     buildClearAllFiltersUrl,
     buildClearFilterUrl,
+    buildTableSortUrl,
     buildPendingSummary,
     emptyFilterState,
     formatApplyLabel,
@@ -464,6 +504,24 @@
     document.querySelectorAll("[data-view-change]").forEach((link) => {
       link.addEventListener("click", () => {
         recordEvent("view_changed", { context: link.dataset.viewChange });
+      });
+    });
+    document.querySelectorAll("[data-table-sort]").forEach((button) => {
+      button.addEventListener("click", () => {
+        const values = {};
+        if (form) {
+          new FormData(form).forEach((value, key) => {
+            values[key] = String(value);
+          });
+        }
+        const nextUrl = buildTableSortUrl(window.location.href, {
+          asc: button.dataset.orderByAsc,
+          currentOrder: document.getElementById("order-by")?.value || "",
+          desc: button.dataset.orderByDesc,
+          values,
+        });
+        recordEvent("sort_changed", { context: button.dataset.orderByAsc });
+        window.location.assign(nextUrl);
       });
     });
     document.querySelectorAll("[data-movie-detail-link]").forEach((link) => {

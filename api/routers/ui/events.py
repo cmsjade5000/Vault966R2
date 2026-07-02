@@ -22,6 +22,7 @@ EventName = Literal[
     "library_search_submitted",
     "filters_applied",
     "view_changed",
+    "sort_changed",
     "movie_details_opened",
     "discover_rail_opened",
     "personalized_recommendations_shown",

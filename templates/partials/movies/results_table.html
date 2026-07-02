@@ -7,24 +7,16 @@
       <thead>
         <tr>
           {% set title_sort = 'ascending' if order_by == 'title_asc' else 'descending' if order_by == 'title_desc' else 'none' %}
-          <th
-            scope="col"
-            data-order-by-asc="title_asc"
-            data-order-by-desc="title_desc"
-            aria-sort="{{ title_sort }}"
-            tabindex="0"
-          >
-            Title
-          </th>
-          {% set id_sort = 'ascending' if order_by == 'id_asc' else 'descending' if order_by == 'id_desc' else 'none' %}
-          <th
-            scope="col"
-            data-order-by-asc="id_asc"
-            data-order-by-desc="id_desc"
-            aria-sort="{{ id_sort }}"
-            tabindex="0"
-          >
-            Vault ID
+          <th scope="col" aria-sort="{{ title_sort }}">
+            <button
+              type="button"
+              class="table-sort-button"
+              data-table-sort
+              data-order-by-asc="title_asc"
+              data-order-by-desc="title_desc"
+            >
+              Title
+            </button>
           </th>
           <th scope="col" class="data-table__col-details">Details</th>
           <th scope="col" class="data-table__col-status" hidden>Status</th>
@@ -54,21 +46,82 @@
           data-flagged="{{ 'true' if movie.flagged else 'false' }}"
           class="{% if movie.flagged %}is-flagged{% endif %}"
         >
-          <td data-label="Title">
-            <a href="/ui/movies/{{ movie.id }}" data-movie-detail-link data-event-context="library_list">{{ movie.title | display_title }}</a>
-            {% if movie.flagged %}<span class="table-tag table-tag--review">Needs review</span>{% endif %}
-            {% if order_by == 'flic' %}
-            {% set table_rank = flic_rank_offset + loop.index %}
-            <span class="table-tag table-tag--flic">
-              #{{ table_rank }} · Flic {{ "%.0f"|format(movie.flic_score) if movie.flic_score is defined else "—" }}
-            </span>
-            {% endif %}
+          <td data-label="Title" class="data-table__cell-title">
+            <div class="library-list-movie" data-movie-card data-movie-id="{{ movie.id }}" data-liked="{{ 'true' if movie.liked else 'false' }}" data-watchlist="{{ 'true' if movie.watchlist else 'false' }}">
+              <a
+                class="library-list-movie__poster"
+                href="/ui/movies/{{ movie.id }}"
+                data-movie-detail-link
+                data-event-context="library_list_poster"
+                aria-label="Open {{ movie.title | display_title }}"
+              >
+                {% if movie.poster_url %}
+                <img src="/ui/posters/{{ movie.id }}/w185" alt="{{ movie.title | display_title }} poster" loading="lazy" decoding="async" />
+                {% else %}
+                <span class="poster poster--empty {{ movie.poster_theme or 'poster-theme-default' }}" aria-hidden="true">966</span>
+                {% endif %}
+              </a>
+              <div class="library-list-movie__copy">
+                <a class="library-list-movie__title" href="/ui/movies/{{ movie.id }}" data-movie-detail-link data-event-context="library_list">{{ movie.title | display_title }}</a>
+                <div class="library-list-movie__badges">
+                  {% if movie.flagged %}<span class="table-tag table-tag--review">Needs review</span>{% endif %}
+                  {% if order_by == 'flic' %}
+                  {% set table_rank = flic_rank_offset + loop.index %}
+                  <span class="table-tag table-tag--flic">
+                    #{{ table_rank }} · Flic {{ "%.0f"|format(movie.flic_score) if movie.flic_score is defined else "—" }}
+                  </span>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
           </td>
-          <td data-label="Vault ID">{{ movie.vault_id or ("V%04d"|format(movie.id)) }}</td>
           <td data-label="Details" class="data-table__cell-details">
-            <div class="table-detail-line">{{ year_runtime_text }}</div>
-            <div class="table-detail-line table-detail-line--muted">{{ rating_text }}</div>
-            <div class="table-detail-line table-detail-line--muted" title="{{ genre_text }}">{{ genre_text }}</div>
+            <div class="library-list-meta" aria-label="Movie metadata">
+              <span>{{ year_text }}</span>
+              <span>{{ runtime_text }}</span>
+              <span>{{ imdb_text }}</span>
+              <span>{{ rt_text }}</span>
+            </div>
+            {% if genre_names %}
+            <div class="library-list-genres" title="{{ genre_text }}">
+              {% for label in genre_names[:3] %}<span>{{ label }}</span>{% endfor %}
+              {% if genre_names|length > 3 %}<span aria-label="{{ genre_names|length - 3 }} more genres">+{{ genre_names|length - 3 }}</span>{% endif %}
+            </div>
+            {% else %}
+            <div class="library-list-genres library-list-genres--empty">No genres</div>
+            {% endif %}
+            <div class="library-list-actions" aria-label="Preferences for {{ movie.title | display_title }}">
+              <button
+                type="button"
+                class="preference-icon{% if movie.liked %} is-active{% endif %}"
+                data-preference-button
+                data-preference-type="like"
+                data-movie-id="{{ movie.id }}"
+                data-movie-title="{{ movie.title | display_title }}"
+                aria-label="{{ 'Unlike' if movie.liked else 'Like' }} {{ movie.title | display_title }}"
+                title="Like"
+                aria-pressed="{{ 'true' if movie.liked else 'false' }}"
+              >
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8l1.1 1.1L12 21.2l7.8-7.7 1.1-1.1a5.5 5.5 0 0 0-.1-7.8z"></path>
+                </svg>
+              </button>
+              <button
+                type="button"
+                class="preference-icon{% if movie.watchlist %} is-active{% endif %}"
+                data-preference-button
+                data-preference-type="watchlist"
+                data-movie-id="{{ movie.id }}"
+                data-movie-title="{{ movie.title | display_title }}"
+                aria-label="{{ 'Remove' if movie.watchlist else 'Add' }} {{ movie.title | display_title }} {{ 'from' if movie.watchlist else 'to' }} watchlist"
+                title="Watchlist"
+                aria-pressed="{{ 'true' if movie.watchlist else 'false' }}"
+              >
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1z"></path>
+                </svg>
+              </button>
+            </div>
           </td>
           <td data-label="Status" class="data-table__cell-status" hidden>
             {% if movie.flagged %}Needs review{% else %}—{% endif %}

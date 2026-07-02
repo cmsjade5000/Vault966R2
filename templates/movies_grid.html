@@ -37,77 +37,77 @@
             Search
           </button>
         </div>
-      </section>
 
-      <div class="library-toolbar" aria-label="Library controls">
-        <label class="library-sort" for="order-by">
-          <span class="sr-only">Sort movies</span>
-          <select id="order-by" name="order_by" aria-label="Sort movies">
-            <option value="title_asc" {% if order_by == 'title_asc' %}selected{% endif %}>Title A–Z</option>
-            <option value="title_desc" {% if order_by == 'title_desc' %}selected{% endif %}>Title Z–A</option>
-            <option value="id_asc" {% if order_by == 'id_asc' %}selected{% endif %}>Vault ID ↑</option>
-            <option value="id_desc" {% if order_by == 'id_desc' %}selected{% endif %}>Vault ID ↓</option>
-            <option value="year_desc" {% if order_by == 'year_desc' %}selected{% endif %}>Newest</option>
-            <option value="year_asc" {% if order_by == 'year_asc' %}selected{% endif %}>Oldest</option>
-            <option value="runtime_asc" {% if order_by == 'runtime_asc' %}selected{% endif %}>Shortest</option>
-            <option value="runtime_desc" {% if order_by == 'runtime_desc' %}selected{% endif %}>Longest</option>
-            <option value="imdb_desc" {% if order_by == 'imdb_desc' %}selected{% endif %}>IMDb rating</option>
-            <option value="rt_desc" {% if order_by == 'rt_desc' %}selected{% endif %}>RT score</option>
-          </select>
-        </label>
+        <div class="library-toolbar" aria-label="Library controls">
+          <label class="library-sort" for="order-by">
+            <span class="sr-only">Sort movies</span>
+            <select id="order-by" name="order_by" aria-label="Sort movies">
+              <option value="title_asc" {% if order_by == 'title_asc' %}selected{% endif %}>Title A–Z</option>
+              <option value="title_desc" {% if order_by == 'title_desc' %}selected{% endif %}>Title Z–A</option>
+              <option value="id_asc" {% if order_by == 'id_asc' %}selected{% endif %}>Vault ID ↑</option>
+              <option value="id_desc" {% if order_by == 'id_desc' %}selected{% endif %}>Vault ID ↓</option>
+              <option value="year_desc" {% if order_by == 'year_desc' %}selected{% endif %}>Newest</option>
+              <option value="year_asc" {% if order_by == 'year_asc' %}selected{% endif %}>Oldest</option>
+              <option value="runtime_asc" {% if order_by == 'runtime_asc' %}selected{% endif %}>Shortest</option>
+              <option value="runtime_desc" {% if order_by == 'runtime_desc' %}selected{% endif %}>Longest</option>
+              <option value="imdb_desc" {% if order_by == 'imdb_desc' %}selected{% endif %}>IMDb rating</option>
+              <option value="rt_desc" {% if order_by == 'rt_desc' %}selected{% endif %}>RT score</option>
+              <option value="random" {% if order_by == 'random' %}selected{% endif %}>Random</option>
+            </select>
+          </label>
 
-        <div class="view-switcher" role="group" aria-label="Library view">
-          <a
-            href="{{ request.url.include_query_params(view='grid', page=1) }}"
-            class="view-switcher__button{% if view == 'grid' %} is-active{% endif %}"
-            aria-label="Grid view"
-            title="Grid view"
-            data-view-change="grid"
-            {% if view == 'grid' %}aria-current="true"{% endif %}
-          >
+          <div class="view-switcher" role="group" aria-label="Library view">
+            <a
+              href="{{ request.url.include_query_params(view='grid', page=1) }}"
+              class="view-switcher__button{% if view == 'grid' %} is-active{% endif %}"
+              aria-label="Grid view"
+              title="Grid view"
+              data-view-change="grid"
+              {% if view == 'grid' %}aria-current="true"{% endif %}
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <rect x="3" y="3" width="7" height="7" rx="1"></rect>
+                <rect x="14" y="3" width="7" height="7" rx="1"></rect>
+                <rect x="3" y="14" width="7" height="7" rx="1"></rect>
+                <rect x="14" y="14" width="7" height="7" rx="1"></rect>
+              </svg>
+            </a>
+            <a
+              href="{{ request.url.include_query_params(view='list', page=1) }}"
+              class="view-switcher__button{% if view == 'list' %} is-active{% endif %}"
+              aria-label="List view"
+              title="List view"
+              data-view-change="list"
+              {% if view == 'list' %}aria-current="true"{% endif %}
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <line x1="8" y1="6" x2="21" y2="6"></line>
+                <line x1="8" y1="12" x2="21" y2="12"></line>
+                <line x1="8" y1="18" x2="21" y2="18"></line>
+                <line x1="3" y1="6" x2="3.01" y2="6"></line>
+                <line x1="3" y1="12" x2="3.01" y2="12"></line>
+                <line x1="3" y1="18" x2="3.01" y2="18"></line>
+              </svg>
+            </a>
+          </div>
+
+          <button type="button" class="library-filter-button{% if genres or moods or year_min or year_max or runtime_max or preset %} is-active{% endif %}" data-filters-open aria-label="Open filters" title="Filters">
             <svg viewBox="0 0 24 24" aria-hidden="true">
-              <rect x="3" y="3" width="7" height="7" rx="1"></rect>
-              <rect x="14" y="3" width="7" height="7" rx="1"></rect>
-              <rect x="3" y="14" width="7" height="7" rx="1"></rect>
-              <rect x="14" y="14" width="7" height="7" rx="1"></rect>
+              <path d="M4 5h16l-6.5 7.4v5.1l-3 1.5v-6.6L4 5z"></path>
             </svg>
-          </a>
-          <a
-            href="{{ request.url.include_query_params(view='list', page=1) }}"
-            class="view-switcher__button{% if view == 'list' %} is-active{% endif %}"
-            aria-label="List view"
-            title="List view"
-            data-view-change="list"
-            {% if view == 'list' %}aria-current="true"{% endif %}
-          >
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <line x1="8" y1="6" x2="21" y2="6"></line>
-              <line x1="8" y1="12" x2="21" y2="12"></line>
-              <line x1="8" y1="18" x2="21" y2="18"></line>
-              <line x1="3" y1="6" x2="3.01" y2="6"></line>
-              <line x1="3" y1="12" x2="3.01" y2="12"></line>
-              <line x1="3" y1="18" x2="3.01" y2="18"></line>
+          </button>
+          <button type="button" class="library-icon-button" id="pick-button" aria-label="Random trusted movie" title="Random pick">
+            <svg viewBox="0 0 24 24" aria-hidden="true" data-action-label>
+              <rect x="3" y="3" width="18" height="18" rx="3"></rect>
+              <circle cx="8" cy="8" r="1"></circle>
+              <circle cx="16" cy="8" r="1"></circle>
+              <circle cx="12" cy="12" r="1"></circle>
+              <circle cx="8" cy="16" r="1"></circle>
+              <circle cx="16" cy="16" r="1"></circle>
             </svg>
-          </a>
+          </button>
         </div>
-
-        <button type="button" class="library-filter-button" data-filters-open aria-label="Open filters" title="Filters">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M4 5h16l-6.5 7.4v5.1l-3 1.5v-6.6L4 5z"></path>
-          </svg>
-          {% if genres or moods or year_min or year_max or runtime_max or preset %}<span class="library-control-badge" aria-label="Filters active"></span>{% endif %}
-        </button>
-        <button type="button" class="library-icon-button" id="pick-button" aria-label="Random trusted movie" title="Random pick">
-          <svg viewBox="0 0 24 24" aria-hidden="true" data-action-label>
-            <rect x="3" y="3" width="18" height="18" rx="3"></rect>
-            <circle cx="8" cy="8" r="1"></circle>
-            <circle cx="16" cy="8" r="1"></circle>
-            <circle cx="12" cy="12" r="1"></circle>
-            <circle cx="8" cy="16" r="1"></circle>
-            <circle cx="16" cy="16" r="1"></circle>
-          </svg>
-        </button>
-      </div>
+      </section>
 
       {% set active = namespace(filters=[]) %}
       {% if q %}{% set active.filters = active.filters + [{'key':'q','label':'Search: ' ~ q, 'value': q}] %}{% endif %}
