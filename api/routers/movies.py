@@ -29,7 +29,13 @@ from api.schemas.movie import (
 )
 from api.schemas.llm_filters import LlmMovieSearchRequest, LlmMovieSearchResponse
 from api.schemas.movie_detail import MovieDetail
+from api.schemas.movie_trailer import MovieTrailerRead
 from api.services.movies_detail import get_movie_detail
+from api.services.movie_trailers import (
+    MovieTrailerNotFound,
+    MovieTrailerUnavailable,
+    get_or_fetch_movie_trailer,
+)
 from core.movie_filters import (
     MovieFilterParams,
     apply_filters,
@@ -255,6 +261,23 @@ def movie_detail(movie_id: int, db: Session = Depends(get_db)):
     if detail is None:
         raise HTTPException(status_code=404, detail="Movie not found")
     return detail
+
+
+@router.get("/{movie_id}/trailer", response_model=MovieTrailerRead)
+def movie_trailer(movie_id: int, db: Session = Depends(get_db)):
+    try:
+        trailer = get_or_fetch_movie_trailer(db, movie_id)
+    except MovieTrailerNotFound as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except MovieTrailerUnavailable as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    return MovieTrailerRead(
+        site=trailer.site,
+        key=trailer.key,
+        name=trailer.name,
+        url=trailer.url,
+        embed_url=trailer.embed_url,
+    )
 
 
 @router.get("/{movie_id}/lookup", response_model=MovieLookupResponse)

@@ -581,23 +581,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/ui/discover": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Discover */
-        get: operations["discover_ui_discover_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/ui/events": {
         parameters: {
             query?: never;
@@ -1331,12 +1314,18 @@ export interface components {
         };
         /** Body_upload_first_import_snapshot_ui_first_import_upload_post */
         Body_upload_first_import_snapshot_ui_first_import_upload_post: {
-            /** Source File */
+            /**
+             * Source File
+             * Format: binary
+             */
             source_file: string;
         };
         /** Body_upload_source_snapshot_ui_source_sync_upload_post */
         Body_upload_source_snapshot_ui_source_sync_upload_post: {
-            /** Source File */
+            /**
+             * Source File
+             * Format: binary
+             */
             source_file: string;
         };
         /** FlicFilters */
@@ -2296,10 +2285,6 @@ export interface components {
         };
         /** ValidationError */
         ValidationError: {
-            /** Context */
-            ctx?: Record<string, never>;
-            /** Input */
-            input?: unknown;
             /** Location */
             loc: (string | number)[];
             /** Message */
@@ -3626,26 +3611,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    discover_ui_discover_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "text/html": string;
                 };
             };
         };

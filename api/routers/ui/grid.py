@@ -235,16 +235,31 @@ def movies_grid(
     if resolved_preset not in LIBRARY_PRESETS:
         resolved_preset = None
 
-    params: MovieFilterParams = parse_movie_filters(
-        q=resolve(q, "q"),
-        year_min=resolve(year_min, "year_min"),
-        year_max=resolve(year_max, "year_max"),
-        runtime_min=resolve(None, "runtime_min"),
-        runtime_max=resolve(runtime_max, "runtime_max"),
-        genres=resolve(genres, "genres"),
-        moods=resolve(moods, "moods"),
-        order_by=resolve(order_by, "order_by"),
-    )
+    try:
+        params: MovieFilterParams = parse_movie_filters(
+            q=resolve(q, "q"),
+            year_min=resolve(year_min, "year_min"),
+            year_max=resolve(year_max, "year_max"),
+            runtime_min=resolve(None, "runtime_min"),
+            runtime_max=resolve(runtime_max, "runtime_max"),
+            genres=resolve(genres, "genres"),
+            moods=resolve(moods, "moods"),
+            order_by=resolve(order_by, "order_by"),
+        )
+    except HTTPException:
+        if using_filter_query:
+            raise
+        params = parse_movie_filters(
+            q=None,
+            year_min=None,
+            year_max=None,
+            runtime_min=None,
+            runtime_max=None,
+            genres=None,
+            moods=None,
+            order_by="title_asc",
+        )
+        resolved_preset = None
 
     semantic_value = resolve(semantic, "semantic")
     semantic_active = str(semantic_value).lower() in {"1", "true", "yes", "on"}

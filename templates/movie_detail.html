@@ -15,13 +15,24 @@
     {% endif %}
   </div>
   <div class="detail-wrapper">
-    <a
-      class="back-link"
-      href="/ui/movies"
-      data-back-link
-      data-vault-busy-message="Returning to the Library…"
-      >← Back to results</a
-    >
+    <div class="detail-topbar">
+      <a
+        class="back-link"
+        href="/ui/movies"
+        data-back-link
+        data-vault-busy-message="Returning to the Library…"
+        >← Back to results</a
+      >
+      <button
+        type="button"
+        class="chip chip-id detail-pill detail-pill--vault detail-pill--interactive"
+        data-vault-id="{{ movie.vault_id or ('V%04d'|format(movie.id)) }}"
+        data-copy-vault
+        aria-label="Copy Vault ID"
+      >
+        {{ movie.vault_id or ("V%04d"|format(movie.id)) }}
+      </button>
+    </div>
     <div class="hero">
       <div class="poster-shell">
         <button
@@ -74,20 +85,11 @@
           {% endif %}
         </div>
         <div class="hero-tags">
-          <button
-            type="button"
-            class="chip chip-id"
-            data-vault-id="{{ movie.vault_id or ('V%04d'|format(movie.id)) }}"
-            data-copy-vault
-            aria-label="Copy Vault ID"
-          >
-            {{ movie.vault_id or ("V%04d"|format(movie.id)) }}
-          </button>
           {% if movie.runtime %}
           {% set rounded_runtime = ((movie.runtime + 4) // 5) * 5 %}
           {% set runtime_hours = rounded_runtime // 60 %}
           {% set runtime_minutes = rounded_runtime % 60 %}
-          <span class="chip chip-runtime" data-runtime="{{ rounded_runtime }}">
+          <span class="chip chip-runtime detail-pill detail-pill--runtime" data-runtime="{{ rounded_runtime }}">
             {% if runtime_hours > 0 %}
             {{ runtime_hours }} hour{% if runtime_hours != 1 %}s{% endif %}{% if runtime_minutes %}, {{ runtime_minutes }} minute{% if runtime_minutes != 1 %}s{% endif %}{% endif %}
             {% else %}
@@ -95,18 +97,18 @@
             {% endif %}
           </span>
           {% endif %}
-          {% if movie.year %}<span class="chip chip-year" data-year="{{ movie.year }}">{{ movie.year }}</span>{% endif %}
+          {% if movie.year %}<span class="chip chip-year detail-pill detail-pill--year" data-year="{{ movie.year }}">{{ movie.year }}</span>{% endif %}
           {% for genre in movie.genres %}
-          <span class="chip chip-genre" data-genre="{{ genre }}">{{ genre }}</span>
+          <span class="chip chip-genre detail-pill detail-pill--genre" data-genre="{{ genre }}">{{ genre }}</span>
           {% endfor %}
           {% for mood in movie.moods %}
-          <span class="chip chip-mood" data-mood="{{ mood }}">{{ mood }}</span>
+          <span class="chip chip-mood detail-pill detail-pill--mood" data-mood="{{ mood }}">{{ mood }}</span>
           {% endfor %}
         </div>
         <div class="badge-links">
           {% if movie.imdb_id %}
           <a
-            class="badge-link"
+            class="badge-link detail-pill detail-pill--source detail-pill--interactive"
             href="https://www.imdb.com/title/{{ movie.imdb_id }}/"
             target="_blank"
             rel="noreferrer noopener"
@@ -115,9 +117,32 @@
           </a>
           {% endif %}
           {% if movie.tmdb_id %}
-          <a class="badge-link" href="https://www.themoviedb.org/movie/{{ movie.tmdb_id }}" target="_blank" rel="noreferrer noopener">
+          <a class="badge-link detail-pill detail-pill--source detail-pill--interactive" href="https://www.themoviedb.org/movie/{{ movie.tmdb_id }}" target="_blank" rel="noreferrer noopener">
             <span>TMDb</span>
           </a>
+          {% endif %}
+          {% if movie.tmdb_id or movie.trailer_available %}
+          <div
+            class="trailer-action"
+            data-trailer-action
+            data-movie-id="{{ movie.id }}"
+            {% if not movie.trailer_available %}hidden{% endif %}
+          >
+            <button
+              type="button"
+              class="trailer-pill detail-pill detail-pill--trailer detail-pill--interactive"
+              data-trailer-button
+              data-trailer-key="{{ movie.trailer_key or '' }}"
+              data-trailer-name="{{ movie.trailer_name or 'Trailer' }}"
+              data-trailer-embed-url="{% if movie.trailer_key %}https://www.youtube-nocookie.com/embed/{{ movie.trailer_key }}{% endif %}"
+              aria-label="Play trailer for {{ movie.title | display_title }}"
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M8 5v14l11-7z"></path>
+              </svg>
+              <span>Play Trailer</span>
+            </button>
+          </div>
           {% endif %}
         </div>
         <div class="preference-actions" aria-label="Movie preferences">
@@ -393,6 +418,24 @@
     {% endif %}
   </div>
   <div class="poster-focus-backdrop" data-poster-focus-backdrop hidden></div>
+  <div
+    class="trailer-modal"
+    data-trailer-modal
+    hidden
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="trailer-modal-title"
+  >
+    <div class="trailer-modal__panel">
+      <header class="trailer-modal__header">
+        <h2 id="trailer-modal-title" data-trailer-title>Trailer</h2>
+        <button type="button" class="trailer-modal__close" data-trailer-close aria-label="Close trailer">
+          ×
+        </button>
+      </header>
+      <div class="trailer-modal__frame" data-trailer-frame></div>
+    </div>
+  </div>
   <dialog
     class="flag-dialog-overlay"
     data-flag-dialog

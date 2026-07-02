@@ -43,9 +43,9 @@
       const url = new URL(referrer);
       if (url.origin === window.location.origin) {
         if (url.pathname.startsWith("/ui/discover")) {
-          link.textContent = "← Back to Discover";
-          link.setAttribute("href", "/ui/discover");
-          link.dataset.vaultBusyMessage = "Returning to Discover…";
+          link.textContent = "← Back to Library";
+          link.setAttribute("href", "/ui/movies");
+          link.dataset.vaultBusyMessage = "Returning to the Library…";
         } else if (url.pathname.startsWith("/ui/watchlist")) {
           link.textContent = "← Back to Watchlist";
           link.setAttribute("href", "/ui/watchlist");

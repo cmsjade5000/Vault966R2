@@ -10,7 +10,7 @@ from api.services.movie_review import (
     get_review_queue,
 )
 from api.services.profiles import get_profiles
-from api.services.ui.grid import FILTER_COOKIE_NAME
+from api.services.ui.grid import FILTER_COOKIE_NAME, FILTER_COOKIE_PATH, dump_filter_cookie
 
 
 def test_movies_grid_persists_filters_via_cookie(client: TestClient) -> None:
@@ -28,6 +28,7 @@ def test_movies_grid_persists_filters_via_cookie(client: TestClient) -> None:
     assert second.status_code == 200
     html = second.text
     assert 'id="genres-input" value="Science Fiction"' in html
+    assert 'data-clear-filter="genre" data-filter-value="Science Fiction"' in html
     assert 'option value="runtime_asc" selected' in html
     assert "Blade Runner" in html
     assert "Toy Story" not in html
@@ -53,6 +54,37 @@ def test_movies_grid_explicit_clear_removes_cookie_backed_preset(
     assert 'data-clear-filter="preset"' not in restored_after_clear.text
 
 
+def test_movies_grid_ignores_invalid_cookie_backed_filters(client: TestClient) -> None:
+    client.cookies.set(
+        FILTER_COOKIE_NAME,
+        dump_filter_cookie(
+            {
+                "year_min": "not-a-year",
+                "order_by": "sideways",
+                "preset": "hidden-gems",
+                "page": 4,
+            }
+        ),
+        domain="testserver",
+        path=FILTER_COOKIE_PATH,
+    )
+
+    response = client.get("/ui/movies")
+
+    assert response.status_code == 200
+    html = response.text
+    assert 'id="preset-input" value=""' in html
+    assert 'id="year-min-input" value=""' in html
+    assert 'option value="title_asc" selected' in html
+    assert "Blade Runner" in html
+
+
+def test_movies_grid_rejects_invalid_explicit_filters(client: TestClient) -> None:
+    response = client.get("/ui/movies", params={"order_by": "sideways"})
+
+    assert response.status_code == 400
+
+
 def test_movies_grid_view_switch_preserves_cookie_backed_filters(client: TestClient) -> None:
     selected = client.get(
         "/ui/movies",
@@ -74,6 +106,8 @@ def test_movies_grid_filters_by_mood(client: TestClient) -> None:
     response = client.get("/ui/movies", params={"moods": "Moody"})
     assert response.status_code == 200
     html = response.text
+    assert 'id="moods-input" value="Moody"' in html
+    assert 'data-clear-filter="mood" data-filter-value="Moody"' in html
     assert "Blade Runner" in html
     assert "The Matrix" not in html
 
@@ -493,11 +527,14 @@ def test_health_page_uses_vault_health_title_and_prioritizes_metrics(
     assert 'href="/ui/movies/health/missing"' in response.text
     assert "View missing details" in response.text
     assert "Source synchronization" in response.text
+    assert "Add one movie" in response.text
+    assert "Add to Vault" in response.text
+    assert "data-source-manual-add" in response.text
+    assert "js/source_sync_manual_add.js?v=" in response.text
     assert 'href="#metadata-gaps"' not in response.text
     assert 'href="/ui/review"' not in response.text
     assert ">Review</a" not in response.text
     assert "Flic Recommendation" not in response.text
-    assert "Add a movie" not in response.text
 
 
 def test_flags_page_lists_flagged_movies(client: TestClient, admin_headers: dict[str, str]) -> None:

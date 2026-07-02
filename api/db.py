@@ -184,6 +184,11 @@ def _ensure_sqlite_movie_columns() -> None:
             "tmdb_etag": "ALTER TABLE movies ADD COLUMN tmdb_etag TEXT",
             "tmdb_payload_sha": "ALTER TABLE movies ADD COLUMN tmdb_payload_sha TEXT",
             "omdb_payload_sha": "ALTER TABLE movies ADD COLUMN omdb_payload_sha TEXT",
+            "trailer_site": "ALTER TABLE movies ADD COLUMN trailer_site TEXT",
+            "trailer_key": "ALTER TABLE movies ADD COLUMN trailer_key TEXT",
+            "trailer_name": "ALTER TABLE movies ADD COLUMN trailer_name TEXT",
+            "trailer_url": "ALTER TABLE movies ADD COLUMN trailer_url TEXT",
+            "trailer_checked_at": "ALTER TABLE movies ADD COLUMN trailer_checked_at TIMESTAMP",
         }
 
         for column_name, ddl in migrations.items():

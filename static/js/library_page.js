@@ -1,6 +1,9 @@
 (function () {
   const buildClearFilterUrl = (href, key) => {
     const url = new URL(href);
+    if (key === "q") {
+      url.searchParams.delete("q");
+    }
     if (key === "preset") {
       url.searchParams.delete("preset");
     }
@@ -93,6 +96,7 @@
     const form = document.getElementById("filters-form");
     const dialog = document.querySelector("[data-filters-dialog]");
     const genresInput = document.getElementById("genres-input");
+    const moodsInput = document.getElementById("moods-input");
     const yearMinInput = document.getElementById("year-min-input");
     const yearMaxInput = document.getElementById("year-max-input");
     const runtimeInput = document.getElementById("runtime-max-input");
@@ -384,6 +388,7 @@
     resetButton?.addEventListener("click", () => {
       selectedGenres.clear();
       if (genresInput) genresInput.value = "";
+      if (moodsInput) moodsInput.value = "";
       if (yearMinInput) yearMinInput.value = "";
       if (yearMaxInput) yearMaxInput.value = "";
       if (runtimeInput) runtimeInput.value = "";
@@ -400,7 +405,10 @@
     syncFilterUi();
 
     const clearFilter = (key, value) => {
-      if (key === "q") document.getElementById("search-q").value = "";
+      if (key === "q") {
+        window.location.assign(buildClearFilterUrl(window.location.href, "q"));
+        return;
+      }
       if (key === "preset") {
         if (presetInput) presetInput.value = "";
         window.location.assign(
@@ -411,6 +419,12 @@
       if (key === "genre") {
         selectedGenres.delete(value);
         genresInput.value = Array.from(selectedGenres).join(", ");
+      }
+      if (key === "mood" && moodsInput) {
+        const remainingMoods = parseCsv(moodsInput.value).filter(
+          (mood) => mood !== value,
+        );
+        moodsInput.value = remainingMoods.join(", ");
       }
       if (key === "year") {
         yearMinInput.value = "";
@@ -429,17 +443,11 @@
       ?.addEventListener("click", () => {
         window.location.assign(buildClearAllFiltersUrl(window.location.href));
       });
-    document
-      .querySelector("[data-clear-search]")
-      ?.addEventListener("click", () => {
-        const searchInput = document.getElementById("search-q");
-        if (searchInput) searchInput.value = "";
-        form?.requestSubmit();
-      });
 
     form?.addEventListener("submit", () => {
       const hasFilters = Boolean(
         genresInput?.value ||
+        moodsInput?.value ||
         yearMinInput?.value ||
         yearMaxInput?.value ||
         runtimeInput?.value ||
@@ -492,7 +500,9 @@
         recordEvent("random_pick_requested", { context: "toolbar" });
         const params = new URLSearchParams();
         const firstGenre = selectedGenres.values().next().value;
+        const firstMood = parseCsv(moodsInput?.value || "")[0];
         if (firstGenre) params.set("genre", firstGenre);
+        if (firstMood) params.set("mood", firstMood);
         if (yearMinInput?.value) params.set("year_min", yearMinInput.value);
         if (yearMaxInput?.value) params.set("year_max", yearMaxInput.value);
         if (runtimeInput?.value) params.set("runtime_max", runtimeInput.value);

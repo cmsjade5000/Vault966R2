@@ -8,7 +8,7 @@ from typing import Iterable, Optional
 from zoneinfo import ZoneInfo
 
 from fastapi import APIRouter, Depends, Query, Request
-from fastapi.responses import HTMLResponse
+from fastapi.responses import RedirectResponse
 from sqlalchemy import desc, func, or_
 from sqlalchemy.orm import Session, selectinload
 
@@ -17,14 +17,10 @@ from api.models.movie import Genre, Movie, movie_genres
 from api.models.profile import MoviePreference
 from api.services.double_feature import DEFAULT_DOUBLE_FEATURE_RUNTIME, pick_double_feature
 from api.services.profiles import (
-    ensure_profile_cookie,
     get_active_profile_id,
     get_preferences_for_movies,
-    get_profiles,
 )
 from api.services.ui.grid import attach_genre_display, attach_poster_themes
-from api.services.ui.spotlight import build_spotlight_reason, get_daily_spotlight_movies
-from api.services.ui.templates import TEMPLATES
 from api.services.trusted_movies import get_untrusted_movie_ids, trusted_movie_query
 
 router = APIRouter()
@@ -608,66 +604,6 @@ def discover_refresh(
     }
 
 
-@router.get("/ui/discover", response_class=HTMLResponse)
-def discover(request: Request, db: Session = Depends(get_db)):
-    profiles = get_profiles(db)
-    active_profile_id = get_active_profile_id(request, db)
-
-    spotlight_movies = get_daily_spotlight_movies(db, limit=4)
-
-    used_ids = {movie.id for movie in spotlight_movies if movie.id is not None}
-    selected_for_you, selected_for_you_genres = _pick_selected_for_you(
-        db,
-        active_profile_id,
-        exclude_ids=used_ids,
-    )
-    used_ids.update(movie.id for movie in selected_for_you if movie.id is not None)
-
-    rails = _build_discover_rails(db, used_ids=used_ids)
-    spotlight_reasons = {
-        movie.id: build_spotlight_reason(movie)
-        for movie in spotlight_movies
-        if movie.id is not None
-    }
-    selected_for_you_reasons = {
-        movie.id: _personalized_reason(movie, selected_for_you_genres)
-        for movie in selected_for_you
-        if movie.id is not None
-    }
-
-    all_movies: dict[int, Movie] = {}
-    for movie in spotlight_movies:
-        if movie.id is not None:
-            all_movies[movie.id] = movie
-    for movie in selected_for_you:
-        if movie.id is not None:
-            all_movies[movie.id] = movie
-    for rail in rails:
-        for movie in rail["movies"]:
-            if movie.id is not None:
-                all_movies[movie.id] = movie
-    attach_poster_themes(all_movies.values())
-    attach_genre_display(all_movies.values())
-
-    preferences = get_preferences_for_movies(db, active_profile_id, all_movies.keys())
-    for movie in all_movies.values():
-        pref = preferences.get(movie.id or 0, {})
-        setattr(movie, "liked", pref.get("liked", False))
-        setattr(movie, "watchlist", pref.get("watchlist", False))
-
-    context = {
-        "request": request,
-        "profiles": profiles,
-        "active_profile_id": active_profile_id,
-        "spotlight_movies": spotlight_movies,
-        "spotlight_lead": spotlight_movies[0] if spotlight_movies else None,
-        "spotlight_supporting": spotlight_movies[1:],
-        "spotlight_reasons": spotlight_reasons,
-        "selected_for_you": selected_for_you,
-        "selected_for_you_genres": selected_for_you_genres,
-        "selected_for_you_reasons": selected_for_you_reasons,
-        "rails": rails,
-    }
-    response = TEMPLATES.TemplateResponse(request, "movies_discover.html", context)
-    ensure_profile_cookie(request, response, db)
-    return response
+@router.get("/ui/discover", include_in_schema=False)
+def discover():
+    return RedirectResponse("/ui/movies", status_code=307)

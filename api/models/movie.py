@@ -101,6 +101,13 @@ class Movie(Base):
     tmdb_etag: Mapped[Optional[str]] = mapped_column(String(128), nullable=True)
     tmdb_payload_sha: Mapped[Optional[str]] = mapped_column(String(128), nullable=True)
     omdb_payload_sha: Mapped[Optional[str]] = mapped_column(String(128), nullable=True)
+    trailer_site: Mapped[Optional[str]] = mapped_column(String(30), nullable=True)
+    trailer_key: Mapped[Optional[str]] = mapped_column(String(128), nullable=True)
+    trailer_name: Mapped[Optional[str]] = mapped_column(String(300), nullable=True)
+    trailer_url: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
+    trailer_checked_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
 
     # Postgres stores these as JSONB (see Alembic migration). SQLite dumps in the repo
     # store raw TEXT, so keep SQLite lenient to avoid JSON decode issues.
