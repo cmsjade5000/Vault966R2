@@ -49,7 +49,11 @@ def test_update_run_requires_admin_profile_same_origin(client, monkeypatch, logi
     )
     monkeypatch.setattr(
         "api.routers.collection_health.run_update_tasks",
-        lambda task="all": {"state": "success", "task_id": task, "steps": []},
+        lambda task="all", record_job=False: {
+            "state": "success",
+            "task_id": task,
+            "steps": [],
+        },
     )
     login_profile(1)
 
@@ -78,7 +82,11 @@ def test_update_run_accepts_single_maintenance_task(client, monkeypatch, login_p
     monkeypatch.setattr("api.routers.collection_health.start_update", fake_start_update)
     monkeypatch.setattr(
         "api.routers.collection_health.run_update_tasks",
-        lambda task="all": {"state": "success", "task_id": task, "steps": []},
+        lambda task="all", record_job=False: {
+            "state": "success",
+            "task_id": task,
+            "steps": [],
+        },
     )
     login_profile(1)
 
