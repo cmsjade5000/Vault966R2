@@ -1882,6 +1882,67 @@
             "title": "Top Billed",
             "type": "array"
           },
+          "trailer_available": {
+            "default": false,
+            "title": "Trailer Available",
+            "type": "boolean"
+          },
+          "trailer_checked_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trailer Checked At"
+          },
+          "trailer_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trailer Key"
+          },
+          "trailer_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trailer Name"
+          },
+          "trailer_site": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trailer Site"
+          },
+          "trailer_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trailer Url"
+          },
           "vault_id": {
             "anyOf": [
               {
@@ -2804,6 +2865,47 @@
           "facets"
         ],
         "title": "MovieSearchResponse",
+        "type": "object"
+      },
+      "MovieTrailerRead": {
+        "properties": {
+          "embed_url": {
+            "title": "Embed Url",
+            "type": "string"
+          },
+          "key": {
+            "pattern": "^[A-Za-z0-9_-]{6,128}$",
+            "title": "Key",
+            "type": "string"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "site": {
+            "pattern": "^youtube$",
+            "title": "Site",
+            "type": "string"
+          },
+          "url": {
+            "title": "Url",
+            "type": "string"
+          }
+        },
+        "required": [
+          "site",
+          "key",
+          "url",
+          "embed_url"
+        ],
+        "title": "MovieTrailerRead",
         "type": "object"
       },
       "MovieUpdate": {
@@ -6235,6 +6337,48 @@
           }
         ],
         "summary": "Attach Role",
+        "tags": [
+          "movies"
+        ]
+      }
+    },
+    "/movies/{movie_id}/trailer": {
+      "get": {
+        "operationId": "movie_trailer_movies__movie_id__trailer_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "movie_id",
+            "required": true,
+            "schema": {
+              "title": "Movie Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MovieTrailerRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Movie Trailer",
         "tags": [
           "movies"
         ]
