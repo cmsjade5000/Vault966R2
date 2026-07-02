@@ -1331,18 +1331,12 @@ export interface components {
         };
         /** Body_upload_first_import_snapshot_ui_first_import_upload_post */
         Body_upload_first_import_snapshot_ui_first_import_upload_post: {
-            /**
-             * Source File
-             * Format: binary
-             */
+            /** Source File */
             source_file: string;
         };
         /** Body_upload_source_snapshot_ui_source_sync_upload_post */
         Body_upload_source_snapshot_ui_source_sync_upload_post: {
-            /**
-             * Source File
-             * Format: binary
-             */
+            /** Source File */
             source_file: string;
         };
         /** FlicFilters */
@@ -2330,6 +2324,10 @@ export interface components {
         };
         /** ValidationError */
         ValidationError: {
+            /** Context */
+            ctx?: Record<string, never>;
+            /** Input */
+            input?: unknown;
             /** Location */
             loc: (string | number)[];
             /** Message */
