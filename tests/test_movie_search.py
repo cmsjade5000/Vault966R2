@@ -102,6 +102,34 @@ def test_search_sorting_runtime(client: TestClient) -> None:
     ]
 
 
+def test_search_sorting_runtime_keeps_unknown_runtimes_last(
+    client: TestClient, db_session: Session
+) -> None:
+    library_genre = db_session.query(Genre).filter_by(name="Library").one()
+    general_mood = db_session.query(Mood).filter_by(name="General").one()
+
+    movie = Movie(
+        title="Runtime Unknown",
+        year=2024,
+        runtime=None,
+        imdb_id="ttruntimeunknown",
+        tmdb_id=99997,
+        genres=[library_genre],
+        moods=[general_mood],
+    )
+    db_session.add(movie)
+    db_session.commit()
+
+    response = client.get(
+        "/movies/search",
+        params={"order_by": "runtime_asc", "page_size": 100},
+    )
+
+    assert response.status_code == 200
+    titles = [item["title"] for item in response.json()["items"]]
+    assert titles[-1] == "Runtime Unknown"
+
+
 def test_search_facets_respect_filters(client: TestClient) -> None:
     response = client.get(
         "/movies/search",
