@@ -173,6 +173,9 @@ def test_update_preview_returns_standardized_maintenance_tasks(client) -> None:
 
     assert response.status_code == 200
     payload = response.json()
+    assert set(payload["providers"]) == {"tmdb", "omdb"}
+    assert isinstance(payload["providers"]["tmdb"], bool)
+    assert isinstance(payload["providers"]["omdb"], bool)
     task_by_id = {task["id"]: task for task in payload["tasks"]}
     assert set(task_by_id) == {"genres", "moods", "posters", "backdrops"}
     assert task_by_id["posters"]["candidate_unit"] == "movies missing posters"

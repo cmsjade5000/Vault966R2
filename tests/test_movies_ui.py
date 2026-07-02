@@ -511,9 +511,12 @@ def test_health_page_uses_vault_health_title_and_prioritizes_metrics(
     assert "New additions" in response.text
     assert "Outdated fields" in response.text
     assert "Metadata maintenance" in response.text
+    assert 'href="#metadata-maintenance">Metadata maintenance</a>' in response.text
     assert "Run full metadata maintenance" in response.text
     assert "This does not accept source rows" in response.text
     assert "Preview counts are read-only" in response.text
+    assert "Checking API access" in response.text
+    assert "data-maintenance-providers" in response.text
     assert 'href="#metadata-maintenance"' in response.text
     assert 'id="metadata-maintenance"' in response.text
     assert "data-maintenance-history" in response.text
