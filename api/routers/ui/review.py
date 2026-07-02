@@ -250,6 +250,8 @@ def review_queue_ui(
     request: Request,
     _: str = Depends(require_profile_role(ROLE_ADMIN)),
 ) -> RedirectResponse:
+    # Compatibility alias for older review links. The Health workbench owns the
+    # current review queues and preserves any query filters.
     query = f"?{request.url.query}" if request.url.query else ""
     return RedirectResponse(
         url=f"/ui/movies/health{query}#review-workbench",

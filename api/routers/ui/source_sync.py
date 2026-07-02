@@ -56,6 +56,8 @@ def _snapshot_or_404(db: Session, snapshot_id: int) -> SourceSnapshot:
 def source_sync_ui(
     _: str = Depends(require_profile_role(ROLE_ADMIN)),
 ):
+    # Compatibility alias for older source-sync bookmarks. Upload and history now
+    # live inside the Health workbench.
     return RedirectResponse(
         url="/ui/movies/health#source-synchronization",
         status_code=302,

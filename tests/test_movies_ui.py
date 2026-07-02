@@ -390,6 +390,19 @@ def test_reviewer_cannot_open_admin_health_or_review_routes(
         assert response.status_code == 403
 
 
+def test_admin_compatibility_routes_redirect_to_health_workbench(client: TestClient) -> None:
+    expected_locations = {
+        "/ui/flags": "/ui/movies/health?view=flags#review-workbench",
+        "/ui/review": "/ui/movies/health#review-workbench",
+        "/ui/source-sync": "/ui/movies/health#source-synchronization",
+    }
+
+    for path, location in expected_locations.items():
+        response = client.get(path, follow_redirects=False)
+        assert response.status_code == 302
+        assert response.headers["location"] == location
+
+
 def test_empty_library_shows_admin_first_import_cta(
     client: TestClient,
     db_session,

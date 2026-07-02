@@ -14,6 +14,7 @@ Dated measurements, screenshots, audits, and generated CSVs belong in `reports/`
   repo-scoped Codex skills
 - `legacy-vault-review.md`: migration status and ideas retained from the original Vault
 - `legacy-etl.md`: lifecycle and support contract for archived-but-supported ETL tooling
+- `api-surface-audit-2026-07-02.md`: keep/deprecate/remove decisions for stale backend API candidates
 - `nextjs_frontend_plan.md`: historical optional frontend migration plan
 - `public-launch.md`: checklist for publishing the repository without exposing
   private history or runtime artifacts

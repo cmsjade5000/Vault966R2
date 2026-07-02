@@ -13,6 +13,8 @@ router = APIRouter(tags=["ui"])
 def list_flags_ui(
     _: str = Depends(require_profile_role(ROLE_ADMIN)),
 ) -> RedirectResponse:
+    # Compatibility alias for older bookmarks and generated clients. The Health
+    # workbench owns the current flags UI.
     return RedirectResponse(
         url="/ui/movies/health?view=flags#review-workbench",
         status_code=302,
