@@ -37,7 +37,7 @@ if str(ROOT_DIR) not in sys.path:
 
 import api.models  # noqa: F401  # ensure all ORM mappers are registered (e.g., MovieFlag)
 from core.movie_metadata import MovieMetadata
-from core.vault_ids import normalize_vault_id
+from core.vault_ids import allocate_vault_id
 
 from sqlalchemy import func, select
 from sqlalchemy.exc import SQLAlchemyError
@@ -933,8 +933,18 @@ def process_record(
             mood_objs = [get_or_create_mood(session, name) for name in record["moods"]]
 
             if existing is None:
+                try:
+                    vault_id = (
+                        allocate_vault_id(session, record.get("legacy_vault_id"))
+                        if record.get("legacy_vault_id")
+                        else None
+                    )
+                except ValueError:
+                    session.rollback()
+                    _write_db_duplicate(record, duplicates_path)
+                    return "skipped", "retired_vault_id"
                 movie = Movie(
-                    vault_id=normalize_vault_id(record.get("legacy_vault_id")),
+                    vault_id=vault_id,
                     title=record["title"],
                     year=record["year"],
                     runtime=record["runtime"],

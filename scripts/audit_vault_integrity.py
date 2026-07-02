@@ -25,6 +25,7 @@ from api.models.movie import Movie, MovieIngestProvenance  # noqa: E402
 from api.models.movie_review import MovieReviewCheck  # noqa: E402
 from api.models.person import Role, RoleType  # noqa: E402
 from api.models.source_sync import SourceFieldDecision  # noqa: E402
+from api.models.vault_id import RetiredVaultId  # noqa: E402
 from api.services.collection_integrity import (  # noqa: E402
     count_structural_issues,
     get_structural_issues,
@@ -239,6 +240,17 @@ def audit(
     missing_source_ids: list[dict[str, Any]] = []
     source_unmatched: list[str] = []
     source = _load_source(source_path) if source_path is not None else {}
+    retired_vault_ids = {
+        retired.vault_id: {
+            "vault_id": retired.vault_id,
+            "retired_at": retired.retired_at.isoformat() if retired.retired_at else None,
+            "source": retired.source,
+            "reason": retired.reason,
+            "deleted_movie_id": retired.deleted_movie_id,
+            "deleted_movie_title": retired.deleted_movie_title,
+        }
+        for retired in db.query(RetiredVaultId).order_by(RetiredVaultId.vault_id.asc()).all()
+    }
     approved_decisions = _approved_source_decisions(db)
     approved_title_year_decisions = _approved_title_year_decisions(db)
     matched_source_ids: set[str] = set()
@@ -341,7 +353,10 @@ def audit(
                 }
             )
     if source:
-        source_unmatched = sorted(set(source) - matched_source_ids)
+        retired_source_ids = sorted(set(source) & set(retired_vault_ids))
+        source_unmatched = sorted(set(source) - matched_source_ids - set(retired_vault_ids))
+    else:
+        retired_source_ids = []
 
     rng = random.Random(sample_seed)
     identified = [movie for movie in movies if movie.imdb_id or movie.tmdb_id]
@@ -384,6 +399,8 @@ def audit(
             "newer_source_entry_count": len(newer_source_entries),
             "missing_source_id_count": len(missing_source_ids),
             "source_unmatched_count": len(source_unmatched),
+            "retired_vault_id_count": len(retired_vault_ids),
+            "retired_source_vault_id_count": len(retired_source_ids),
             "healthy": structural_issue_count == 0 and not drift and not missing_source_ids,
             "review_required": content_review_issue_count > 0 or bool(source_unmatched),
         },
@@ -399,6 +416,10 @@ def audit(
             "newer_source_entries": newer_source_entries,
             "missing_source_ids": missing_source_ids,
             "source_unmatched_vault_ids": source_unmatched,
+            "retired_vault_ids": list(retired_vault_ids.values()),
+            "retired_source_vault_ids": [
+                retired_vault_ids[vault_id] for vault_id in retired_source_ids
+            ],
         },
         "spot_check": [
             {

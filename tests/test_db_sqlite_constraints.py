@@ -93,7 +93,7 @@ def test_sqlite_schema_invariant_check_reports_missing_identity_index(monkeypatc
     assert "ix_movies_vault_id" in str(excinfo.value)
 
 
-def test_sqlite_bootstrap_creates_vault_id_unique_index(monkeypatch):
+def test_sqlite_bootstrap_creates_vault_id_unique_index_and_retired_registry(monkeypatch):
     engine = create_engine(
         "sqlite://",
         future=True,
@@ -123,6 +123,14 @@ def test_sqlite_bootstrap_creates_vault_id_unique_index(monkeypatch):
 
     with engine.connect() as connection:
         index_rows = list(connection.execute(text("PRAGMA index_list(movies)")))
+        retired_count = connection.execute(
+            text("SELECT COUNT(*) FROM retired_vault_ids")
+        ).scalar_one()
+        retired_v0087 = connection.execute(
+            text("SELECT source FROM retired_vault_ids WHERE vault_id = 'V0087'")
+        ).scalar_one()
 
     unique_indexes = {row[1] for row in index_rows if bool(row[2])}
     assert "ix_movies_vault_id" in unique_indexes
+    assert retired_count == len(db.LEGACY_RETIRED_VAULT_IDS)
+    assert retired_v0087 == "legacy_gap"

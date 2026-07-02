@@ -20,6 +20,7 @@ from .source_sync import (  # noqa: F401
     SourceSnapshot,
 )
 from .usage_event import UsageEvent  # noqa: F401
+from .vault_id import RetiredVaultId  # noqa: F401
 
 __all__ = [
     "Movie",
@@ -40,4 +41,5 @@ __all__ = [
     "SourceFieldDecision",
     "OwnedMovieCopy",
     "UsageEvent",
+    "RetiredVaultId",
 ]
