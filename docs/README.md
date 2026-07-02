@@ -22,6 +22,7 @@ Dated measurements, screenshots, audits, and generated CSVs belong in `reports/`
 
 ## Operations and Integrations
 
+- `security-automation.md`: GitHub security automation and local audit guidance
 - `siri-shortcut.md`: local Siri Shortcut integration
 - `samples.md`: archived-but-supported CSV preparation workflow
 
