@@ -10,9 +10,7 @@ from .body_login_submit_login_post import BodyLoginSubmitLoginPost
 from .body_upload_first_import_snapshot_ui_first_import_upload_post import (
     BodyUploadFirstImportSnapshotUiFirstImportUploadPost,
 )
-from .body_upload_source_snapshot_ui_source_sync_upload_post import (
-    BodyUploadSourceSnapshotUiSourceSyncUploadPost,
-)
+from .body_upload_source_snapshot_ui_source_sync_upload_post import BodyUploadSourceSnapshotUiSourceSyncUploadPost
 from .discover_refresh_api_discover_refresh_get_response_discover_refresh_api_discover_refresh_get import (
     DiscoverRefreshApiDiscoverRefreshGetResponseDiscoverRefreshApiDiscoverRefreshGet,
 )
