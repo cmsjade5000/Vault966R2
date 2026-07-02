@@ -58,6 +58,14 @@ def poster_source_url(value: object, size: str) -> str:
     return urlunsplit(("https", "image.tmdb.org", "/".join(parts), parsed.query, ""))
 
 
+def is_cacheable_poster_source(value: object) -> bool:
+    try:
+        poster_source_url(value, "w185")
+    except ValueError:
+        return False
+    return True
+
+
 def cache_stem(movie_id: int, size: str, source_url: str) -> str:
     digest = hashlib.sha256(source_url.encode("utf-8")).hexdigest()[:16]
     return f"{movie_id}-{size}-{digest}"
