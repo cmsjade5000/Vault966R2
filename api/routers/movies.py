@@ -43,7 +43,7 @@ from core.movie_filters import (
     parse_movie_filters,
 )
 from core.movie_metadata import MovieMetadata
-from core.vault_ids import next_vault_id, normalize_vault_id
+from core.vault_ids import allocate_vault_id, retire_movie_vault_id
 from api.utils.pagination import paginate
 from api.services.movie_lookup import (
     MovieLookupError,
@@ -545,6 +545,12 @@ def delete_movie(
     movie = db.get(Movie, movie_id)
     if movie is None:
         raise HTTPException(status_code=404, detail="Movie not found")
+    retire_movie_vault_id(
+        db,
+        movie,
+        source="movie_delete",
+        reason="Movie row deleted through API.",
+    )
     db.delete(movie)
     db.commit()
     return Response(status_code=204)
@@ -687,8 +693,12 @@ def create_movie(
         moods.append(m)
 
     metadata = MovieMetadata.from_mapping(payload.model_dump())
+    try:
+        vault_id = allocate_vault_id(db, metadata.vault_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
     movie = Movie(
-        vault_id=normalize_vault_id(metadata.vault_id) or next_vault_id(db),
+        vault_id=vault_id,
         title=metadata.title,
         year=metadata.year,
         runtime=metadata.runtime,

@@ -41,6 +41,19 @@ SQLITE_REQUIRED_UNIQUE_INDEXES = {
     "ix_movies_tmdb_id",
     "ix_movies_vault_id",
 }
+LEGACY_RETIRED_VAULT_IDS = (
+    "V0087",
+    "V0135",
+    "V0288",
+    "V0309",
+    "V0539",
+    "V0584",
+    "V0631",
+    "V0637",
+    "V0643",
+    "V0695",
+    "V0942",
+)
 
 
 class Base(DeclarativeBase):
@@ -493,6 +506,54 @@ def _ensure_sqlite_movie_columns() -> None:
                     ON maintenance_jobs (state)
                     """
                 )
+            )
+
+        retired_vault_ids_exists = connection.execute(
+            text("SELECT name FROM sqlite_master WHERE type='table' AND name='retired_vault_ids'")
+        ).first()
+        if not retired_vault_ids_exists:
+            connection.execute(
+                text(
+                    """
+                    CREATE TABLE retired_vault_ids (
+                        vault_id TEXT PRIMARY KEY,
+                        retired_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                        source TEXT NOT NULL,
+                        reason TEXT,
+                        deleted_movie_id INTEGER,
+                        deleted_movie_title TEXT
+                    )
+                    """
+                )
+            )
+            connection.execute(
+                text(
+                    """
+                    CREATE INDEX IF NOT EXISTS ix_retired_vault_ids_retired_at
+                    ON retired_vault_ids (retired_at)
+                    """
+                )
+            )
+            connection.execute(
+                text(
+                    """
+                    CREATE INDEX IF NOT EXISTS ix_retired_vault_ids_source
+                    ON retired_vault_ids (source)
+                    """
+                )
+            )
+
+        for vault_id in LEGACY_RETIRED_VAULT_IDS:
+            connection.execute(
+                text(
+                    """
+                    INSERT OR IGNORE INTO retired_vault_ids
+                        (vault_id, source, reason)
+                    VALUES
+                        (:vault_id, 'legacy_gap', 'Known legacy Vault ID gap reserved to prevent reuse.')
+                    """
+                ),
+                {"vault_id": vault_id},
             )
 
 

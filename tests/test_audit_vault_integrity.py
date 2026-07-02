@@ -3,6 +3,7 @@ from datetime import datetime, timezone
 from api.models.movie import Movie, MovieIngestProvenance
 from api.models.movie_review import MovieReviewCheck
 from api.models.source_sync import SourceFieldDecision, SourceMovieRow, SourceSnapshot
+from api.models.vault_id import RetiredVaultId
 from scripts.audit_vault_integrity import _fingerprint, audit
 
 
@@ -131,6 +132,36 @@ def test_audit_reports_nonlegacy_movies_as_newer_source_entries(db_session, tmp_
     assert report["summary"]["newer_source_entry_count"] >= 1
     newer = report["source_reconciliation"]["newer_source_entries"]
     assert any(item["vault_id"] == "V1000" for item in newer)
+
+
+def test_audit_reports_retired_source_ids_separately_from_unmatched_gaps(
+    db_session,
+    tmp_path,
+):
+    db_session.add(
+        RetiredVaultId(
+            vault_id="V0087",
+            source="legacy_gap",
+            reason="Known legacy Vault ID gap reserved to prevent reuse.",
+        )
+    )
+    db_session.commit()
+    source_path = tmp_path / "legacy.csv"
+    source_path.write_text(
+        "vault_id,title,year,runtime\n"
+        "V0087,Retired Gap,1987,90\n"
+        "V0999,Accidental Gap,1999,90\n",
+        encoding="utf-8",
+    )
+
+    report = audit(db_session, source_path=source_path, sample_size=0)
+
+    assert report["summary"]["retired_vault_id_count"] == 1
+    assert report["summary"]["retired_source_vault_id_count"] == 1
+    assert report["source_reconciliation"]["source_unmatched_vault_ids"] == ["V0999"]
+    retired = report["source_reconciliation"]["retired_source_vault_ids"]
+    assert retired[0]["vault_id"] == "V0087"
+    assert retired[0]["source"] == "legacy_gap"
 
 
 def test_audit_reports_added_posters_as_artwork_enrichment(db_session, tmp_path):

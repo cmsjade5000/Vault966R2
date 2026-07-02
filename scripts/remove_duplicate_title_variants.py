@@ -33,6 +33,7 @@ if str(ROOT_DIR) not in sys.path:
 from api.db import SessionLocal  # noqa: E402
 from api.models.movie import Movie  # noqa: E402
 from api.models.person import Role  # noqa: E402,F401  # ensure mapper registration
+from core.vault_ids import retire_movie_vault_id  # noqa: E402
 
 YEAR_SUFFIX_RE = re.compile(r"^(?P<base>.+)\s\((?P<year>\d{4})\)$")
 
@@ -130,14 +131,21 @@ def main() -> int:
             print("\nDry run complete. Re-run with --delete to apply removals.")
             return 0
 
-        delete_ids = [dup.id for _, duplicates in flagged for dup in duplicates]
-        if not delete_ids:
+        duplicates_to_delete = [dup for _, duplicates in flagged for dup in duplicates]
+        if not duplicates_to_delete:
             print("No rows matched deletion criteria.")
             return 0
 
-        session.query(Movie).filter(Movie.id.in_(delete_ids)).delete(synchronize_session=False)
+        for duplicate in duplicates_to_delete:
+            retire_movie_vault_id(
+                session,
+                duplicate,
+                source="duplicate_cleanup",
+                reason="Duplicate title/year row removed by maintenance script.",
+            )
+            session.delete(duplicate)
         session.commit()
-        print(f"Deleted {len(delete_ids)} rows.")
+        print(f"Deleted {len(duplicates_to_delete)} rows.")
 
     return 0
 

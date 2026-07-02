@@ -7,6 +7,7 @@ from sqlalchemy.pool import StaticPool
 
 from api.models.movie import Movie
 from api.models.person import RoleType
+from api.models.vault_id import RetiredVaultId
 from legacy.etl import etl_seed
 
 
@@ -243,6 +244,41 @@ def test_process_record_preserves_legacy_vault_id(in_memory_session, tmp_path):
     with in_memory_session() as session:
         movie = session.execute(select(Movie).where(Movie.imdb_id == "tt1234567")).scalar_one()
         assert movie.vault_id == "V0042"
+
+
+def test_process_record_skips_retired_legacy_vault_id(in_memory_session, tmp_path):
+    with in_memory_session() as session:
+        session.add(
+            RetiredVaultId(
+                vault_id="V0087",
+                source="legacy_gap",
+                reason="Known legacy Vault ID gap reserved to prevent reuse.",
+            )
+        )
+        session.commit()
+    record = {
+        "title": "Retired Legacy Entry",
+        "year": 1987,
+        "runtime": 100,
+        "plot": None,
+        "imdb_id": "tt7654321",
+        "tmdb_id": 765,
+        "poster_url": None,
+        "backdrop_url": None,
+        "genres": [],
+        "moods": [],
+        "legacy_vault_id": "V0087",
+    }
+
+    assert etl_seed.process_record(
+        record,
+        dry_run=False,
+        duplicates_path=tmp_path / "duplicates.csv",
+    ) == ("skipped", "retired_vault_id")
+
+    with in_memory_session() as session:
+        movie = session.execute(select(Movie).where(Movie.imdb_id == "tt7654321")).one_or_none()
+        assert movie is None
 
 
 def test_process_record_skips_no_changes(in_memory_session, tmp_path):

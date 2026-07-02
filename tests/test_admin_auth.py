@@ -1,5 +1,6 @@
 from fastapi.testclient import TestClient
 
+from api.models.vault_id import RetiredVaultId
 from api.schemas.movie import MovieCreate
 
 
@@ -46,3 +47,28 @@ def test_create_movie_with_token(client: TestClient, admin_headers: dict[str, st
     assert body["collection"] == "Auth Collection"
     body = response.json()
     assert body["title"] == "Auth Movie"
+
+
+def test_create_movie_rejects_retired_vault_id(
+    client: TestClient,
+    db_session,
+    admin_headers: dict[str, str],
+):
+    db_session.add(
+        RetiredVaultId(
+            vault_id="V0087",
+            source="legacy_gap",
+            reason="Known legacy Vault ID gap reserved to prevent reuse.",
+        )
+    )
+    db_session.commit()
+    payload = MovieCreate(title="Retired ID Movie", vault_id="V0087", genres=[], moods=[])
+
+    response = client.post(
+        "/movies/",
+        json=payload.model_dump(),
+        headers=admin_headers,
+    )
+
+    assert response.status_code == 400
+    assert response.json()["message"] == "Vault ID V0087 is retired and cannot be reused"
