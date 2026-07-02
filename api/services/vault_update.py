@@ -486,6 +486,10 @@ def _missing_artwork_preview(db: Session, field_name: str) -> tuple[int, list[st
 
 
 def build_update_preview(db: Session) -> dict[str, Any]:
+    provider_access = {
+        "tmdb": _env_has_any(["TMDB_API_KEY"]),
+        "omdb": _env_has_any(["OMDB_API_KEY"]),
+    }
     previews = {
         "genres": _genre_preview(db),
         "moods": _mood_preview(db),
@@ -511,7 +515,7 @@ def build_update_preview(db: Session) -> dict[str, Any]:
                 "report": _report_meta(task),
             }
         )
-    return {"tasks": tasks}
+    return {"providers": provider_access, "tasks": tasks}
 
 
 def _compact_output(stdout: str, stderr: str) -> str:

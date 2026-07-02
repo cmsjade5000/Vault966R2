@@ -7,6 +7,9 @@
     const updateSteps = document.querySelector("[data-update-steps]");
     const runHistory = document.querySelector("[data-maintenance-history]");
     const cancelButton = document.querySelector("[data-update-cancel]");
+    const providerSummary = document.querySelector(
+      "[data-maintenance-providers]",
+    );
 
     const setBusy = (isBusy) => {
       updateButtons.forEach((button) => {
@@ -155,6 +158,16 @@
     };
 
     const renderPreview = (payload) => {
+      if (providerSummary) {
+        const providers =
+          payload?.providers && typeof payload.providers === "object"
+            ? payload.providers
+            : {};
+        const tmdb = providers.tmdb ? "TMDb available" : "TMDb missing";
+        const omdb = providers.omdb ? "OMDb available" : "OMDb missing";
+        providerSummary.textContent = `${tmdb} · ${omdb}`;
+      }
+
       const tasks = Array.isArray(payload?.tasks) ? payload.tasks : [];
       tasks.forEach((task) => {
         const preview = document.querySelector(
