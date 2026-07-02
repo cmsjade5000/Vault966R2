@@ -42,6 +42,8 @@ reports/**/*.jpg
 reports/**/*.jpeg
 reports/**/*.md
 !reports/README.md
+!reports/demo-screenshots/
+!reports/demo-screenshots/**
 legacy/data/
 legacy/reports/
 llm-council/
