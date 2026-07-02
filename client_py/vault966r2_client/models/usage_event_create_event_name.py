@@ -9,6 +9,7 @@ class UsageEventCreateEventName(str, Enum):
     PERSONALIZED_RECOMMENDATIONS_SHOWN = "personalized_recommendations_shown"
     PREFERENCE_TOGGLED = "preference_toggled"
     RANDOM_PICK_REQUESTED = "random_pick_requested"
+    SORT_CHANGED = "sort_changed"
     VIEW_CHANGED = "view_changed"
 
     def __str__(self) -> str:
