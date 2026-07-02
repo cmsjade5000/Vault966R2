@@ -175,7 +175,7 @@ def ordering_clause(order_by: str):
         "title_desc": (Movie.title.desc(), Movie.id.asc()),
         "year_asc": (Movie.year.asc().nullslast(), Movie.id.asc()),
         "year_desc": (Movie.year.desc().nullslast(), Movie.id.asc()),
-        "runtime_asc": (Movie.runtime.asc(), Movie.id.asc()),
+        "runtime_asc": (Movie.runtime.asc().nullslast(), Movie.id.asc()),
         "runtime_desc": (Movie.runtime.desc().nullslast(), Movie.id.asc()),
         "imdb_desc": (Movie.imdb_rating.desc().nullslast(), Movie.id.asc()),
         "rt_desc": (Movie.rt_score.desc().nullslast(), Movie.id.asc()),

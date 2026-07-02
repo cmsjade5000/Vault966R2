@@ -76,6 +76,18 @@ LIBRARY_PRESETS = {
 }
 
 LIBRARY_PAGE_SIZE = 36
+LIBRARY_FILTER_QUERY_KEYS = {
+    "q",
+    "genres",
+    "moods",
+    "year_min",
+    "year_max",
+    "runtime_min",
+    "runtime_max",
+    "order_by",
+    "preset",
+    "semantic",
+}
 
 
 def _apply_library_preset(query, preset: str | None):
@@ -206,12 +218,17 @@ def movies_grid(
     profiles = get_profiles(db)
     active_profile_id = get_active_profile_id(request, db)
     cookie_data = load_filter_cookie(request)
-    using_query = bool(request.query_params)
+    query_params = request.query_params
+    using_filter_query = "_filters" in query_params or any(
+        key in query_params for key in LIBRARY_FILTER_QUERY_KEYS
+    )
 
     def resolve(source_value, key):
-        return source_value if using_query else cookie_data.get(key)
+        return source_value if using_filter_query else cookie_data.get(key)
 
     resolved_view = resolve(view, "view") or "grid"
+    if "view" in query_params:
+        resolved_view = view
     if resolved_view not in {"grid", "list"}:
         resolved_view = "grid"
     resolved_preset = resolve(preset, "preset")
@@ -232,7 +249,7 @@ def movies_grid(
     semantic_value = resolve(semantic, "semantic")
     semantic_active = str(semantic_value).lower() in {"1", "true", "yes", "on"}
     current_page = page
-    if not using_query:
+    if "page" not in query_params and not using_filter_query:
         cookie_page = cookie_data.get("page")
         if cookie_page is not None:
             try:

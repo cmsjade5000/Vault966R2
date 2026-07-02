@@ -53,6 +53,23 @@ def test_movies_grid_explicit_clear_removes_cookie_backed_preset(
     assert 'data-clear-filter="preset"' not in restored_after_clear.text
 
 
+def test_movies_grid_view_switch_preserves_cookie_backed_filters(client: TestClient) -> None:
+    selected = client.get(
+        "/ui/movies",
+        params={"genres": "Science Fiction", "order_by": "runtime_asc"},
+    )
+    assert selected.status_code == 200
+
+    switched = client.get("/ui/movies", params={"view": "list"})
+    assert switched.status_code == 200
+    html = switched.text
+    assert 'id="genres-input" value="Science Fiction"' in html
+    assert 'option value="runtime_asc" selected' in html
+    assert 'input type="hidden" name="view" value="list"' in html
+    assert "Blade Runner" in html
+    assert "Toy Story" not in html
+
+
 def test_movies_grid_filters_by_mood(client: TestClient) -> None:
     response = client.get("/ui/movies", params={"moods": "Moody"})
     assert response.status_code == 200
