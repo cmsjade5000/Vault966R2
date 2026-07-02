@@ -19,7 +19,7 @@ from api.services.movie_lookup import (
     MovieLookupUnavailable,
     lookup_movie,
 )
-from api.services.poster_cache import cache_movie_posters_safely
+from api.services.poster_cache import cache_movie_posters_safely, is_cacheable_poster_source
 from api.services.profiles import ROLE_ADMIN
 from api.utils.providers import merge_providers
 from core.genres import split_and_normalize
@@ -280,7 +280,7 @@ def manual_add_movie(
         metadata.model_dump(mode="json"),
         providers,
     )
-    if movie.poster_url:
+    if movie.poster_url and is_cacheable_poster_source(movie.poster_url):
         background_tasks.add_task(cache_movie_posters_safely, movie.id)
 
     return {
