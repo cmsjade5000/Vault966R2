@@ -33,3 +33,19 @@ Staged 5 rows; review issues: 2
 Use this sample for contributor onboarding, screenshots, issue reproduction, and
 Codex workflow examples. Do not replace it with rows from the private database or
 with exports from the live service.
+
+## Demo Screenshots
+
+Public-safe screenshots live under `reports/demo-screenshots/`. They were
+captured from the real UI with a temporary SQLite database seeded only with
+fictional titles such as `Sample Moon`, `Paper Comet`, `Neon Orchard`, and
+`Velvet Satellite`.
+
+The screenshot set covers:
+
+- Library browsing in grid view.
+- The Vault Health review workbench with a synthetic metadata flag.
+- A Flic-ranked list filtered to a synthetic watch-night scenario.
+
+Do not regenerate these screenshots from the live database, private collection
+exports, real profile names, local paths, or logs.
