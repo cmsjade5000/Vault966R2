@@ -66,8 +66,17 @@
             throw new Error("Clipboard unavailable");
           }
           await navigator.clipboard.writeText(vaultId);
-          window.showToast?.("Copied Vault ID.");
+          window.showToast?.({
+            label: "Copied",
+            message: "Vault ID copied to clipboard.",
+            tone: "success",
+          });
         } catch (error) {
+          window.showToast?.({
+            label: "Copy unavailable",
+            message: "Select and copy the Vault ID manually.",
+            tone: "notice",
+          });
           return;
         }
       });
@@ -139,13 +148,21 @@
         try {
           const payload = await fetchTrailer();
           if (!applyTrailerPayload(payload)) {
-            window.showToast?.("Trailer unavailable.");
+            window.showToast?.({
+              label: "Trailer unavailable",
+              message: "No playable YouTube trailer is linked for this movie.",
+              tone: "notice",
+            });
             return;
           }
           embedUrl = trailerPayload.embedUrl;
           trailerName = trailerPayload.name;
         } catch (error) {
-          window.showToast?.("Trailer unavailable.");
+          window.showToast?.({
+            label: "Trailer failed",
+            message: "The trailer could not load. Try again later.",
+            tone: "error",
+          });
           return;
         }
       }
@@ -332,7 +349,19 @@
           notes: savedFlag.notes,
         });
         flagDialogController?.close();
-        window.showToast?.(canManageFlags ? "Flag saved." : "Report sent.");
+        window.showToast?.(
+          canManageFlags
+            ? {
+                label: "Flag saved",
+                message: "This movie is marked for review.",
+                tone: "success",
+              }
+            : {
+                label: "Report sent",
+                message: "Thanks. This issue is now in the review queue.",
+                tone: "success",
+              },
+        );
       } catch (error) {
         if (flagDialogStatus) {
           flagDialogStatus.textContent =
@@ -377,7 +406,11 @@
         }
         updateFlagView({ flagged: false });
         flagDialogController?.close();
-        window.showToast?.("Flag resolved.");
+        window.showToast?.({
+          label: "Flag resolved",
+          message: "This movie is no longer in Flags.",
+          tone: "success",
+        });
       } catch (error) {
         if (flagDialogStatus) {
           flagDialogStatus.textContent =

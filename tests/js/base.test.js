@@ -9,7 +9,31 @@ const script = fs.readFileSync(
   "utf8",
 );
 
-const loadBase = () => {
+const createElement = (tagName) => ({
+  tagName: tagName.toUpperCase(),
+  attributes: {},
+  children: [],
+  className: "",
+  dataset: {},
+  textContent: "",
+  classList: {
+    add() {},
+    remove() {},
+  },
+  appendChild(child) {
+    this.children.push(child);
+    child.parentNode = this;
+  },
+  remove() {
+    this.removed = true;
+  },
+  setAttribute(name, value) {
+    this.attributes[name] = value;
+  },
+  addEventListener() {},
+});
+
+const loadBase = ({ toastContainer = null, immediateTimers = true } = {}) => {
   const documentListeners = {};
   const body = {
     attributes: {},
@@ -40,7 +64,9 @@ const loadBase = () => {
     addEventListener(type, listener) {
       documentListeners[type] = listener;
     },
-    getElementById() {
+    createElement,
+    getElementById(id) {
+      if (id === "toast-container") return toastContainer;
       return null;
     },
     querySelector(selector) {
@@ -60,7 +86,7 @@ const loadBase = () => {
     },
     navigator: {},
     setTimeout(callback) {
-      callback();
+      if (immediateTimers) callback();
       return 1;
     },
     addEventListener() {},
@@ -111,4 +137,41 @@ test("global busy still handles normal form submissions", () => {
   assert.equal(indicator.attributes.hidden, undefined);
   assert.equal(body.attributes["aria-busy"], "true");
   assert.equal(messageTarget.textContent, "Searching the Vault…");
+});
+
+test("global busy release updates the active loading message", () => {
+  const { body, indicator, messageTarget, window } = loadBase();
+
+  const release = window.setVaultBusy("Choosing from the full Vault…", {
+    delay: 0,
+  });
+  release.update("Still checking trusted picks…");
+
+  assert.equal(indicator.attributes.hidden, undefined);
+  assert.equal(body.attributes["aria-busy"], "true");
+  assert.equal(messageTarget.textContent, "Still checking trusted picks…");
+
+  release();
+  assert.equal(indicator.attributes.hidden, "");
+  assert.equal(body.attributes["aria-busy"], undefined);
+});
+
+test("toast helper renders optional label, message, and tone", () => {
+  const toastContainer = createElement("div");
+  const { window } = loadBase({ toastContainer, immediateTimers: false });
+
+  window.showToast({
+    label: "Connection issue",
+    message: "The Vault could not connect. Try again.",
+    tone: "error",
+  });
+
+  assert.equal(toastContainer.children.length, 1);
+  const toast = toastContainer.children[0];
+  assert.equal(toast.dataset.tone, "error");
+  assert.equal(toast.children[0].children[0].textContent, "Connection issue");
+  assert.equal(
+    toast.children[0].children[1].textContent,
+    "The Vault could not connect. Try again.",
+  );
 });

@@ -44,17 +44,37 @@
   }
 })();
 
-window.showToast = function (message) {
+window.showToast = function (input) {
   const container = document.getElementById("toast-container");
   if (!container) return;
+  const options =
+    input && typeof input === "object" && !Array.isArray(input)
+      ? input
+      : { message: input };
+  const label = String(options.label || "").trim();
+  const message = String(options.message ?? "").trim();
+  const tone = String(options.tone || "").trim();
   const toast = document.createElement("div");
   toast.className = "toast";
-  const text = document.createElement("span");
-  text.textContent = String(message ?? "");
+  if (tone) {
+    toast.dataset.tone = tone;
+  }
+  const content = document.createElement("span");
+  content.className = "toast__content";
+  if (label) {
+    const labelNode = document.createElement("strong");
+    labelNode.className = "toast__label";
+    labelNode.textContent = label;
+    content.appendChild(labelNode);
+  }
+  const messageNode = document.createElement("span");
+  messageNode.className = "toast__message";
+  messageNode.textContent = message;
+  content.appendChild(messageNode);
   const button = document.createElement("button");
   button.setAttribute("aria-label", "Dismiss toast");
   button.textContent = "\u00d7";
-  toast.appendChild(text);
+  toast.appendChild(content);
   toast.appendChild(button);
   const dismiss = () => {
     toast.classList.remove("show");
@@ -70,7 +90,10 @@ window.showToast = function (message) {
 
 window.persistToastMessage = function (message) {
   try {
-    sessionStorage.setItem("flicToast", message);
+    sessionStorage.setItem(
+      "flicToast",
+      typeof message === "string" ? message : JSON.stringify(message),
+    );
   } catch (err) {
     console.warn("Failed to persist toast message", err);
   }
@@ -108,9 +131,15 @@ window.persistToastMessage = function (message) {
     } else {
       show();
     }
-    return () => {
+    const release = () => {
       if (activeToken === token) clearBusy();
     };
+    release.update = (nextMessage) => {
+      if (activeToken === token) {
+        messageTarget.textContent = String(nextMessage);
+      }
+    };
+    return release;
   };
 
   document.addEventListener("click", (event) => {
@@ -217,18 +246,30 @@ window.runFlicPick = async function runFlicPick(options = {}) {
     const response = await fetch(url);
     if (response.status === 404) {
       if (typeof window.showToast === "function") {
-        window.showToast("Nothing matched\u2014want me to widen the net?");
+        window.showToast({
+          label: "No match",
+          message: "No trusted movie fits those filters yet.",
+          tone: "notice",
+        });
       }
       return;
     }
     if (!response.ok) {
       if (typeof window.showToast === "function") {
-        window.showToast("I hit a snag\u2014try again?");
+        window.showToast({
+          label: "Pick failed",
+          message: "The Vault could not choose right now. Try again.",
+          tone: "error",
+        });
       }
       return;
     }
     const data = await response.json();
-    const successMessage = `I queued "${data.title}" for you.`;
+    const successMessage = {
+      label: "Pick ready",
+      message: `Queued "${data.title}" for you.`,
+      tone: "success",
+    };
     if (typeof window.persistToastMessage === "function") {
       window.persistToastMessage(successMessage);
     }
@@ -241,7 +282,11 @@ window.runFlicPick = async function runFlicPick(options = {}) {
   } catch (error) {
     console.error("Global pick failed", error);
     if (typeof window.showToast === "function") {
-      window.showToast("Network hiccup\u2014try again soon?");
+      window.showToast({
+        label: "Connection issue",
+        message: "The Vault could not connect. Try again soon.",
+        tone: "error",
+      });
     }
   } finally {
     window.runFlicPick.pending = false;
@@ -255,9 +300,15 @@ window.runFlicPick = async function runFlicPick(options = {}) {
 };
 
 try {
-  const pendingToast = sessionStorage.getItem("flicToast");
-  if (pendingToast && typeof window.showToast === "function") {
+  const pendingToastRaw = sessionStorage.getItem("flicToast");
+  if (pendingToastRaw && typeof window.showToast === "function") {
     sessionStorage.removeItem("flicToast");
+    let pendingToast = pendingToastRaw;
+    try {
+      pendingToast = JSON.parse(pendingToastRaw);
+    } catch (err) {
+      pendingToast = pendingToastRaw;
+    }
     window.showToast(pendingToast);
   }
 } catch (err) {

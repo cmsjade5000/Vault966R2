@@ -327,7 +327,11 @@
         findMatches();
       } catch {
         closeDialog();
-        window.showToast?.("Could not load that movie—try again?");
+        window.showToast?.({
+          label: "Load failed",
+          message: "Movie metadata could not load. Try again.",
+          tone: "error",
+        });
       } finally {
         setPending(submitButton, false);
       }
@@ -388,7 +392,11 @@
       }
 
       if (!Object.keys(payload).length) {
-        window.showToast?.("No changes to save.");
+        window.showToast?.({
+          label: "No changes",
+          message: "Nothing changed, so the movie was left as-is.",
+          tone: "notice",
+        });
         closeDialog({ restoreFocus: true });
         return;
       }
@@ -402,7 +410,11 @@
           body: JSON.stringify(payload),
         });
         if (!response.ok) throw new Error("Update failed");
-        window.showToast?.("Movie updated.");
+        window.showToast?.({
+          label: "Movie updated",
+          message: "Changes saved to the Vault.",
+          tone: "success",
+        });
         window.location.reload();
       } catch {
         setStatus("Could not save changes—try again?", true);

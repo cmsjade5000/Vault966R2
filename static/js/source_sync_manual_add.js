@@ -173,7 +173,11 @@
         const payload = await response.json();
         const label = payload.vault_id ? ` ${payload.vault_id}` : "";
         setStatus(`Added${label}: ${payload.title}.`);
-        window.showToast?.(`Added ${payload.title}.`);
+        window.showToast?.({
+          label: "Movie added",
+          message: `Added ${payload.title}.`,
+          tone: "success",
+        });
         resetPreview();
         form.reset();
       } catch (error) {
