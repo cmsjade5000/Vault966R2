@@ -20,13 +20,13 @@ class MovieDoubleFeature:
         primary (MovieRead):
         runtime_cap (int):
         secondary (MovieRead):
-        total_runtime (int):
+        total_runtime (str):
     """
 
     primary: MovieRead
     runtime_cap: int
     secondary: MovieRead
-    total_runtime: int
+    total_runtime: str
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:

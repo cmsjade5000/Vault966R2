@@ -18,7 +18,8 @@ def _get_kwargs(
     year_max: None | str | Unset = UNSET,
     runtime_max: None | str | Unset = UNSET,
     page: int | Unset = 1,
-    order_by: str | Unset = "title_asc",
+    order_by: None | str | Unset = UNSET,
+    random_seed: int | None | Unset = UNSET,
     view: str | Unset = "grid",
     preset: None | str | Unset = UNSET,
     semantic: None | str | Unset = UNSET,
@@ -69,7 +70,19 @@ def _get_kwargs(
 
     params["page"] = page
 
-    params["order_by"] = order_by
+    json_order_by: None | str | Unset
+    if isinstance(order_by, Unset):
+        json_order_by = UNSET
+    else:
+        json_order_by = order_by
+    params["order_by"] = json_order_by
+
+    json_random_seed: int | None | Unset
+    if isinstance(random_seed, Unset):
+        json_random_seed = UNSET
+    else:
+        json_random_seed = random_seed
+    params["random_seed"] = json_random_seed
 
     params["view"] = view
 
@@ -137,7 +150,8 @@ def sync_detailed(
     year_max: None | str | Unset = UNSET,
     runtime_max: None | str | Unset = UNSET,
     page: int | Unset = 1,
-    order_by: str | Unset = "title_asc",
+    order_by: None | str | Unset = UNSET,
+    random_seed: int | None | Unset = UNSET,
     view: str | Unset = "grid",
     preset: None | str | Unset = UNSET,
     semantic: None | str | Unset = UNSET,
@@ -152,7 +166,8 @@ def sync_detailed(
         year_max (None | str | Unset):
         runtime_max (None | str | Unset):
         page (int | Unset):  Default: 1.
-        order_by (str | Unset):  Default: 'title_asc'.
+        order_by (None | str | Unset):
+        random_seed (int | None | Unset):
         view (str | Unset):  Default: 'grid'.
         preset (None | str | Unset):
         semantic (None | str | Unset):
@@ -174,6 +189,7 @@ def sync_detailed(
         runtime_max=runtime_max,
         page=page,
         order_by=order_by,
+        random_seed=random_seed,
         view=view,
         preset=preset,
         semantic=semantic,
@@ -196,7 +212,8 @@ def sync(
     year_max: None | str | Unset = UNSET,
     runtime_max: None | str | Unset = UNSET,
     page: int | Unset = 1,
-    order_by: str | Unset = "title_asc",
+    order_by: None | str | Unset = UNSET,
+    random_seed: int | None | Unset = UNSET,
     view: str | Unset = "grid",
     preset: None | str | Unset = UNSET,
     semantic: None | str | Unset = UNSET,
@@ -211,7 +228,8 @@ def sync(
         year_max (None | str | Unset):
         runtime_max (None | str | Unset):
         page (int | Unset):  Default: 1.
-        order_by (str | Unset):  Default: 'title_asc'.
+        order_by (None | str | Unset):
+        random_seed (int | None | Unset):
         view (str | Unset):  Default: 'grid'.
         preset (None | str | Unset):
         semantic (None | str | Unset):
@@ -234,6 +252,7 @@ def sync(
         runtime_max=runtime_max,
         page=page,
         order_by=order_by,
+        random_seed=random_seed,
         view=view,
         preset=preset,
         semantic=semantic,
@@ -250,7 +269,8 @@ async def asyncio_detailed(
     year_max: None | str | Unset = UNSET,
     runtime_max: None | str | Unset = UNSET,
     page: int | Unset = 1,
-    order_by: str | Unset = "title_asc",
+    order_by: None | str | Unset = UNSET,
+    random_seed: int | None | Unset = UNSET,
     view: str | Unset = "grid",
     preset: None | str | Unset = UNSET,
     semantic: None | str | Unset = UNSET,
@@ -265,7 +285,8 @@ async def asyncio_detailed(
         year_max (None | str | Unset):
         runtime_max (None | str | Unset):
         page (int | Unset):  Default: 1.
-        order_by (str | Unset):  Default: 'title_asc'.
+        order_by (None | str | Unset):
+        random_seed (int | None | Unset):
         view (str | Unset):  Default: 'grid'.
         preset (None | str | Unset):
         semantic (None | str | Unset):
@@ -287,6 +308,7 @@ async def asyncio_detailed(
         runtime_max=runtime_max,
         page=page,
         order_by=order_by,
+        random_seed=random_seed,
         view=view,
         preset=preset,
         semantic=semantic,
@@ -307,7 +329,8 @@ async def asyncio(
     year_max: None | str | Unset = UNSET,
     runtime_max: None | str | Unset = UNSET,
     page: int | Unset = 1,
-    order_by: str | Unset = "title_asc",
+    order_by: None | str | Unset = UNSET,
+    random_seed: int | None | Unset = UNSET,
     view: str | Unset = "grid",
     preset: None | str | Unset = UNSET,
     semantic: None | str | Unset = UNSET,
@@ -322,7 +345,8 @@ async def asyncio(
         year_max (None | str | Unset):
         runtime_max (None | str | Unset):
         page (int | Unset):  Default: 1.
-        order_by (str | Unset):  Default: 'title_asc'.
+        order_by (None | str | Unset):
+        random_seed (int | None | Unset):
         view (str | Unset):  Default: 'grid'.
         preset (None | str | Unset):
         semantic (None | str | Unset):
@@ -346,6 +370,7 @@ async def asyncio(
             runtime_max=runtime_max,
             page=page,
             order_by=order_by,
+            random_seed=random_seed,
             view=view,
             preset=preset,
             semantic=semantic,

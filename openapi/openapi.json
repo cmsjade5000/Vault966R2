@@ -1994,7 +1994,7 @@
           },
           "total_runtime": {
             "title": "Total Runtime",
-            "type": "integer"
+            "type": "string"
           }
         },
         "required": [
@@ -4309,6 +4309,7 @@
               "discover_rail_opened",
               "personalized_recommendations_shown",
               "random_pick_requested",
+              "double_feature_requested",
               "preference_toggled"
             ],
             "title": "Event Name",
@@ -6944,9 +6945,33 @@
             "name": "order_by",
             "required": false,
             "schema": {
-              "default": "title_asc",
-              "title": "Order By",
-              "type": "string"
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Order By"
+            }
+          },
+          {
+            "in": "query",
+            "name": "random_seed",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maximum": 2147483646,
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Random Seed"
             }
           },
           {

@@ -1746,7 +1746,7 @@ export interface components {
             runtime_cap: number;
             secondary: components["schemas"]["MovieRead"];
             /** Total Runtime */
-            total_runtime: number;
+            total_runtime: string;
         };
         /** MovieFacets */
         MovieFacets: {
@@ -2313,7 +2313,7 @@ export interface components {
              * Event Name
              * @enum {string}
              */
-            event_name: "library_search_submitted" | "filters_applied" | "view_changed" | "movie_details_opened" | "discover_rail_opened" | "personalized_recommendations_shown" | "random_pick_requested" | "preference_toggled";
+            event_name: "library_search_submitted" | "filters_applied" | "view_changed" | "movie_details_opened" | "discover_rail_opened" | "personalized_recommendations_shown" | "random_pick_requested" | "double_feature_requested" | "preference_toggled";
             /** Movie Id */
             movie_id?: number | null;
             /**
@@ -3896,7 +3896,8 @@ export interface operations {
                 year_max?: string | null;
                 runtime_max?: string | null;
                 page?: number;
-                order_by?: string;
+                order_by?: string | null;
+                random_seed?: number | null;
                 view?: string;
                 preset?: string | null;
                 semantic?: string | null;
