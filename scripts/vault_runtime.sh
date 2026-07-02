@@ -116,7 +116,7 @@ monitor_health() {
       if (( failures >= HEALTH_FAILURE_LIMIT )); then
         echo "Vault is unhealthy; terminating it so launchd can restart it." >&2
         terminate_child
-        return
+        return 137
       fi
     fi
     sleep "$HEALTH_INTERVAL"
@@ -136,10 +136,15 @@ while child_is_running; do
 done
 
 set +e
+monitor_status=0
+if [[ -n "$monitor_pid" ]]; then
+  wait "$monitor_pid" 2>/dev/null
+  monitor_status=$?
+fi
 wait "$child_pid"
 status=$?
 set -e
-if [[ -f "$forced_shutdown_marker" ]]; then
+if [[ "$monitor_status" -eq 137 || -f "$forced_shutdown_marker" ]]; then
   status=137
 fi
 exit "$status"
