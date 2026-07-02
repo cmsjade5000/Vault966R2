@@ -47,6 +47,17 @@ def test_usage_events_accept_only_whitelisted_fields(client, db_session) -> None
     assert accepted.status_code == 204
     assert db_session.query(UsageEvent).count() == 1
 
+    sort_event = client.post(
+        "/ui/events",
+        json={
+            "event_name": "sort_changed",
+            "page": "library",
+            "context": "title_asc",
+        },
+    )
+    assert sort_event.status_code == 204
+    assert db_session.query(UsageEvent).count() == 2
+
     unknown = client.post(
         "/ui/events",
         json={
@@ -57,7 +68,7 @@ def test_usage_events_accept_only_whitelisted_fields(client, db_session) -> None
         },
     )
     assert unknown.status_code == 422
-    assert db_session.query(UsageEvent).count() == 1
+    assert db_session.query(UsageEvent).count() == 2
 
 
 def test_personalized_impression_event_uses_fixed_whitelisted_context(client, db_session) -> None:

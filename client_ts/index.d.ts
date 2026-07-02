@@ -2313,7 +2313,7 @@ export interface components {
              * Event Name
              * @enum {string}
              */
-            event_name: "library_search_submitted" | "filters_applied" | "view_changed" | "movie_details_opened" | "discover_rail_opened" | "personalized_recommendations_shown" | "random_pick_requested" | "preference_toggled";
+            event_name: "library_search_submitted" | "filters_applied" | "view_changed" | "sort_changed" | "movie_details_opened" | "discover_rail_opened" | "personalized_recommendations_shown" | "random_pick_requested" | "preference_toggled";
             /** Movie Id */
             movie_id?: number | null;
             /**

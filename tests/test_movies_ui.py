@@ -102,6 +102,58 @@ def test_movies_grid_view_switch_preserves_cookie_backed_filters(client: TestCli
     assert "Toy Story" not in html
 
 
+def test_movies_list_view_renders_modern_list_rows(client: TestClient) -> None:
+    response = client.get("/ui/movies", params={"view": "list"})
+
+    assert response.status_code == 200
+    html = response.text
+    assert "data-results-table" in html
+    assert 'id="results-table-table"' in html
+    assert "data-results-grid" not in html
+    assert 'class="library-list-movie"' in html
+    assert 'class="library-list-id"' not in html
+    assert 'data-label="Vault ID"' not in html
+    assert 'class="library-list-meta"' in html
+    assert "data-preference-button" in html
+    assert "data-table-sort" in html
+
+
+def test_movies_list_view_title_sort_sets_aria_sort(client: TestClient) -> None:
+    ascending = client.get(
+        "/ui/movies",
+        params={"view": "list", "order_by": "title_asc"},
+    )
+    descending = client.get(
+        "/ui/movies",
+        params={"view": "list", "order_by": "title_desc"},
+    )
+
+    assert ascending.status_code == 200
+    assert '<th scope="col" aria-sort="ascending">' in ascending.text
+    assert '<th scope="col" aria-sort="descending">' in descending.text
+
+
+def test_movies_list_view_vault_id_sort_does_not_render_vault_id_column(
+    client: TestClient,
+) -> None:
+    response = client.get(
+        "/ui/movies",
+        params={"view": "list", "order_by": "id_asc"},
+    )
+
+    assert response.status_code == 200
+    assert 'data-label="Vault ID"' not in response.text
+    assert 'class="library-list-id"' not in response.text
+    assert "Vault ID ↑" in response.text
+
+
+def test_movies_sort_dropdown_includes_random_option(client: TestClient) -> None:
+    response = client.get("/ui/movies", params={"view": "list", "order_by": "random"})
+
+    assert response.status_code == 200
+    assert '<option value="random" selected>Random</option>' in response.text
+
+
 def test_movies_grid_filters_by_mood(client: TestClient) -> None:
     response = client.get("/ui/movies", params={"moods": "Moody"})
     assert response.status_code == 200

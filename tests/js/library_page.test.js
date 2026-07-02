@@ -85,6 +85,54 @@ test("clear all removes filters while preserving view and sort", () => {
   assert.equal(result.searchParams.get("page"), "1");
 });
 
+test("table sort toggles active ascending column to descending", () => {
+  const { buildTableSortUrl } = loadSupport();
+  const result = new URL(
+    buildTableSortUrl(
+      "http://127.0.0.1:8000/ui/movies?view=list&order_by=title_asc&page=4&genres=Drama",
+      {
+        asc: "title_asc",
+        currentOrder: "title_asc",
+        desc: "title_desc",
+      },
+    ),
+  );
+
+  assert.equal(result.searchParams.get("order_by"), "title_desc");
+  assert.equal(result.searchParams.get("view"), "list");
+  assert.equal(result.searchParams.get("genres"), "Drama");
+  assert.equal(result.searchParams.get("_filters"), "1");
+  assert.equal(result.searchParams.get("page"), "1");
+});
+
+test("table sort preserves form-backed filters and switches inactive column to ascending", () => {
+  const { buildTableSortUrl } = loadSupport();
+  const result = new URL(
+    buildTableSortUrl("http://127.0.0.1:8000/ui/movies?view=list&page=3", {
+      asc: "id_asc",
+      currentOrder: "title_desc",
+      desc: "id_desc",
+      values: {
+        genres: "Drama",
+        moods: "Moody",
+        q: "alien",
+        runtime_max: "120",
+        view: "list",
+        year_min: "1990",
+      },
+    }),
+  );
+
+  assert.equal(result.searchParams.get("order_by"), "id_asc");
+  assert.equal(result.searchParams.get("q"), "alien");
+  assert.equal(result.searchParams.get("genres"), "Drama");
+  assert.equal(result.searchParams.get("moods"), "Moody");
+  assert.equal(result.searchParams.get("runtime_max"), "120");
+  assert.equal(result.searchParams.get("year_min"), "1990");
+  assert.equal(result.searchParams.get("view"), "list");
+  assert.equal(result.searchParams.get("page"), "1");
+});
+
 test("builds pending filter summary and counts each visible chip", () => {
   const { buildPendingSummary, formatApplyLabel } = loadSupport();
   const summary = buildPendingSummary({

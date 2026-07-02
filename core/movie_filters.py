@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from typing import Iterable, Optional, Sequence, Tuple
 
 from fastapi import HTTPException, status
-from sqlalchemy import String, cast, or_
+from sqlalchemy import String, cast, func, or_
 from sqlalchemy.orm import Query
 
 from api.models.movie import Genre, Mood, Movie
@@ -26,6 +26,7 @@ _ALLOWED_ORDERING = {
     "imdb_desc",
     "rt_desc",
     "flic",
+    "random",
 }
 
 
@@ -180,6 +181,7 @@ def ordering_clause(order_by: str):
         "imdb_desc": (Movie.imdb_rating.desc().nullslast(), Movie.id.asc()),
         "rt_desc": (Movie.rt_score.desc().nullslast(), Movie.id.asc()),
         "flic": None,
+        "random": (func.random(), Movie.id.asc()),
     }
     return mapping[order_by]
 
