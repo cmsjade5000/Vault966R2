@@ -6,55 +6,30 @@ from typing import Any, TypeVar
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 
-from .. import types
-
-T = TypeVar("T", bound="BodyUploadSourceSnapshotUiSourceSyncUploadPost")
+T = TypeVar(
+    "T", bound="UpdateCancelApiCollectionHealthUpdateCancelPostResponseUpdateCancelApiCollectionHealthUpdateCancelPost"
+)
 
 
 @_attrs_define
-class BodyUploadSourceSnapshotUiSourceSyncUploadPost:
-    """
-    Attributes:
-        source_file (str):
-    """
+class UpdateCancelApiCollectionHealthUpdateCancelPostResponseUpdateCancelApiCollectionHealthUpdateCancelPost:
+    """ """
 
-    source_file: str
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
-        source_file = self.source_file
-
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
-        field_dict.update(
-            {
-                "source_file": source_file,
-            }
-        )
 
         return field_dict
-
-    def to_multipart(self) -> types.RequestFiles:
-        files: types.RequestFiles = []
-
-        files.append(("source_file", (None, str(self.source_file).encode(), "text/plain")))
-
-        for prop_name, prop in self.additional_properties.items():
-            files.append((prop_name, (None, str(prop).encode(), "text/plain")))
-
-        return files
 
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         d = dict(src_dict)
-        source_file = d.pop("source_file")
+        update_cancel_api_collection_health_update_cancel_post_response_update_cancel_api_collection_health_update_cancel_post = cls()
 
-        body_upload_source_snapshot_ui_source_sync_upload_post = cls(
-            source_file=source_file,
-        )
-
-        body_upload_source_snapshot_ui_source_sync_upload_post.additional_properties = d
-        return body_upload_source_snapshot_ui_source_sync_upload_post
+        update_cancel_api_collection_health_update_cancel_post_response_update_cancel_api_collection_health_update_cancel_post.additional_properties = d
+        return update_cancel_api_collection_health_update_cancel_post_response_update_cancel_api_collection_health_update_cancel_post
 
     @property
     def additional_keys(self) -> list[str]:

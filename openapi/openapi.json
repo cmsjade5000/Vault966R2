@@ -251,7 +251,7 @@
       "Body_upload_first_import_snapshot_ui_first_import_upload_post": {
         "properties": {
           "source_file": {
-            "format": "binary",
+            "contentMediaType": "application/octet-stream",
             "title": "Source File",
             "type": "string"
           }
@@ -265,7 +265,7 @@
       "Body_upload_source_snapshot_ui_source_sync_upload_post": {
         "properties": {
           "source_file": {
-            "format": "binary",
+            "contentMediaType": "application/octet-stream",
             "title": "Source File",
             "type": "string"
           }
@@ -4244,6 +4244,13 @@
       },
       "ValidationError": {
         "properties": {
+          "ctx": {
+            "title": "Context",
+            "type": "object"
+          },
+          "input": {
+            "title": "Input"
+          },
           "loc": {
             "items": {
               "anyOf": [
@@ -4453,9 +4460,112 @@
         ]
       }
     },
+    "/api/collection-health/update/cancel": {
+      "post": {
+        "operationId": "update_cancel_api_collection_health_update_cancel_post",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Update Cancel Api Collection Health Update Cancel Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Update Cancel",
+        "tags": [
+          "collection-health"
+        ]
+      }
+    },
+    "/api/collection-health/update/preview": {
+      "get": {
+        "operationId": "update_preview_api_collection_health_update_preview_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Update Preview Api Collection Health Update Preview Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Update Preview",
+        "tags": [
+          "collection-health"
+        ]
+      }
+    },
+    "/api/collection-health/update/reports/{task}": {
+      "get": {
+        "operationId": "update_report_api_collection_health_update_reports__task__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "task",
+            "required": true,
+            "schema": {
+              "title": "Task",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Update Report",
+        "tags": [
+          "collection-health"
+        ]
+      }
+    },
     "/api/collection-health/update/run": {
       "post": {
         "operationId": "update_run_api_collection_health_update_run_post",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "task",
+            "required": false,
+            "schema": {
+              "default": "all",
+              "title": "Task",
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "content": {
@@ -4468,6 +4578,16 @@
               }
             },
             "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
           }
         },
         "security": [
@@ -8111,6 +8231,48 @@
           }
         },
         "summary": "Confirm Source Snapshot",
+        "tags": [
+          "ui",
+          "ui",
+          "ui"
+        ]
+      }
+    },
+    "/ui/source-sync/{snapshot_id}/new-additions.csv": {
+      "get": {
+        "operationId": "download_new_additions_csv_ui_source_sync__snapshot_id__new_additions_csv_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "snapshot_id",
+            "required": true,
+            "schema": {
+              "title": "Snapshot Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Download New Additions Csv",
         "tags": [
           "ui",
           "ui",

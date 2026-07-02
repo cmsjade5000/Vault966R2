@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import csv
+import io
+
 from fastapi.testclient import TestClient
 
 from api.models.movie import Movie, MovieIngestProvenance
@@ -159,6 +162,95 @@ def test_first_import_auto_creates_high_confidence_tmdb_match(
     assert {"collection_source", "tmdb", "omdb"} <= providers
 
 
+def test_new_additions_csv_exports_only_high_confidence_auto_created_rows(
+    client: TestClient,
+    db_session,
+    monkeypatch,
+) -> None:
+    snapshot = source_sync.create_draft_snapshot(
+        db_session,
+        filename="source.csv",
+        content=_csv(
+            "Arrival,1:56:00,Denis Villeneuve,2016,Sci-Fi,PG-13,11/11/16,1",
+            "Solaris,2:46:00,Andrei Tarkovsky,1972,Sci-Fi,PG,09/26/72,1",
+            "Unknown Title,1:30:00,Unknown,2020,Drama,PG,01/01/20,0",
+        ),
+        profile_id=1,
+    )
+
+    def candidates(title: str, year: int | None, limit: int = 3) -> list[dict]:
+        if title == "Arrival":
+            return [_candidate()]
+        if title == "Solaris":
+            return [
+                _candidate(
+                    title="Solaris",
+                    year=1972,
+                    runtime=166,
+                    tmdb_id=593,
+                    imdb_id="tt0069293",
+                    confidence=0.82,
+                )
+            ]
+        return []
+
+    monkeypatch.setattr(source_sync, "lookup_movie_candidates", candidates)
+    source_sync.apply_first_import_auto_create(
+        db_session,
+        snapshot_id=snapshot.id,
+        profile_id=1,
+    )
+
+    response = client.get(f"/ui/source-sync/{snapshot.id}/new-additions.csv")
+
+    assert response.status_code == 200
+    assert response.headers["content-type"].startswith("text/csv")
+    assert (
+        response.headers["content-disposition"]
+        == f'attachment; filename="vault966-source-{snapshot.id}-new-additions.csv"'
+    )
+    rows = list(csv.DictReader(io.StringIO(response.text)))
+    assert len(rows) == 1
+    assert rows[0]["source_snapshot_id"] == str(snapshot.id)
+    assert rows[0]["vault_id"]
+    assert rows[0]["match_confidence"] == "0.99"
+    assert rows[0]["title"] == "Arrival"
+    assert rows[0]["year"] == "2016"
+    assert rows[0]["runtime"] == "116"
+    assert rows[0]["director"] == "Denis Villeneuve"
+    assert rows[0]["hd"] == "HD"
+    assert rows[0]["status"] == "high_confidence_added"
+
+
+def test_vault_health_links_new_additions_export_when_high_confidence_rows_exist(
+    client: TestClient,
+    db_session,
+    monkeypatch,
+) -> None:
+    snapshot = source_sync.create_draft_snapshot(
+        db_session,
+        filename="source.csv",
+        content=_csv("Arrival,1:56:00,Denis Villeneuve,2016,Sci-Fi,PG-13,11/11/16,1"),
+        profile_id=1,
+    )
+    monkeypatch.setattr(
+        source_sync,
+        "lookup_movie_candidates",
+        lambda title, year, limit=3: [_candidate()],
+    )
+    source_sync.apply_first_import_auto_create(
+        db_session,
+        snapshot_id=snapshot.id,
+        profile_id=1,
+    )
+
+    page = client.get("/ui/movies/health")
+
+    assert page.status_code == 200
+    assert "Download new additions CSV" in page.text
+    assert f'href="/ui/source-sync/{snapshot.id}/new-additions.csv"' in page.text
+
+
 def test_first_import_rejects_low_confidence_from_auto_create(
     db_session,
     monkeypatch,
@@ -299,3 +391,5 @@ def test_first_import_auto_create_redirects_to_report(
     assert report.status_code == 200
     assert "<h1>First import report</h1>" in report.text
     assert "1 high-confidence movies created" in report.text
+    assert "Download new additions CSV" in report.text
+    assert f'href="/ui/source-sync/{snapshot.id}/new-additions.csv"' in report.text

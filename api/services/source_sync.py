@@ -714,6 +714,7 @@ def snapshot_summary(db: Session, snapshot: SourceSnapshot | None) -> dict[str, 
         return {
             "rows": 0,
             "matched": 0,
+            "auto_created": 0,
             "conflicts": 0,
             "ambiguous": 0,
             "duplicates": 0,
@@ -727,12 +728,14 @@ def snapshot_summary(db: Session, snapshot: SourceSnapshot | None) -> dict[str, 
         .all()
     )
     conflicts = len(get_source_review_queue(db, snapshot=snapshot, include_unmatched=False))
-    auto_matched = counts.get("exact", 0) + counts.get("likely", 0) + counts.get("auto_create", 0)
+    auto_created = counts.get("auto_create", 0)
+    auto_matched = counts.get("exact", 0) + counts.get("likely", 0) + auto_created
     manually_matched = counts.get("manual", 0)
     return {
         "rows": snapshot.row_count,
         "matched": auto_matched,
         "auto_matched": auto_matched,
+        "auto_created": auto_created,
         "manually_matched": manually_matched,
         "accepted": auto_matched + manually_matched,
         "conflicts": conflicts,
@@ -740,6 +743,21 @@ def snapshot_summary(db: Session, snapshot: SourceSnapshot | None) -> dict[str, 
         "duplicates": counts.get("duplicate", 0),
         "source_only": counts.get("source_only", 0),
     }
+
+
+def source_new_addition_rows(db: Session, *, snapshot: SourceSnapshot) -> list[SourceMovieRow]:
+    return (
+        db.query(SourceMovieRow)
+        .options(selectinload(SourceMovieRow.match).selectinload(SourceReconciliationMatch.movie))
+        .join(
+            SourceReconciliationMatch,
+            SourceReconciliationMatch.source_row_id == SourceMovieRow.id,
+        )
+        .filter(SourceMovieRow.snapshot_id == snapshot.id)
+        .filter(SourceReconciliationMatch.match_type == "auto_create")
+        .order_by(SourceMovieRow.row_number.asc())
+        .all()
+    )
 
 
 def _display_value(value: object) -> str:
@@ -1726,6 +1744,7 @@ __all__ = [
     "reconcile_snapshot",
     "snapshot_summary",
     "source_bulk_decision_counts",
+    "source_new_addition_rows",
     "source_provenance_for_movie",
     "undo_source_field_decision",
 ]

@@ -79,6 +79,12 @@ from .unlike_movie_movies_movie_id_like_delete_response_unlike_movie_movies_movi
 from .unwatchlist_movie_movies_movie_id_watchlist_delete_response_unwatchlist_movie_movies_movie_id_watchlist_delete import (
     UnwatchlistMovieMoviesMovieIdWatchlistDeleteResponseUnwatchlistMovieMoviesMovieIdWatchlistDelete,
 )
+from .update_cancel_api_collection_health_update_cancel_post_response_update_cancel_api_collection_health_update_cancel_post import (
+    UpdateCancelApiCollectionHealthUpdateCancelPostResponseUpdateCancelApiCollectionHealthUpdateCancelPost,
+)
+from .update_preview_api_collection_health_update_preview_get_response_update_preview_api_collection_health_update_preview_get import (
+    UpdatePreviewApiCollectionHealthUpdatePreviewGetResponseUpdatePreviewApiCollectionHealthUpdatePreviewGet,
+)
 from .update_run_api_collection_health_update_run_post_response_update_run_api_collection_health_update_run_post import (
     UpdateRunApiCollectionHealthUpdateRunPostResponseUpdateRunApiCollectionHealthUpdateRunPost,
 )
@@ -89,6 +95,7 @@ from .usage_event_create import UsageEventCreate
 from .usage_event_create_event_name import UsageEventCreateEventName
 from .usage_event_create_page import UsageEventCreatePage
 from .validation_error import ValidationError
+from .validation_error_context import ValidationErrorContext
 from .watchlist_movie_movies_movie_id_watchlist_post_response_watchlist_movie_movies_movie_id_watchlist_post import (
     WatchlistMovieMoviesMovieIdWatchlistPostResponseWatchlistMovieMoviesMovieIdWatchlistPost,
 )
@@ -155,11 +162,14 @@ __all__ = (
     "TopBilledEntry",
     "UnlikeMovieMoviesMovieIdLikeDeleteResponseUnlikeMovieMoviesMovieIdLikeDelete",
     "UnwatchlistMovieMoviesMovieIdWatchlistDeleteResponseUnwatchlistMovieMoviesMovieIdWatchlistDelete",
+    "UpdateCancelApiCollectionHealthUpdateCancelPostResponseUpdateCancelApiCollectionHealthUpdateCancelPost",
+    "UpdatePreviewApiCollectionHealthUpdatePreviewGetResponseUpdatePreviewApiCollectionHealthUpdatePreviewGet",
     "UpdateRunApiCollectionHealthUpdateRunPostResponseUpdateRunApiCollectionHealthUpdateRunPost",
     "UpdateStatusApiCollectionHealthUpdateStatusGetResponseUpdateStatusApiCollectionHealthUpdateStatusGet",
     "UsageEventCreate",
     "UsageEventCreateEventName",
     "UsageEventCreatePage",
     "ValidationError",
+    "ValidationErrorContext",
     "WatchlistMovieMoviesMovieIdWatchlistPostResponseWatchlistMovieMoviesMovieIdWatchlistPost",
 )

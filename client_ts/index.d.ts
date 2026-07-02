@@ -56,6 +56,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/collection-health/update/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Update Cancel */
+        post: operations["update_cancel_api_collection_health_update_cancel_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/collection-health/update/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Update Preview */
+        get: operations["update_preview_api_collection_health_update_preview_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/collection-health/update/reports/{task}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Update Report */
+        get: operations["update_report_api_collection_health_update_reports__task__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/collection-health/update/run": {
         parameters: {
             query?: never;
@@ -1143,6 +1194,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/ui/source-sync/{snapshot_id}/new-additions.csv": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Download New Additions Csv */
+        get: operations["download_new_additions_csv_ui_source_sync__snapshot_id__new_additions_csv_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/ui/source-sync/{snapshot_id}/preview": {
         parameters: {
             query?: never;
@@ -1263,18 +1331,12 @@ export interface components {
         };
         /** Body_upload_first_import_snapshot_ui_first_import_upload_post */
         Body_upload_first_import_snapshot_ui_first_import_upload_post: {
-            /**
-             * Source File
-             * Format: binary
-             */
+            /** Source File */
             source_file: string;
         };
         /** Body_upload_source_snapshot_ui_source_sync_upload_post */
         Body_upload_source_snapshot_ui_source_sync_upload_post: {
-            /**
-             * Source File
-             * Format: binary
-             */
+            /** Source File */
             source_file: string;
         };
         /** FlicFilters */
@@ -2234,6 +2296,10 @@ export interface components {
         };
         /** ValidationError */
         ValidationError: {
+            /** Context */
+            ctx?: Record<string, never>;
+            /** Input */
+            input?: unknown;
             /** Location */
             loc: (string | number)[];
             /** Message */
@@ -2370,7 +2436,7 @@ export interface operations {
             };
         };
     };
-    update_run_api_collection_health_update_run_post: {
+    update_cancel_api_collection_health_update_cancel_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -2388,6 +2454,92 @@ export interface operations {
                     "application/json": {
                         [key: string]: unknown;
                     };
+                };
+            };
+        };
+    };
+    update_preview_api_collection_health_update_preview_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+        };
+    };
+    update_report_api_collection_health_update_reports__task__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                task: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_run_api_collection_health_update_run_post: {
+        parameters: {
+            query?: {
+                task?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -4552,6 +4704,37 @@ export interface operations {
         };
     };
     confirm_source_snapshot_ui_source_sync__snapshot_id__confirm_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                snapshot_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    download_new_additions_csv_ui_source_sync__snapshot_id__new_additions_csv_get: {
         parameters: {
             query?: never;
             header?: never;

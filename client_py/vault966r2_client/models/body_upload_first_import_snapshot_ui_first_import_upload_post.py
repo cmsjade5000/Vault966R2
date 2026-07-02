@@ -1,14 +1,12 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
-from io import BytesIO
 from typing import Any, TypeVar
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 
 from .. import types
-from ..types import File
 
 T = TypeVar("T", bound="BodyUploadFirstImportSnapshotUiFirstImportUploadPost")
 
@@ -17,14 +15,14 @@ T = TypeVar("T", bound="BodyUploadFirstImportSnapshotUiFirstImportUploadPost")
 class BodyUploadFirstImportSnapshotUiFirstImportUploadPost:
     """
     Attributes:
-        source_file (File):
+        source_file (str):
     """
 
-    source_file: File
+    source_file: str
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
-        source_file = self.source_file.to_tuple()
+        source_file = self.source_file
 
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
@@ -39,7 +37,7 @@ class BodyUploadFirstImportSnapshotUiFirstImportUploadPost:
     def to_multipart(self) -> types.RequestFiles:
         files: types.RequestFiles = []
 
-        files.append(("source_file", self.source_file.to_tuple()))
+        files.append(("source_file", (None, str(self.source_file).encode(), "text/plain")))
 
         for prop_name, prop in self.additional_properties.items():
             files.append((prop_name, (None, str(prop).encode(), "text/plain")))
@@ -49,7 +47,7 @@ class BodyUploadFirstImportSnapshotUiFirstImportUploadPost:
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
         d = dict(src_dict)
-        source_file = File(payload=BytesIO(d.pop("source_file")))
+        source_file = d.pop("source_file")
 
         body_upload_first_import_snapshot_ui_first_import_upload_post = cls(
             source_file=source_file,

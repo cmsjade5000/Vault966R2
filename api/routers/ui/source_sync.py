@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+import csv
+import io
 from urllib.parse import quote
 
 from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from sqlalchemy.orm import Session
 
 from api.db import get_db
@@ -19,10 +21,28 @@ from api.services.source_sync import (
     SourceSyncError,
     create_draft_snapshot,
     reconcile_snapshot,
+    source_new_addition_rows,
 )
 from api.services.ui.templates import TEMPLATES
 
 router = APIRouter(tags=["ui"])
+
+NEW_ADDITION_EXPORT_FIELDS = [
+    "source_snapshot_id",
+    "source_row_id",
+    "vault_id",
+    "match_confidence",
+    "row_number",
+    "title",
+    "year",
+    "runtime",
+    "director",
+    "genre",
+    "content_rating",
+    "release_date",
+    "hd",
+    "status",
+]
 
 
 def _snapshot_or_404(db: Session, snapshot_id: int) -> SourceSnapshot:
@@ -97,6 +117,56 @@ def preview_source_snapshot(
     )
     ensure_profile_cookie(request, response, db)
     return response
+
+
+def _new_addition_export_records(snapshot: SourceSnapshot, rows) -> list[dict[str, object]]:
+    records: list[dict[str, object]] = []
+    for row in rows:
+        match = row.match
+        movie = match.movie if match else None
+        records.append(
+            {
+                "source_snapshot_id": row.snapshot_id,
+                "source_row_id": row.id,
+                "vault_id": movie.vault_id if movie else "",
+                "match_confidence": (
+                    round(match.confidence, 2) if match and match.confidence else ""
+                ),
+                "row_number": row.row_number,
+                "title": row.title,
+                "year": row.year or "",
+                "runtime": row.runtime or "",
+                "director": row.director or "",
+                "genre": row.genre or "",
+                "content_rating": row.content_rating or "",
+                "release_date": row.release_date or "",
+                "hd": "HD" if row.hd is True else "SD" if row.hd is False else "",
+                "status": "high_confidence_added",
+            }
+        )
+    return records
+
+
+@router.get("/ui/source-sync/{snapshot_id}/new-additions.csv")
+def download_new_additions_csv(
+    snapshot_id: int,
+    db: Session = Depends(get_db),
+    _: str = Depends(require_profile_role(ROLE_ADMIN)),
+) -> Response:
+    snapshot = _snapshot_or_404(db, snapshot_id)
+    records = _new_addition_export_records(
+        snapshot, source_new_addition_rows(db, snapshot=snapshot)
+    )
+    output = io.StringIO()
+    writer = csv.DictWriter(output, fieldnames=NEW_ADDITION_EXPORT_FIELDS)
+    writer.writeheader()
+    writer.writerows(records)
+    headers = {
+        "Content-Disposition": (
+            f'attachment; filename="vault966-source-{snapshot.id}-new-additions.csv"'
+        )
+    }
+    return Response(content=output.getvalue(), media_type="text/csv", headers=headers)
 
 
 @router.post("/ui/source-sync/{snapshot_id}/confirm")

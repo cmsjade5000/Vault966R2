@@ -36,6 +36,9 @@
         </div>
       </div>
       <div class="first-import-report-actions">
+        {% if report.created_count %}
+          <a class="button-primary" href="/ui/source-sync/{{ snapshot.id }}/new-additions.csv">Download new additions CSV</a>
+        {% endif %}
         {% if report.review_count %}
           <a class="button-primary" href="/ui/movies/health?view=ambiguous#review-workbench">Review ambiguous rows</a>
         {% elif report.duplicate_conflict_count %}
