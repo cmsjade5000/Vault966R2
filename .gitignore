@@ -6,6 +6,7 @@ __pycache__/
 design-qa.md
 second-user-permissions-plan.md
 .venv/
+.venv*/
 venv/
 .pytest_cache/
 .ruff_cache/
@@ -19,6 +20,11 @@ node_modules/
 * 2.py
 * 2.js
 * 2.css
+* 2.ts
+* 2.md
+* 2.toml
+* 2.typed
+* 3.py
 # data/report artifacts
 data/*.csv
 data/*.log
