@@ -143,9 +143,7 @@ def test_movie_detail_template(client: TestClient, detail_movie_setup):
     assert "https://www.youtube-nocookie.com/embed/" not in html
 
 
-def test_movie_detail_template_shows_cached_trailer_pill(
-    client: TestClient, detail_movie_setup
-):
+def test_movie_detail_template_shows_cached_trailer_pill(client: TestClient, detail_movie_setup):
     movie_id = detail_movie_setup
     for db in _db_session(client):
         movie = db.query(Movie).filter(Movie.id == movie_id).one()

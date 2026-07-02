@@ -68,9 +68,7 @@ def test_select_tmdb_trailer_rejects_non_youtube_and_bad_keys() -> None:
     assert movie_trailers.select_tmdb_trailer(payload) is None
 
 
-def test_movie_trailer_endpoint_fetches_and_caches_trailer(
-    client: TestClient, monkeypatch
-) -> None:
+def test_movie_trailer_endpoint_fetches_and_caches_trailer(client: TestClient, monkeypatch) -> None:
     for db in _db_session(client):
         movie = Movie(title="Trailer Movie", tmdb_id=12345)
         db.add(movie)
