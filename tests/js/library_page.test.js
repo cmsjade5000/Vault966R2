@@ -13,6 +13,7 @@ const loadSupport = () => {
   const window = {};
   const context = {
     URL,
+    URLSearchParams,
     document: {
       addEventListener() {},
     },
@@ -55,6 +56,21 @@ test("clearing a search chip removes q and preserves filters", () => {
   assert.equal(result.searchParams.get("page"), "1");
 });
 
+test("clearing the only search chip removes explicit sort", () => {
+  const { buildClearFilterUrl } = loadSupport();
+  const result = new URL(
+    buildClearFilterUrl(
+      "http://127.0.0.1:8000/ui/movies?q=Titanic&view=grid&order_by=title_asc&page=3",
+      "q",
+    ),
+  );
+
+  assert.equal(result.searchParams.has("q"), false);
+  assert.equal(result.searchParams.has("order_by"), false);
+  assert.equal(result.searchParams.get("_filters"), "1");
+  assert.equal(result.searchParams.get("page"), "1");
+});
+
 test("clearing a cookie-backed preset marks the URL as authoritative", () => {
   const { buildClearFilterUrl } = loadSupport();
   const result = new URL(
@@ -66,7 +82,7 @@ test("clearing a cookie-backed preset marks the URL as authoritative", () => {
   assert.equal(result.searchParams.get("page"), "1");
 });
 
-test("clear all removes filters while preserving view and sort", () => {
+test("clear all removes filters and sort while preserving view", () => {
   const { buildClearAllFiltersUrl } = loadSupport();
   const result = new URL(
     buildClearAllFiltersUrl(
@@ -80,7 +96,7 @@ test("clear all removes filters while preserving view and sort", () => {
   assert.equal(result.searchParams.has("year_min"), false);
   assert.equal(result.searchParams.has("runtime_max"), false);
   assert.equal(result.searchParams.get("view"), "list");
-  assert.equal(result.searchParams.get("order_by"), "title");
+  assert.equal(result.searchParams.has("order_by"), false);
   assert.equal(result.searchParams.get("_filters"), "1");
   assert.equal(result.searchParams.get("page"), "1");
 });
@@ -126,6 +142,70 @@ test("formats URL preset names for the pending summary", () => {
     "Drama",
     "Science Fiction",
   ]);
+});
+
+test("recommendation params use the first genre and mood", () => {
+  const { buildRecommendationParams, buildRecommendationUrl } = loadSupport();
+  const params = buildRecommendationParams({
+    genres: new Set(["Drama", "Science Fiction"]),
+    moodsValue: "Moody, Exciting",
+    runtimeMax: "120",
+    yearMax: "1999",
+    yearMin: "1980",
+  });
+
+  assert.equal(params.get("genre"), "Drama");
+  assert.equal(params.get("mood"), "Moody");
+  assert.equal(params.get("runtime_max"), "120");
+  assert.equal(params.get("year_min"), "1980");
+  assert.equal(params.get("year_max"), "1999");
+  assert.equal(
+    buildRecommendationUrl("/movies/picks", params),
+    "/movies/picks?genre=Drama&mood=Moody&year_min=1980&year_max=1999&runtime_max=120",
+  );
+});
+
+test("double feature params do not treat single-movie runtime as pair cap", () => {
+  const { buildRecommendationParams } = loadSupport();
+  const params = buildRecommendationParams(
+    {
+      genres: ["Action"],
+      moodsValue: "Exciting",
+      runtimeMax: "90",
+    },
+    { includeRuntime: false },
+  );
+
+  assert.equal(params.get("genre"), "Action");
+  assert.equal(params.get("mood"), "Exciting");
+  assert.equal(params.has("runtime_max"), false);
+});
+
+test("recommendation busy messages reflect scope and slow states", () => {
+  const { recommendationBusyMessage } = loadSupport();
+  const empty = new URLSearchParams();
+  const filtered = new URLSearchParams({ genre: "Drama" });
+
+  assert.equal(
+    recommendationBusyMessage(empty),
+    "Choosing from the full Vault…",
+  );
+  assert.equal(
+    recommendationBusyMessage(filtered),
+    "Choosing from your filtered results…",
+  );
+  assert.equal(
+    recommendationBusyMessage(filtered, { kind: "double-feature" }),
+    "Pairing movies from your filters…",
+  );
+  assert.equal(
+    recommendationBusyMessage(filtered, { stage: "slow" }),
+    "Still checking trusted picks…",
+  );
+  assert.equal(
+    recommendationBusyMessage(filtered, { stage: "long" }),
+    "This is taking longer than usual…",
+  );
 });
 
 test("shows custom controls only when selected or holding a non-preset value", () => {

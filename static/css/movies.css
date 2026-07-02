@@ -1540,7 +1540,7 @@
 
 .library-toolbar {
   display: grid;
-  grid-template-columns: minmax(150px, 210px) auto auto auto;
+  grid-template-columns: minmax(150px, 210px) auto auto auto auto;
   align-items: center;
   gap: 0.6rem;
   justify-content: start;
@@ -1646,6 +1646,8 @@
 .library-filter-button,
 .view-switcher__button {
   position: relative;
+  width: 2.75rem;
+  height: 2.75rem;
   min-width: 2.75rem;
   min-height: 2.75rem;
   display: inline-grid;
@@ -1659,16 +1661,30 @@
   font: inherit;
 }
 
+.library-icon-button[hidden],
+.library-filter-button[hidden],
+.view-switcher__button[hidden] {
+  display: none !important;
+}
+
 .library-icon-button svg,
 .library-filter-button svg,
 .view-switcher__button svg {
   fill: none;
-  height: 1.15rem;
+  height: 1.25rem;
   stroke: currentColor;
   stroke-linecap: round;
   stroke-linejoin: round;
   stroke-width: 1.8;
-  width: 1.15rem;
+  width: 1.25rem;
+}
+
+.library-icon-button__badge {
+  fill: currentColor;
+  font-size: 0.42rem;
+  font-weight: 800;
+  letter-spacing: 0;
+  stroke: none;
 }
 
 .library-icon-button.is-busy svg {
@@ -1955,7 +1971,8 @@ body.filters-open {
   }
 
   .library-toolbar {
-    grid-template-columns: minmax(0, 1fr) auto auto auto;
+    grid-template-columns: minmax(0, 1fr) auto auto auto auto;
+    gap: 0.45rem;
     justify-content: stretch;
   }
 
@@ -2340,6 +2357,87 @@ body.filters-open {
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
   touch-action: pan-y;
+}
+
+.double-feature-dialog {
+  background: rgba(15, 23, 42, 0.9);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  display: none;
+  z-index: 30;
+}
+
+.double-feature-dialog.is-open {
+  display: grid;
+  place-items: end center;
+}
+
+.double-feature-dialog__sheet {
+  width: min(620px, 100%);
+  background: rgba(15, 23, 42, 0.95);
+  border-top-left-radius: 1.5rem;
+  border-top-right-radius: 1.5rem;
+  box-shadow: 0 -12px 40px rgba(15, 23, 42, 0.6);
+  padding-bottom: env(safe-area-inset-bottom, 1rem);
+}
+
+.double-feature-dialog__header {
+  align-items: center;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.16);
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.25rem 1.4rem 0.9rem;
+}
+
+.double-feature-dialog__header h2 {
+  font-size: 1.25rem;
+  margin: 0;
+}
+
+.double-feature-dialog__header p {
+  color: rgba(148, 163, 184, 0.85);
+  font-size: 0.85rem;
+  margin: 0.2rem 0 0;
+}
+
+.double-feature-dialog__body {
+  display: grid;
+  gap: 0.85rem;
+  padding: 1rem 1.4rem 1.4rem;
+}
+
+.double-feature-pick {
+  background: rgba(15, 23, 42, 0.72);
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  border-radius: 0.5rem;
+  display: grid;
+  gap: 0.45rem;
+  padding: 0.95rem;
+}
+
+.double-feature-pick__label {
+  color: #93c5fd;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.double-feature-pick h3 {
+  font-size: 1.05rem;
+  margin: 0;
+}
+
+.double-feature-pick p {
+  color: var(--flic-muted);
+  font-size: 0.85rem;
+  margin: 0;
+}
+
+.double-feature-pick a {
+  justify-self: start;
+  margin-top: 0.15rem;
 }
 
 .edit-dialog {

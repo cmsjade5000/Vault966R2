@@ -7,10 +7,26 @@
     if (key === "preset") {
       url.searchParams.delete("preset");
     }
+    if (!hasActiveLibraryParams(url.searchParams)) {
+      url.searchParams.delete("order_by");
+    }
     url.searchParams.set("_filters", "1");
     url.searchParams.set("page", "1");
     return url.toString();
   };
+
+  const hasActiveLibraryParams = (params) =>
+    [
+      "q",
+      "preset",
+      "genres",
+      "moods",
+      "year_min",
+      "year_max",
+      "runtime_min",
+      "runtime_max",
+      "semantic",
+    ].some((key) => String(params.get(key) || "").trim());
 
   const buildClearAllFiltersUrl = (href) => {
     const url = new URL(href);
@@ -24,6 +40,7 @@
       "runtime_min",
       "runtime_max",
       "semantic",
+      "order_by",
       "page",
     ].forEach((key) => url.searchParams.delete(key));
     url.searchParams.set("_filters", "1");
@@ -81,14 +98,69 @@
     value = "",
   } = {}) => selected || Boolean(value && !hasPresetMatch);
 
+  const buildRecommendationParams = (
+    {
+      genres = [],
+      moodsValue = "",
+      runtimeMax = "",
+      yearMax = "",
+      yearMin = "",
+    } = {},
+    { includeRuntime = true } = {},
+  ) => {
+    const params = new URLSearchParams();
+    const firstGenre = Array.from(genres).find(Boolean);
+    const firstMood = parseCsv(moodsValue)[0];
+    if (firstGenre) params.set("genre", firstGenre);
+    if (firstMood) params.set("mood", firstMood);
+    if (yearMin) params.set("year_min", yearMin);
+    if (yearMax) params.set("year_max", yearMax);
+    if (includeRuntime && runtimeMax) params.set("runtime_max", runtimeMax);
+    return params;
+  };
+
+  const buildRecommendationUrl = (path, params = new URLSearchParams()) => {
+    const query = params.toString();
+    return query ? `${path}?${query}` : path;
+  };
+
+  const recommendationHasFilters = (params = new URLSearchParams()) =>
+    Array.from(params.values()).some((value) => String(value).trim());
+
+  const recommendationBusyMessage = (
+    params = new URLSearchParams(),
+    { kind = "pick", stage = "start" } = {},
+  ) => {
+    const filtered = recommendationHasFilters(params);
+    if (stage === "slow") {
+      return kind === "double-feature"
+        ? "Still pairing movies from those filters…"
+        : "Still checking trusted picks…";
+    }
+    if (stage === "long") {
+      return "This is taking longer than usual…";
+    }
+    if (kind === "double-feature") {
+      return filtered
+        ? "Pairing movies from your filters…"
+        : "Pairing two movies from the Vault…";
+    }
+    return filtered
+      ? "Choosing from your filtered results…"
+      : "Choosing from the full Vault…";
+  };
+
   window.VaultLibrarySupport = {
     buildClearAllFiltersUrl,
     buildClearFilterUrl,
     buildPendingSummary,
+    buildRecommendationParams,
+    buildRecommendationUrl,
     emptyFilterState,
     formatApplyLabel,
     formatPresetName,
     parseCsv,
+    recommendationBusyMessage,
     shouldShowCustomControl,
   };
 
@@ -101,6 +173,8 @@
     const yearMaxInput = document.getElementById("year-max-input");
     const runtimeInput = document.getElementById("runtime-max-input");
     const presetInput = document.getElementById("preset-input");
+    const orderSelect = document.getElementById("order-by");
+    const searchInput = document.getElementById("search-q");
     const applyButton = document.querySelector("[data-filters-apply]");
     const resetButton = document.querySelector("[data-filters-reset]");
     const summary = document.querySelector("[data-filters-summary]");
@@ -125,6 +199,7 @@
       document.querySelectorAll(".chip-preset[data-filters]"),
     );
     const selectedGenres = new Set(parseCsv(genresInput?.value || ""));
+    const initialSearchValue = searchInput?.value.trim() || "";
     let pendingPresetName = formatPresetName(presetInput?.value || "");
     let yearCustomSelected = false;
     let runtimeCustomSelected = false;
@@ -378,7 +453,6 @@
         runtimeCustomSelected = Boolean(
           runtimeInput.value && !getMatchingRuntimeButton(),
         );
-        const orderSelect = document.getElementById("order-by");
         if (orderSelect && filters.order_by)
           orderSelect.value = filters.order_by;
         syncFilterUi();
@@ -403,6 +477,18 @@
     });
 
     syncFilterUi();
+
+    const currentRecommendationParams = (options) =>
+      buildRecommendationParams(
+        {
+          genres: selectedGenres,
+          moodsValue: moodsInput?.value || "",
+          runtimeMax: runtimeInput?.value || "",
+          yearMax: yearMaxInput?.value || "",
+          yearMin: yearMinInput?.value || "",
+        },
+        options,
+      );
 
     const clearFilter = (key, value) => {
       if (key === "q") {
@@ -444,7 +530,18 @@
         window.location.assign(buildClearAllFiltersUrl(window.location.href));
       });
 
-    form?.addEventListener("submit", () => {
+    form?.addEventListener("submit", (event) => {
+      const searchValue = searchInput?.value.trim() || "";
+      const submittedBySearch =
+        event.submitter?.id === "search-button" ||
+        document.activeElement?.id === "search-q";
+      if (
+        orderSelect &&
+        searchValue &&
+        (submittedBySearch || searchValue !== initialSearchValue)
+      ) {
+        orderSelect.value = "title_asc";
+      }
       const hasFilters = Boolean(
         genresInput?.value ||
         moodsInput?.value ||
@@ -483,13 +580,36 @@
       });
     });
 
+    const scheduleBusyUpdates = (releaseBusy, params, options = {}) => {
+      if (typeof releaseBusy?.update !== "function") return () => {};
+      const timers = [
+        window.setTimeout(
+          () =>
+            releaseBusy.update(
+              recommendationBusyMessage(params, { ...options, stage: "slow" }),
+            ),
+          3500,
+        ),
+        window.setTimeout(
+          () =>
+            releaseBusy.update(
+              recommendationBusyMessage(params, { ...options, stage: "long" }),
+            ),
+          9000,
+        ),
+      ];
+      return () => timers.forEach((timer) => window.clearTimeout(timer));
+    };
+
     const pickButton = document.getElementById("pick-button");
     pickButton?.addEventListener("click", async () => {
       if (pickButton.disabled) return;
+      const params = currentRecommendationParams({ includeRuntime: true });
       const releaseBusy =
         typeof window.setVaultBusy === "function"
-          ? window.setVaultBusy("Vault is choosing a movie…", { delay: 0 })
+          ? window.setVaultBusy(recommendationBusyMessage(params), { delay: 0 })
           : () => {};
+      const clearBusyUpdates = scheduleBusyUpdates(releaseBusy, params);
       pickButton.disabled = true;
       pickButton.classList.add("is-busy");
       pickButton.setAttribute("aria-busy", "true");
@@ -498,21 +618,23 @@
       let navigating = false;
       try {
         recordEvent("random_pick_requested", { context: "toolbar" });
-        const params = new URLSearchParams();
-        const firstGenre = selectedGenres.values().next().value;
-        const firstMood = parseCsv(moodsInput?.value || "")[0];
-        if (firstGenre) params.set("genre", firstGenre);
-        if (firstMood) params.set("mood", firstMood);
-        if (yearMinInput?.value) params.set("year_min", yearMinInput.value);
-        if (yearMaxInput?.value) params.set("year_max", yearMaxInput.value);
-        if (runtimeInput?.value) params.set("runtime_max", runtimeInput.value);
-        const response = await fetch(`/movies/picks?${params.toString()}`);
+        const response = await fetch(
+          buildRecommendationUrl("/movies/picks", params),
+        );
         if (response.status === 404) {
-          window.showToast?.("Nothing matched—try widening the filters.");
+          window.showToast?.({
+            label: "No match",
+            message: "No trusted movie fits those filters yet.",
+            tone: "notice",
+          });
           return;
         }
         if (!response.ok) {
-          window.showToast?.("The Vault couldn’t choose right now. Try again.");
+          window.showToast?.({
+            label: "Pick failed",
+            message: "The Vault could not choose right now. Try again.",
+            tone: "error",
+          });
           return;
         }
         const movie = await response.json();
@@ -525,8 +647,13 @@
         navigating = true;
         window.location.href = `/ui/movies/${movie.id}`;
       } catch {
-        window.showToast?.("The Vault couldn’t connect. Try again.");
+        window.showToast?.({
+          label: "Connection issue",
+          message: "The Vault could not connect. Try again.",
+          tone: "error",
+        });
       } finally {
+        clearBusyUpdates();
         if (!navigating) {
           releaseBusy();
           pickButton.disabled = false;
@@ -534,6 +661,114 @@
           pickButton.removeAttribute("aria-busy");
           pickButton.setAttribute("aria-label", "Random trusted movie");
         }
+      }
+    });
+
+    const doubleFeatureButton = document.getElementById(
+      "double-feature-button",
+    );
+    const doubleFeatureDialog = document.querySelector(
+      "[data-double-feature-dialog]",
+    );
+    const doubleFeatureController = window.VaultDialog?.bind(
+      doubleFeatureDialog,
+      { closeSelector: "[data-double-feature-close]" },
+    );
+    const doubleFeatureSummary = document.querySelector(
+      "[data-double-feature-summary]",
+    );
+    const renderDoubleFeatureMovie = (prefix, movie) => {
+      const title = document.querySelector(
+        `[data-double-feature-${prefix}-title]`,
+      );
+      const meta = document.querySelector(
+        `[data-double-feature-${prefix}-meta]`,
+      );
+      const link = document.querySelector(
+        `[data-double-feature-${prefix}-link]`,
+      );
+      if (title) title.textContent = movie?.title || "Untitled";
+      const details = [
+        movie?.year,
+        movie?.runtime ? `${movie.runtime} min` : "",
+      ]
+        .filter(Boolean)
+        .join(" · ");
+      if (meta) meta.textContent = details || "Runtime unavailable";
+      if (link && movie?.id)
+        link.setAttribute("href", `/ui/movies/${movie.id}`);
+    };
+
+    doubleFeatureButton?.addEventListener("click", async () => {
+      if (doubleFeatureButton.disabled) return;
+      const params = currentRecommendationParams({ includeRuntime: false });
+      const releaseBusy =
+        typeof window.setVaultBusy === "function"
+          ? window.setVaultBusy(
+              recommendationBusyMessage(params, { kind: "double-feature" }),
+              { delay: 0 },
+            )
+          : () => {};
+      const clearBusyUpdates = scheduleBusyUpdates(releaseBusy, params, {
+        kind: "double-feature",
+      });
+      doubleFeatureButton.disabled = true;
+      doubleFeatureButton.classList.add("is-busy");
+      doubleFeatureButton.setAttribute("aria-busy", "true");
+      doubleFeatureButton.setAttribute(
+        "aria-label",
+        "Choosing a double feature",
+      );
+      const busyStartedAt = Date.now();
+      try {
+        recordEvent("double_feature_requested", { context: "toolbar" });
+        const response = await fetch(
+          buildRecommendationUrl("/movies/double-feature", params),
+        );
+        if (response.status === 404) {
+          window.showToast?.({
+            label: "No pairing",
+            message: "No double feature fits those filters yet.",
+            tone: "notice",
+          });
+          return;
+        }
+        if (!response.ok) {
+          window.showToast?.({
+            label: "Pairing failed",
+            message: "The Vault could not pair movies right now. Try again.",
+            tone: "error",
+          });
+          return;
+        }
+        const pairing = await response.json();
+        const remainingBusyTime = 650 - (Date.now() - busyStartedAt);
+        if (remainingBusyTime > 0) {
+          await new Promise((resolve) =>
+            window.setTimeout(resolve, remainingBusyTime),
+          );
+        }
+        renderDoubleFeatureMovie("primary", pairing.primary);
+        renderDoubleFeatureMovie("secondary", pairing.secondary);
+        if (doubleFeatureSummary) {
+          doubleFeatureSummary.textContent = pairing.total_runtime
+            ? `Two trusted picks, ${pairing.total_runtime} total.`
+            : "Two trusted picks for the same movie night.";
+        }
+        doubleFeatureController?.open(doubleFeatureButton);
+      } catch {
+        window.showToast?.({
+          label: "Connection issue",
+          message: "The Vault could not connect. Try again.",
+          tone: "error",
+        });
+      } finally {
+        clearBusyUpdates();
+        releaseBusy();
+        doubleFeatureButton.disabled = false;
+        doubleFeatureButton.classList.remove("is-busy");
+        doubleFeatureButton.removeAttribute("aria-busy");
+        doubleFeatureButton.setAttribute("aria-label", "Pick a double feature");
       }
     });
   });

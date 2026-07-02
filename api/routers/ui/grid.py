@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import secrets
+from dataclasses import replace
 from typing import Iterable, Optional, Tuple
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
@@ -58,6 +60,7 @@ from api.services.semantic_search import (
 from api.services.trusted_movies import get_untrusted_movie_ids
 from core.movie_filters import (
     MovieFilterParams,
+    RANDOM_ORDER_MODULUS,
     apply_filters,
     ordering_clause,
     parse_movie_filters,
@@ -88,6 +91,41 @@ LIBRARY_FILTER_QUERY_KEYS = {
     "preset",
     "semantic",
 }
+
+RANDOM_SEED_MAX = RANDOM_ORDER_MODULUS - 1
+
+
+def _has_active_library_filters(
+    params: MovieFilterParams, preset: str | None
+) -> bool:
+    return any(
+        (
+            params.q,
+            params.genres,
+            params.moods,
+            params.year_min is not None,
+            params.year_max is not None,
+            params.runtime_min is not None,
+            params.runtime_max is not None,
+            preset,
+        )
+    )
+
+
+def _parse_random_seed(value: object) -> int | None:
+    if value in (None, ""):
+        return None
+    try:
+        seed = int(value)
+    except (TypeError, ValueError):
+        return None
+    if seed < 0 or seed > RANDOM_SEED_MAX:
+        return None
+    return seed
+
+
+def _new_random_seed() -> int:
+    return secrets.randbelow(RANDOM_SEED_MAX + 1)
 
 
 def _apply_library_preset(query, preset: str | None):
@@ -209,7 +247,8 @@ def movies_grid(
     year_max: Optional[str] = Query(default=None),
     runtime_max: Optional[str] = Query(default=None),
     page: int = Query(default=1, ge=1),
-    order_by: str = Query(default="title_asc"),
+    order_by: Optional[str] = Query(default=None),
+    random_seed: Optional[int] = Query(default=None, ge=0, le=RANDOM_SEED_MAX),
     view: str = Query(default="grid", pattern="^(grid|list)$"),
     preset: Optional[str] = Query(default=None, max_length=30),
     semantic: Optional[str] = Query(default=None),
@@ -260,6 +299,22 @@ def movies_grid(
             order_by="title_asc",
         )
         resolved_preset = None
+
+    has_explicit_order = "order_by" in query_params
+    if params.q and (not has_explicit_order or params.order_by == "random"):
+        params = replace(params, order_by="title_asc")
+    elif not _has_active_library_filters(params, resolved_preset) and not has_explicit_order:
+        params = replace(params, order_by="random")
+
+    resolved_random_seed = (
+        random_seed
+        if random_seed is not None
+        else _parse_random_seed(cookie_data.get("random_seed"))
+    )
+    if params.order_by == "random" and resolved_random_seed is None:
+        resolved_random_seed = _new_random_seed()
+    if params.order_by != "random":
+        resolved_random_seed = None
 
     semantic_value = resolve(semantic, "semantic")
     semantic_active = str(semantic_value).lower() in {"1", "true", "yes", "on"}
@@ -352,7 +407,7 @@ def movies_grid(
                 effective_order = (
                     "id_desc" if resolved_preset == "recently-added" else params.order_by
                 )
-                clause = ordering_clause(effective_order)
+                clause = ordering_clause(effective_order, random_seed=resolved_random_seed)
                 movies = (
                     filtered_query.options(selectinload(Movie.genres), selectinload(Movie.moods))
                     .order_by(*clause)
@@ -390,7 +445,7 @@ def movies_grid(
             )
         else:
             effective_order = "id_desc" if resolved_preset == "recently-added" else params.order_by
-            clause = ordering_clause(effective_order)
+            clause = ordering_clause(effective_order, random_seed=resolved_random_seed)
             movies = (
                 filtered_query.options(selectinload(Movie.genres), selectinload(Movie.moods))
                 .order_by(*clause)
@@ -439,6 +494,7 @@ def movies_grid(
         "year_max": year_max_value,
         "runtime_max": runtime_max_value,
         "order_by": params.order_by,
+        "random_seed": resolved_random_seed,
         "genre_options": genre_options,
         "decade_options": decade_options,
         "runtime_presets": runtime_presets,
@@ -459,6 +515,7 @@ def movies_grid(
     response = TEMPLATES.TemplateResponse(request, "movies_grid.html", context)
     ensure_profile_cookie(request, response, db)
     cookie_payload = params.to_cookie_payload(page=current_page)
+    cookie_payload["random_seed"] = resolved_random_seed if resolved_random_seed is not None else ""
     cookie_payload["semantic"] = 1 if semantic_active else 0
     cookie_payload["view"] = resolved_view
     cookie_payload["preset"] = resolved_preset or ""

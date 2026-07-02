@@ -43,6 +43,7 @@
         <label class="library-sort" for="order-by">
           <span class="sr-only">Sort movies</span>
           <select id="order-by" name="order_by" aria-label="Sort movies">
+            <option value="random" {% if order_by == 'random' %}selected{% endif %}>Random</option>
             <option value="title_asc" {% if order_by == 'title_asc' %}selected{% endif %}>Title A–Z</option>
             <option value="title_desc" {% if order_by == 'title_desc' %}selected{% endif %}>Title Z–A</option>
             <option value="id_asc" {% if order_by == 'id_asc' %}selected{% endif %}>Vault ID ↑</option>
@@ -58,7 +59,7 @@
 
         <div class="view-switcher" role="group" aria-label="Library view">
           <a
-            href="{{ request.url.include_query_params(view='grid', page=1) }}"
+            href="{% if random_seed is not none %}{{ request.url.include_query_params(view='grid', page=1, random_seed=random_seed) }}{% else %}{{ request.url.include_query_params(view='grid', page=1) }}{% endif %}"
             class="view-switcher__button{% if view == 'grid' %} is-active{% endif %}"
             aria-label="Grid view"
             title="Grid view"
@@ -73,7 +74,7 @@
             </svg>
           </a>
           <a
-            href="{{ request.url.include_query_params(view='list', page=1) }}"
+            href="{% if random_seed is not none %}{{ request.url.include_query_params(view='list', page=1, random_seed=random_seed) }}{% else %}{{ request.url.include_query_params(view='list', page=1) }}{% endif %}"
             class="view-switcher__button{% if view == 'list' %} is-active{% endif %}"
             aria-label="List view"
             title="List view"
@@ -105,6 +106,18 @@
             <circle cx="12" cy="12" r="1"></circle>
             <circle cx="8" cy="16" r="1"></circle>
             <circle cx="16" cy="16" r="1"></circle>
+          </svg>
+        </button>
+        <button type="button" class="library-icon-button" id="double-feature-button" aria-label="Pick a double feature" title="Double feature" hidden>
+          <svg viewBox="0 0 24 24" aria-hidden="true" data-action-label>
+            <circle cx="10" cy="12" r="5.5"></circle>
+            <circle cx="10" cy="12" r="1.2"></circle>
+            <circle cx="10" cy="8.2" r="0.75"></circle>
+            <circle cx="13.8" cy="12" r="0.75"></circle>
+            <circle cx="10" cy="15.8" r="0.75"></circle>
+            <circle cx="6.2" cy="12" r="0.75"></circle>
+            <path d="M15.1 16.3h2.8"></path>
+            <text class="library-icon-button__badge" x="14.4" y="8.2">x2</text>
           </svg>
         </button>
       </div>
@@ -178,6 +191,38 @@
         </div>
       </dialog>
 
+      <dialog
+        class="double-feature-dialog"
+        data-double-feature-dialog
+        aria-hidden="true"
+        aria-labelledby="double-feature-dialog-title"
+        aria-describedby="double-feature-dialog-description"
+      >
+        <div class="double-feature-dialog__sheet">
+          <header class="double-feature-dialog__header">
+            <div>
+              <h2 id="double-feature-dialog-title">Double Feature</h2>
+              <p id="double-feature-dialog-description" data-double-feature-summary>Two trusted picks for the same movie night.</p>
+            </div>
+            <button type="button" class="filters-close" data-double-feature-close aria-label="Close double feature">×</button>
+          </header>
+          <div class="double-feature-dialog__body">
+            <article class="double-feature-pick">
+              <span class="double-feature-pick__label">First</span>
+              <h3 data-double-feature-primary-title></h3>
+              <p data-double-feature-primary-meta></p>
+              <a class="button-primary" data-double-feature-primary-link href="/ui/movies">Open</a>
+            </article>
+            <article class="double-feature-pick">
+              <span class="double-feature-pick__label">Second</span>
+              <h3 data-double-feature-secondary-title></h3>
+              <p data-double-feature-secondary-meta></p>
+              <a class="button-secondary" data-double-feature-secondary-link href="/ui/movies">Open</a>
+            </article>
+          </div>
+        </div>
+      </dialog>
+
       <input type="hidden" name="view" value="{{ view }}" />
       <input type="hidden" name="preset" id="preset-input" value="{{ preset or '' }}" />
       <input type="hidden" name="genres" id="genres-input" value="{{ genres or '' }}" />
@@ -185,6 +230,7 @@
       <input type="hidden" name="year_min" id="year-min-input" value="{{ year_min or '' }}" />
       <input type="hidden" name="year_max" id="year-max-input" value="{{ year_max or '' }}" />
       <input type="hidden" name="runtime_max" id="runtime-max-input" value="{{ runtime_max or '' }}" />
+      {% if random_seed is not none %}<input type="hidden" name="random_seed" value="{{ random_seed }}" />{% endif %}
       <input type="hidden" name="_filters" value="1" />
       <input type="hidden" name="page" value="1" />
     </form>
@@ -202,22 +248,24 @@
       {% endif %}
 
       {% if total_pages > 1 %}
+      {% set previous_page = page - 1 if page > 1 else 1 %}
+      {% set next_page = page + 1 if page < total_pages else total_pages %}
       <nav class="pager" aria-label="Pagination" data-results-pager>
         <a
           class="pager-link"
-          href="{{ request.url.include_query_params(page=page - 1 if page > 1 else 1) }}#results"
+          href="{% if random_seed is not none %}{{ request.url.include_query_params(page=previous_page, random_seed=random_seed) }}{% else %}{{ request.url.include_query_params(page=previous_page) }}{% endif %}#results"
           aria-disabled="{{ 'true' if page <= 1 else 'false' }}"
           data-disabled="{{ 'true' if page <= 1 else 'false' }}"
-          data-goto-page="{{ page - 1 if page > 1 else 1 }}"
+          data-goto-page="{{ previous_page }}"
           {% if page <= 1 %}tabindex="-1"{% endif %}
         >Previous</a>
         <span>Page {{ page }} of {{ total_pages }}</span>
         <a
           class="pager-link"
-          href="{{ request.url.include_query_params(page=page + 1 if page < total_pages else total_pages) }}#results"
+          href="{% if random_seed is not none %}{{ request.url.include_query_params(page=next_page, random_seed=random_seed) }}{% else %}{{ request.url.include_query_params(page=next_page) }}{% endif %}#results"
           aria-disabled="{{ 'true' if page >= total_pages else 'false' }}"
           data-disabled="{{ 'true' if page >= total_pages else 'false' }}"
-          data-goto-page="{{ page + 1 if page < total_pages else total_pages }}"
+          data-goto-page="{{ next_page }}"
           {% if page >= total_pages %}tabindex="-1"{% endif %}
         >Next</a>
       </nav>

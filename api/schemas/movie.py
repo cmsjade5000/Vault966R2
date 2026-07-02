@@ -247,7 +247,7 @@ class MovieDoubleFeature(BaseModel):
     primary: MovieRead
     secondary: MovieRead
     runtime_cap: int
-    total_runtime: int
+    total_runtime: str
 
     model_config = ConfigDict(from_attributes=True)
 

@@ -1,3 +1,5 @@
+import re
+
 from fastapi.testclient import TestClient
 
 from api.models.movie import Movie
@@ -11,6 +13,10 @@ from api.services.movie_review import (
 )
 from api.services.profiles import get_profiles
 from api.services.ui.grid import FILTER_COOKIE_NAME, FILTER_COOKIE_PATH, dump_filter_cookie
+
+
+def _movie_card_ids(html: str) -> list[int]:
+    return [int(match) for match in re.findall(r'data-movie-id="(\d+)"', html)]
 
 
 def test_movies_grid_persists_filters_via_cookie(client: TestClient) -> None:
@@ -32,6 +38,23 @@ def test_movies_grid_persists_filters_via_cookie(client: TestClient) -> None:
     assert 'option value="runtime_asc" selected' in html
     assert "Blade Runner" in html
     assert "Toy Story" not in html
+
+
+def test_movies_grid_defaults_to_random_when_unfiltered(client: TestClient) -> None:
+    response = client.get("/ui/movies", params={"_filters": "1", "page": "1"})
+
+    assert response.status_code == 200
+    assert 'option value="random" selected' in response.text
+
+
+def test_movies_grid_search_without_explicit_sort_defaults_to_title(
+    client: TestClient,
+) -> None:
+    response = client.get("/ui/movies", params={"q": "matrix"})
+
+    assert response.status_code == 200
+    assert 'option value="title_asc" selected' in response.text
+    assert "The Matrix" in response.text
 
 
 def test_movies_grid_explicit_clear_removes_cookie_backed_preset(
@@ -75,7 +98,7 @@ def test_movies_grid_ignores_invalid_cookie_backed_filters(client: TestClient) -
     html = response.text
     assert 'id="preset-input" value=""' in html
     assert 'id="year-min-input" value=""' in html
-    assert 'option value="title_asc" selected' in html
+    assert 'option value="random" selected' in html
     assert "Blade Runner" in html
 
 
@@ -110,6 +133,21 @@ def test_movies_grid_filters_by_mood(client: TestClient) -> None:
     assert 'data-clear-filter="mood" data-filter-value="Moody"' in html
     assert "Blade Runner" in html
     assert "The Matrix" not in html
+
+
+def test_movies_grid_renders_random_and_double_feature_buttons(
+    client: TestClient,
+) -> None:
+    response = client.get("/ui/movies")
+
+    assert response.status_code == 200
+    html = response.text
+    pick_index = html.index('id="pick-button"')
+    double_feature_index = html.index('id="double-feature-button"')
+    assert pick_index < double_feature_index
+    assert 'aria-label="Random trusted movie"' in html
+    assert 'aria-label="Pick a double feature" title="Double feature" hidden' in html
+    assert 'data-double-feature-dialog' in html
 
 
 def test_library_card_can_be_flagged_for_review(client: TestClient, db_session) -> None:
@@ -421,6 +459,40 @@ def test_movies_grid_paginates_in_complete_36_card_pages(client: TestClient, db_
     assert 'data-goto-page="1"' in first_page.text
     assert 'data-goto-page="1"' in second_page.text
     assert 'data-disabled="true"' in second_page.text
+
+
+def test_movies_grid_random_order_is_stable_across_pages(
+    client: TestClient, db_session
+) -> None:
+    for index in range(40):
+        db_session.add(
+            Movie(
+                title=f"Stable Random Movie {index:02d}",
+                year=2020,
+                runtime=100,
+                imdb_id=f"ttrandompage{index:02d}",
+                tmdb_id=9100 + index,
+            )
+        )
+    db_session.commit()
+
+    first_page = client.get(
+        "/ui/movies",
+        params={"page": 1, "view": "grid", "order_by": "random", "random_seed": 12345},
+    )
+    second_page = client.get(
+        "/ui/movies",
+        params={"page": 2, "view": "grid", "order_by": "random", "random_seed": 12345},
+    )
+
+    assert first_page.status_code == 200
+    assert second_page.status_code == 200
+    first_ids = set(_movie_card_ids(first_page.text))
+    second_ids = set(_movie_card_ids(second_page.text))
+    assert len(first_ids) == 36
+    assert len(second_ids) > 0
+    assert first_ids.isdisjoint(second_ids)
+    assert "random_seed=12345" in first_page.text
 
 
 def test_library_search_is_prominent_and_searches_identity_fields(

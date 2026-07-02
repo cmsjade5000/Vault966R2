@@ -22,3 +22,15 @@ def test_pick_rejects_inverted_year_range(client: TestClient) -> None:
     )
     assert response.status_code == 400
     assert response.json()["message"] == "year_min cannot be greater than year_max"
+
+
+def test_double_feature_returns_pair(client: TestClient) -> None:
+    response = client.get("/movies/double-feature")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["runtime_cap"] == 240
+    assert payload["primary"]["id"] != payload["secondary"]["id"]
+    assert payload["primary"]["title"]
+    assert payload["secondary"]["title"]
+    assert isinstance(payload["total_runtime"], str)

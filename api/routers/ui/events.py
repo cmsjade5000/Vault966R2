@@ -26,6 +26,7 @@ EventName = Literal[
     "discover_rail_opened",
     "personalized_recommendations_shown",
     "random_pick_requested",
+    "double_feature_requested",
     "preference_toggled",
 ]
 PageName = Literal["library", "discover", "detail", "watchlist"]

@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from typing import Iterable, Optional, Sequence, Tuple
 
 from fastapi import HTTPException, status
-from sqlalchemy import String, cast, or_
+from sqlalchemy import String, cast, func, or_
 from sqlalchemy.orm import Query
 
 from api.models.movie import Genre, Mood, Movie
@@ -26,6 +26,7 @@ _ALLOWED_ORDERING = {
     "imdb_desc",
     "rt_desc",
     "flic",
+    "random",
 }
 
 
@@ -167,7 +168,17 @@ def apply_filters(query: Query, params: MovieFilterParams) -> Query:
     return query
 
 
-def ordering_clause(order_by: str):
+RANDOM_ORDER_MODULUS = 2_147_483_647
+RANDOM_ORDER_MULTIPLIER = 1_103_515_245
+
+
+def ordering_clause(order_by: str, *, random_seed: int | None = None):
+    random_clause = (func.random(), Movie.id.asc())
+    if random_seed is not None:
+        random_clause = (
+            ((Movie.id * RANDOM_ORDER_MULTIPLIER + random_seed) % RANDOM_ORDER_MODULUS).asc(),
+            Movie.id.asc(),
+        )
     mapping = {
         "id_asc": (Movie.vault_id.asc().nullslast(), Movie.id.asc()),
         "id_desc": (Movie.vault_id.desc().nullslast(), Movie.id.desc()),
@@ -180,6 +191,7 @@ def ordering_clause(order_by: str):
         "imdb_desc": (Movie.imdb_rating.desc().nullslast(), Movie.id.asc()),
         "rt_desc": (Movie.rt_score.desc().nullslast(), Movie.id.asc()),
         "flic": None,
+        "random": random_clause,
     }
     return mapping[order_by]
 
