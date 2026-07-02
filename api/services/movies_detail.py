@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 import math
+import re
 from functools import lru_cache
 from typing import List, Optional, Tuple
 
@@ -30,6 +31,7 @@ from core.enriched_csv import (
 )
 
 TMDB_API_BASE = "https://api.themoviedb.org/3"
+YOUTUBE_KEY_RE = re.compile(r"^[A-Za-z0-9_-]{6,128}$")
 
 
 @lru_cache(maxsize=256)
@@ -429,6 +431,12 @@ def get_movie_detail(db: Session, movie_id: int) -> Optional[MovieDetail]:
         local_similar = _score_similar(movie, similar_candidates)
         similar = _merge_similar(similar, local_similar)
 
+    trailer_available = bool(
+        movie.trailer_site == "youtube"
+        and movie.trailer_key
+        and YOUTUBE_KEY_RE.fullmatch(movie.trailer_key)
+    )
+
     detail = MovieDetail(
         id=movie.id,
         vault_id=movie.vault_id,
@@ -464,6 +472,12 @@ def get_movie_detail(db: Session, movie_id: int) -> Optional[MovieDetail]:
         tmdb_etag=movie.tmdb_etag,
         tmdb_payload_sha=movie.tmdb_payload_sha,
         omdb_payload_sha=movie.omdb_payload_sha,
+        trailer_site=movie.trailer_site,
+        trailer_key=movie.trailer_key,
+        trailer_name=movie.trailer_name,
+        trailer_url=movie.trailer_url,
+        trailer_checked_at=movie.trailer_checked_at,
+        trailer_available=trailer_available,
         roles=roles,
         similar=similar,
         poster_theme=select_poster_theme([genre.name for genre in movie.genres]),

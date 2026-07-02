@@ -121,53 +121,11 @@ def test_poster_image_url_uses_one_smaller_tmdb_origin() -> None:
     assert poster_image_url("https://example.com/poster.jpg") == ("https://example.com/poster.jpg")
 
 
-def test_discover_contains_all_collection_rails(client, db_session) -> None:
-    for movie in db_session.query(Movie).all():
-        movie.poster_url = f"https://image.tmdb.org/t/p/original/{movie.id}.jpg"
-    db_session.commit()
+def test_discover_page_redirects_to_library(client) -> None:
+    response = client.get("/ui/discover", follow_redirects=False)
 
-    response = client.get("/ui/discover")
-    assert response.status_code == 200
-    for title in (
-        "Recently Added",
-        "Under 100 Minutes",
-        "Highly Rated",
-        "Hidden Gems",
-        "Before 2000",
-        "Edition Cuts",
-    ):
-        assert title in response.text
-    assert 'data-preference-type="like"' in response.text
-    assert 'data-preference-type="watchlist"' in response.text
-    assert ">♡</button>" not in response.text
-    assert ">▯</button>" not in response.text
-    assert "library-card discover-rail-card library-card--poster-only" in response.text
-    assert 'class="library-card__link"' in response.text
-    assert 'class="library-card__media"' in response.text
-    assert 'class="library-card__body"' not in response.text
-    assert 'class="library-card__meta"' not in response.text
-    assert 'class="library-card__genres"' not in response.text
-    assert 'class="library-card__reasons"' not in response.text
-    assert 'class="library-card__actions"' in response.text
-    assert "Today’s shelves" not in response.text
-    assert 'class="discover-sidebar"' not in response.text
-    assert 'class="discover-index"' not in response.text
-    assert "data-rail-next" in response.text
-    assert "data-rail-progress" in response.text
-    assert "Why this" in response.text
-    assert 'fetchpriority="high"' in response.text
-    assert 'fetchpriority="auto"' not in response.text
-    assert "image.tmdb.org" not in response.text
-    assert 'src="/ui/posters/' in response.text
-    assert "data-deferred-poster" in response.text
-    assert 'data-poster-src="/ui/posters/' in response.text
-    eager_poster_sources = response.text.count('src="/ui/posters/') - response.text.count(
-        'data-poster-src="/ui/posters/'
-    )
-    assert eager_poster_sources <= 4
-    assert "/w185" in response.text
-    assert 'loading="eager"' not in response.text
-    assert response.text.count("library-card--poster-only") <= 36
+    assert response.status_code == 307
+    assert response.headers["location"] == "/ui/movies"
 
 
 def test_discover_rails_default_to_five_movies(db_session) -> None:
@@ -229,18 +187,7 @@ def test_discover_rails_keep_all_topics_and_do_not_repeat_movies(db_session) -> 
     assert len(movie_ids) == len(set(movie_ids))
 
 
-def test_discover_explains_how_to_enable_personalization(client) -> None:
-    response = client.get("/ui/discover")
-
-    assert response.status_code == 200
-    assert "Make Discover yours" in response.text
-    assert "Like a movie in the Library" in response.text
-    assert "data-selected-for-you" not in response.text
-
-
-def test_selected_for_you_is_profile_specific_trusted_and_non_repeating(
-    client, db_session, monkeypatch
-) -> None:
+def test_selected_for_you_is_profile_specific_trusted_and_non_repeating(db_session) -> None:
     profile_a = Profile(name="User A", role="admin")
     profile_b = Profile(name="User B", role="reviewer")
     db_session.add_all([profile_a, profile_b])
@@ -276,17 +223,6 @@ def test_selected_for_you_is_profile_specific_trusted_and_non_repeating(
     assert candidate.id not in recommendation_ids
     assert all(sci_fi in movie.genres for movie in recommendations)
     assert _pick_selected_for_you(db_session, profile_b.id) == ([], [])
-
-    monkeypatch.setattr(
-        "api.routers.ui.discover.get_daily_spotlight_movies",
-        lambda _db, limit: [],
-    )
-    response = client.get("/ui/discover")
-    assert response.status_code == 200
-    assert "Selected for You" in response.text
-    assert f"in {sci_fi.name}." in response.text
-    assert "data-selected-for-you" in response.text
-    assert response.text.count(f'href="/ui/movies/{candidate.id}"') == 1
 
 
 def test_discover_rails_only_surface_movies_with_posters(db_session) -> None:

@@ -46,6 +46,155 @@
       });
     }
 
+    const vaultCopyButton = document.querySelector("[data-copy-vault]");
+    if (vaultCopyButton) {
+      const triggerVaultReaction = () => {
+        vaultCopyButton.classList.remove("is-vault-burst");
+        void vaultCopyButton.offsetWidth;
+        vaultCopyButton.classList.add("is-vault-burst");
+        window.setTimeout(() => {
+          vaultCopyButton.classList.remove("is-vault-burst");
+        }, 560);
+      };
+
+      vaultCopyButton.addEventListener("click", async () => {
+        const vaultId = vaultCopyButton.dataset.vaultId || "";
+        triggerVaultReaction();
+        if (!vaultId) return;
+        try {
+          if (typeof navigator.clipboard?.writeText !== "function") {
+            throw new Error("Clipboard unavailable");
+          }
+          await navigator.clipboard.writeText(vaultId);
+          window.showToast?.("Copied Vault ID.");
+        } catch (error) {
+          return;
+        }
+      });
+    }
+
+    const trailerAction = document.querySelector("[data-trailer-action]");
+    const trailerButton = document.querySelector("[data-trailer-button]");
+    const trailerModal = document.querySelector("[data-trailer-modal]");
+    const trailerFrame = document.querySelector("[data-trailer-frame]");
+    const trailerTitle = document.querySelector("[data-trailer-title]");
+    const trailerClose = document.querySelector("[data-trailer-close]");
+    let trailerPayload = null;
+    let trailerReturnFocus = null;
+
+    const trailerEmbedUrl = (value) => {
+      if (!value) return null;
+      try {
+        const url = new URL(value);
+        if (url.origin !== "https://www.youtube-nocookie.com") return null;
+        if (!url.pathname.startsWith("/embed/")) return null;
+        url.searchParams.set("autoplay", "1");
+        url.searchParams.set("rel", "0");
+        return url.toString();
+      } catch (error) {
+        return null;
+      }
+    };
+
+    const applyTrailerPayload = (payload) => {
+      if (!payload || payload.site !== "youtube") return false;
+      const embedUrl = trailerEmbedUrl(payload.embed_url);
+      if (!embedUrl || !trailerButton || !trailerAction) return false;
+      trailerPayload = {
+        name: payload.name || "Trailer",
+        embedUrl,
+      };
+      trailerButton.dataset.trailerName = trailerPayload.name;
+      trailerButton.dataset.trailerEmbedUrl = trailerPayload.embedUrl;
+      trailerAction.hidden = false;
+      return true;
+    };
+
+    const fetchTrailer = async () => {
+      const movieId = trailerAction?.dataset.movieId;
+      if (!movieId) return null;
+      const response = await fetch(`/movies/${movieId}/trailer`, {
+        headers: { Accept: "application/json" },
+      });
+      if (!response.ok) return null;
+      return response.json();
+    };
+
+    const closeTrailer = () => {
+      if (!trailerModal) return;
+      trailerModal.hidden = true;
+      document.body.classList.remove("trailer-open");
+      if (trailerFrame) {
+        trailerFrame.replaceChildren();
+      }
+      trailerReturnFocus?.focus?.();
+      trailerReturnFocus = null;
+    };
+
+    const openTrailer = async () => {
+      if (!trailerButton || !trailerModal || !trailerFrame) return;
+      let embedUrl = trailerEmbedUrl(trailerButton.dataset.trailerEmbedUrl);
+      let trailerName = trailerButton.dataset.trailerName || "Trailer";
+      if (!embedUrl) {
+        try {
+          const payload = await fetchTrailer();
+          if (!applyTrailerPayload(payload)) {
+            window.showToast?.("Trailer unavailable.");
+            return;
+          }
+          embedUrl = trailerPayload.embedUrl;
+          trailerName = trailerPayload.name;
+        } catch (error) {
+          window.showToast?.("Trailer unavailable.");
+          return;
+        }
+      }
+
+      if (trailerTitle) trailerTitle.textContent = trailerName;
+      const iframe = document.createElement("iframe");
+      iframe.src = embedUrl;
+      iframe.title = trailerName;
+      iframe.allow =
+        "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share";
+      iframe.allowFullscreen = true;
+      iframe.referrerPolicy = "strict-origin-when-cross-origin";
+      trailerFrame.replaceChildren(iframe);
+      trailerReturnFocus = document.activeElement;
+      trailerModal.hidden = false;
+      document.body.classList.add("trailer-open");
+      trailerClose?.focus();
+    };
+
+    if (trailerAction && trailerButton) {
+      if (trailerButton.dataset.trailerEmbedUrl) {
+        applyTrailerPayload({
+          site: "youtube",
+          name: trailerButton.dataset.trailerName || "Trailer",
+          embed_url: trailerButton.dataset.trailerEmbedUrl,
+        });
+      } else {
+        fetchTrailer()
+          .then((payload) => {
+            applyTrailerPayload(payload);
+          })
+          .catch(() => {});
+      }
+
+      trailerButton.addEventListener("click", () => {
+        openTrailer();
+      });
+      trailerClose?.addEventListener("click", closeTrailer);
+      trailerModal?.addEventListener("click", (event) => {
+        if (event.target === trailerModal) closeTrailer();
+      });
+      document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape" && trailerModal && !trailerModal.hidden) {
+          event.preventDefault();
+          closeTrailer();
+        }
+      });
+    }
+
     const parseErrorDetail = async (response) => {
       if (!response || typeof response.json !== "function") return null;
       try {

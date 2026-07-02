@@ -79,6 +79,12 @@ class MovieDetail(BaseModel):
     tmdb_etag: Optional[str] = None
     tmdb_payload_sha: Optional[str] = None
     omdb_payload_sha: Optional[str] = None
+    trailer_site: Optional[str] = None
+    trailer_key: Optional[str] = None
+    trailer_name: Optional[str] = None
+    trailer_url: Optional[str] = None
+    trailer_checked_at: Optional[datetime] = None
+    trailer_available: bool = False
     roles: List[RoleWithPersonRead] = Field(default_factory=list)
     similar: List[SimilarMovie] = Field(default_factory=list)
     poster_theme: Optional[str] = None

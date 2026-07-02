@@ -60,6 +60,12 @@ class MovieDetail:
         tomato_audience (int | None | Unset):
         tomato_meter (int | None | Unset):
         top_billed (list[TopBilledEntry] | Unset):
+        trailer_available (bool | Unset):  Default: False.
+        trailer_checked_at (datetime.datetime | None | Unset):
+        trailer_key (None | str | Unset):
+        trailer_name (None | str | Unset):
+        trailer_site (None | str | Unset):
+        trailer_url (None | str | Unset):
         vault_id (None | str | Unset):
         where_to_watch (list[str] | Unset):
         year (int | None | Unset):
@@ -103,6 +109,12 @@ class MovieDetail:
     tomato_audience: int | None | Unset = UNSET
     tomato_meter: int | None | Unset = UNSET
     top_billed: list[TopBilledEntry] | Unset = UNSET
+    trailer_available: bool | Unset = False
+    trailer_checked_at: datetime.datetime | None | Unset = UNSET
+    trailer_key: None | str | Unset = UNSET
+    trailer_name: None | str | Unset = UNSET
+    trailer_site: None | str | Unset = UNSET
+    trailer_url: None | str | Unset = UNSET
     vault_id: None | str | Unset = UNSET
     where_to_watch: list[str] | Unset = UNSET
     year: int | None | Unset = UNSET
@@ -324,6 +336,40 @@ class MovieDetail:
                 top_billed_item = top_billed_item_data.to_dict()
                 top_billed.append(top_billed_item)
 
+        trailer_available = self.trailer_available
+
+        trailer_checked_at: None | str | Unset
+        if isinstance(self.trailer_checked_at, Unset):
+            trailer_checked_at = UNSET
+        elif isinstance(self.trailer_checked_at, datetime.datetime):
+            trailer_checked_at = self.trailer_checked_at.isoformat()
+        else:
+            trailer_checked_at = self.trailer_checked_at
+
+        trailer_key: None | str | Unset
+        if isinstance(self.trailer_key, Unset):
+            trailer_key = UNSET
+        else:
+            trailer_key = self.trailer_key
+
+        trailer_name: None | str | Unset
+        if isinstance(self.trailer_name, Unset):
+            trailer_name = UNSET
+        else:
+            trailer_name = self.trailer_name
+
+        trailer_site: None | str | Unset
+        if isinstance(self.trailer_site, Unset):
+            trailer_site = UNSET
+        else:
+            trailer_site = self.trailer_site
+
+        trailer_url: None | str | Unset
+        if isinstance(self.trailer_url, Unset):
+            trailer_url = UNSET
+        else:
+            trailer_url = self.trailer_url
+
         vault_id: None | str | Unset
         if isinstance(self.vault_id, Unset):
             vault_id = UNSET
@@ -420,6 +466,18 @@ class MovieDetail:
             field_dict["tomato_meter"] = tomato_meter
         if top_billed is not UNSET:
             field_dict["top_billed"] = top_billed
+        if trailer_available is not UNSET:
+            field_dict["trailer_available"] = trailer_available
+        if trailer_checked_at is not UNSET:
+            field_dict["trailer_checked_at"] = trailer_checked_at
+        if trailer_key is not UNSET:
+            field_dict["trailer_key"] = trailer_key
+        if trailer_name is not UNSET:
+            field_dict["trailer_name"] = trailer_name
+        if trailer_site is not UNSET:
+            field_dict["trailer_site"] = trailer_site
+        if trailer_url is not UNSET:
+            field_dict["trailer_url"] = trailer_url
         if vault_id is not UNSET:
             field_dict["vault_id"] = vault_id
         if where_to_watch is not UNSET:
@@ -740,6 +798,61 @@ class MovieDetail:
 
                 top_billed.append(top_billed_item)
 
+        trailer_available = d.pop("trailer_available", UNSET)
+
+        def _parse_trailer_checked_at(data: object) -> datetime.datetime | None | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            try:
+                if not isinstance(data, str):
+                    raise TypeError()
+                trailer_checked_at_type_0 = datetime.datetime.fromisoformat(data)
+
+                return trailer_checked_at_type_0
+            except (TypeError, ValueError, AttributeError, KeyError):
+                pass
+            return cast(datetime.datetime | None | Unset, data)
+
+        trailer_checked_at = _parse_trailer_checked_at(d.pop("trailer_checked_at", UNSET))
+
+        def _parse_trailer_key(data: object) -> None | str | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(None | str | Unset, data)
+
+        trailer_key = _parse_trailer_key(d.pop("trailer_key", UNSET))
+
+        def _parse_trailer_name(data: object) -> None | str | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(None | str | Unset, data)
+
+        trailer_name = _parse_trailer_name(d.pop("trailer_name", UNSET))
+
+        def _parse_trailer_site(data: object) -> None | str | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(None | str | Unset, data)
+
+        trailer_site = _parse_trailer_site(d.pop("trailer_site", UNSET))
+
+        def _parse_trailer_url(data: object) -> None | str | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(None | str | Unset, data)
+
+        trailer_url = _parse_trailer_url(d.pop("trailer_url", UNSET))
+
         def _parse_vault_id(data: object) -> None | str | Unset:
             if data is None:
                 return data
@@ -799,6 +912,12 @@ class MovieDetail:
             tomato_audience=tomato_audience,
             tomato_meter=tomato_meter,
             top_billed=top_billed,
+            trailer_available=trailer_available,
+            trailer_checked_at=trailer_checked_at,
+            trailer_key=trailer_key,
+            trailer_name=trailer_name,
+            trailer_site=trailer_site,
+            trailer_url=trailer_url,
             vault_id=vault_id,
             where_to_watch=where_to_watch,
             year=year,

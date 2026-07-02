@@ -16,11 +16,6 @@
 
     <form method="get" action="/ui/movies" id="filters-form" data-base-action="/ui/movies">
       <section class="library-search-panel" aria-label="Search your Vault">
-        {% if q %}
-        <div class="library-search-panel__heading library-search-panel__heading--actions">
-          <button type="button" class="button-ghost" data-clear-search>Clear search</button>
-        </div>
-        {% endif %}
         <label class="sr-only" for="search-q">Search your Vault</label>
         <div class="library-search">
           <input
@@ -100,7 +95,7 @@
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <path d="M4 5h16l-6.5 7.4v5.1l-3 1.5v-6.6L4 5z"></path>
           </svg>
-          {% if genres or year_min or year_max or runtime_max or preset %}<span class="library-control-badge" aria-label="Filters active"></span>{% endif %}
+          {% if genres or moods or year_min or year_max or runtime_max or preset %}<span class="library-control-badge" aria-label="Filters active"></span>{% endif %}
         </button>
         <button type="button" class="library-icon-button" id="pick-button" aria-label="Random trusted movie" title="Random pick">
           <svg viewBox="0 0 24 24" aria-hidden="true" data-action-label>
@@ -114,30 +109,35 @@
         </button>
       </div>
 
-      {% set active_filters = [] %}
-      {% if q %}{% set active_filters = active_filters + [{'key':'q','label':'Search: ' ~ q, 'value': q}] %}{% endif %}
-      {% if preset %}{% set active_filters = active_filters + [{'key':'preset','label': preset | replace('-', ' ') | title, 'value': preset}] %}{% endif %}
+      {% set active = namespace(filters=[]) %}
+      {% if q %}{% set active.filters = active.filters + [{'key':'q','label':'Search: ' ~ q, 'value': q}] %}{% endif %}
+      {% if preset %}{% set active.filters = active.filters + [{'key':'preset','label': preset | replace('-', ' ') | title, 'value': preset}] %}{% endif %}
       {% set genre_list = genres.split(',') if genres else [] %}
       {% for label in genre_list %}
         {% set clean = label | trim %}
-        {% if clean %}{% set active_filters = active_filters + [{'key':'genre','label':clean,'value':clean}] %}{% endif %}
+        {% if clean %}{% set active.filters = active.filters + [{'key':'genre','label':clean,'value':clean}] %}{% endif %}
+      {% endfor %}
+      {% set mood_list = moods.split(',') if moods else [] %}
+      {% for label in mood_list %}
+        {% set clean = label | trim %}
+        {% if clean %}{% set active.filters = active.filters + [{'key':'mood','label':clean,'value':clean}] %}{% endif %}
       {% endfor %}
       {% if year_min or year_max %}
-        {% set active_filters = active_filters + [{'key':'year','label':(year_min or 'Any') ~ '–' ~ (year_max or 'Now'),'value':''}] %}
+        {% set active.filters = active.filters + [{'key':'year','label':(year_min or 'Any') ~ '–' ~ (year_max or 'Now'),'value':''}] %}
       {% endif %}
       {% if runtime_max %}
-        {% set active_filters = active_filters + [{'key':'runtime','label':'≤ ' ~ runtime_max ~ ' min','value':runtime_max}] %}
+        {% set active.filters = active.filters + [{'key':'runtime','label':'≤ ' ~ runtime_max ~ ' min','value':runtime_max}] %}
       {% endif %}
-      {% if active_filters %}
+      {% if active.filters %}
       <div class="active-filters" data-active-filters>
         <div class="active-filters__chips">
-          {% for item in active_filters %}
+          {% for item in active.filters %}
           <button type="button" class="chip chip-active" data-clear-filter="{{ item.key }}" data-filter-value="{{ item.value }}">
             {{ item.label }} <span aria-hidden="true">×</span>
           </button>
           {% endfor %}
         </div>
-        <button type="button" class="button-ghost" id="clear-active-filters">Clear all</button>
+        <button type="button" class="button-ghost active-filters__clear" id="clear-active-filters">Clear all</button>
       </div>
       {% endif %}
 
@@ -181,6 +181,7 @@
       <input type="hidden" name="view" value="{{ view }}" />
       <input type="hidden" name="preset" id="preset-input" value="{{ preset or '' }}" />
       <input type="hidden" name="genres" id="genres-input" value="{{ genres or '' }}" />
+      <input type="hidden" name="moods" id="moods-input" value="{{ moods or '' }}" />
       <input type="hidden" name="year_min" id="year-min-input" value="{{ year_min or '' }}" />
       <input type="hidden" name="year_max" id="year-max-input" value="{{ year_max or '' }}" />
       <input type="hidden" name="runtime_max" id="runtime-max-input" value="{{ runtime_max or '' }}" />

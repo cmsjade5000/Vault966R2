@@ -38,6 +38,23 @@ test("clearing a preset removes Hidden Gems and preserves other filters", () => 
   assert.equal(result.searchParams.get("page"), "1");
 });
 
+test("clearing a search chip removes q and preserves filters", () => {
+  const { buildClearFilterUrl } = loadSupport();
+  const result = new URL(
+    buildClearFilterUrl(
+      "http://127.0.0.1:8000/ui/movies?q=Titanic&genres=Drama&view=grid&order_by=title_asc&page=3",
+      "q",
+    ),
+  );
+
+  assert.equal(result.searchParams.has("q"), false);
+  assert.equal(result.searchParams.get("genres"), "Drama");
+  assert.equal(result.searchParams.get("view"), "grid");
+  assert.equal(result.searchParams.get("order_by"), "title_asc");
+  assert.equal(result.searchParams.get("_filters"), "1");
+  assert.equal(result.searchParams.get("page"), "1");
+});
+
 test("clearing a cookie-backed preset marks the URL as authoritative", () => {
   const { buildClearFilterUrl } = loadSupport();
   const result = new URL(

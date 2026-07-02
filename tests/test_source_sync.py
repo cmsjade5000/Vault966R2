@@ -86,9 +86,13 @@ def test_source_sync_status_and_history_live_on_collection_health(client: TestCl
 
     assert source_sync.status_code == 302
     assert source_sync.headers["location"] == ("/ui/movies/health#source-synchronization")
+    assert "Latest confirmed source" in health.text
+    assert "Need attention" in health.text
+    assert "Add one movie" in health.text
+    assert "Full source refresh" in health.text
     assert "Upload collection CSV" in health.text
-    assert "Latest confirmed snapshot" in health.text
-    assert "Snapshot history" in health.text
+    assert "Match breakdown" in health.text
+    assert "Audit trail" in health.text
     assert "Auto-matched" in health.text
     assert "Manually matched" in health.text
     assert '<details class="page-shell source-health" id="source-synchronization">' in health.text

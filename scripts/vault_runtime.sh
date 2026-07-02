@@ -22,6 +22,8 @@ cd "$ROOT_DIR"
 child_pid=""
 monitor_pid=""
 stopping=0
+runtime_state_dir="$(mktemp -d "${TMPDIR:-/tmp}/vault-runtime.XXXXXX")"
+forced_shutdown_marker="$runtime_state_dir/forced-shutdown"
 
 # kill -0 succeeds for zombies, but an exited process is no longer serviceable.
 process_is_running() {
@@ -60,6 +62,7 @@ terminate_child() {
 
   if child_is_running; then
     echo "Vault did not stop within ${SHUTDOWN_GRACE}s; forcing termination." >&2
+    touch "$forced_shutdown_marker" 2>/dev/null || true
     kill -KILL "$child_pid" 2>/dev/null || true
   fi
 }
@@ -79,6 +82,7 @@ stop_processes() {
   if [[ -n "$child_pid" ]]; then
     wait "$child_pid" 2>/dev/null || true
   fi
+  rm -rf "$runtime_state_dir" 2>/dev/null || true
 }
 
 # shellcheck disable=SC2329
@@ -112,7 +116,7 @@ monitor_health() {
       if (( failures >= HEALTH_FAILURE_LIMIT )); then
         echo "Vault is unhealthy; terminating it so launchd can restart it." >&2
         terminate_child
-        return
+        return 137
       fi
     fi
     sleep "$HEALTH_INTERVAL"
@@ -132,7 +136,15 @@ while child_is_running; do
 done
 
 set +e
+monitor_status=0
+if [[ -n "$monitor_pid" ]]; then
+  wait "$monitor_pid" 2>/dev/null
+  monitor_status=$?
+fi
 wait "$child_pid"
 status=$?
 set -e
+if [[ "$monitor_status" -eq 137 || -f "$forced_shutdown_marker" ]]; then
+  status=137
+fi
 exit "$status"

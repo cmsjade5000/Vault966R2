@@ -126,6 +126,49 @@ def test_movie_detail_template(client: TestClient, detail_movie_setup):
     assert "data-flag-form" in html
     assert "Flag for review" in html
     assert "adminToken" not in html
+    assert "data-trailer-action" in html
+    assert "Play Trailer" in html
+    poster_shell = html.split('<div class="poster-shell">', 1)[1].split(
+        '<div class="hero-meta">',
+        1,
+    )[0]
+    badge_links = html.split('<div class="badge-links">', 1)[1].split(
+        '<div class="preference-actions"',
+        1,
+    )[0]
+    assert "data-trailer-action" not in poster_shell
+    assert "data-trailer-action" in badge_links
+    trailer_action = html.split('class="trailer-action"', 1)[1].split(">", 1)[0]
+    assert "hidden" in trailer_action
+    assert "https://www.youtube-nocookie.com/embed/" not in html
+
+
+def test_movie_detail_template_shows_cached_trailer_pill(client: TestClient, detail_movie_setup):
+    movie_id = detail_movie_setup
+    for db in _db_session(client):
+        movie = db.query(Movie).filter(Movie.id == movie_id).one()
+        movie.trailer_site = "youtube"
+        movie.trailer_key = "cached_123"
+        movie.trailer_name = "Official Trailer"
+        movie.trailer_url = "https://www.youtube.com/watch?v=cached_123"
+        db.add(movie)
+        db.commit()
+
+    resp = client.get(f"/ui/movies/{movie_id}")
+
+    assert resp.status_code == 200
+    html = resp.text
+    assert "Play Trailer" in html
+    assert 'class="trailer-action"' in html
+    assert "data-trailer-action" in html
+    badge_links = html.split('<div class="badge-links">', 1)[1].split(
+        '<div class="preference-actions"',
+        1,
+    )[0]
+    assert badge_links.index("TMDb") < badge_links.index("Play Trailer")
+    trailer_action = html.split('class="trailer-action"', 1)[1].split(">", 1)[0]
+    assert "hidden" not in trailer_action
+    assert 'data-trailer-embed-url="https://www.youtube-nocookie.com/embed/cached_123"' in html
 
 
 def test_movie_detail_renders_spotlight_context_when_requested(

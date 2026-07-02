@@ -545,6 +545,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/movies/{movie_id}/trailer": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Movie Trailer */
+        get: operations["movie_trailer_movies__movie_id__trailer_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/movies/{movie_id}/watchlist": {
         parameters: {
             query?: never;
@@ -575,23 +592,6 @@ export interface paths {
         put?: never;
         /** Create Person */
         post: operations["create_person_people__post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/ui/discover": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Discover */
-        get: operations["discover_ui_discover_get"];
-        put?: never;
-        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -1717,6 +1717,21 @@ export interface components {
             tomato_meter?: number | null;
             /** Top Billed */
             top_billed?: components["schemas"]["TopBilledEntry"][];
+            /**
+             * Trailer Available
+             * @default false
+             */
+            trailer_available: boolean;
+            /** Trailer Checked At */
+            trailer_checked_at?: string | null;
+            /** Trailer Key */
+            trailer_key?: string | null;
+            /** Trailer Name */
+            trailer_name?: string | null;
+            /** Trailer Site */
+            trailer_site?: string | null;
+            /** Trailer Url */
+            trailer_url?: string | null;
             /** Vault Id */
             vault_id?: string | null;
             /** Where To Watch */
@@ -1953,6 +1968,19 @@ export interface components {
             page_size: number;
             /** Total */
             total: number;
+        };
+        /** MovieTrailerRead */
+        MovieTrailerRead: {
+            /** Embed Url */
+            embed_url: string;
+            /** Key */
+            key: string;
+            /** Name */
+            name?: string | null;
+            /** Site */
+            site: string;
+            /** Url */
+            url: string;
         };
         /** MovieUpdate */
         MovieUpdate: {
@@ -3499,6 +3527,37 @@ export interface operations {
             };
         };
     };
+    movie_trailer_movies__movie_id__trailer_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                movie_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MovieTrailerRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     watchlist_movie_movies__movie_id__watchlist_post: {
         parameters: {
             query?: never;
@@ -3626,26 +3685,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    discover_ui_discover_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "text/html": string;
                 };
             };
         };

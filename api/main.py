@@ -271,6 +271,7 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
             "style-src 'self'; "
             "style-src-attr 'none'; "
             "font-src 'self' data:; "
+            "frame-src https://www.youtube-nocookie.com; "
             "connect-src 'self'"
         )
         response.headers.setdefault("Content-Security-Policy", csp)

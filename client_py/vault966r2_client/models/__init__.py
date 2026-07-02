@@ -52,6 +52,7 @@ from .movie_match_selection import MovieMatchSelection
 from .movie_match_selection_source import MovieMatchSelectionSource
 from .movie_read import MovieRead
 from .movie_search_response import MovieSearchResponse
+from .movie_trailer_read import MovieTrailerRead
 from .movie_update import MovieUpdate
 from .person_create import PersonCreate
 from .person_list_response import PersonListResponse
@@ -143,6 +144,7 @@ __all__ = (
     "MovieMatchSelectionSource",
     "MovieRead",
     "MovieSearchResponse",
+    "MovieTrailerRead",
     "MovieUpdate",
     "PersonCreate",
     "PersonListResponse",

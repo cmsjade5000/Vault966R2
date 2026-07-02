@@ -77,10 +77,9 @@ def test_profile_tap_creates_selected_profile_session(client: TestClient, monkey
     assert session is not None
     assert session.profile_id == 2
 
-    discover = client.get("/ui/discover")
-    assert discover.status_code == 200
-    assert 'data-vault-auto-lock-ms="1200000"' in discover.text
-    assert "js/auto_lock.js" in discover.text
+    discover = client.get("/ui/discover", follow_redirects=False)
+    assert discover.status_code == 307
+    assert discover.headers["location"] == "/ui/movies"
 
 
 def test_profile_form_redirects_without_javascript(client: TestClient, monkeypatch):
