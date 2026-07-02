@@ -20,7 +20,7 @@ from api.services.profiles import (
     get_active_profile_id,
     get_preferences_for_movies,
 )
-from api.services.ui.grid import attach_genre_display, attach_poster_themes
+from api.services.ui.grid import attach_poster_themes
 from api.services.trusted_movies import get_untrusted_movie_ids, trusted_movie_query
 
 router = APIRouter()

@@ -66,7 +66,6 @@ def _youtube_trailer_from_movie(movie: Movie) -> MovieTrailer | None:
 def _video_score(item: dict[str, Any]) -> tuple[int, int, int, int, int, str]:
     video_type = str(item.get("type") or "").strip().lower()
     site = str(item.get("site") or "").strip().lower()
-    name = str(item.get("name") or "").strip().lower()
     language = str(item.get("iso_639_1") or "").strip().lower()
     country = str(item.get("iso_3166_1") or "").strip().upper()
     official = item.get("official") is True
