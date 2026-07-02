@@ -1,31 +1,23 @@
 from http import HTTPStatus
 from typing import Any
+from urllib.parse import quote
 
 import httpx
 
 from ... import errors
 from ...client import AuthenticatedClient, Client
 from ...models.http_validation_error import HTTPValidationError
-from ...models.update_run_api_collection_health_update_run_post_response_update_run_api_collection_health_update_run_post import (
-    UpdateRunApiCollectionHealthUpdateRunPostResponseUpdateRunApiCollectionHealthUpdateRunPost,
-)
-from ...types import UNSET, Response, Unset
+from ...types import Response
 
 
 def _get_kwargs(
-    *,
-    task: str | Unset = "all",
+    snapshot_id: int,
 ) -> dict[str, Any]:
-    params: dict[str, Any] = {}
-
-    params["task"] = task
-
-    params = {k: v for k, v in params.items() if v is not UNSET and v is not None}
-
     _kwargs: dict[str, Any] = {
-        "method": "post",
-        "url": "/api/collection-health/update/run",
-        "params": params,
+        "method": "get",
+        "url": "/ui/source-sync/{snapshot_id}/new-additions.csv".format(
+            snapshot_id=quote(str(snapshot_id), safe=""),
+        ),
     }
 
     return _kwargs
@@ -33,18 +25,9 @@ def _get_kwargs(
 
 def _parse_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> (
-    HTTPValidationError
-    | UpdateRunApiCollectionHealthUpdateRunPostResponseUpdateRunApiCollectionHealthUpdateRunPost
-    | None
-):
+) -> Any | HTTPValidationError | None:
     if response.status_code == 200:
-        response_200 = (
-            UpdateRunApiCollectionHealthUpdateRunPostResponseUpdateRunApiCollectionHealthUpdateRunPost.from_dict(
-                response.json()
-            )
-        )
-
+        response_200 = response.json()
         return response_200
 
     if response.status_code == 422:
@@ -60,9 +43,7 @@ def _parse_response(
 
 def _build_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> Response[
-    HTTPValidationError | UpdateRunApiCollectionHealthUpdateRunPostResponseUpdateRunApiCollectionHealthUpdateRunPost
-]:
+) -> Response[Any | HTTPValidationError]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -72,27 +53,25 @@ def _build_response(
 
 
 def sync_detailed(
+    snapshot_id: int,
     *,
-    client: AuthenticatedClient,
-    task: str | Unset = "all",
-) -> Response[
-    HTTPValidationError | UpdateRunApiCollectionHealthUpdateRunPostResponseUpdateRunApiCollectionHealthUpdateRunPost
-]:
-    """Update Run
+    client: AuthenticatedClient | Client,
+) -> Response[Any | HTTPValidationError]:
+    """Download New Additions Csv
 
     Args:
-        task (str | Unset):  Default: 'all'.
+        snapshot_id (int):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[HTTPValidationError | UpdateRunApiCollectionHealthUpdateRunPostResponseUpdateRunApiCollectionHealthUpdateRunPost]
+        Response[Any | HTTPValidationError]
     """
 
     kwargs = _get_kwargs(
-        task=task,
+        snapshot_id=snapshot_id,
     )
 
     response = client.get_httpx_client().request(
@@ -103,55 +82,49 @@ def sync_detailed(
 
 
 def sync(
+    snapshot_id: int,
     *,
-    client: AuthenticatedClient,
-    task: str | Unset = "all",
-) -> (
-    HTTPValidationError
-    | UpdateRunApiCollectionHealthUpdateRunPostResponseUpdateRunApiCollectionHealthUpdateRunPost
-    | None
-):
-    """Update Run
+    client: AuthenticatedClient | Client,
+) -> Any | HTTPValidationError | None:
+    """Download New Additions Csv
 
     Args:
-        task (str | Unset):  Default: 'all'.
+        snapshot_id (int):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        HTTPValidationError | UpdateRunApiCollectionHealthUpdateRunPostResponseUpdateRunApiCollectionHealthUpdateRunPost
+        Any | HTTPValidationError
     """
 
     return sync_detailed(
+        snapshot_id=snapshot_id,
         client=client,
-        task=task,
     ).parsed
 
 
 async def asyncio_detailed(
+    snapshot_id: int,
     *,
-    client: AuthenticatedClient,
-    task: str | Unset = "all",
-) -> Response[
-    HTTPValidationError | UpdateRunApiCollectionHealthUpdateRunPostResponseUpdateRunApiCollectionHealthUpdateRunPost
-]:
-    """Update Run
+    client: AuthenticatedClient | Client,
+) -> Response[Any | HTTPValidationError]:
+    """Download New Additions Csv
 
     Args:
-        task (str | Unset):  Default: 'all'.
+        snapshot_id (int):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[HTTPValidationError | UpdateRunApiCollectionHealthUpdateRunPostResponseUpdateRunApiCollectionHealthUpdateRunPost]
+        Response[Any | HTTPValidationError]
     """
 
     kwargs = _get_kwargs(
-        task=task,
+        snapshot_id=snapshot_id,
     )
 
     response = await client.get_async_httpx_client().request(**kwargs)
@@ -160,30 +133,26 @@ async def asyncio_detailed(
 
 
 async def asyncio(
+    snapshot_id: int,
     *,
-    client: AuthenticatedClient,
-    task: str | Unset = "all",
-) -> (
-    HTTPValidationError
-    | UpdateRunApiCollectionHealthUpdateRunPostResponseUpdateRunApiCollectionHealthUpdateRunPost
-    | None
-):
-    """Update Run
+    client: AuthenticatedClient | Client,
+) -> Any | HTTPValidationError | None:
+    """Download New Additions Csv
 
     Args:
-        task (str | Unset):  Default: 'all'.
+        snapshot_id (int):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        HTTPValidationError | UpdateRunApiCollectionHealthUpdateRunPostResponseUpdateRunApiCollectionHealthUpdateRunPost
+        Any | HTTPValidationError
     """
 
     return (
         await asyncio_detailed(
+            snapshot_id=snapshot_id,
             client=client,
-            task=task,
         )
     ).parsed
