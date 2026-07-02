@@ -465,10 +465,10 @@ def test_health_page_uses_vault_health_title_and_prioritizes_metrics(
     assert "Preview counts are read-only" in response.text
     assert 'href="#metadata-maintenance"' in response.text
     assert 'id="metadata-maintenance"' in response.text
-    assert 'data-maintenance-history' in response.text
+    assert "data-maintenance-history" in response.text
     assert 'data-maintenance-latest="genres"' in response.text
     assert 'data-maintenance-latest="posters"' in response.text
-    assert 'data-update-cancel' in response.text
+    assert "data-update-cancel" in response.text
     assert "Cancel queued maintenance" in response.text
     assert "Normalize genres" in response.text
     assert "Find missing posters" in response.text

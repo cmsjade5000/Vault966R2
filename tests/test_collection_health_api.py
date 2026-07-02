@@ -36,9 +36,7 @@ def test_refresh_collection_health_allows_admin_profile_session(
     assert response.json() == {"recommendation": "session recommendation"}
 
 
-def test_update_run_requires_admin_profile_same_origin(
-    client, monkeypatch, login_profile
-) -> None:
+def test_update_run_requires_admin_profile_same_origin(client, monkeypatch, login_profile) -> None:
     task_values = []
 
     def fake_start_update(task="all", **kwargs):
@@ -70,9 +68,7 @@ def test_update_run_requires_admin_profile_same_origin(
     assert task_values == ["all"]
 
 
-def test_update_run_accepts_single_maintenance_task(
-    client, monkeypatch, login_profile
-) -> None:
+def test_update_run_accepts_single_maintenance_task(client, monkeypatch, login_profile) -> None:
     task_values = []
 
     def fake_start_update(task="all", **kwargs):

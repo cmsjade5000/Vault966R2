@@ -42,9 +42,7 @@ def upgrade() -> None:
             server_default=sa.func.now(),
             nullable=False,
         ),
-        sa.ForeignKeyConstraint(
-            ["started_by_profile_id"], ["profiles.id"], ondelete="SET NULL"
-        ),
+        sa.ForeignKeyConstraint(["started_by_profile_id"], ["profiles.id"], ondelete="SET NULL"),
         sa.PrimaryKeyConstraint("id"),
     )
     op.create_index(

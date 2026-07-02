@@ -227,9 +227,11 @@ def _report_meta(task: dict) -> dict[str, Any]:
         "path": task["report_path"],
         "url": f"/api/collection-health/update/reports/{task['id']}",
         "exists": exists,
-        "updated_at": datetime.fromtimestamp(path.stat().st_mtime, timezone.utc).isoformat()
-        if exists
-        else None,
+        "updated_at": (
+            datetime.fromtimestamp(path.stat().st_mtime, timezone.utc).isoformat()
+            if exists
+            else None
+        ),
     }
 
 

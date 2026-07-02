@@ -441,10 +441,7 @@ def _ensure_sqlite_movie_columns() -> None:
             )
 
         maintenance_jobs_exists = connection.execute(
-            text(
-                "SELECT name FROM sqlite_master "
-                "WHERE type='table' AND name='maintenance_jobs'"
-            )
+            text("SELECT name FROM sqlite_master " "WHERE type='table' AND name='maintenance_jobs'")
         ).first()
         if not maintenance_jobs_exists:
             connection.execute(
