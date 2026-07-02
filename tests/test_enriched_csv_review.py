@@ -8,6 +8,7 @@ from scripts.enriched_csv_review import (
     EnrichedCsvContractError,
     GateConfig,
     apply_overrides,
+    normalize_row,
     quality_flags,
     validate_enriched_contract,
 )
@@ -99,6 +100,23 @@ def test_validate_enriched_contract_rejects_malformed_values():
         validate_enriched_contract(fieldnames, [row])
 
 
+def test_validate_enriched_contract_rejects_fractional_integer_fields():
+    fieldnames = list(ENRICHED_CSV_REQUIRED_COLUMNS)
+    row = _base_enriched_row()
+    row["runtime_min"] = "90.5"
+
+    with pytest.raises(EnrichedCsvContractError, match="runtime_min is not an integer"):
+        validate_enriched_contract(fieldnames, [row])
+
+
+def test_validate_enriched_contract_accepts_integer_like_decimal_fields():
+    fieldnames = list(ENRICHED_CSV_REQUIRED_COLUMNS)
+    row = _base_enriched_row()
+    row["runtime_min"] = "90.0"
+
+    validate_enriched_contract(fieldnames, [row])
+
+
 def test_quality_flags_are_deterministic():
     row = {
         "title": "Test",
@@ -122,3 +140,27 @@ def test_quality_flags_are_deterministic():
         "languages_unmapped",
         "countries_unmapped",
     ]
+
+
+def test_normalize_row_preserves_structured_watch_url_without_provider_names():
+    row = _base_enriched_row()
+    row["providers_stream"] = ""
+    row["providers_rent"] = ""
+    row["providers_buy"] = ""
+
+    normalized = normalize_row(row, GateConfig())
+
+    assert normalized["watch_region"] == "US"
+    assert normalized["tmdb_watch_url"] == row["tmdb_watch_url"]
+    assert normalized["providers_stream"] == ""
+
+
+def test_normalize_row_flags_unmapped_languages_before_iso_rewrite():
+    row = _base_enriched_row()
+    row["languages"] = "English; Klingon"
+
+    normalized = normalize_row(row, GateConfig())
+
+    assert "languages_unmapped" in normalized["quality_flags"]
+    assert normalized["quality_quarantined"] == "true"
+    assert normalized["languages"] == "en"
