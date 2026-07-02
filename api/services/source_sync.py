@@ -4,10 +4,12 @@ import csv
 import hashlib
 import io
 import re
+import zipfile
 from collections import Counter, defaultdict
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from urllib.parse import urlencode
+from xml.etree import ElementTree
 
 from sqlalchemy import func
 from sqlalchemy.orm import Session, selectinload
@@ -37,14 +39,14 @@ MAX_SOURCE_BYTES = 5 * 1024 * 1024
 MAX_SOURCE_ROWS = 5000
 REQUIRED_FIELDS = ("title", "time", "director", "year")
 FIELD_ALIASES = {
-    "title": ("Title", "Name"),
-    "time": ("Time", "Total Time"),
-    "director": ("Director", "Artist"),
-    "year": ("Year",),
-    "genre": ("Genre",),
-    "content_rating": ("Content Rating",),
-    "release_date": ("Release Date",),
-    "hd": ("HD",),
+    "title": ("Title", "Name", "Movie", "Movie Title", "Film", "Film Title"),
+    "time": ("Time", "Total Time", "Runtime", "Run Time", "Duration", "Minutes", "Runtime Min"),
+    "director": ("Director", "Directors", "Director(s)", "Artist"),
+    "year": ("Year", "Release Year", "Movie Year"),
+    "genre": ("Genre", "Genres"),
+    "content_rating": ("Content Rating", "Rating", "Rated", "Certificate"),
+    "release_date": ("Release Date", "Released", "Date"),
+    "hd": ("HD", "High Definition", "Quality"),
 }
 IDENTITY_FIELDS = ("title", "year", "runtime", "director")
 SPACE_RE = re.compile(r"\s+")
@@ -350,9 +352,21 @@ def parse_runtime(value: object) -> int | None:
     text = clean_text(value)
     if text is None:
         return None
+    lowered = text.casefold()
+    minute_match = re.fullmatch(r"(\d+(?:\.\d+)?)\s*(?:m|min|mins|minute|minutes)", lowered)
+    hour_minute_match = re.fullmatch(
+        r"(?:(\d+(?:\.\d+)?)\s*h(?:ours?)?)?\s*(?:(\d+(?:\.\d+)?)\s*m(?:in(?:ute)?s?)?)?",
+        lowered,
+    )
+    if minute_match:
+        runtime = round(float(minute_match.group(1)))
+    elif hour_minute_match and any(hour_minute_match.groups()):
+        hours = float(hour_minute_match.group(1) or 0)
+        minutes = float(hour_minute_match.group(2) or 0)
+        runtime = round(hours * 60 + minutes)
     if text.isdigit():
         runtime = int(text)
-    else:
+    elif "runtime" not in locals():
         parts = text.split(":")
         if len(parts) not in {2, 3}:
             raise SourceSyncError(f"Invalid runtime '{text}'")
@@ -375,6 +389,8 @@ def parse_year(value: object) -> int | None:
     text = clean_text(value)
     if text is None:
         return None
+    if re.fullmatch(r"\d{4}\.0+", text):
+        text = text.split(".", 1)[0]
     if not text.isdigit():
         raise SourceSyncError(f"Invalid year '{text}'")
     year = int(text)
@@ -395,43 +411,42 @@ def parse_hd(value: object) -> bool | None:
     raise SourceSyncError(f"Invalid HD value '{text}'")
 
 
+def _header_key(value: object) -> str:
+    text = str(value or "").replace("\ufeff", "").casefold()
+    text = re.sub(r"[^a-z0-9]+", " ", text)
+    return SPACE_RE.sub(" ", text).strip()
+
+
 def _find_header(rows: list[list[str]]) -> tuple[int, dict[str, int]]:
+    alias_lookup = {
+        field: {_header_key(alias) for alias in aliases} for field, aliases in FIELD_ALIASES.items()
+    }
     for index, row in enumerate(rows):
-        names = {str(value or "").strip(): position for position, value in enumerate(row)}
+        names = {
+            _header_key(value): position for position, value in enumerate(row) if _header_key(value)
+        }
         resolved: dict[str, int] = {}
-        for field, aliases in FIELD_ALIASES.items():
+        for field, aliases in alias_lookup.items():
             for alias in aliases:
-                if alias in names:
+                if alias and alias in names:
                     resolved[field] = names[alias]
                     break
         if all(field in resolved for field in REQUIRED_FIELDS):
             return index, resolved
     raise SourceSyncError(
-        "CSV must contain Title, Time, Director, and Year columns "
-        "(Numbers exports using Name, Total Time, and Artist are also accepted)."
+        "Upload must contain title, runtime, director, and year columns. "
+        "Common headers such as Name, Movie Title, Total Time, Runtime, Artist, "
+        "Director, Release Year, and Year are accepted."
     )
 
 
-def parse_source_csv(content: bytes) -> tuple[str, list[ParsedSourceRow]]:
-    if not content:
-        raise SourceSyncError("The uploaded CSV is empty")
-    if len(content) > MAX_SOURCE_BYTES:
-        raise SourceSyncError("The uploaded CSV is larger than 5 MB")
-    try:
-        text = content.decode("utf-8-sig")
-    except UnicodeDecodeError as exc:
-        raise SourceSyncError("The CSV must use UTF-8 encoding") from exc
-
-    try:
-        raw_rows = list(csv.reader(io.StringIO(text)))
-    except csv.Error as exc:
-        raise SourceSyncError(f"CSV parsing failed: {exc}") from exc
+def _parse_source_rows(raw_rows: list[list[str]]) -> list[ParsedSourceRow]:
     header_index, columns = _find_header(raw_rows)
     data_rows = [row for row in raw_rows[header_index + 1 :] if any(cell.strip() for cell in row)]
     if not data_rows:
-        raise SourceSyncError("The CSV contains no movie rows")
+        raise SourceSyncError("The upload contains no movie rows")
     if len(data_rows) > MAX_SOURCE_ROWS:
-        raise SourceSyncError(f"The CSV contains more than {MAX_SOURCE_ROWS} rows")
+        raise SourceSyncError(f"The upload contains more than {MAX_SOURCE_ROWS} rows")
 
     parsed: list[ParsedSourceRow] = []
     duplicate_keys: list[str] = []
@@ -539,7 +554,139 @@ def parse_source_csv(content: bytes) -> tuple[str, list[ParsedSourceRow]]:
                 raw_data=row["raw_data"],
             )
         )
-    return text, parsed
+    return parsed
+
+
+def parse_source_csv(content: bytes) -> tuple[str, list[ParsedSourceRow]]:
+    if not content:
+        raise SourceSyncError("The uploaded CSV is empty")
+    if len(content) > MAX_SOURCE_BYTES:
+        raise SourceSyncError("The uploaded CSV is larger than 5 MB")
+    try:
+        text = content.decode("utf-8-sig")
+    except UnicodeDecodeError as exc:
+        raise SourceSyncError("The CSV must use UTF-8 encoding") from exc
+
+    try:
+        raw_rows = list(csv.reader(io.StringIO(text)))
+    except csv.Error as exc:
+        raise SourceSyncError(f"CSV parsing failed: {exc}") from exc
+    return text, _parse_source_rows(raw_rows)
+
+
+def _xlsx_column_index(cell_ref: str) -> int:
+    letters = "".join(char for char in cell_ref if char.isalpha())
+    if not letters:
+        return 0
+    index = 0
+    for char in letters.upper():
+        index = index * 26 + (ord(char) - ord("A") + 1)
+    return index - 1
+
+
+def _xlsx_text(element: ElementTree.Element) -> str:
+    return "".join(element.itertext())
+
+
+def _xlsx_shared_strings(workbook: zipfile.ZipFile) -> list[str]:
+    try:
+        root = ElementTree.fromstring(workbook.read("xl/sharedStrings.xml"))
+    except KeyError:
+        return []
+    except ElementTree.ParseError as exc:
+        raise SourceSyncError("XLSX shared strings could not be read") from exc
+    return [_xlsx_text(item) for item in root.findall(".//{*}si")]
+
+
+def _xlsx_first_sheet_path(workbook: zipfile.ZipFile) -> str:
+    try:
+        workbook_root = ElementTree.fromstring(workbook.read("xl/workbook.xml"))
+        rels_root = ElementTree.fromstring(workbook.read("xl/_rels/workbook.xml.rels"))
+    except (KeyError, ElementTree.ParseError) as exc:
+        raise SourceSyncError("XLSX workbook metadata could not be read") from exc
+
+    first_sheet = workbook_root.find(".//{*}sheet")
+    relationship_id = (
+        first_sheet.attrib.get(
+            "{http://schemas.openxmlformats.org/officeDocument/2006/relationships}id"
+        )
+        if first_sheet is not None
+        else None
+    )
+    if relationship_id is None:
+        raise SourceSyncError("XLSX workbook has no worksheets")
+
+    for relationship in rels_root.findall(".//{*}Relationship"):
+        if relationship.attrib.get("Id") == relationship_id:
+            target = relationship.attrib.get("Target", "")
+            if target.startswith("/"):
+                return target.lstrip("/")
+            return "xl/" + target.lstrip("/")
+    raise SourceSyncError("XLSX first worksheet could not be resolved")
+
+
+def _xlsx_cell_value(cell: ElementTree.Element, shared_strings: list[str]) -> str:
+    cell_type = cell.attrib.get("t")
+    if cell_type == "inlineStr":
+        inline = cell.find(".//{*}t")
+        return _xlsx_text(inline) if inline is not None else ""
+    value = cell.find("{*}v")
+    if value is None or value.text is None:
+        return ""
+    if cell_type == "s":
+        try:
+            return shared_strings[int(value.text)]
+        except (ValueError, IndexError) as exc:
+            raise SourceSyncError("XLSX shared string reference is invalid") from exc
+    if cell_type == "b":
+        return "true" if value.text == "1" else "false"
+    return value.text
+
+
+def _xlsx_rows(content: bytes) -> list[list[str]]:
+    try:
+        with zipfile.ZipFile(io.BytesIO(content)) as workbook:
+            shared_strings = _xlsx_shared_strings(workbook)
+            sheet_path = _xlsx_first_sheet_path(workbook)
+            sheet_root = ElementTree.fromstring(workbook.read(sheet_path))
+    except zipfile.BadZipFile as exc:
+        raise SourceSyncError("The XLSX file could not be opened") from exc
+    except KeyError as exc:
+        raise SourceSyncError("The XLSX first worksheet could not be read") from exc
+    except ElementTree.ParseError as exc:
+        raise SourceSyncError("The XLSX first worksheet is malformed") from exc
+
+    rows: list[list[str]] = []
+    for row in sheet_root.findall(".//{*}sheetData/{*}row"):
+        values: list[str] = []
+        for cell in row.findall("{*}c"):
+            column = _xlsx_column_index(cell.attrib.get("r", ""))
+            while len(values) <= column:
+                values.append("")
+            values[column] = _xlsx_cell_value(cell, shared_strings).strip()
+        rows.append(values)
+    return rows
+
+
+def parse_source_xlsx(content: bytes) -> tuple[str, list[ParsedSourceRow]]:
+    if not content:
+        raise SourceSyncError("The uploaded XLSX is empty")
+    if len(content) > MAX_SOURCE_BYTES:
+        raise SourceSyncError("The uploaded XLSX is larger than 5 MB")
+    rows = _xlsx_rows(content)
+    normalized_csv = io.StringIO()
+    writer = csv.writer(normalized_csv)
+    writer.writerows(rows)
+    return normalized_csv.getvalue(), _parse_source_rows(rows)
+
+
+def parse_source_file(filename: str, content: bytes) -> tuple[str, list[ParsedSourceRow]]:
+    suffix = filename.rsplit(".", 1)[-1].casefold() if "." in filename else "csv"
+    if suffix == "xlsx":
+        return parse_source_xlsx(content)
+    if suffix == "csv":
+        return parse_source_csv(content)
+    raise SourceSyncError("Upload must be a CSV or XLSX file")
 
 
 def create_draft_snapshot(
@@ -555,7 +702,7 @@ def create_draft_snapshot(
         raise SourceSyncError(
             f"This exact source file was already uploaded as snapshot #{existing.id}."
         )
-    raw_csv, rows = parse_source_csv(content)
+    raw_csv, rows = parse_source_file(filename, content)
     snapshot = SourceSnapshot(
         filename=filename or "collection.csv",
         file_sha256=file_sha,

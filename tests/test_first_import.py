@@ -50,7 +50,10 @@ def test_first_import_shell_renders_for_admin(client: TestClient) -> None:
         'method="post" action="/ui/first-import/upload" enctype="multipart/form-data"' in page.text
     )
     assert 'name="source_file"' in page.text
-    assert 'accept=".csv,text/csv"' in page.text
+    assert (
+        'accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"'
+        in page.text
+    )
 
 
 def test_first_import_reviewer_cannot_open_wizard(

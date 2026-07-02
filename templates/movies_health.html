@@ -135,14 +135,14 @@
         <summary>
           <div>
             <span class="review-vault-id">Full source refresh</span>
-            <h3>Upload collection CSV</h3>
+            <h3>Upload collection file</h3>
           </div>
           <span>Use this for a rebuilt export.</span>
         </summary>
         <div class="source-sync-disclosure__body">
           <form method="post" action="/ui/source-sync/upload" enctype="multipart/form-data">
             <label for="source-file">CSV file</label>
-            <input id="source-file" name="source_file" type="file" accept=".csv,text/csv" required />
+            <input id="source-file" name="source_file" type="file" accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" required />
             <button class="button-primary" type="submit">Preview snapshot</button>
           </form>
           <p>Required: Title, Time, Director, Year. Numbers exports using Name, Total Time, and Artist are accepted.</p>

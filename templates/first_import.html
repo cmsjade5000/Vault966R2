@@ -9,7 +9,7 @@
     <header class="library-heading first-import-heading">
       <div>
         <h1>First import</h1>
-        <p>Start with a collection CSV, preview the rows, then auto-create only high-confidence matches.</p>
+        <p>Start with a collection file, preview the rows, then auto-create only high-confidence matches.</p>
       </div>
       <a class="button-secondary" href="/ui/movies">Back to Library</a>
     </header>
@@ -20,13 +20,13 @@
 
     <section class="source-sync-upload first-import-upload" aria-labelledby="first-import-upload-title">
       <span class="review-vault-id">Collection source</span>
-      <h2 id="first-import-upload-title">Upload collection CSV</h2>
+      <h2 id="first-import-upload-title">Upload collection file</h2>
       <form method="post" action="/ui/first-import/upload" enctype="multipart/form-data">
-        <label for="source-file">CSV file</label>
-        <input id="source-file" name="source_file" type="file" accept=".csv,text/csv" required />
+        <label for="source-file">CSV or XLSX file</label>
+        <input id="source-file" name="source_file" type="file" accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" required />
         <button class="button-primary" type="submit">Preview import</button>
       </form>
-      <p>Required: Title, Time, Director, Year. Numbers exports using Name, Total Time, and Artist are accepted.</p>
+      <p>Required: title, runtime, director, and year columns. Common CSV and spreadsheet headers are accepted.</p>
     </section>
 
     <section class="source-sync-summary first-import-next" aria-labelledby="first-import-next-title">
