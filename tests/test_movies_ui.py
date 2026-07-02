@@ -147,7 +147,7 @@ def test_movies_grid_renders_random_and_double_feature_buttons(
     assert pick_index < double_feature_index
     assert 'aria-label="Random trusted movie"' in html
     assert 'aria-label="Pick a double feature" title="Double feature" hidden' in html
-    assert 'data-double-feature-dialog' in html
+    assert "data-double-feature-dialog" in html
 
 
 def test_library_card_can_be_flagged_for_review(client: TestClient, db_session) -> None:
@@ -461,9 +461,7 @@ def test_movies_grid_paginates_in_complete_36_card_pages(client: TestClient, db_
     assert 'data-disabled="true"' in second_page.text
 
 
-def test_movies_grid_random_order_is_stable_across_pages(
-    client: TestClient, db_session
-) -> None:
+def test_movies_grid_random_order_is_stable_across_pages(client: TestClient, db_session) -> None:
     for index in range(40):
         db_session.add(
             Movie(

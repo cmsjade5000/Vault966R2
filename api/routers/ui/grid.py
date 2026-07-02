@@ -95,9 +95,7 @@ LIBRARY_FILTER_QUERY_KEYS = {
 RANDOM_SEED_MAX = RANDOM_ORDER_MODULUS - 1
 
 
-def _has_active_library_filters(
-    params: MovieFilterParams, preset: str | None
-) -> bool:
+def _has_active_library_filters(params: MovieFilterParams, preset: str | None) -> bool:
     return any(
         (
             params.q,
