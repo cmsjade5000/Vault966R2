@@ -90,6 +90,8 @@ def _build_reason_tags(base_genres: list[str], base_year: int | None, item) -> l
 
 @router.get("/ui/movies/review")
 def start_review(request: Request, db: Session = Depends(get_db)) -> RedirectResponse:
+    # Compatibility alias for the retired standalone review mode. Vault checks
+    # now live inside the Health workbench.
     return RedirectResponse(
         url="/ui/movies/health?view=vault#review-workbench",
         status_code=302,

@@ -507,6 +507,8 @@ def discover_refresh(
     pairings_limit: int = Query(default=2, ge=1, le=4),
     genre_limit: int = Query(default=6, ge=3, le=12),
 ) -> dict:
+    # Compatibility JSON endpoint retained for generated clients and external
+    # callers that refresh Discover without loading the server-rendered page.
     top_genres = _top_genre_names(db, limit=genre_limit)
 
     used_ids: set[int] = set()
