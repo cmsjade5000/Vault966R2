@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import io
+import zipfile
+from xml.sax.saxutils import escape
 from urllib.parse import parse_qs, urlparse
 
 import pytest
@@ -28,6 +31,64 @@ from api.services.source_sync import (
 def _csv(*rows: str) -> bytes:
     header = "Title,Time,Director,Year,Genre,Content Rating,Release Date,HD"
     return ("\n".join((header, *rows)) + "\n").encode()
+
+
+def _xlsx(rows: list[list[str]]) -> bytes:
+    def column_name(index: int) -> str:
+        name = ""
+        index += 1
+        while index:
+            index, remainder = divmod(index - 1, 26)
+            name = chr(ord("A") + remainder) + name
+        return name
+
+    sheet_rows = []
+    for row_index, row in enumerate(rows, start=1):
+        cells = []
+        for column_index, value in enumerate(row):
+            reference = f"{column_name(column_index)}{row_index}"
+            cells.append(f'<c r="{reference}" t="inlineStr"><is><t>{escape(value)}</t></is></c>')
+        sheet_rows.append(f'<row r="{row_index}">{"".join(cells)}</row>')
+    sheet_xml = (
+        '<?xml version="1.0" encoding="UTF-8"?>'
+        '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
+        f'<sheetData>{"".join(sheet_rows)}</sheetData>'
+        "</worksheet>"
+    )
+    buffer = io.BytesIO()
+    with zipfile.ZipFile(buffer, "w") as archive:
+        archive.writestr(
+            "[Content_Types].xml",
+            '<?xml version="1.0" encoding="UTF-8"?>'
+            '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">'
+            '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>'
+            '<Default Extension="xml" ContentType="application/xml"/>'
+            "</Types>",
+        )
+        archive.writestr(
+            "_rels/.rels",
+            '<?xml version="1.0" encoding="UTF-8"?>'
+            '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+            '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/>'
+            "</Relationships>",
+        )
+        archive.writestr(
+            "xl/workbook.xml",
+            '<?xml version="1.0" encoding="UTF-8"?>'
+            '<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" '
+            'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">'
+            '<sheets><sheet name="Movies" sheetId="1" r:id="rId1"/></sheets>'
+            "</workbook>",
+        )
+        archive.writestr(
+            "xl/_rels/workbook.xml.rels",
+            '<?xml version="1.0" encoding="UTF-8"?>'
+            '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+            '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>'
+            "</Relationships>",
+        )
+        archive.writestr("xl/worksheets/sheet1.xml", sheet_xml)
+    return buffer.getvalue()
 
 
 def _upload_and_confirm(client: TestClient, content: bytes) -> int:
@@ -90,7 +151,7 @@ def test_source_sync_status_and_history_live_on_collection_health(client: TestCl
     assert "Need attention" in health.text
     assert "Add one movie" in health.text
     assert "Full source refresh" in health.text
-    assert "Upload collection CSV" in health.text
+    assert "Upload collection file" in health.text
     assert "Match breakdown" in health.text
     assert "Audit trail" in health.text
     assert "Auto-matched" in health.text
@@ -131,6 +192,57 @@ def test_source_sync_accepts_reordered_columns(client: TestClient, db_session) -
     snapshot = db_session.get(SourceSnapshot, snapshot_id)
     assert snapshot.rows[0].title == "Blade Runner"
     assert snapshot.rows[0].hd is True
+
+
+def test_source_sync_accepts_common_case_insensitive_headers(
+    client: TestClient,
+    db_session,
+) -> None:
+    content = (
+        "movie title,runtime min,directors,release year,rating,quality\n"
+        "Blade Runner,117,Ridley Scott,1982,PG,HD\n"
+    ).encode()
+
+    snapshot_id = _upload_and_confirm(client, content)
+
+    row = db_session.get(SourceSnapshot, snapshot_id).rows[0]
+    assert row.title == "Blade Runner"
+    assert row.runtime == 117
+    assert row.director == "Ridley Scott"
+    assert row.year == 1982
+    assert row.content_rating == "PG"
+    assert row.hd is True
+
+
+def test_source_sync_accepts_xlsx_upload(client: TestClient, db_session) -> None:
+    content = _xlsx(
+        [
+            ["Movie Title", "Runtime", "Director(s)", "Release Year", "Genres", "Rated"],
+            ["Arrival", "1h 56m", "Denis Villeneuve", "2016.0", "Sci-Fi", "PG-13"],
+        ]
+    )
+
+    upload = client.post(
+        "/ui/source-sync/upload",
+        files={
+            "source_file": (
+                "source.xlsx",
+                content,
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            )
+        },
+        follow_redirects=False,
+    )
+
+    assert upload.status_code == 303
+    snapshot_id = int(upload.headers["location"].split("/")[-2])
+    row = db_session.get(SourceSnapshot, snapshot_id).rows[0]
+    assert row.title == "Arrival"
+    assert row.runtime == 116
+    assert row.director == "Denis Villeneuve"
+    assert row.year == 2016
+    assert row.genre == "Sci-Fi"
+    assert row.content_rating == "PG-13"
 
 
 def test_source_sync_rejects_malformed_and_repeated_files(client: TestClient) -> None:

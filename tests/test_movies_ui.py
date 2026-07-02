@@ -442,7 +442,10 @@ def test_first_import_page_reuses_source_sync_upload_flow(client: TestClient) ->
         'method="post" action="/ui/first-import/upload" enctype="multipart/form-data"' in page.text
     )
     assert 'name="source_file"' in page.text
-    assert 'accept=".csv,text/csv"' in page.text
+    assert (
+        'accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"'
+        in page.text
+    )
     assert "Preview import" in page.text
 
 
