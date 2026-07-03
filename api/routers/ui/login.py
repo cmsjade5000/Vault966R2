@@ -9,12 +9,10 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, Form, Query, Request, status
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
-from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from api.config import settings
 from api.db import get_db
-from api.models.movie import Movie
 from api.services.profiles import (
     PROFILE_COOKIE_NAME,
     ensure_profile_cookie,
@@ -36,6 +34,20 @@ PROFILE_PICKER_LABELS = ("CORY", "DAMIAN")
 UNLOCK_COOKIE_NAME = "vault_unlock"
 UNLOCK_TOKEN_VERSION = 1
 UNLOCK_TTL_SECONDS = 5 * 60
+PUBLIC_ARCHIVE_IMAGE_PATHS = (
+    "img/app-icon.png",
+    "img/apple-touch-icon.png",
+    "img/android-chrome-512x512.png",
+    "img/splash-1024.png",
+    "img/splash-1536x2048.png",
+    "img/splash-1668x2224.png",
+    "img/splash-1668x2388.png",
+    "img/splash-2048x1536.png",
+    "img/splash-2048x2732.png",
+    "img/splash-2224x1668.png",
+    "img/splash-2388x1668.png",
+    "img/splash-2732x2048.png",
+)
 
 
 def _b64encode(raw: bytes) -> str:
@@ -102,15 +114,10 @@ def _session_profile_id(request: Request) -> Optional[int]:
     return None
 
 
-def _archive_poster_urls(db: Session, *, limit: int = 36) -> list[str]:
-    rows = (
-        db.query(Movie.poster_url)
-        .filter(Movie.poster_url.isnot(None))
-        .order_by(func.random())
-        .limit(limit)
-        .all()
-    )
-    return [row[0] for row in rows if row[0]]
+def _public_archive_image_urls(request: Request) -> list[str]:
+    return [
+        str(request.url_for("static", path=image_path)) for image_path in PUBLIC_ARCHIVE_IMAGE_PATHS
+    ]
 
 
 def _archive_tiles(urls: list[str], *, limit: int = 12) -> list[Optional[str]]:
@@ -191,13 +198,12 @@ def _credentials_match(
 
 def _render_login_error(
     request: Request,
-    db: Session,
     profiles,
     *,
     message: str,
     status_code: int,
 ):
-    archive_poster_urls = _archive_poster_urls(db)
+    archive_poster_urls = _public_archive_image_urls(request)
     archive_tiles = _archive_tiles(archive_poster_urls)
     return TEMPLATES.TemplateResponse(
         request,
@@ -237,7 +243,7 @@ def login(
         except (TypeError, ValueError):
             active_profile_id = None
 
-    archive_poster_urls = _archive_poster_urls(db)
+    archive_poster_urls = _public_archive_image_urls(request)
     archive_tiles = _archive_tiles(archive_poster_urls)
 
     response = TEMPLATES.TemplateResponse(
@@ -282,7 +288,6 @@ def login_submit(
             )
         return _render_login_error(
             request,
-            db,
             profiles,
             message=message,
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
@@ -307,7 +312,6 @@ def login_submit(
             )
         return _render_login_error(
             request,
-            db,
             profiles,
             message=message,
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -337,7 +341,7 @@ def login_submit(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 content={"error": "Unknown profile."},
             )
-        archive_poster_urls = _archive_poster_urls(db)
+        archive_poster_urls = _public_archive_image_urls(request)
         archive_tiles = _archive_tiles(archive_poster_urls)
         return TEMPLATES.TemplateResponse(
             request,
@@ -364,7 +368,6 @@ def login_submit(
             )
         return _render_login_error(
             request,
-            db,
             profiles,
             message=message,
             status_code=status.HTTP_403_FORBIDDEN,

@@ -1,6 +1,7 @@
 from fastapi.testclient import TestClient
 
 from api.config import settings
+from api.models.movie import Movie
 from api.services.session import SESSION_COOKIE_NAME, get_session_secret, parse_session_token
 from api.services.ui.grid import FILTER_COOKIE_NAME, FILTER_COOKIE_PATH
 
@@ -25,6 +26,24 @@ def test_login_page_only_shows_unlock_action(client: TestClient):
     assert "login-crt" not in response.text
     assert "css/login.css?v=" in response.text
     assert "js/login_archive.js?v=" in response.text
+
+
+def test_public_login_uses_static_archive_art(
+    client: TestClient,
+    db_session,
+) -> None:
+    private_poster_url = "https://collection.example/private-poster.jpg"
+    movie = db_session.query(Movie).filter(Movie.title == "Blade Runner").one()
+    movie.poster_url = private_poster_url
+    db_session.commit()
+
+    response = client.get("/login")
+
+    assert response.status_code == 200
+    assert private_poster_url not in response.text
+    assert 'src="http://testserver/static/img/app-icon.png"' in response.text
+    assert '"http://testserver/static/img/app-icon.png"' in response.text
+    assert "collection.example" not in response.text
 
 
 def test_unlock_reveals_profile_picker_without_session(client: TestClient, monkeypatch):
@@ -124,6 +143,32 @@ def test_login_rejects_invalid_credentials(client: TestClient, monkeypatch):
     assert response.status_code == 401
     assert response.json() == {"error": "Invalid login credentials."}
     assert response.cookies.get(SESSION_COOKIE_NAME) is None
+
+
+def test_login_error_uses_static_archive_art(
+    client: TestClient,
+    db_session,
+    monkeypatch,
+) -> None:
+    monkeypatch.setattr(settings, "disable_auth", False)
+    monkeypatch.setattr(settings, "login_session_secret", None)
+    monkeypatch.setattr(settings, "login_access_key", "vault")
+    monkeypatch.setattr(settings, "login_passcode", "966")
+    private_poster_url = "https://collection.example/error-poster.jpg"
+    movie = db_session.query(Movie).filter(Movie.title == "The Matrix").one()
+    movie.poster_url = private_poster_url
+    db_session.commit()
+
+    response = client.post(
+        "/login",
+        data={"profile_id": "1", "access_key": "vault", "passcode": "wrong"},
+    )
+
+    assert response.status_code == 401
+    assert "Invalid login credentials." in response.text
+    assert private_poster_url not in response.text
+    assert 'src="http://testserver/static/img/app-icon.png"' in response.text
+    assert "collection.example" not in response.text
 
 
 def test_login_fails_closed_when_credentials_missing(client: TestClient, monkeypatch):
