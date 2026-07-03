@@ -38,4 +38,6 @@ Use this to get voice responses from the `/api/assistant` endpoint on your local
 
 ## Notes
 - Use `format=text` for a clean, voice-friendly reply.
+- Use the recommended POST shortcut for provider-backed phrasing. GET returns
+  local vault picks without spending provider work.
 - Keep queries short for best voice accuracy.
