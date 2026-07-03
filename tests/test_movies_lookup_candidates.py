@@ -184,9 +184,7 @@ def test_movies_lookup_candidates_missing_key(client, movie_id, monkeypatch, db_
     assert any(item["source"] == "vault" for item in payload["items"])
 
 
-def test_movies_lookup_get_uses_local_candidates_only(
-    client, movie_id, monkeypatch, db_session
-):
+def test_movies_lookup_get_uses_local_candidates_only(client, movie_id, monkeypatch, db_session):
     monkeypatch.setattr(movie_lookup.settings, "tmdb_api_key", "tmdb-key")
     monkeypatch.setattr(movie_lookup.settings, "omdb_api_key", "omdb-key")
 
@@ -227,9 +225,7 @@ def test_movies_lookup_provider_post_requires_same_origin(
     assert response.json()["items"][0]["source"] == "tmdb"
 
 
-def test_movies_lookup_provider_post_is_throttled(
-    client, movie_id, monkeypatch, login_profile
-):
+def test_movies_lookup_provider_post_is_throttled(client, movie_id, monkeypatch, login_profile):
     monkeypatch.setattr(
         "api.routers.movies.lookup_movie_candidates",
         lambda title, year, limit=5: [{"title": title, "source": "tmdb"}],
