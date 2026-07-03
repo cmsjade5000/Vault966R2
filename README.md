@@ -29,24 +29,22 @@ For contributor-friendly next steps, see [ROADMAP.md](ROADMAP.md). For safe
 public examples, see [docs/demo-data.md](docs/demo-data.md).
 For the supported lifecycle of archived import tooling, see
 [docs/legacy-etl.md](docs/legacy-etl.md).
-Before changing repository visibility, follow
-[docs/public-launch.md](docs/public-launch.md).
+The public repository is
+[`cmsjade5000/Vault966R2`](https://github.com/cmsjade5000/Vault966R2), with
+`public-main` as the default branch.
 
 ## Repository status
 
-Vault 966 is being prepared for public open-source maintenance. Before treating
-the repository as a fully reusable OSS project, confirm these external setup
-items are complete:
+Vault 966 is public open-source software maintained from the `public-main`
+branch. The repository is ready for contributor review and still keeps local
+runtime data out of source control:
 
-- Confirm the MIT license is the intended public license.
-- Make the GitHub repository public when private data has been reviewed.
-- Add GitHub repository description, topics, labels, and starter issues.
-- Confirm issue templates, pull request template, security policy, and code of
-  conduct are appropriate for the public repository.
-- Publish from a clean public branch or fresh public repository if existing Git
-  history is not suitable for public review.
 - Keep generated logs, databases, credentials, local backups, private import
   snapshots, and generated collection reports out of commits.
+- Use synthetic data for public examples, screenshots, tests, and issue
+  reproduction.
+- Confirm repository metadata, templates, security policy, and maintainer docs
+  stay aligned as public workflows evolve.
 
 ## Quickstart
 
@@ -231,9 +229,9 @@ into repeatable review surfaces:
 - Security scanning and test-suite summaries.
 - Release note drafting.
 
-The same workflow surface is used for local maintenance and for future
+The same workflow surface is used for local maintenance and public
 open-source collaboration. See [docs/codex-for-oss.md](docs/codex-for-oss.md)
-for how API credits and Codex access would support PR review, maintainer
+for how API credits and Codex access support PR review, maintainer
 automation, release workflows, and security coverage.
 
 ## Debugging and observability

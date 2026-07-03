@@ -3,7 +3,7 @@ name: CI
 on:
   workflow_dispatch:
   push:
-    branches: ["main", "master", "public-main", "reliability-hardening"]
+    branches: ["public-main", "reliability-hardening"]
   pull_request:
 
 permissions:

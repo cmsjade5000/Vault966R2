@@ -4,14 +4,12 @@ This roadmap is intentionally practical: it lists contributor-friendly work that
 improves Vault 966 as a self-hosted movie-library system and as a Codex-ready
 open-source maintenance project.
 
-## Public OSS Readiness
+## Public OSS Maintenance
 
-- Confirm the MIT license is the intended public license.
-- Make the repository public after a private-data review.
-- Add GitHub repository description, topics, and starter labels.
-- Seed `good first issue` and `help wanted` issues from this roadmap.
-- Publish from a clean public branch or fresh public repository if existing Git
-  history is not suitable for public review.
+- Keep the MIT license, repository description, topics, and starter labels
+  current.
+- Seed new `good first issue` and `help wanted` issues from this roadmap.
+- Maintain `public-main` as the default branch for public contributions.
 - Keep `README.md`, `CONTRIBUTING.md`, `SECURITY.md`, `AGENTS.md`, and
   `docs/codex-for-oss.md` aligned as maintainer workflows evolve.
 

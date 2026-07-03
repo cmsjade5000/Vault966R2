@@ -18,9 +18,10 @@ is useful beyond one household because many personal media collections face the
 same problems: messy imports, missing metadata, duplicate records, inconsistent
 genres, stale artwork, fragile local services, and unclear security boundaries.
 
-The repository is being prepared as public open-source software. The private
-runtime database, logs, local backups, and environment files are intentionally
-excluded from source control.
+The repository is public open-source software at
+[`cmsjade5000/Vault966R2`](https://github.com/cmsjade5000/Vault966R2), maintained
+from the `public-main` default branch. The private runtime database, logs, local
+backups, and environment files are intentionally excluded from source control.
 
 ## Program Fit
 
@@ -103,23 +104,24 @@ Vault 966 already has selection-relevant maintainer infrastructure:
 - Project-specific skills cover recurring maintainer work instead of relying on
   one-off prompt memory.
 
-## Pre-Publication Cleanup
+## Public Repository Hygiene
 
-Before making the repository public, review tracked data and generated report
-artifacts. Keep synthetic samples and documentation, but move private collection
-snapshots, local audit outputs, and movie-record exports out of the public source
-tree if they expose personal collection details or distract from the reusable
-software.
+Keep tracked data and generated report artifacts suitable for public review.
+Synthetic samples and documentation belong in the repository; private collection
+snapshots, local audit outputs, and movie-record exports should stay out of the
+public source tree if they expose personal collection details or distract from
+the reusable software.
 
 ## Public Readiness Checklist
 
 - [x] Choose and commit a license.
-- [ ] Make the GitHub repository public after private-data review.
+- [x] Make the GitHub repository public after private-data review.
 - [x] Add repository description and topics.
 - [x] Confirm GitHub private vulnerability reporting in the repository security
       settings after the repository is public.
 - [x] Review tracked `data/` and `reports/` artifacts for public suitability.
 - [x] Add initial `good first issue` and `help wanted` issues.
+- [x] Set `public-main` as the default branch.
 - [ ] Keep `README.md`, `CONTRIBUTING.md`, `SECURITY.md`, and `AGENTS.md`
       aligned as the maintainer workflow evolves.
 - [x] Publish a short roadmap of contributor-friendly tasks.

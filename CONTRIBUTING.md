@@ -1,7 +1,7 @@
 # Contributing to Vault 966
 
-Thanks for helping improve Vault 966. This project is being prepared for public
-open-source maintenance, so contribution quality and private-data hygiene matter.
+Thanks for helping improve Vault 966. This project is public open-source
+software, so contribution quality and private-data hygiene matter.
 
 ## Start Here
 
