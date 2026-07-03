@@ -6,8 +6,8 @@ scope for source control and public discussion.
 
 ## Supported Versions
 
-Security fixes are accepted for the current `main` branch. If release branches
-are introduced later, this policy should be updated with explicit support
+Security fixes are accepted for the current `public-main` branch. If release
+branches are introduced later, this policy should be updated with explicit support
 windows.
 
 ## Reporting a Vulnerability

@@ -12,6 +12,8 @@ Dated measurements, screenshots, audits, and generated CSVs belong in `reports/`
   and public-readiness checklist
 - `codex-skill-examples.md`: contributor examples for choosing and verifying
   repo-scoped Codex skills
+- `contributor-release-summary-2026-07-02.md`: contributor-facing summary of
+  launch-prep PRs #141 through #150
 - `legacy-vault-review.md`: migration status and ideas retained from the original Vault
 - `legacy-etl.md`: lifecycle and support contract for archived-but-supported ETL tooling
 - `api-surface-audit-2026-07-02.md`: keep/deprecate/remove decisions for stale backend API candidates
