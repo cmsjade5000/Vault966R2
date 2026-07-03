@@ -5,7 +5,7 @@ from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 
 from api.db import get_db
-from api.deps.auth import require_admin_or_profile_admin
+from api.deps.auth import require_admin_or_profile_admin, require_same_origin_provider_work
 from api.services.movies_curated import get_collection_recommendation
 from api.services.vault_update import (
     build_update_preview,
@@ -25,6 +25,7 @@ router = APIRouter(prefix="/api/collection-health", tags=["collection-health"])
 def refresh_recommendation(
     db: Session = Depends(get_db),
     _: None = Depends(require_admin_or_profile_admin),
+    __: None = Depends(require_same_origin_provider_work("collection_health_recommendation")),
 ) -> dict:
     recommendation = get_collection_recommendation(db, force=True)
     return {"recommendation": recommendation}

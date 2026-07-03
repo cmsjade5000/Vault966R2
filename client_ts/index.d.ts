@@ -467,7 +467,8 @@ export interface paths {
         /** Movie Detail */
         get: operations["movie_detail_movies__movie_id__detail_get"];
         put?: never;
-        post?: never;
+        /** Movie Detail With Provider Similar */
+        post: operations["movie_detail_with_provider_similar_movies__movie_id__detail_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -537,7 +538,8 @@ export interface paths {
         /** Movie Lookup */
         get: operations["movie_lookup_movies__movie_id__lookup_get"];
         put?: never;
-        post?: never;
+        /** Movie Lookup Provider */
+        post: operations["movie_lookup_provider_movies__movie_id__lookup_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3306,6 +3308,37 @@ export interface operations {
             };
         };
     };
+    movie_detail_with_provider_similar_movies__movie_id__detail_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                movie_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MovieDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     flag_movie_movies__movie_id__flag_post: {
         parameters: {
             query?: never;
@@ -3472,6 +3505,42 @@ export interface operations {
         };
     };
     movie_lookup_movies__movie_id__lookup_get: {
+        parameters: {
+            query?: {
+                /** @description Override title to search */
+                title?: string | null;
+                year?: number | null;
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                movie_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MovieLookupResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    movie_lookup_provider_movies__movie_id__lookup_post: {
         parameters: {
             query?: {
                 /** @description Override title to search */

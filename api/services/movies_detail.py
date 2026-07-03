@@ -352,7 +352,9 @@ def _merge_similar(
     return merged
 
 
-def get_movie_detail(db: Session, movie_id: int) -> Optional[MovieDetail]:
+def get_movie_detail(
+    db: Session, movie_id: int, *, include_provider_similar: bool = False
+) -> Optional[MovieDetail]:
     movie = _fetch_movie(db, movie_id)
     if movie is None:
         return None
@@ -425,7 +427,7 @@ def get_movie_detail(db: Session, movie_id: int) -> Optional[MovieDetail]:
         countries_display_from_iso(countries_iso) if countries_iso else countries_normalized.display
     )
 
-    similar = _get_tmdb_similar(db, movie)
+    similar = _get_tmdb_similar(db, movie) if include_provider_similar else []
     if len(similar) < 12:
         similar_candidates = _get_similarity_candidates(db, movie)
         local_similar = _score_similar(movie, similar_candidates)

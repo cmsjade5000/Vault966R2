@@ -4,6 +4,7 @@ from api.models.movie import Movie
 from api.models.movie_flag import MovieFlag
 from api.models.movie_review import MovieReviewCheck
 from api.models.person import Person, Role, RoleType
+from api.services import movies_curated
 from api.services.movie_review import (
     apply_all_title_year_corrections,
     detect_review_issues,
@@ -606,6 +607,20 @@ def test_health_page_uses_vault_health_title_and_prioritizes_metrics(
     assert 'href="/ui/review"' not in response.text
     assert ">Review</a" not in response.text
     assert "Flic Recommendation" not in response.text
+
+
+def test_health_page_get_does_not_fetch_recommendation_provider(
+    client: TestClient, monkeypatch
+) -> None:
+    def fail_provider(*args, **kwargs):
+        raise AssertionError("GET health must not call the LLM recommendation provider")
+
+    monkeypatch.setattr(movies_curated, "_fetch_recommendation_text", fail_provider)
+
+    response = client.get("/ui/movies/health")
+
+    assert response.status_code == 200
+    assert "Vault Health" in response.text
 
 
 def test_flags_page_lists_flagged_movies(client: TestClient, admin_headers: dict[str, str]) -> None:

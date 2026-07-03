@@ -272,7 +272,7 @@
       try {
         const response = await fetch(
           `/movies/${currentMovieId}/lookup?${params.toString()}`,
-          { headers: { Accept: "application/json" } },
+          { method: "POST", headers: { Accept: "application/json" } },
         );
         if (requestId !== lookupRequestId) return;
         if (!response.ok) {

@@ -9,6 +9,7 @@ from api.deps.auth import (
     require_admin,
     require_admin_or_profile_admin,
     require_profile_role,
+    require_same_origin_provider_work,
     require_same_origin,
 )
 from api.models.flic_memory import FlicMemory
@@ -274,6 +275,18 @@ def movie_detail(movie_id: int, db: Session = Depends(get_db)):
     return detail
 
 
+@router.post("/{movie_id}/detail", response_model=MovieDetail)
+def movie_detail_with_provider_similar(
+    movie_id: int,
+    db: Session = Depends(get_db),
+    _: None = Depends(require_same_origin_provider_work("movie_detail_provider")),
+):
+    detail = get_movie_detail(db, movie_id, include_provider_similar=True)
+    if detail is None:
+        raise HTTPException(status_code=404, detail="Movie not found")
+    return detail
+
+
 @router.get("/{movie_id}/trailer", response_model=MovieTrailerRead)
 def movie_trailer(movie_id: int, db: Session = Depends(get_db)):
     try:
@@ -296,6 +309,40 @@ def movie_lookup(
     year: Optional[int] = Query(default=None, ge=1870, le=2100),
     limit: int = Query(default=5, ge=1, le=20),
     db: Session = Depends(get_db),
+):
+    movie: Optional[Movie] = db.query(Movie).filter(Movie.id == movie_id).one_or_none()
+    if movie is None:
+        raise HTTPException(status_code=404, detail="Movie not found")
+
+    search_title = (title or movie.title or "").strip()
+    if not search_title:
+        raise HTTPException(status_code=400, detail="Movie title is required for lookup")
+
+    search_year = year if year is not None else movie.year
+
+    fallback = lookup_local_candidates(
+        db,
+        search_title,
+        search_year,
+        limit=limit,
+        exclude_id=movie.id,
+    )
+    notice = (
+        "External lookup requires a same-origin POST—showing vault matches only."
+        if fallback
+        else "External lookup requires a same-origin POST—no vault matches found."
+    )
+    return MovieLookupResponse(items=fallback, notice=notice)
+
+
+@router.post("/{movie_id}/lookup", response_model=MovieLookupResponse)
+def movie_lookup_provider(
+    movie_id: int,
+    title: Optional[str] = Query(default=None, description="Override title to search"),
+    year: Optional[int] = Query(default=None, ge=1870, le=2100),
+    limit: int = Query(default=5, ge=1, le=20),
+    db: Session = Depends(get_db),
+    _: None = Depends(require_same_origin_provider_work("movie_lookup_provider")),
 ):
     movie: Optional[Movie] = db.query(Movie).filter(Movie.id == movie_id).one_or_none()
     if movie is None:

@@ -129,7 +129,7 @@ def test_movies_lookup_candidates_success(client, movie_id, monkeypatch):
 
     monkeypatch.setattr(movie_lookup.httpx, "get", fake_get)
 
-    response = client.get(f"/movies/{movie_id}/lookup")
+    response = client.post(f"/movies/{movie_id}/lookup")
     assert response.status_code == 200
     payload = response.json()
     assert len(payload["items"]) == 2
@@ -164,7 +164,7 @@ def test_movies_lookup_candidates_empty_results(client, movie_id, monkeypatch):
 
     monkeypatch.setattr(movie_lookup.httpx, "get", fake_get)
 
-    response = client.get(f"/movies/{movie_id}/lookup")
+    response = client.post(f"/movies/{movie_id}/lookup")
     assert response.status_code == 404
     assert response.json()["message"] == "No TMDb results found"
 
@@ -176,9 +176,64 @@ def test_movies_lookup_candidates_missing_key(client, movie_id, monkeypatch, db_
     db_session.add(Movie(title="Blade Runner Final Cut", year=1982, runtime=116))
     db_session.commit()
 
-    response = client.get(f"/movies/{movie_id}/lookup")
+    response = client.post(f"/movies/{movie_id}/lookup")
     assert response.status_code == 200
     payload = response.json()
     assert "notice" in payload
     assert payload["items"]
     assert any(item["source"] == "vault" for item in payload["items"])
+
+
+def test_movies_lookup_get_uses_local_candidates_only(client, movie_id, monkeypatch, db_session):
+    monkeypatch.setattr(movie_lookup.settings, "tmdb_api_key", "tmdb-key")
+    monkeypatch.setattr(movie_lookup.settings, "omdb_api_key", "omdb-key")
+
+    def fail_provider(*args, **kwargs):
+        raise AssertionError("GET lookup must not call external providers")
+
+    monkeypatch.setattr(movie_lookup, "lookup_movie_candidates", fail_provider)
+    monkeypatch.setattr(movie_lookup.httpx, "get", fail_provider)
+    db_session.add(Movie(title="Blade Runner Final Cut", year=1982, runtime=116))
+    db_session.commit()
+
+    response = client.get(f"/movies/{movie_id}/lookup")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["items"]
+    assert payload["notice"].startswith("External lookup requires a same-origin POST")
+
+
+def test_movies_lookup_provider_post_requires_same_origin(
+    client, movie_id, monkeypatch, login_profile
+):
+    monkeypatch.setattr(
+        "api.routers.movies.lookup_movie_candidates",
+        lambda title, year, limit=5: [{"title": title, "source": "tmdb"}],
+    )
+    login_profile(1)
+
+    missing_origin = client.post(f"/movies/{movie_id}/lookup")
+    response = client.post(
+        f"/movies/{movie_id}/lookup",
+        headers={"Origin": "http://testserver"},
+    )
+
+    assert missing_origin.status_code == 403
+    assert response.status_code == 200
+    assert response.json()["items"][0]["title"] == "Blade Runner"
+    assert response.json()["items"][0]["source"] == "tmdb"
+
+
+def test_movies_lookup_provider_post_is_throttled(client, movie_id, monkeypatch, login_profile):
+    monkeypatch.setattr(
+        "api.routers.movies.lookup_movie_candidates",
+        lambda title, year, limit=5: [{"title": title, "source": "tmdb"}],
+    )
+    login_profile(1)
+    headers = {"Origin": "http://testserver"}
+
+    responses = [client.post(f"/movies/{movie_id}/lookup", headers=headers) for _ in range(11)]
+
+    assert [response.status_code for response in responses[:10]] == [200] * 10
+    assert responses[10].status_code == 429
