@@ -1,3 +1,6 @@
+from collections import defaultdict, deque
+from threading import Lock
+from time import monotonic
 from urllib.parse import urlsplit
 
 from fastapi import Depends, HTTPException, Request, status
@@ -10,6 +13,8 @@ from api.models.profile import Profile
 from api.services.profiles import ROLE_ADMIN, ROLE_REVIEWER, get_active_profile_role
 
 _bearer_scheme = HTTPBearer(auto_error=False)
+_provider_work_lock = Lock()
+_provider_work_windows: dict[tuple[str, str], deque[float]] = defaultdict(deque)
 
 
 def require_same_origin(request: Request) -> None:
@@ -30,6 +35,59 @@ def require_same_origin(request: Request) -> None:
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Cross-origin request rejected",
         )
+
+
+def require_provider_work_budget(
+    request: Request,
+    *,
+    scope: str,
+    max_requests: int = 10,
+    window_seconds: int = 60,
+) -> None:
+    """Apply a small per-user budget before routes spend provider quota."""
+    profile_id = getattr(request.state, "session_profile_id", None)
+    if isinstance(profile_id, int) and profile_id > 0:
+        actor = f"profile:{profile_id}"
+    else:
+        client_host = request.client.host if request.client else "unknown"
+        actor = f"client:{client_host}"
+
+    now = monotonic()
+    cutoff = now - window_seconds
+    key = (scope, actor)
+    with _provider_work_lock:
+        window = _provider_work_windows[key]
+        while window and window[0] <= cutoff:
+            window.popleft()
+        if len(window) >= max_requests:
+            raise HTTPException(
+                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                detail="Provider work rate limit exceeded",
+            )
+        window.append(now)
+
+
+def require_same_origin_provider_work(
+    scope: str,
+    *,
+    max_requests: int = 10,
+    window_seconds: int = 60,
+):
+    def _checker(request: Request) -> None:
+        require_same_origin(request)
+        require_provider_work_budget(
+            request,
+            scope=scope,
+            max_requests=max_requests,
+            window_seconds=window_seconds,
+        )
+
+    return _checker
+
+
+def clear_provider_work_budgets_for_tests() -> None:
+    with _provider_work_lock:
+        _provider_work_windows.clear()
 
 
 def require_admin(

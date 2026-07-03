@@ -244,7 +244,9 @@ def _fetch_recommendation_text(fact: dict, *, client: httpx.Client | None = None
             client.close()
 
 
-def get_collection_recommendation(db: Session, *, force: bool = False) -> str | None:
+def get_collection_recommendation(
+    db: Session, *, force: bool = False, allow_provider: bool = True
+) -> str | None:
     facts = _recommendation_facts(db)
     if not facts:
         return None
@@ -260,6 +262,8 @@ def get_collection_recommendation(db: Session, *, force: bool = False) -> str | 
         cached = _cache_get(db, cache_key)
         if cached and isinstance(cached.get("text"), str):
             cached_text = cached["text"]
+    if not allow_provider:
+        return fallback
     try:
         text = _fetch_recommendation_text(fact)
     except RecommendationProviderUnavailable:
@@ -421,7 +425,7 @@ def get_collection_health(db: Session) -> CollectionHealth:
         aspirational = ["Animation", "Mystery", "Noir", "Western", "Family"]
         genre_gaps = [label for label in aspirational if label.lower() not in seen][:3]
 
-    recommendation = get_collection_recommendation(db)
+    recommendation = get_collection_recommendation(db, allow_provider=False)
     from api.services.movie_review import get_review_queue
     from api.services.source_sync import (
         get_source_review_queue,

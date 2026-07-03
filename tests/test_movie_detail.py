@@ -5,6 +5,7 @@ from fastapi.testclient import TestClient
 from api.db import get_db
 from api.models.movie import Genre, Mood, Movie
 from api.models.person import Person, Role, RoleType
+from api.services import movies_detail
 
 
 def _db_session(client: TestClient):
@@ -92,6 +93,22 @@ def test_movie_detail_api(client: TestClient, detail_movie_setup):
     assert payload["flag_notes"] is None
     assert payload["top_billed"][0]["name"] == "Case Worker"
     assert payload["top_billed"][0]["character"] == "Dreamer"
+
+
+def test_movie_detail_get_does_not_fetch_provider_similar(
+    client: TestClient, detail_movie_setup, monkeypatch
+):
+    movie_id = detail_movie_setup
+
+    def fail_provider(*args, **kwargs):
+        raise AssertionError("GET detail must not call TMDb recommendations")
+
+    monkeypatch.setattr(movies_detail, "_tmdb_related_ids", fail_provider)
+
+    resp = client.get(f"/movies/{movie_id}/detail")
+
+    assert resp.status_code == 200
+    assert resp.json()["similar"]
 
 
 def test_movie_detail_template(client: TestClient, detail_movie_setup):

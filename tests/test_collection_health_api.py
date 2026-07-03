@@ -36,6 +36,25 @@ def test_refresh_collection_health_allows_admin_profile_session(
     assert response.json() == {"recommendation": "session recommendation"}
 
 
+def test_refresh_collection_health_recommendation_is_throttled(
+    client, monkeypatch, login_profile
+) -> None:
+    monkeypatch.setattr(
+        "api.routers.collection_health.get_collection_recommendation",
+        lambda db, force=False: "session recommendation",
+    )
+    login_profile(1)
+    headers = {"Origin": "http://testserver"}
+
+    responses = [
+        client.post("/api/collection-health/recommendation/refresh", headers=headers)
+        for _ in range(11)
+    ]
+
+    assert [response.status_code for response in responses[:10]] == [200] * 10
+    assert responses[10].status_code == 429
+
+
 def test_update_run_requires_admin_profile_same_origin(client, monkeypatch, login_profile) -> None:
     task_values = []
 
