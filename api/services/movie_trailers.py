@@ -174,3 +174,14 @@ def get_or_fetch_movie_trailer(db: Session, movie_id: int) -> MovieTrailer:
     db.commit()
     logging.getLogger(__name__).info("Cached trailer for movie_id=%s", movie_id)
     return trailer
+
+
+def get_cached_movie_trailer(db: Session, movie_id: int) -> MovieTrailer:
+    movie = db.query(Movie).filter(Movie.id == movie_id).one_or_none()
+    if movie is None:
+        raise MovieTrailerNotFound("Movie not found")
+
+    cached = _youtube_trailer_from_movie(movie)
+    if cached is None:
+        raise MovieTrailerNotFound("Trailer not available")
+    return cached
