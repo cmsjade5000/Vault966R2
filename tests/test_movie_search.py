@@ -162,6 +162,59 @@ def test_search_rejects_inverted_runtime_range(client: TestClient) -> None:
     assert response.json()["message"] == "runtime_min cannot be greater than runtime_max"
 
 
+def test_search_rejects_overlong_query_before_filtering(client: TestClient) -> None:
+    response = client.get("/movies/search", params={"q": "x" * 201})
+
+    assert response.status_code == 400
+    assert response.json()["message"] == "q must be 200 characters or fewer"
+
+
+def test_search_rejects_too_many_filter_labels(client: TestClient) -> None:
+    response = client.get(
+        "/movies/search",
+        params={"genres": ",".join(f"Genre {index}" for index in range(21))},
+    )
+
+    assert response.status_code == 400
+    assert response.json()["message"] == "genres can include at most 20 values"
+
+
+def test_search_rejects_overlong_filter_list(client: TestClient) -> None:
+    response = client.get("/movies/search", params={"genres": "g" * 1001})
+
+    assert response.status_code == 400
+    assert response.json()["message"] == "genres must be 1000 characters or fewer"
+
+
+def test_search_rejects_overlong_filter_label(client: TestClient) -> None:
+    response = client.get("/movies/search", params={"moods": "m" * 81})
+
+    assert response.status_code == 400
+    assert response.json()["message"] == "moods values must be 80 characters or fewer"
+
+
+def test_search_rejects_excessive_flic_inputs_before_ranking(client: TestClient) -> None:
+    response = client.get(
+        "/movies/search",
+        params={"order_by": "flic", "moods": ",".join(f"Mood {index}" for index in range(21))},
+    )
+
+    assert response.status_code == 400
+    assert response.json()["message"] == "moods can include at most 20 values"
+
+
+def test_search_allows_bounded_flic_filters(client: TestClient) -> None:
+    response = client.get(
+        "/movies/search",
+        params={"order_by": "flic", "q": "matrix", "genres": "Sci-Fi", "moods": "Exciting"},
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["total"] == 1
+    assert payload["items"][0]["title"] == "The Matrix"
+
+
 def test_search_genre_synonyms(client: TestClient) -> None:
     response = client.get(
         "/movies/search",
