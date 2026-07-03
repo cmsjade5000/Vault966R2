@@ -10,6 +10,7 @@ from api.models.profile import Profile
 from api.services.profiles import ROLE_ADMIN, ROLE_REVIEWER, get_active_profile_role
 
 _bearer_scheme = HTTPBearer(auto_error=False)
+_SAFE_METHODS = {"GET", "HEAD", "OPTIONS"}
 
 
 def require_same_origin(request: Request) -> None:
@@ -69,7 +70,8 @@ def require_admin_or_profile_admin(
             detail="Invalid or missing admin token",
         )
 
-    require_same_origin(request)
+    if request.method not in _SAFE_METHODS:
+        require_same_origin(request)
     profile_id = getattr(request.state, "session_profile_id", None)
     if not isinstance(profile_id, int) or profile_id <= 0:
         if settings.disable_auth:
