@@ -20,7 +20,9 @@ from api.models.source_sync import (
     SourceReconciliationMatch,
     SourceSnapshot,
 )
+from api.services import source_sync
 from api.services.source_sync import (
+    SourceSyncError,
     build_research_links,
     clean_research_title,
     get_source_review_queue,
@@ -88,6 +90,46 @@ def _xlsx(rows: list[list[str]]) -> bytes:
             "</Relationships>",
         )
         archive.writestr("xl/worksheets/sheet1.xml", sheet_xml)
+    return buffer.getvalue()
+
+
+def _xlsx_archive(
+    sheet_xml: str,
+    *,
+    shared_strings_xml: str | None = None,
+    compression: int = zipfile.ZIP_STORED,
+    extra_members: int = 0,
+) -> bytes:
+    buffer = io.BytesIO()
+    with zipfile.ZipFile(buffer, "w", compression=compression) as archive:
+        archive.writestr(
+            "[Content_Types].xml",
+            '<?xml version="1.0" encoding="UTF-8"?>'
+            '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">'
+            '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>'
+            '<Default Extension="xml" ContentType="application/xml"/>'
+            "</Types>",
+        )
+        archive.writestr(
+            "xl/workbook.xml",
+            '<?xml version="1.0" encoding="UTF-8"?>'
+            '<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" '
+            'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">'
+            '<sheets><sheet name="Movies" sheetId="1" r:id="rId1"/></sheets>'
+            "</workbook>",
+        )
+        archive.writestr(
+            "xl/_rels/workbook.xml.rels",
+            '<?xml version="1.0" encoding="UTF-8"?>'
+            '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+            '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>'
+            "</Relationships>",
+        )
+        if shared_strings_xml is not None:
+            archive.writestr("xl/sharedStrings.xml", shared_strings_xml)
+        archive.writestr("xl/worksheets/sheet1.xml", sheet_xml)
+        for index in range(extra_members):
+            archive.writestr(f"xl/extra/{index}.xml", "<extra/>")
     return buffer.getvalue()
 
 
@@ -243,6 +285,111 @@ def test_source_sync_accepts_xlsx_upload(client: TestClient, db_session) -> None
     assert row.year == 2016
     assert row.genre == "Sci-Fi"
     assert row.content_rating == "PG-13"
+
+
+def test_source_sync_rejects_xlsx_expansion_before_xml_parse(monkeypatch) -> None:
+    sheet_xml = (
+        '<?xml version="1.0" encoding="UTF-8"?>'
+        '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
+        f"<sheetData>{' ' * 1024}</sheetData>"
+        "</worksheet>"
+    )
+    content = _xlsx_archive(sheet_xml)
+    monkeypatch.setattr(source_sync, "MAX_XLSX_UNCOMPRESSED_BYTES", 128)
+
+    def fail_fromstring(_content):
+        raise AssertionError("XML should not be materialized for oversized XLSX archives")
+
+    monkeypatch.setattr(source_sync.ElementTree, "fromstring", fail_fromstring)
+
+    with pytest.raises(SourceSyncError, match="expands beyond"):
+        source_sync.parse_source_xlsx(content)
+
+
+def test_source_sync_rejects_xlsx_member_count_before_xml_parse(monkeypatch) -> None:
+    sheet_xml = (
+        '<?xml version="1.0" encoding="UTF-8"?>'
+        '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
+        "<sheetData/>"
+        "</worksheet>"
+    )
+    content = _xlsx_archive(sheet_xml, extra_members=3)
+    monkeypatch.setattr(source_sync, "MAX_XLSX_MEMBERS", 4)
+
+    def fail_fromstring(_content):
+        raise AssertionError("XML should not be materialized for too many XLSX parts")
+
+    monkeypatch.setattr(source_sync.ElementTree, "fromstring", fail_fromstring)
+
+    with pytest.raises(SourceSyncError, match="too many parts"):
+        source_sync.parse_source_xlsx(content)
+
+
+def test_source_sync_rejects_high_compression_xlsx_before_xml_parse(monkeypatch) -> None:
+    sheet_xml = (
+        '<?xml version="1.0" encoding="UTF-8"?>'
+        '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
+        f"<sheetData>{'A' * 2048}</sheetData>"
+        "</worksheet>"
+    )
+    content = _xlsx_archive(sheet_xml, compression=zipfile.ZIP_DEFLATED)
+    monkeypatch.setattr(source_sync, "MAX_XLSX_COMPRESSION_RATIO", 2)
+
+    def fail_fromstring(_content):
+        raise AssertionError("XML should not be materialized for high-compression XLSX")
+
+    monkeypatch.setattr(source_sync.ElementTree, "fromstring", fail_fromstring)
+
+    with pytest.raises(SourceSyncError, match="compression ratio"):
+        source_sync.parse_source_xlsx(content)
+
+
+def test_source_sync_rejects_xlsx_shared_string_count(monkeypatch) -> None:
+    sheet_xml = (
+        '<?xml version="1.0" encoding="UTF-8"?>'
+        '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
+        '<sheetData><row r="1"><c r="A1" t="s"><v>0</v></c></row></sheetData>'
+        "</worksheet>"
+    )
+    shared_strings_xml = (
+        '<?xml version="1.0" encoding="UTF-8"?>'
+        '<sst xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
+        "<si><t>Title</t></si><si><t>Time</t></si>"
+        "</sst>"
+    )
+    monkeypatch.setattr(source_sync, "MAX_XLSX_SHARED_STRINGS", 1)
+
+    with pytest.raises(SourceSyncError, match="too many shared strings"):
+        source_sync.parse_source_xlsx(
+            _xlsx_archive(sheet_xml, shared_strings_xml=shared_strings_xml)
+        )
+
+
+def test_source_sync_rejects_xlsx_row_and_cell_caps(monkeypatch) -> None:
+    row_xml = '<row r="1"><c r="A1" t="inlineStr"><is><t>Title</t></is></c></row>'
+    two_rows = (
+        '<?xml version="1.0" encoding="UTF-8"?>'
+        '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
+        f"<sheetData>{row_xml}{row_xml}</sheetData>"
+        "</worksheet>"
+    )
+    monkeypatch.setattr(source_sync, "MAX_XLSX_ROWS", 1)
+    with pytest.raises(SourceSyncError, match="more than 5000 rows"):
+        source_sync.parse_source_xlsx(_xlsx_archive(two_rows))
+
+    three_cells = (
+        '<?xml version="1.0" encoding="UTF-8"?>'
+        '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
+        '<sheetData><row r="1">'
+        '<c r="A1" t="inlineStr"><is><t>Title</t></is></c>'
+        '<c r="B1" t="inlineStr"><is><t>Time</t></is></c>'
+        '<c r="C1" t="inlineStr"><is><t>Director</t></is></c>'
+        "</row></sheetData></worksheet>"
+    )
+    monkeypatch.setattr(source_sync, "MAX_XLSX_ROWS", source_sync.MAX_SOURCE_ROWS + 25)
+    monkeypatch.setattr(source_sync, "MAX_XLSX_CELLS", 2)
+    with pytest.raises(SourceSyncError, match="too many cells"):
+        source_sync.parse_source_xlsx(_xlsx_archive(three_cells))
 
 
 def test_source_sync_rejects_malformed_and_repeated_files(client: TestClient) -> None:
