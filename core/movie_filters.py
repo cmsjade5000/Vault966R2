@@ -29,6 +29,11 @@ _ALLOWED_ORDERING = {
     "random",
 }
 
+_MAX_SEARCH_QUERY_LENGTH = 200
+_MAX_FILTER_LIST_RAW_LENGTH = 1000
+_MAX_FILTER_ITEM_COUNT = 20
+_MAX_FILTER_LABEL_LENGTH = 80
+
 
 @dataclass(frozen=True)
 class MovieFilterParams:
@@ -57,18 +62,37 @@ class MovieFilterParams:
         return payload
 
 
-def _parse_list(value: Optional[Sequence[str] | str]) -> Tuple[str, ...]:
+def _raise_bad_filter(detail: str) -> None:
+    raise HTTPException(
+        status_code=status.HTTP_400_BAD_REQUEST,
+        detail=detail,
+    )
+
+
+def _parse_list(value: Optional[Sequence[str] | str], field_name: str) -> Tuple[str, ...]:
     if value is None:
         return ()
     items: list[str] = []
     if isinstance(value, str):
+        if len(value) > _MAX_FILTER_LIST_RAW_LENGTH:
+            _raise_bad_filter(
+                f"{field_name} must be {_MAX_FILTER_LIST_RAW_LENGTH} characters or fewer"
+            )
         raw_iterable: Iterable[str] = value.split(",")
     else:
         raw_iterable = value
+    raw_count = 0
     for raw in raw_iterable:
         if raw is None:
             continue
+        raw_count += 1
+        if raw_count > _MAX_FILTER_ITEM_COUNT:
+            _raise_bad_filter(f"{field_name} can include at most {_MAX_FILTER_ITEM_COUNT} values")
         candidate = str(raw).strip()
+        if len(candidate) > _MAX_FILTER_LABEL_LENGTH:
+            _raise_bad_filter(
+                f"{field_name} values must be {_MAX_FILTER_LABEL_LENGTH} characters or fewer"
+            )
         if candidate and candidate not in items:
             items.append(candidate)
     return tuple(items)
@@ -85,13 +109,15 @@ def parse_movie_filters(
     moods: Optional[Sequence[str] | str],
     order_by: Optional[str],
 ) -> MovieFilterParams:
+    if q is not None and len(q) > _MAX_SEARCH_QUERY_LENGTH:
+        _raise_bad_filter(f"q must be {_MAX_SEARCH_QUERY_LENGTH} characters or fewer")
     clean_q = q.strip() if q else None
     clean_year_min = parse_optional_non_negative_int(year_min, "year_min")
     clean_year_max = parse_optional_non_negative_int(year_max, "year_max")
     clean_runtime_min = parse_optional_non_negative_int(runtime_min, "runtime_min")
     clean_runtime_max = parse_optional_non_negative_int(runtime_max, "runtime_max")
-    clean_genres = _parse_list(genres)
-    clean_moods = _parse_list(moods)
+    clean_genres = _parse_list(genres, "genres")
+    clean_moods = _parse_list(moods, "moods")
     clean_order = order_by or "title_asc"
     if clean_order not in _ALLOWED_ORDERING:
         raise HTTPException(
