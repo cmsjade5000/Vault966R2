@@ -126,6 +126,24 @@ def _preference_response(pref) -> dict:
     }
 
 
+def _record_pick_memory(db: Session, movie_id: int) -> None:
+    memory_entry = FlicMemory(movie_id=movie_id)
+    db.add(memory_entry)
+    db.flush()
+
+    # keep last 10 entries
+    ids_to_remove = (
+        db.query(FlicMemory.id)
+        .order_by(FlicMemory.created_at.desc(), FlicMemory.id.desc())
+        .offset(10)
+        .all()
+    )
+    if ids_to_remove:
+        db.query(FlicMemory).filter(FlicMemory.id.in_([row[0] for row in ids_to_remove])).delete(
+            synchronize_session=False
+        )
+
+
 @router.get("/picks", response_model=MovieRead)
 def get_pick(
     mood: Optional[str] = Query(default=None, description="Desired mood name"),
@@ -192,26 +210,20 @@ def get_pick(
     if selected_movie is None:
         raise HTTPException(status_code=404, detail="No movies available")
 
-    memory_entry = FlicMemory(movie_id=selected_movie.id)
-    db.add(memory_entry)
-    db.flush()
-
-    # keep last 10 entries
-    ids_to_remove = (
-        db.query(FlicMemory.id)
-        .order_by(FlicMemory.created_at.desc(), FlicMemory.id.desc())
-        .offset(10)
-        .all()
-    )
-    if ids_to_remove:
-        db.query(FlicMemory).filter(FlicMemory.id.in_([row[0] for row in ids_to_remove])).delete(
-            synchronize_session=False
-        )
-
-    db.commit()
-
     setattr(selected_movie, "flagged", selected_movie.flag is not None)
     return selected_movie
+
+
+@router.post("/picks/{movie_id}/memory", status_code=204)
+def record_pick_memory(
+    movie_id: int,
+    db: Session = Depends(get_db),
+    _: None = Depends(require_same_origin),
+) -> Response:
+    _ensure_movie_exists(db, movie_id)
+    _record_pick_memory(db, movie_id)
+    db.commit()
+    return Response(status_code=204)
 
 
 @router.get("/double-feature", response_model=MovieDoubleFeature)
