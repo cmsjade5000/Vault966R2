@@ -314,35 +314,83 @@ ROMAN_NUMERALS = {
 }
 
 
+TITLE_SUFFIX_ALIASES = (
+    "unrated",
+    "uncut",
+    "uncut version",
+    "newly remastered",
+    "extended",
+    "extended edition",
+    "extended cut",
+    "unrated extended edition",
+    "director's cut",
+    "directors cut",
+    "director's definitive cut",
+    "directors definitive cut",
+    "new extended cut",
+    "special edition",
+    "theatrical cut",
+    "final cut",
+    "restored edition",
+    "the ultimate edition",
+    "the magnum edition",
+)
+
+
+def _remove_square_bracket_aliases(title: str) -> str:
+    result: list[str] = []
+    depth = 0
+    for char in title:
+        if char == "[":
+            if depth == 0:
+                result.append(" ")
+            depth += 1
+            continue
+        if char == "]" and depth:
+            depth -= 1
+            continue
+        if depth == 0:
+            result.append(char)
+    return "".join(result)
+
+
+def _strip_wrapped_suffix(title: str) -> str:
+    lowered = title.casefold()
+    for open_char, close_char in (("(", ")"), ("[", "]")):
+        if not lowered.endswith(close_char):
+            continue
+        start = lowered.rfind(open_char)
+        if start == -1:
+            continue
+        suffix = lowered[start + 1 : -1].strip()
+        if (
+            suffix.isdigit() and len(suffix) == 4 and 1800 <= int(suffix) <= 2099
+        ) or suffix in TITLE_SUFFIX_ALIASES:
+            return title[:start].rstrip()
+    return title
+
+
+def _replace_roman_part_aliases(title: str) -> str:
+    words = title.split()
+    for index in range(len(words) - 1):
+        if words[index].casefold() != "part":
+            continue
+        replacement = ROMAN_NUMERALS.get(words[index + 1].casefold())
+        if replacement:
+            words[index + 1] = replacement
+    return " ".join(words)
+
+
 def _clean_title_aliases(title: str) -> str:
-    import re
 
     cleaned = title.strip()
-    cleaned = re.sub(r"\[[^\]]*\]", " ", cleaned)
+    cleaned = _remove_square_bracket_aliases(cleaned).strip()
     cleaned = cleaned.replace("&", "and")
-    suffix_pattern = re.compile(
-        r"(?:"
-        r"\s*[\[(](?:18|19|20)\d{2}[\])]"
-        r"|\s*\((?:unrated|uncut(?: version)?|newly remastered|"
-        r"extended(?: edition| cut)?|unrated extended edition|"
-        r"director'?s (?:cut|definitive cut)|new extended cut|"
-        r"special edition|theatrical cut|final cut|restored edition|"
-        r"the ultimate edition|the magnum edition)\)"
-        r")\s*$",
-        flags=re.I,
-    )
     previous = None
     while cleaned != previous:
         previous = cleaned
-        cleaned = suffix_pattern.sub("", cleaned)
-    cleaned = re.sub(
-        r"\bpart\s+([ivx]+)\b",
-        lambda m: f"part {ROMAN_NUMERALS.get(m.group(1).lower(), m.group(1))}",
-        cleaned,
-        flags=re.I,
-    )
-    cleaned = re.sub(r"\s{2,}", " ", cleaned)
-    return cleaned.strip()
+        cleaned = _strip_wrapped_suffix(cleaned).strip()
+    return _replace_roman_part_aliases(cleaned).strip()
 
 
 def standardize_title_for_identity_search(title: str) -> str:
