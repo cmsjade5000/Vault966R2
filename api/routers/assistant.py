@@ -12,6 +12,7 @@ from sqlalchemy.orm import Session, selectinload
 
 from api.config import settings
 from api.db import get_db
+from api.deps.auth import require_same_origin
 from api.models.movie import Movie
 from api.schemas.assistant import AssistantMovie, AssistantRequest, AssistantResponse
 from api.services.assistant import (
@@ -25,7 +26,6 @@ from api.services.semantic_search import (
     semantic_search_enabled,
     semantic_search_movies,
 )
-
 
 router = APIRouter(prefix="/api/assistant", tags=["assistant"])
 LOG = logging.getLogger(__name__)
@@ -200,6 +200,7 @@ def _assistant_logic(
     limit: int,
     request: Request,
     db: Session,
+    use_provider: bool = True,
 ):
     query = query.strip()
     if not query:
@@ -223,18 +224,19 @@ def _assistant_logic(
     catalog = [_catalog_payload(movie) for movie in top_candidates[:12]]
 
     template = None
-    try:
-        template = generate_assistant_template(query, movies=catalog)
-    except AssistantProviderUnavailable:
-        LOG.info(
-            "assistant_llm_unavailable",
-            extra={"query_hash": _query_hash(query)},
-        )
-    except AssistantError:
-        LOG.warning(
-            "assistant_llm_error",
-            extra={"query_hash": _query_hash(query)},
-        )
+    if use_provider:
+        try:
+            template = generate_assistant_template(query, movies=catalog)
+        except AssistantProviderUnavailable:
+            LOG.info(
+                "assistant_llm_unavailable",
+                extra={"query_hash": _query_hash(query)},
+            )
+        except AssistantError:
+            LOG.warning(
+                "assistant_llm_error",
+                extra={"query_hash": _query_hash(query)},
+            )
 
     if template:
         pick_count = min(max(template.pick_count, 1), limit)
@@ -261,10 +263,29 @@ def _assistant_logic(
     return response
 
 
+def _require_same_origin_for_session(request: Request) -> None:
+    token = settings.assistant_access_token
+    authorization = request.headers.get("Authorization", "")
+    if token and authorization.lower().startswith("bearer "):
+        if authorization[7:].strip() == token:
+            return
+    if token:
+        header_token = (
+            request.headers.get("X-Vault-Assistant-Token")
+            or request.headers.get("X-Assistant-Token")
+            or ""
+        )
+        if header_token == token:
+            return
+    if getattr(request.state, "session_profile_id", None):
+        require_same_origin(request)
+
+
 @router.post("", response_model=AssistantResponse)
 def assistant_reply(
     payload: AssistantRequest,
     request: Request,
+    _: None = Depends(_require_same_origin_for_session),
     db: Session = Depends(get_db),
 ):
     return _assistant_logic(
@@ -272,6 +293,7 @@ def assistant_reply(
         limit=payload.limit,
         request=request,
         db=db,
+        use_provider=True,
     )
 
 
@@ -287,4 +309,5 @@ def assistant_reply_get(
         limit=limit,
         request=request,
         db=db,
+        use_provider=False,
     )
