@@ -18,7 +18,6 @@ from api.services.vault_update import (
     task_ids,
 )
 
-
 router = APIRouter(prefix="/api/collection-health", tags=["collection-health"])
 
 
@@ -32,17 +31,26 @@ def refresh_recommendation(
 
 
 @router.get("/update/status")
-def update_status(db: Session = Depends(get_db)) -> dict:
+def update_status(
+    db: Session = Depends(get_db),
+    _: None = Depends(require_admin_or_profile_admin),
+) -> dict:
     return merge_durable_job_history(load_status(), db)
 
 
 @router.get("/update/preview")
-def update_preview(db: Session = Depends(get_db)) -> dict:
+def update_preview(
+    db: Session = Depends(get_db),
+    _: None = Depends(require_admin_or_profile_admin),
+) -> dict:
     return build_update_preview(db)
 
 
 @router.get("/update/reports/{task}")
-def update_report(task: str) -> FileResponse:
+def update_report(
+    task: str,
+    _: None = Depends(require_admin_or_profile_admin),
+) -> FileResponse:
     report_path = report_path_for_task(task)
     if report_path is None:
         raise HTTPException(status_code=404, detail="Unknown maintenance report")

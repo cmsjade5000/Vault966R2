@@ -55,7 +55,7 @@ def _build_response(
 def sync_detailed(
     task: str,
     *,
-    client: AuthenticatedClient | Client,
+    client: AuthenticatedClient,
 ) -> Response[Any | HTTPValidationError]:
     """Update Report
 
@@ -84,7 +84,7 @@ def sync_detailed(
 def sync(
     task: str,
     *,
-    client: AuthenticatedClient | Client,
+    client: AuthenticatedClient,
 ) -> Any | HTTPValidationError | None:
     """Update Report
 
@@ -108,7 +108,7 @@ def sync(
 async def asyncio_detailed(
     task: str,
     *,
-    client: AuthenticatedClient | Client,
+    client: AuthenticatedClient,
 ) -> Response[Any | HTTPValidationError]:
     """Update Report
 
@@ -135,7 +135,7 @@ async def asyncio_detailed(
 async def asyncio(
     task: str,
     *,
-    client: AuthenticatedClient | Client,
+    client: AuthenticatedClient,
 ) -> Any | HTTPValidationError | None:
     """Update Report
 
