@@ -68,30 +68,24 @@ def test_select_tmdb_trailer_rejects_non_youtube_and_bad_keys() -> None:
     assert movie_trailers.select_tmdb_trailer(payload) is None
 
 
-def test_movie_trailer_endpoint_fetches_and_caches_trailer(client: TestClient, monkeypatch) -> None:
+def test_movie_trailer_endpoint_returns_cached_trailer(client: TestClient, monkeypatch) -> None:
     for db in _db_session(client):
-        movie = Movie(title="Trailer Movie", tmdb_id=12345)
+        movie = Movie(
+            title="Trailer Movie",
+            tmdb_id=12345,
+            trailer_site="youtube",
+            trailer_key="trailer_789",
+            trailer_name="Main Trailer",
+            trailer_url="https://www.youtube.com/watch?v=trailer_789",
+        )
         db.add(movie)
         db.commit()
         movie_id = movie.id
 
-    monkeypatch.setattr(
-        movie_trailers,
-        "_fetch_tmdb_videos",
-        lambda tmdb_id: {
-            "results": [
-                {
-                    "site": "YouTube",
-                    "type": "Trailer",
-                    "key": "trailer_789",
-                    "name": "Main Trailer",
-                    "official": True,
-                    "iso_639_1": "en",
-                    "iso_3166_1": "US",
-                }
-            ]
-        },
-    )
+    def fail_fetch(tmdb_id: int) -> dict:
+        raise AssertionError("GET /trailer must not call TMDb")
+
+    monkeypatch.setattr(movie_trailers, "_fetch_tmdb_videos", fail_fetch)
 
     response = client.get(f"/movies/{movie_id}/trailer")
 
@@ -105,10 +99,10 @@ def test_movie_trailer_endpoint_fetches_and_caches_trailer(client: TestClient, m
         movie = db.query(Movie).filter(Movie.id == movie_id).one()
         assert movie.trailer_site == "youtube"
         assert movie.trailer_key == "trailer_789"
-        assert movie.trailer_checked_at is not None
+        assert movie.trailer_checked_at is None
 
 
-def test_movie_trailer_endpoint_returns_404_without_trailer(
+def test_movie_trailer_endpoint_returns_404_without_cached_trailer(
     client: TestClient, monkeypatch
 ) -> None:
     for db in _db_session(client):
@@ -117,13 +111,17 @@ def test_movie_trailer_endpoint_returns_404_without_trailer(
         db.commit()
         movie_id = movie.id
 
-    monkeypatch.setattr(
-        movie_trailers,
-        "_fetch_tmdb_videos",
-        lambda tmdb_id: {"results": []},
-    )
+    def fail_fetch(tmdb_id: int) -> dict:
+        raise AssertionError("GET /trailer must not call TMDb")
+
+    monkeypatch.setattr(movie_trailers, "_fetch_tmdb_videos", fail_fetch)
 
     response = client.get(f"/movies/{movie_id}/trailer")
 
     assert response.status_code == 404
     assert response.json()["message"] == "Trailer not available"
+    for db in _db_session(client):
+        movie = db.query(Movie).filter(Movie.id == movie_id).one()
+        assert movie.trailer_site is None
+        assert movie.trailer_key is None
+        assert movie.trailer_checked_at is None

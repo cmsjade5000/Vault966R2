@@ -33,8 +33,7 @@ from api.schemas.movie_trailer import MovieTrailerRead
 from api.services.movies_detail import get_movie_detail
 from api.services.movie_trailers import (
     MovieTrailerNotFound,
-    MovieTrailerUnavailable,
-    get_or_fetch_movie_trailer,
+    get_cached_movie_trailer,
 )
 from core.movie_filters import (
     MovieFilterParams,
@@ -266,11 +265,9 @@ def movie_detail(movie_id: int, db: Session = Depends(get_db)):
 @router.get("/{movie_id}/trailer", response_model=MovieTrailerRead)
 def movie_trailer(movie_id: int, db: Session = Depends(get_db)):
     try:
-        trailer = get_or_fetch_movie_trailer(db, movie_id)
+        trailer = get_cached_movie_trailer(db, movie_id)
     except MovieTrailerNotFound as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
-    except MovieTrailerUnavailable as exc:
-        raise HTTPException(status_code=503, detail=str(exc)) from exc
     return MovieTrailerRead(
         site=trailer.site,
         key=trailer.key,
