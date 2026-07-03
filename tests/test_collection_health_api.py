@@ -175,6 +175,23 @@ def test_update_status_prefers_durable_maintenance_history(client, db_session) -
     assert payload["task_statuses"]["moods"]["summary"] == "updated: 3"
 
 
+def test_update_status_rejects_reviewer_profile_session(client, login_profile) -> None:
+    login_profile(2)
+
+    response = client.get("/api/collection-health/update/status")
+
+    assert response.status_code == 403
+
+
+def test_update_status_allows_admin_profile_session(client, login_profile) -> None:
+    login_profile(1)
+
+    response = client.get("/api/collection-health/update/status")
+
+    assert response.status_code == 200
+    assert "task_statuses" in response.json()
+
+
 def test_update_run_rejects_unknown_maintenance_task(client, login_profile) -> None:
     login_profile(1)
 
@@ -204,6 +221,23 @@ def test_update_preview_returns_standardized_maintenance_tasks(client) -> None:
     assert task_by_id["genres"]["report"]["path"] == "reports/genre_normalization.csv"
 
 
+def test_update_preview_rejects_reviewer_profile_session(client, login_profile) -> None:
+    login_profile(2)
+
+    response = client.get("/api/collection-health/update/preview")
+
+    assert response.status_code == 403
+
+
+def test_update_preview_allows_admin_profile_session(client, login_profile) -> None:
+    login_profile(1)
+
+    response = client.get("/api/collection-health/update/preview")
+
+    assert response.status_code == 200
+    assert "tasks" in response.json()
+
+
 def test_update_report_serves_known_report_file(client, monkeypatch, tmp_path) -> None:
     report_path = tmp_path / "genre_normalization.csv"
     report_path.write_text("movie_id,title\n1,Blade Runner\n", encoding="utf-8")
@@ -217,6 +251,39 @@ def test_update_report_serves_known_report_file(client, monkeypatch, tmp_path) -
     assert response.status_code == 200
     assert response.headers["content-type"].startswith("text/csv")
     assert "Blade Runner" in response.text
+
+
+def test_update_report_rejects_reviewer_profile_session(
+    client, monkeypatch, tmp_path, login_profile
+) -> None:
+    report_path = tmp_path / "genre_normalization.csv"
+    report_path.write_text("movie_id,title\n1,Blade Runner\n", encoding="utf-8")
+    monkeypatch.setattr(
+        "api.routers.collection_health.report_path_for_task",
+        lambda task: report_path if task == "genres" else None,
+    )
+    login_profile(2)
+
+    response = client.get("/api/collection-health/update/reports/genres")
+
+    assert response.status_code == 403
+
+
+def test_update_report_allows_admin_profile_session(
+    client, monkeypatch, tmp_path, login_profile
+) -> None:
+    report_path = tmp_path / "genre_normalization.csv"
+    report_path.write_text("movie_id,title\n1,Blade Runner\n", encoding="utf-8")
+    monkeypatch.setattr(
+        "api.routers.collection_health.report_path_for_task",
+        lambda task: report_path if task == "genres" else None,
+    )
+    login_profile(1)
+
+    response = client.get("/api/collection-health/update/reports/genres")
+
+    assert response.status_code == 200
+    assert response.headers["content-type"].startswith("text/csv")
 
 
 def test_update_report_rejects_unknown_report(client, monkeypatch) -> None:

@@ -1,5 +1,5 @@
 from http import HTTPStatus
-from typing import Any
+from typing import Any, cast
 from urllib.parse import quote
 
 import httpx
@@ -11,12 +11,12 @@ from ...types import Response
 
 
 def _get_kwargs(
-    task: str,
+    movie_id: int,
 ) -> dict[str, Any]:
     _kwargs: dict[str, Any] = {
-        "method": "get",
-        "url": "/api/collection-health/update/reports/{task}".format(
-            task=quote(str(task), safe=""),
+        "method": "post",
+        "url": "/movies/picks/{movie_id}/memory".format(
+            movie_id=quote(str(movie_id), safe=""),
         ),
     }
 
@@ -26,9 +26,9 @@ def _get_kwargs(
 def _parse_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
 ) -> Any | HTTPValidationError | None:
-    if response.status_code == 200:
-        response_200 = response.json()
-        return response_200
+    if response.status_code == 204:
+        response_204 = cast(Any, None)
+        return response_204
 
     if response.status_code == 422:
         response_422 = HTTPValidationError.from_dict(response.json())
@@ -53,14 +53,14 @@ def _build_response(
 
 
 def sync_detailed(
-    task: str,
+    movie_id: int,
     *,
-    client: AuthenticatedClient,
+    client: AuthenticatedClient | Client,
 ) -> Response[Any | HTTPValidationError]:
-    """Update Report
+    """Record Pick Memory
 
     Args:
-        task (str):
+        movie_id (int):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -71,7 +71,7 @@ def sync_detailed(
     """
 
     kwargs = _get_kwargs(
-        task=task,
+        movie_id=movie_id,
     )
 
     response = client.get_httpx_client().request(
@@ -82,14 +82,14 @@ def sync_detailed(
 
 
 def sync(
-    task: str,
+    movie_id: int,
     *,
-    client: AuthenticatedClient,
+    client: AuthenticatedClient | Client,
 ) -> Any | HTTPValidationError | None:
-    """Update Report
+    """Record Pick Memory
 
     Args:
-        task (str):
+        movie_id (int):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -100,20 +100,20 @@ def sync(
     """
 
     return sync_detailed(
-        task=task,
+        movie_id=movie_id,
         client=client,
     ).parsed
 
 
 async def asyncio_detailed(
-    task: str,
+    movie_id: int,
     *,
-    client: AuthenticatedClient,
+    client: AuthenticatedClient | Client,
 ) -> Response[Any | HTTPValidationError]:
-    """Update Report
+    """Record Pick Memory
 
     Args:
-        task (str):
+        movie_id (int):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -124,7 +124,7 @@ async def asyncio_detailed(
     """
 
     kwargs = _get_kwargs(
-        task=task,
+        movie_id=movie_id,
     )
 
     response = await client.get_async_httpx_client().request(**kwargs)
@@ -133,14 +133,14 @@ async def asyncio_detailed(
 
 
 async def asyncio(
-    task: str,
+    movie_id: int,
     *,
-    client: AuthenticatedClient,
+    client: AuthenticatedClient | Client,
 ) -> Any | HTTPValidationError | None:
-    """Update Report
+    """Record Pick Memory
 
     Args:
-        task (str):
+        movie_id (int):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -152,7 +152,7 @@ async def asyncio(
 
     return (
         await asyncio_detailed(
-            task=task,
+            movie_id=movie_id,
             client=client,
         )
     ).parsed

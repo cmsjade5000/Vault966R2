@@ -44,6 +44,8 @@ NEW_ADDITION_EXPORT_FIELDS = [
     "status",
 ]
 
+SPREADSHEET_FORMULA_PREFIXES = ("=", "+", "-", "@", "\t", "\r")
+
 
 def _snapshot_or_404(db: Session, snapshot_id: int) -> SourceSnapshot:
     snapshot = db.get(SourceSnapshot, snapshot_id)
@@ -121,6 +123,19 @@ def preview_source_snapshot(
     return response
 
 
+def _neutralize_spreadsheet_formula(value: object) -> object:
+    if isinstance(value, str) and value.startswith(SPREADSHEET_FORMULA_PREFIXES):
+        return f"'{value}"
+    return value
+
+
+def _neutralize_csv_record(record: dict[str, object]) -> dict[str, object]:
+    return {
+        field: _neutralize_spreadsheet_formula(record.get(field, ""))
+        for field in NEW_ADDITION_EXPORT_FIELDS
+    }
+
+
 def _new_addition_export_records(snapshot: SourceSnapshot, rows) -> list[dict[str, object]]:
     records: list[dict[str, object]] = []
     for row in rows:
@@ -162,7 +177,7 @@ def download_new_additions_csv(
     output = io.StringIO()
     writer = csv.DictWriter(output, fieldnames=NEW_ADDITION_EXPORT_FIELDS)
     writer.writeheader()
-    writer.writerows(records)
+    writer.writerows(_neutralize_csv_record(record) for record in records)
     headers = {
         "Content-Disposition": (
             f'attachment; filename="vault966-source-{snapshot.id}-new-additions.csv"'

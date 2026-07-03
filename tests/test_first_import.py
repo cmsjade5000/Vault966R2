@@ -7,6 +7,7 @@ from fastapi.testclient import TestClient
 
 from api.models.movie import Movie, MovieIngestProvenance
 from api.models.source_sync import SourceMovieRow, SourceReconciliationMatch, SourceSnapshot
+from api.routers.ui.source_sync import _neutralize_spreadsheet_formula
 from api.services import source_sync
 
 
@@ -223,6 +224,50 @@ def test_new_additions_csv_exports_only_high_confidence_auto_created_rows(
     assert rows[0]["director"] == "Denis Villeneuve"
     assert rows[0]["hd"] == "HD"
     assert rows[0]["status"] == "high_confidence_added"
+
+
+def test_new_additions_csv_neutralizes_formula_leading_source_fields(
+    client: TestClient,
+    db_session,
+    monkeypatch,
+) -> None:
+    snapshot = source_sync.create_draft_snapshot(
+        db_session,
+        filename="source.csv",
+        content=_csv("=Formula Title,1:56:00,+Director,2016,-Genre,@Rating,=ReleaseDate,1"),
+        profile_id=1,
+    )
+    monkeypatch.setattr(
+        source_sync,
+        "lookup_movie_candidates",
+        lambda title, year, limit=3: [_candidate(title=title, year=year or 2016, confidence=0.99)],
+    )
+    source_sync.apply_first_import_auto_create(
+        db_session,
+        snapshot_id=snapshot.id,
+        profile_id=1,
+    )
+
+    response = client.get(f"/ui/source-sync/{snapshot.id}/new-additions.csv")
+
+    assert response.status_code == 200
+    rows = list(csv.DictReader(io.StringIO(response.text)))
+    assert rows[0]["title"] == "'=Formula Title"
+    assert rows[0]["director"] == "'+Director"
+    assert rows[0]["genre"] == "'-Genre"
+    assert rows[0]["content_rating"] == "'@Rating"
+    assert rows[0]["release_date"] == "'=ReleaseDate"
+
+
+def test_spreadsheet_formula_neutralizer_escapes_all_dangerous_prefixes() -> None:
+    assert _neutralize_spreadsheet_formula("=SUM(1,1)") == "'=SUM(1,1)"
+    assert _neutralize_spreadsheet_formula("+SUM(1,1)") == "'+SUM(1,1)"
+    assert _neutralize_spreadsheet_formula("-SUM(1,1)") == "'-SUM(1,1)"
+    assert _neutralize_spreadsheet_formula("@SUM(1,1)") == "'@SUM(1,1)"
+    assert _neutralize_spreadsheet_formula("\tSUM(1,1)") == "'\tSUM(1,1)"
+    assert _neutralize_spreadsheet_formula("\rSUM(1,1)") == "'\rSUM(1,1)"
+    assert _neutralize_spreadsheet_formula("Arrival") == "Arrival"
+    assert _neutralize_spreadsheet_formula(2016) == 2016
 
 
 def test_vault_health_links_new_additions_export_when_high_confidence_rows_exist(

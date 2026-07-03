@@ -37,6 +37,14 @@ from core.vault_ids import next_vault_id
 
 MAX_SOURCE_BYTES = 5 * 1024 * 1024
 MAX_SOURCE_ROWS = 5000
+MAX_XLSX_MEMBERS = 128
+MAX_XLSX_UNCOMPRESSED_BYTES = 20 * 1024 * 1024
+MAX_XLSX_MEMBER_BYTES = 8 * 1024 * 1024
+MAX_XLSX_COMPRESSION_RATIO = 100
+MAX_XLSX_SHARED_STRINGS = 100_000
+MAX_XLSX_SHARED_STRING_BYTES = 5 * 1024 * 1024
+MAX_XLSX_ROWS = MAX_SOURCE_ROWS + 25
+MAX_XLSX_CELLS = MAX_XLSX_ROWS * 64
 REQUIRED_FIELDS = ("title", "time", "director", "year")
 FIELD_ALIASES = {
     "title": ("Title", "Name", "Movie", "Movie Title", "Film", "Film Title"),
@@ -588,22 +596,75 @@ def _xlsx_text(element: ElementTree.Element) -> str:
     return "".join(element.itertext())
 
 
+def _xlsx_member_info(workbook: zipfile.ZipFile, name: str) -> zipfile.ZipInfo:
+    try:
+        return workbook.getinfo(name)
+    except KeyError as exc:
+        raise SourceSyncError(f"XLSX member {name} is missing") from exc
+
+
+def _validate_xlsx_member(info: zipfile.ZipInfo) -> None:
+    if info.file_size > MAX_XLSX_MEMBER_BYTES:
+        raise SourceSyncError("The XLSX file expands beyond the supported import size")
+    if info.compress_size > 0 and info.file_size / info.compress_size > MAX_XLSX_COMPRESSION_RATIO:
+        raise SourceSyncError("The XLSX file compression ratio is too high")
+
+
+def _validate_xlsx_archive(workbook: zipfile.ZipFile) -> None:
+    members = workbook.infolist()
+    if len(members) > MAX_XLSX_MEMBERS:
+        raise SourceSyncError("The XLSX file contains too many parts")
+    total_uncompressed = 0
+    for info in members:
+        _validate_xlsx_member(info)
+        total_uncompressed += info.file_size
+        if total_uncompressed > MAX_XLSX_UNCOMPRESSED_BYTES:
+            raise SourceSyncError("The XLSX file expands beyond the supported import size")
+
+
+def _xlsx_read_xml(workbook: zipfile.ZipFile, name: str, error_message: str) -> ElementTree.Element:
+    info = _xlsx_member_info(workbook, name)
+    _validate_xlsx_member(info)
+    try:
+        return ElementTree.fromstring(workbook.read(info))
+    except ElementTree.ParseError as exc:
+        raise SourceSyncError(error_message) from exc
+
+
 def _xlsx_shared_strings(workbook: zipfile.ZipFile) -> list[str]:
     try:
-        root = ElementTree.fromstring(workbook.read("xl/sharedStrings.xml"))
+        info = workbook.getinfo("xl/sharedStrings.xml")
     except KeyError:
         return []
+    _validate_xlsx_member(info)
+
+    shared_strings: list[str] = []
+    total_text_bytes = 0
+    try:
+        with workbook.open(info) as member:
+            for _event, element in ElementTree.iterparse(member, events=("end",)):
+                if element.tag.rsplit("}", 1)[-1] != "si":
+                    continue
+                if len(shared_strings) >= MAX_XLSX_SHARED_STRINGS:
+                    raise SourceSyncError("The XLSX file contains too many shared strings")
+                text = _xlsx_text(element)
+                total_text_bytes += len(text.encode("utf-8"))
+                if total_text_bytes > MAX_XLSX_SHARED_STRING_BYTES:
+                    raise SourceSyncError("The XLSX shared strings are too large")
+                shared_strings.append(text)
+                element.clear()
     except ElementTree.ParseError as exc:
         raise SourceSyncError("XLSX shared strings could not be read") from exc
-    return [_xlsx_text(item) for item in root.findall(".//{*}si")]
+    return shared_strings
 
 
 def _xlsx_first_sheet_path(workbook: zipfile.ZipFile) -> str:
-    try:
-        workbook_root = ElementTree.fromstring(workbook.read("xl/workbook.xml"))
-        rels_root = ElementTree.fromstring(workbook.read("xl/_rels/workbook.xml.rels"))
-    except (KeyError, ElementTree.ParseError) as exc:
-        raise SourceSyncError("XLSX workbook metadata could not be read") from exc
+    workbook_root = _xlsx_read_xml(
+        workbook, "xl/workbook.xml", "XLSX workbook metadata could not be read"
+    )
+    rels_root = _xlsx_read_xml(
+        workbook, "xl/_rels/workbook.xml.rels", "XLSX workbook metadata could not be read"
+    )
 
     first_sheet = workbook_root.find(".//{*}sheet")
     relationship_id = (
@@ -646,26 +707,39 @@ def _xlsx_cell_value(cell: ElementTree.Element, shared_strings: list[str]) -> st
 def _xlsx_rows(content: bytes) -> list[list[str]]:
     try:
         with zipfile.ZipFile(io.BytesIO(content)) as workbook:
+            _validate_xlsx_archive(workbook)
             shared_strings = _xlsx_shared_strings(workbook)
             sheet_path = _xlsx_first_sheet_path(workbook)
-            sheet_root = ElementTree.fromstring(workbook.read(sheet_path))
+            sheet_info = _xlsx_member_info(workbook, sheet_path)
+            _validate_xlsx_member(sheet_info)
+            rows: list[list[str]] = []
+            cell_count = 0
+            with workbook.open(sheet_info) as sheet:
+                for _event, row in ElementTree.iterparse(sheet, events=("end",)):
+                    if row.tag.rsplit("}", 1)[-1] != "row":
+                        continue
+                    if len(rows) >= MAX_XLSX_ROWS:
+                        raise SourceSyncError(
+                            f"The XLSX file contains more than {MAX_SOURCE_ROWS} rows"
+                        )
+                    values: list[str] = []
+                    for cell in row.findall("{*}c"):
+                        cell_count += 1
+                        if cell_count > MAX_XLSX_CELLS:
+                            raise SourceSyncError("The XLSX file contains too many cells")
+                        column = _xlsx_column_index(cell.attrib.get("r", ""))
+                        while len(values) <= column:
+                            values.append("")
+                        values[column] = _xlsx_cell_value(cell, shared_strings).strip()
+                    rows.append(values)
+                    row.clear()
+            return rows
     except zipfile.BadZipFile as exc:
         raise SourceSyncError("The XLSX file could not be opened") from exc
     except KeyError as exc:
         raise SourceSyncError("The XLSX first worksheet could not be read") from exc
     except ElementTree.ParseError as exc:
         raise SourceSyncError("The XLSX first worksheet is malformed") from exc
-
-    rows: list[list[str]] = []
-    for row in sheet_root.findall(".//{*}sheetData/{*}row"):
-        values: list[str] = []
-        for cell in row.findall("{*}c"):
-            column = _xlsx_column_index(cell.attrib.get("r", ""))
-            while len(values) <= column:
-                values.append("")
-            values[column] = _xlsx_cell_value(cell, shared_strings).strip()
-        rows.append(values)
-    return rows
 
 
 def parse_source_xlsx(content: bytes) -> tuple[str, list[ParsedSourceRow]]:

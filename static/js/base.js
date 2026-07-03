@@ -228,6 +228,7 @@ window.runFlicPick = async function runFlicPick(options = {}) {
       return;
     }
     const data = await response.json();
+    await fetch(`/movies/picks/${data.id}/memory`, { method: "POST" });
     const successMessage = `I queued "${data.title}" for you.`;
     if (typeof window.persistToastMessage === "function") {
       window.persistToastMessage(successMessage);

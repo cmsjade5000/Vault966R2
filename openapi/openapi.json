@@ -4608,6 +4608,11 @@
             "description": "Successful Response"
           }
         },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "Update Preview",
         "tags": [
           "collection-health"
@@ -4648,6 +4653,11 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "Update Report",
         "tags": [
           "collection-health"
@@ -4721,6 +4731,11 @@
             "description": "Successful Response"
           }
         },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "Update Status",
         "tags": [
           "collection-health"
@@ -5544,6 +5559,41 @@
           }
         },
         "summary": "Get Pick",
+        "tags": [
+          "movies"
+        ]
+      }
+    },
+    "/movies/picks/{movie_id}/memory": {
+      "post": {
+        "operationId": "record_pick_memory_movies_picks__movie_id__memory_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "movie_id",
+            "required": true,
+            "schema": {
+              "title": "Movie Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Record Pick Memory",
         "tags": [
           "movies"
         ]
