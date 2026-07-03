@@ -4608,6 +4608,11 @@
             "description": "Successful Response"
           }
         },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "Update Preview",
         "tags": [
           "collection-health"
@@ -4648,6 +4653,11 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "Update Report",
         "tags": [
           "collection-health"
@@ -4721,6 +4731,11 @@
             "description": "Successful Response"
           }
         },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "Update Status",
         "tags": [
           "collection-health"
