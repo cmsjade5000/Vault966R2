@@ -574,6 +574,7 @@
           return;
         }
         const movie = await response.json();
+        await fetch(`/movies/picks/${movie.id}/memory`, { method: "POST" });
         const remainingBusyTime = 650 - (Date.now() - busyStartedAt);
         if (remainingBusyTime > 0) {
           await new Promise((resolve) =>
