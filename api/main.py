@@ -414,9 +414,9 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title=settings.app_name, lifespan=lifespan)
 app.add_middleware(GZipMiddleware, minimum_size=1024)
-app.add_middleware(ObservabilityMiddleware)
-app.add_middleware(SecurityHeadersMiddleware)
 app.add_middleware(AuthRequiredMiddleware)
+app.add_middleware(SecurityHeadersMiddleware)
+app.add_middleware(ObservabilityMiddleware)
 
 
 @app.exception_handler(HTTPException)
