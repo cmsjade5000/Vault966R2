@@ -45,7 +45,7 @@ def runtime_env(tmp_path: Path, python_script: str, curl_exit: int) -> dict[str,
     return env
 
 
-def test_runtime_forces_unresponsive_child_to_exit(tmp_path: Path) -> None:
+def test_runtime_terminates_unhealthy_child_to_exit(tmp_path: Path) -> None:
     env = runtime_env(
         tmp_path,
         """\
@@ -68,7 +68,7 @@ def test_runtime_forces_unresponsive_child_to_exit(tmp_path: Path) -> None:
     assert time.monotonic() - started < 4
     assert result.returncode == 137
     assert "Vault is unhealthy" in result.stderr
-    assert "forcing termination" in result.stderr
+    assert "terminating it so launchd can restart it" in result.stderr
 
 
 def test_runtime_preserves_child_exit_status(tmp_path: Path) -> None:

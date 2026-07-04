@@ -13,3 +13,24 @@ def test_security_headers_allow_only_youtube_nocookie_frames(client):
 
     csp = response.headers["Content-Security-Policy"]
     assert "frame-src https://www.youtube-nocookie.com;" in csp
+
+
+def test_security_headers_apply_to_unauthenticated_api_rejects(client, monkeypatch):
+    monkeypatch.setattr(settings, "disable_auth", False)
+
+    response = client.get("/movies/")
+
+    assert response.status_code == 401
+    assert response.headers["Content-Security-Policy"].startswith("default-src 'self';")
+    assert response.headers["X-Content-Type-Options"] == "nosniff"
+
+
+def test_security_headers_apply_to_unauthenticated_ui_redirects(client, monkeypatch):
+    monkeypatch.setattr(settings, "disable_auth", False)
+
+    response = client.get("/ui/movies", follow_redirects=False)
+
+    assert response.status_code == 302
+    assert response.headers["location"] == "/login"
+    assert response.headers["Content-Security-Policy"].startswith("default-src 'self';")
+    assert response.headers["X-Content-Type-Options"] == "nosniff"
