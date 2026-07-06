@@ -159,8 +159,8 @@ def test_movies_grid_filters_by_mood(client: TestClient) -> None:
     response = client.get("/ui/movies", params={"moods": "Moody"})
     assert response.status_code == 200
     html = response.text
-    assert 'id="moods-input" value="Moody"' in html
-    assert 'data-clear-filter="mood" data-filter-value="Moody"' in html
+    assert 'id="moods-input" value="Atmospheric"' in html
+    assert 'data-clear-filter="mood" data-filter-value="Atmospheric"' in html
     assert "Blade Runner" in html
     assert "The Matrix" not in html
 

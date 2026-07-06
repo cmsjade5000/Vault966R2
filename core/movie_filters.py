@@ -13,6 +13,7 @@ from api.models.movie import Genre, Mood, Movie
 from api.models.person import Person, Role
 from api.utils.query_params import parse_optional_non_negative_int
 from core.genres import search_terms_for_label
+from core.moods import normalize_mood_labels
 
 _ALLOWED_ORDERING = {
     "id_asc",
@@ -98,6 +99,16 @@ def _parse_list(value: Optional[Sequence[str] | str], field_name: str) -> Tuple[
     return tuple(items)
 
 
+def _normalize_mood_filters(values: Tuple[str, ...]) -> Tuple[str, ...]:
+    normalized_values: list[str] = []
+    for value in values:
+        normalized = normalize_mood_labels((value,))
+        label = normalized[0] if normalized else value
+        if label not in normalized_values:
+            normalized_values.append(label)
+    return tuple(normalized_values)
+
+
 def parse_movie_filters(
     *,
     q: Optional[str],
@@ -117,7 +128,7 @@ def parse_movie_filters(
     clean_runtime_min = parse_optional_non_negative_int(runtime_min, "runtime_min")
     clean_runtime_max = parse_optional_non_negative_int(runtime_max, "runtime_max")
     clean_genres = _parse_list(genres, "genres")
-    clean_moods = _parse_list(moods, "moods")
+    clean_moods = _normalize_mood_filters(_parse_list(moods, "moods"))
     clean_order = order_by or "title_asc"
     if clean_order not in _ALLOWED_ORDERING:
         raise HTTPException(

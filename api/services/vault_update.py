@@ -16,7 +16,7 @@ from api.db import SessionLocal
 from api.models.maintenance import MaintenanceJob
 from api.models.movie import Movie
 from core.genres import split_and_normalize
-from core.moods import score_moods
+from core.moods import DEFAULT_MAX_MOODS, DEFAULT_MIN_SCORE, score_moods
 
 ROOT_DIR = pathlib.Path(__file__).resolve().parents[2]
 STATUS_PATH = ROOT_DIR / "data" / "vault_update_status.json"
@@ -161,8 +161,17 @@ def _task_list() -> List[dict]:
         {
             "id": "moods",
             "name": "Backfill moods",
-            "description": "Recompute mood tags from the current genre rules.",
-            "cmd": ["scripts/backfill_moods.py", "--apply", "--force"],
+            "description": "Recompute explainable mood tags from genre, keyword, plot, rating, and runtime signals.",
+            "cmd": [
+                "scripts/backfill_moods.py",
+                "--apply",
+                "--force",
+                "--cleanup-unused",
+                "--max-moods",
+                str(DEFAULT_MAX_MOODS),
+                "--min-score",
+                str(DEFAULT_MIN_SCORE),
+            ],
             "preview_unit": "movies with mood changes",
             "report_path": "reports/mood_backfill.csv",
         },
@@ -468,7 +477,17 @@ def _mood_preview(db: Session) -> tuple[int, list[str]]:
     for movie in movies:
         current = {mood.name for mood in movie.moods if getattr(mood, "name", None)}
         genres = [genre.name for genre in movie.genres if getattr(genre, "name", None)]
-        computed = set(score_moods(genres, max_moods=1, min_score=1))
+        computed = set(
+            score_moods(
+                genres,
+                keywords=movie.keywords,
+                plot=movie.plot,
+                certificate=movie.certificate,
+                runtime=movie.runtime,
+                max_moods=DEFAULT_MAX_MOODS,
+                min_score=DEFAULT_MIN_SCORE,
+            )
+        )
         if computed and current != computed:
             candidates.append(movie)
     return len(candidates), _sample_titles(candidates)

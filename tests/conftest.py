@@ -93,7 +93,7 @@ def client() -> Generator[TestClient, None, None]:
             imdb_id="tt0083658",
             tmdb_id=78,
             genres=["Sci-Fi"],
-            moods=["Moody"],
+            moods=["Atmospheric", "Thoughtful"],
         )
         _create_movie(
             session,
@@ -103,7 +103,7 @@ def client() -> Generator[TestClient, None, None]:
             imdb_id="tt0133093",
             tmdb_id=603,
             genres=["Sci-Fi", "Action"],
-            moods=["Exciting"],
+            moods=["High-energy", "Mind-bending"],
         )
         _create_movie(
             session,

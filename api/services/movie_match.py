@@ -58,6 +58,8 @@ class MatchResult:
     lead: MovieMatch | None
     supporting: tuple[MovieMatch, ...]
     widened: bool
+    fallback_tier: str
+    fallback_notice: str | None
     complete: bool
 
 
@@ -71,14 +73,14 @@ QUESTIONS: tuple[MatchQuestion, ...] = (
                 label="Scary",
                 description="Tension, shadows, and a little dread.",
                 genres=("Horror", "Thriller"),
-                moods=("Scary", "Dark", "Intense"),
+                moods=("Scary", "Atmospheric"),
             ),
             MatchOption(
                 id="funny",
                 label="Funny",
                 description="Jokes, charm, and an easier landing.",
                 genres=("Comedy",),
-                moods=("Funny", "Uplifting"),
+                moods=("Funny", "Light"),
             ),
         ),
     ),
@@ -127,14 +129,14 @@ QUESTIONS: tuple[MatchQuestion, ...] = (
                 label="Light",
                 description="Easy, warm, or playful.",
                 genres=("Animation", "Family", "Comedy"),
-                moods=("Cozy", "Family", "Uplifting", "Romantic"),
+                moods=("Light", "Cozy", "Family", "Romantic"),
             ),
             MatchOption(
                 id="intense",
                 label="Intense",
                 description="Louder, sharper, or more absorbing.",
                 genres=("Action", "Crime", "Thriller"),
-                moods=("Exciting", "Intense", "Dark"),
+                moods=("Intense", "Gritty", "High-energy", "Bleak"),
             ),
         ),
     ),
@@ -246,18 +248,19 @@ def build_match_result(
             lead=None,
             supporting=(),
             widened=False,
+            fallback_tier="pending",
+            fallback_notice=None,
             complete=False,
         )
 
     movies = (
         trusted_movie_query(db).options(selectinload(Movie.genres), selectinload(Movie.moods)).all()
     )
-    strict_matches = [movie for movie in movies if _strictly_matches(movie, preferences)]
-    widened = not strict_matches
-    candidates = strict_matches or movies
+    candidates, fallback_tier, fallback_notice = _candidate_pool(movies, preferences)
+    widened = fallback_tier != "exact"
     ranked = _rank_movies(candidates, preferences, reroll=reroll)
     selected = ranked[: max(1, shortlist_size + 1)]
-    if strict_matches and len(selected) < shortlist_size + 1:
+    if fallback_tier != "catalog" and len(selected) < shortlist_size + 1:
         selected_ids = {match.movie.id for match in selected}
         extras = [
             match
@@ -275,6 +278,8 @@ def build_match_result(
         lead=lead,
         supporting=supporting,
         widened=widened,
+        fallback_tier=fallback_tier,
+        fallback_notice=fallback_notice,
         complete=True,
     )
 
@@ -297,14 +302,24 @@ def _names(items: Iterable[object]) -> set[str]:
 
 
 def _strictly_matches(movie: Movie, preferences: MatchPreferences) -> bool:
+    return _matches(movie, preferences)
+
+
+def _matches(
+    movie: Movie,
+    preferences: MatchPreferences,
+    *,
+    relax_moods: bool = False,
+    relax_lane: bool = False,
+) -> bool:
     genres = _names(getattr(movie, "genres", ()))
     moods = _names(getattr(movie, "moods", ()))
     runtime = getattr(movie, "runtime", None)
     year = getattr(movie, "year", None)
 
-    if preferences.genres and not genres.intersection(preferences.genres):
+    if not relax_lane and preferences.genres and not genres.intersection(preferences.genres):
         return False
-    if preferences.moods and not moods.intersection(preferences.moods):
+    if not relax_moods and preferences.moods and not moods.intersection(preferences.moods):
         return False
     if preferences.runtime_min is not None and (
         runtime is None or runtime < preferences.runtime_min
@@ -319,6 +334,34 @@ def _strictly_matches(movie: Movie, preferences: MatchPreferences) -> bool:
     if preferences.year_max is not None and (year is None or year > preferences.year_max):
         return False
     return True
+
+
+def _candidate_pool(
+    movies: Sequence[Movie],
+    preferences: MatchPreferences,
+) -> tuple[Sequence[Movie], str, str | None]:
+    tiers = (
+        ("exact", {}, None),
+        (
+            "relaxed_mood",
+            {"relax_moods": True},
+            "The Vault relaxed the mood layer while keeping your lane, runtime, and era.",
+        ),
+        (
+            "relaxed_lane",
+            {"relax_moods": True, "relax_lane": True},
+            "The Vault kept your runtime and era, then widened the lane.",
+        ),
+    )
+    for tier, options, notice in tiers:
+        matches = [movie for movie in movies if _matches(movie, preferences, **options)]
+        if matches:
+            return matches, tier, notice
+    return (
+        movies,
+        "catalog",
+        "The Vault widened to trusted titles because no movie hit the selected path.",
+    )
 
 
 def _rank_movies(

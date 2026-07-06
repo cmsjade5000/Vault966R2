@@ -20,6 +20,7 @@ def test_match_preferences_compile_answers_to_constraints() -> None:
     assert "Comedy" in preferences.genres
     assert "Animation" in preferences.genres
     assert "Family" in preferences.moods
+    assert "Light" in preferences.moods
 
 
 def test_match_normalizes_only_valid_question_sequence() -> None:
@@ -60,6 +61,8 @@ def test_match_result_widens_when_no_title_hits_every_answer(db_session) -> None
 
     assert result.complete is True
     assert result.widened is True
+    assert result.fallback_tier in {"relaxed_mood", "relaxed_lane", "catalog"}
+    assert result.fallback_notice
     assert result.lead is not None
 
 

@@ -139,7 +139,7 @@ def test_search_facets_respect_filters(client: TestClient) -> None:
     payload = response.json()
     facets = payload["facets"]
     assert payload["total"] == 1
-    assert facets["moods"]["Exciting"] == 1
+    assert facets["moods"]["High-energy"] == 1
     assert facets["genres"]["Sci-Fi"] == 1
     assert facets["genres"]["Action"] == 1
 
