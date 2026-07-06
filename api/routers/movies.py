@@ -43,6 +43,7 @@ from core.movie_filters import (
     parse_movie_filters,
 )
 from core.movie_metadata import MovieMetadata
+from core.moods import normalize_mood_labels
 from core.vault_ids import allocate_vault_id, retire_movie_vault_id
 from api.utils.pagination import paginate
 from api.services.movie_lookup import (
@@ -154,6 +155,8 @@ def get_pick(
     runtime_max: Optional[str] = Query(default=None),
     db: Session = Depends(get_db),
 ):
+    if mood:
+        mood = (normalize_mood_labels((mood,)) or (mood,))[0]
     year_min = parse_optional_non_negative_int(year_min, "year_min")
     year_max = parse_optional_non_negative_int(year_max, "year_max")
     runtime_max = parse_optional_non_negative_int(runtime_max, "runtime_max")

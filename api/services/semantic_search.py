@@ -108,21 +108,29 @@ def parse_semantic_intent(query: str, params: MovieFilterParams) -> SemanticInte
     mood_phrases = {
         "slow burn": "Thoughtful",
         "slow-burn": "Thoughtful",
-        "feel good": "Heartfelt",
+        "feel good": "Light",
+        "feel-good": "Light",
+        "mind bending": "Mind-bending",
+        "mind-bending": "Mind-bending",
     }
     mood_tokens = {
-        "cozy": "Heartfelt",
-        "comfort": "Heartfelt",
-        "heartfelt": "Heartfelt",
+        "bleak": "Bleak",
+        "comfort": "Cozy",
+        "cozy": "Cozy",
+        "funny": "Funny",
+        "gritty": "Gritty",
+        "intense": "Intense",
+        "light": "Light",
         "moody": "Atmospheric",
         "atmospheric": "Atmospheric",
-        "dark": "Gritty",
-        "gritty": "Gritty",
+        "romantic": "Romantic",
+        "scary": "Scary",
         "thoughtful": "Thoughtful",
         "reflective": "Thoughtful",
-        "fast": "High-octane",
-        "fast-paced": "High-octane",
-        "high-octane": "High-octane",
+        "fast": "High-energy",
+        "fast-paced": "High-energy",
+        "high-octane": "High-energy",
+        "epic": "Epic",
     }
 
     for phrase, genre in genre_phrases.items():

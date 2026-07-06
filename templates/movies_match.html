@@ -76,8 +76,8 @@
               {% if result.lead.movie.runtime %}<span>{{ result.lead.movie.runtime }} min</span>{% endif %}
               {% if result.lead.movie.genre_display %}<span>{{ result.lead.movie.genre_display[:2] | join(", ") }}</span>{% endif %}
             </p>
-            {% if result.widened %}
-            <p class="match-notice">The Vault widened the match because no trusted title hit every answer.</p>
+            {% if result.fallback_notice %}
+            <p class="match-notice">{{ result.fallback_notice }}</p>
             {% endif %}
             <div class="match-reasons" aria-label="Why this matched">
               {% for reason in result.lead.reasons %}<span>{{ reason }}</span>{% endfor %}
