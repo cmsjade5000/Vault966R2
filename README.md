@@ -106,17 +106,24 @@ command waits for the live `/health` endpoint before reporting success. Use
 
 - Set `ADMIN_TOKEN` in `.env` (the example file includes a placeholder).
 - In Swagger UI (`/docs`), click the "Authorize" button and enter `Bearer <your token>`.
-- Admin-only endpoints include movie/person creation, role attachments, manual add, and collection
-  health refresh. For UI buttons that call admin endpoints (e.g., collection health refresh), set
-  `localStorage.vaultAdminToken = "<ADMIN_TOKEN>"` in your browser console to attach the header.
+- Admin-only API endpoints include movie/person creation, role attachments,
+  direct Fliclist writes, and collection health refreshes.
+- The live UI uses profile sessions and same-origin form/API requests for
+  admin actions such as Vault Health, manual add, source sync, review, and flag
+  management.
 
-## Meet Flic
+## Live app surface
 
-- **Fliclists**: save picker presets from `/ui/movies` (tap “Save current filters”) and replay them from the chip row; they’re exposed via `/fliclists`.
-- **Flic Score**: `/movies/picks` ranks candidates with runtime/genre hints; search can opt into the same ordering with `order_by=flic`.
-- **Flic Memory**: every pick goes into a 10-item history (`/fliclists/history`); newest first for quick revisits.
+The deployed server-rendered app currently exposes:
 
-Tip: Build a themed Fliclist (runtime, decade, genre), flip to Flic Score ordering, and check `/fliclists/history` to see your recent queue.
+- `/ui/movies`: searchable movie library with grid/list views, filters, sorting,
+  random picks, likes, watchlist actions, and review flags.
+- `/ui/movies/{id}`: movie detail pages with poster/backdrop artwork, metadata,
+  trailer links when available, preferences, and admin edit/flag controls.
+- `/ui/watchlist`: saved watchlist view.
+- `/ui/movies/health`: admin Vault Health dashboard with metadata maintenance,
+  review workbench, source synchronization, manual add, and snapshot history.
+- `/ui/first-import`: first-import staging flow for an empty library.
 
 ## Postgres via Docker Compose
 
@@ -161,8 +168,9 @@ python scripts/backfill_semantic_documents.py --limit 500
 python scripts/backfill_semantic_documents.py --after-id 500
 ```
 
-The `/ui/movies` page includes a "Semantic search" toggle. The API endpoint is
-`POST /api/search/semantic` (falls back to keyword search if embeddings are unavailable).
+The API endpoint is `POST /api/search/semantic` and falls back to keyword search
+if embeddings are unavailable. The current live `/ui/movies` page does not show
+a semantic-search toggle.
 
 ## Running migrations manually
 
@@ -295,10 +303,8 @@ coordinated change. See [docs/legacy-etl.md](docs/legacy-etl.md) for the full
 support contract.
 
 ## Next steps
-- Put your existing picker/filter logic into `core/`.
 - Archived-but-supported import utilities live under `legacy/etl/` (see `legacy/etl/etl_seed.py` if you still need the CSV importer).
 - Pull richer metadata (posters/genres/providers) with `python legacy/etl/enrich_tmdb.py --output data/enriched_movies.csv` if you still rely on the supported legacy ETL tooling.
 - Optional overrides live in `legacy/etl/overrides/imdb_map.csv`; the importer reads them (title/year keyed) before network lookups and logs usages to `reports/overrides_used.csv`.
-- Save reusable picker presets (“Fliclists”) from the `/ui/movies` page; they’re stored via the new `/fliclists` API and can be reapplied with one tap.
 - `legacy/etl/retry_missing_ids.py` can revisit `reports/missing_imdb_id.csv` / `invalid_imdb_id.csv` and emit a patch file (`--output`) you can replay through the importer once an IMDb ID becomes known.
 - When ready, switch to Postgres by setting `DATABASE_URL` in `.env`.

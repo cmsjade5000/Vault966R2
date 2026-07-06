@@ -1,0 +1,154 @@
+{% extends "base.html" %}
+{% from "partials/movies/card.html" import movie_card %}
+{% block title %}Vault 966 · Match{% endblock %}
+{% block head %}
+  <link rel="stylesheet" href="{{ static_asset('css/movies.css') }}" />
+{% endblock %}
+{% block body_class %}match-page{% endblock %}
+{% block content %}
+  <div class="match-shell page-shell" data-match-page>
+    <header class="match-heading">
+      <div>
+        <p class="match-kicker">Movie Match</p>
+        <h1>Narrow It Down</h1>
+      </div>
+      <a class="button-ghost match-reset-link" href="/ui/match" data-match-reset>Start over</a>
+    </header>
+
+    <section class="match-flow" aria-labelledby="match-flow-title">
+      <div class="match-progress" aria-label="Match progress">
+        {% for question in questions %}
+        {% set step_done = loop.index <= result.answers|length %}
+        {% set step_current = result.current_question and result.current_question.id == question.id %}
+        <span
+          class="match-progress__step{% if step_done %} is-complete{% endif %}{% if step_current %} is-current{% endif %}"
+          aria-label="Step {{ loop.index }} of {{ questions|length }}"
+        ></span>
+        {% endfor %}
+      </div>
+
+      {% if result.current_question %}
+      <div class="match-question" data-match-question>
+        <p class="match-question__count">Question {{ result.answers|length + 1 }} of {{ questions|length }}</p>
+        <h2 id="match-flow-title">{{ result.current_question.prompt }}</h2>
+        {% if result.answered_labels %}
+        <p class="match-question__summary">So far: {{ result.answered_labels | join(" · ") }}</p>
+        {% else %}
+        <p class="match-question__summary">Pick the better answer. The Vault will do the narrowing.</p>
+        {% endif %}
+        <div class="match-option-grid">
+          {% for option in result.current_question.options %}
+          {% set next_query = next_answer_query(result.answers, option.id) %}
+          <a
+            class="match-option"
+            href="/ui/match?answers={{ next_query | urlencode }}"
+            data-match-answer
+          >
+            <strong>{{ option.label }}</strong>
+            <span>{{ option.description }}</span>
+          </a>
+          {% endfor %}
+        </div>
+        <div class="match-nav-actions">
+          {% if result.answers %}
+          <a class="button-secondary" href="/ui/match{% if back_answers_query %}?answers={{ back_answers_query | urlencode }}{% endif %}" data-match-back>Back</a>
+          {% endif %}
+        </div>
+      </div>
+      {% endif %}
+
+      {% if result.complete %}
+      <div class="match-results" data-match-results>
+        {% if result.lead %}
+        <article class="match-lead" data-movie-card data-movie-id="{{ result.lead.movie.id }}" data-liked="{{ 'true' if result.lead.movie.liked else 'false' }}" data-watchlist="{{ 'true' if result.lead.movie.watchlist else 'false' }}">
+          <a class="match-lead__poster" href="/ui/movies/{{ result.lead.movie.id }}" data-movie-detail-link data-event-context="match_lead">
+            {% if result.lead.movie.poster_url %}
+            <img src="/ui/posters/{{ result.lead.movie.id }}/w342" alt="{{ result.lead.movie.title | display_title }} poster" decoding="async" fetchpriority="high" />
+            {% else %}
+            <div class="poster poster--empty {{ result.lead.movie.poster_theme or 'poster-theme-default' }}" aria-hidden="true">966</div>
+            {% endif %}
+          </a>
+          <div class="match-lead__copy">
+            <p class="match-kicker">Top Match</p>
+            <h2>{{ result.lead.movie.title | display_title }}</h2>
+            <p class="match-lead__meta">
+              <span>{{ result.lead.movie.year or "—" }}</span>
+              {% if result.lead.movie.runtime %}<span>{{ result.lead.movie.runtime }} min</span>{% endif %}
+              {% if result.lead.movie.genre_display %}<span>{{ result.lead.movie.genre_display[:2] | join(", ") }}</span>{% endif %}
+            </p>
+            {% if result.widened %}
+            <p class="match-notice">The Vault widened the match because no trusted title hit every answer.</p>
+            {% endif %}
+            <div class="match-reasons" aria-label="Why this matched">
+              {% for reason in result.lead.reasons %}<span>{{ reason }}</span>{% endfor %}
+            </div>
+            <div class="match-lead__actions" aria-label="Actions for {{ result.lead.movie.title | display_title }}">
+              <a class="button-primary" href="/ui/movies/{{ result.lead.movie.id }}" data-movie-detail-link data-event-context="match_open">Open</a>
+              <button
+                type="button"
+                class="discover-action{% if result.lead.movie.watchlist %} is-active{% endif %}"
+                data-preference-button
+                data-preference-type="watchlist"
+                data-movie-id="{{ result.lead.movie.id }}"
+                data-movie-title="{{ result.lead.movie.title | display_title }}"
+                aria-label="{{ 'Remove' if result.lead.movie.watchlist else 'Add' }} {{ result.lead.movie.title | display_title }} {{ 'from' if result.lead.movie.watchlist else 'to' }} watchlist"
+                aria-pressed="{{ 'true' if result.lead.movie.watchlist else 'false' }}"
+              >
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1z"></path></svg>
+                <span>Watchlist</span>
+              </button>
+              <button
+                type="button"
+                class="discover-action{% if result.lead.movie.liked %} is-active{% endif %}"
+                data-preference-button
+                data-preference-type="like"
+                data-movie-id="{{ result.lead.movie.id }}"
+                data-movie-title="{{ result.lead.movie.title | display_title }}"
+                aria-label="{{ 'Unlike' if result.lead.movie.liked else 'Like' }} {{ result.lead.movie.title | display_title }}"
+                aria-pressed="{{ 'true' if result.lead.movie.liked else 'false' }}"
+              >
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8l1.1 1.1L12 21.2l7.8-7.7 1.1-1.1a5.5 5.5 0 0 0-.1-7.8z"></path></svg>
+                <span>Like</span>
+              </button>
+            </div>
+          </div>
+        </article>
+
+        {% if result.supporting %}
+        <section class="match-shortlist" aria-labelledby="match-shortlist-title">
+          <header class="discover-section-header">
+            <div>
+              <h2 id="match-shortlist-title">Also in the Mix</h2>
+              <p>A compact shortlist from the same answers.</p>
+            </div>
+            <div class="match-result-actions">
+              <a class="button-secondary" href="/ui/match?answers={{ answers_query | urlencode }}&reroll={{ reroll + 1 }}" data-match-reroll>Try another</a>
+              <a class="button-ghost" href="/ui/match">Start over</a>
+            </div>
+          </header>
+          <div class="match-shortlist__grid">
+            {% for match in result.supporting %}
+            {% set genre_labels = match.movie.genre_display if match.movie.genre_display is defined else [] %}
+            {{ movie_card(match.movie, match.movie.liked, match.movie.watchlist, genre_labels, extra_class="match-card", event_context="match_shortlist", reason_labels=match.reasons, poster_size="w185", show_review=false) }}
+            {% endfor %}
+          </div>
+        </section>
+        {% endif %}
+        {% else %}
+        <div class="match-empty">
+          <h2>No trusted match yet</h2>
+          <p>The Vault could not find an available title for that path.</p>
+          <a class="button-primary" href="/ui/match">Start over</a>
+        </div>
+        {% endif %}
+      </div>
+      {% endif %}
+    </section>
+  </div>
+{% endblock %}
+
+{% block scripts %}
+  {{ super() }}
+  <script src="{{ static_asset('js/movie_preferences.js') }}" defer></script>
+  <script src="{{ static_asset('js/match_page.js') }}" defer></script>
+{% endblock %}
