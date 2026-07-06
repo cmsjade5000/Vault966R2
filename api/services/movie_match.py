@@ -157,9 +157,7 @@ QUESTIONS: tuple[MatchQuestion, ...] = (
     ),
 )
 
-_OPTION_BY_ID = {
-    option.id: option for question in QUESTIONS for option in question.options
-}
+_OPTION_BY_ID = {option.id: option for question in QUESTIONS for option in question.options}
 
 
 def normalize_answer_ids(raw_answers: str | Sequence[str] | None) -> tuple[str, ...]:
@@ -252,9 +250,7 @@ def build_match_result(
         )
 
     movies = (
-        trusted_movie_query(db)
-        .options(selectinload(Movie.genres), selectinload(Movie.moods))
-        .all()
+        trusted_movie_query(db).options(selectinload(Movie.genres), selectinload(Movie.moods)).all()
     )
     strict_matches = [movie for movie in movies if _strictly_matches(movie, preferences)]
     widened = not strict_matches
@@ -310,9 +306,13 @@ def _strictly_matches(movie: Movie, preferences: MatchPreferences) -> bool:
         return False
     if preferences.moods and not moods.intersection(preferences.moods):
         return False
-    if preferences.runtime_min is not None and (runtime is None or runtime < preferences.runtime_min):
+    if preferences.runtime_min is not None and (
+        runtime is None or runtime < preferences.runtime_min
+    ):
         return False
-    if preferences.runtime_max is not None and (runtime is None or runtime > preferences.runtime_max):
+    if preferences.runtime_max is not None and (
+        runtime is None or runtime > preferences.runtime_max
+    ):
         return False
     if preferences.year_min is not None and (year is None or year < preferences.year_min):
         return False
@@ -350,13 +350,25 @@ def _score_movie(movie: Movie, preferences: MatchPreferences) -> float:
     score += 24.0 * len(moods.intersection(preferences.moods))
 
     if preferences.runtime_max is not None and runtime is not None:
-        score += 16.0 if runtime <= preferences.runtime_max else -min((runtime - preferences.runtime_max) / 3, 24)
+        score += (
+            16.0
+            if runtime <= preferences.runtime_max
+            else -min((runtime - preferences.runtime_max) / 3, 24)
+        )
     if preferences.runtime_min is not None and runtime is not None:
-        score += 16.0 if runtime >= preferences.runtime_min else -min((preferences.runtime_min - runtime) / 3, 24)
+        score += (
+            16.0
+            if runtime >= preferences.runtime_min
+            else -min((preferences.runtime_min - runtime) / 3, 24)
+        )
     if preferences.year_min is not None and year is not None:
-        score += 12.0 if year >= preferences.year_min else -min((preferences.year_min - year) / 2, 18)
+        score += (
+            12.0 if year >= preferences.year_min else -min((preferences.year_min - year) / 2, 18)
+        )
     if preferences.year_max is not None and year is not None:
-        score += 12.0 if year <= preferences.year_max else -min((year - preferences.year_max) / 2, 18)
+        score += (
+            12.0 if year <= preferences.year_max else -min((year - preferences.year_max) / 2, 18)
+        )
 
     if getattr(movie, "imdb_rating", None) is not None:
         score += float(movie.imdb_rating or 0) / 2
@@ -389,9 +401,17 @@ def _reason_labels(movie: Movie, preferences: MatchPreferences) -> tuple[str, ..
         reasons.append("Matches the lane")
     if moods.intersection(preferences.moods):
         reasons.append("Fits the mood")
-    if preferences.runtime_max is not None and runtime is not None and runtime <= preferences.runtime_max:
+    if (
+        preferences.runtime_max is not None
+        and runtime is not None
+        and runtime <= preferences.runtime_max
+    ):
         reasons.append("Keeps it tight")
-    if preferences.runtime_min is not None and runtime is not None and runtime >= preferences.runtime_min:
+    if (
+        preferences.runtime_min is not None
+        and runtime is not None
+        and runtime >= preferences.runtime_min
+    ):
         reasons.append("Longer watch")
     if preferences.year_min is not None and year is not None and year >= preferences.year_min:
         reasons.append("Newer shelf")

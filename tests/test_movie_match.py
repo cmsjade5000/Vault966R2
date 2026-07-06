@@ -45,7 +45,9 @@ def test_match_result_excludes_flagged_movies(db_session) -> None:
     db_session.commit()
 
     result = build_match_result(db_session, answer_ids=MATCH_ANSWERS)
-    titles = [match.movie.title for match in ((result.lead,) if result.lead else ()) + result.supporting]
+    titles = [
+        match.movie.title for match in ((result.lead,) if result.lead else ()) + result.supporting
+    ]
 
     assert "Toy Story" not in titles
 
