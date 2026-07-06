@@ -8,6 +8,18 @@ def test_health_is_public_and_omits_database_details(client):
     assert response.json() == {"status": "ok", "app_name": settings.app_name}
 
 
+def test_api_docs_are_intentionally_public_with_auth_enabled(client, monkeypatch):
+    monkeypatch.setattr(settings, "disable_auth", False)
+
+    for path in ("/docs", "/redoc", "/openapi.json"):
+        response = client.get(path, follow_redirects=False)
+
+        assert response.status_code == 200
+
+    openapi = client.get("/openapi.json").json()
+    assert openapi["info"]["title"] == settings.app_name
+
+
 def test_security_headers_allow_only_youtube_nocookie_frames(client):
     response = client.get("/health")
 
