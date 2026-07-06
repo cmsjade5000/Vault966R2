@@ -154,10 +154,14 @@ def main() -> int:
 
     with SessionLocal() as db:
         mood_by_name = ensure_mood_rows(db) if args.apply else {}
-        query = db.query(Movie).options(
-            selectinload(Movie.genres),
-            selectinload(Movie.moods),
-        ).order_by(Movie.id)
+        query = (
+            db.query(Movie)
+            .options(
+                selectinload(Movie.genres),
+                selectinload(Movie.moods),
+            )
+            .order_by(Movie.id)
+        )
         if args.limit:
             query = query.limit(args.limit)
 
@@ -244,7 +248,7 @@ def main() -> int:
                     "movie_id": movie.id,
                     "title": movie.title,
                     "genres": _join(genres),
-                        "keywords": _join(_keywords_for_report(movie.keywords)),
+                    "keywords": _join(_keywords_for_report(movie.keywords)),
                     "certificate": movie.certificate or "",
                     "runtime": movie.runtime or "",
                     "existing_moods": _join(existing),
@@ -267,8 +271,7 @@ def main() -> int:
     write_report(report_path, results)
     print(f"report: {report_path}")
     summary = (
-        f"updated: {updated}, unchanged: {unchanged}, skipped: {skipped}, "
-        f"no-match: {unmatched}"
+        f"updated: {updated}, unchanged: {unchanged}, skipped: {skipped}, " f"no-match: {unmatched}"
     )
     if args.apply and args.cleanup_unused:
         summary += f", removed-unused-moods: {removed_unused}"

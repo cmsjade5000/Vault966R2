@@ -208,7 +208,9 @@ MOOD_RULES: dict[str, MoodRule] = {
                 "time travel",
             }
         ),
-        keyword_soft=frozenset({"afterlife", "experiment", "illusion", "simulation", "space opera"}),
+        keyword_soft=frozenset(
+            {"afterlife", "experiment", "illusion", "simulation", "space opera"}
+        ),
         plot_strong=("alternate reality", "time loop", "time travel", "simulation"),
         plot_soft=("dream", "memory", "reality", "mysterious"),
     ),
@@ -439,7 +441,9 @@ def score_moods(
     return list(analysis.labels)
 
 
-def avoidance_flags_for_moods(moods: Iterable[str], *, runtime: int | None = None) -> tuple[str, ...]:
+def avoidance_flags_for_moods(
+    moods: Iterable[str], *, runtime: int | None = None
+) -> tuple[str, ...]:
     labels = set(normalize_mood_labels(moods))
     flags = [
         flag
