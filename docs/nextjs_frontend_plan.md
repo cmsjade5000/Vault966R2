@@ -12,7 +12,8 @@
   - `/movies/search`
   - `/movies/{id}/detail`
   - `/movies/picks`
-  - `/fliclists` CRUD endpoints
+  - `/fliclists` CRUD endpoints if saved-preset management is reintroduced in
+    the frontend
 - [ ] Implement error handling hooks/utilities (e.g., SWR `useSWR` or React Query) and global loading/error UI patterns.
 - [ ] Ensure CORS and authentication considerations are solved by verifying `api/main.py` configuration or adding tokens if needed.
 
@@ -20,15 +21,16 @@
 - [ ] Use the Next.js App Router (preferred) to create parallel routes matching existing FastAPI UI:
   - `/movies` – list/grid view with filters
   - `/movies/[id]` – detail page
-  - `/fliclists` – saved preset management
+  - `/watchlist` – saved watchlist view
+  - `/health` – admin maintenance and review surface
 - [ ] Set up shared layout with navigation, theme, and global providers (state management, SWR, etc.).
 - [ ] Add metadata and SEO configuration mirroring current meta tags.
 
 ## 4. UI implementation
 - [ ] Recreate the movies grid using reusable components (`MovieCard`, `MovieGrid`, `FilterSidebar`).
-- [ ] Port current Jinja filters (genre, service, year, etc.) into controlled React components with synchronized query parameters.
-- [ ] Implement detail view showing synopsis, services, trailers, and the new Flic score breakdown once available.
-- [ ] Build Fliclist CRUD UI (list, create form, rename/update when backend work completes) with optimistic updates.
+- [ ] Port current Jinja filters (genre, decade, runtime, search, sort, and view mode) into controlled React components with synchronized query parameters.
+- [ ] Implement detail view showing synopsis, ratings, cast/crew, Vault history, trailers, preferences, flags, and similar-title rails.
+- [ ] Treat Fliclist CRUD as optional API-backed preset management unless a current product decision brings saved presets back into the visible UI.
 - [ ] Incorporate responsive design; ensure mobile breakpoints match existing CSS/figma references if available.
 
 ## 5. State management & UX enhancements
@@ -38,7 +40,7 @@
 
 ## 6. Testing & quality
 - [ ] Configure unit testing with Vitest/Jest and React Testing Library for components.
-- [ ] Add integration tests for critical flows (filtering, viewing details, managing Fliclists).
+- [ ] Add integration tests for critical flows (filtering, viewing details, watchlist/preferences, Vault Health admin actions).
 - [ ] Set up Playwright or Cypress end-to-end tests hitting the FastAPI backend (perhaps via docker-compose).
 - [ ] Integrate lint/test commands into existing CI (GitHub Actions or similar) alongside backend checks.
 

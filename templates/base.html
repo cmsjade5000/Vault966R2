@@ -92,6 +92,13 @@
                 >Library</a
               >
               <a
+                class="nav-link{% if current_path == '/ui/match' %} is-active{% endif %}"
+                href="/ui/match"
+                role="menuitem"
+                {% if current_path == '/ui/match' %}aria-current="page"{% endif %}
+                >Match</a
+              >
+              <a
                 class="nav-link{% if current_path == '/ui/watchlist' %} is-active{% endif %}"
                 href="/ui/watchlist"
                 role="menuitem"
@@ -150,6 +157,47 @@
             </svg>
           </span>
           <span class="bottom-nav__label">Library</span>
+        </a>
+        <a
+          class="bottom-nav__link{% if current_path == '/ui/match' %} is-active{% endif %}"
+          href="/ui/match"
+          {% if current_path == '/ui/match' %}aria-current="page"{% endif %}
+        >
+          <span class="bottom-nav__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
+              <path
+                d="M6 7h8"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.5"
+                stroke-linecap="round"
+              />
+              <path
+                d="M6 17h8"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.5"
+                stroke-linecap="round"
+              />
+              <path
+                d="M16 5l3 2-3 2"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+              <path
+                d="M16 15l3 2-3 2"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </span>
+          <span class="bottom-nav__label">Match</span>
         </a>
         <a
           class="bottom-nav__link{% if current_path == '/ui/watchlist' %} is-active{% endif %}"

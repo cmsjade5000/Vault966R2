@@ -26,8 +26,10 @@ Source imports and reviews are backed by one shared data model:
 
 There are two entry flows:
 
-- Ongoing source sync starts at `/ui/source-sync/upload`, creates a draft
-  snapshot, confirms it, and reconciles it against existing Vault entries.
+- Ongoing source sync is launched from the Source synchronization section on
+  `/ui/movies/health`; its upload form posts to `/ui/source-sync/upload`,
+  creates a draft snapshot, confirms it, and reconciles it against existing
+  Vault entries.
 - First import starts at `/ui/first-import`, creates the same kind of snapshot,
   auto-creates strict high-confidence matches, and routes leftovers into the
   same review queues.
