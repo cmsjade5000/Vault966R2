@@ -1,4 +1,5 @@
 import os
+import shutil
 import stat
 import subprocess
 import textwrap
@@ -135,6 +136,122 @@ def test_start_force_restarts_loaded_service(tmp_path: Path) -> None:
 
     assert result.returncode == 0
     assert "kickstart -k gui/" in calls.read_text()
+
+
+def test_restart_cleans_stale_deploy_artifacts(tmp_path: Path) -> None:
+    project = tmp_path / "project"
+    project.mkdir()
+    (project / "scripts").mkdir()
+    shutil.copy2(SERVICE, project / "scripts" / "vault_service.sh")
+    for script_name in (
+        "vault_runtime.sh",
+        "vault_watchdog.sh",
+        "sqlite_maintenance.py",
+    ):
+        (project / "scripts" / script_name).write_text("", encoding="utf-8")
+    (project / "requirements.txt").write_text("", encoding="utf-8")
+    (project / "vault.db").write_text("seed database\n", encoding="utf-8")
+    (project / ".git").write_text("gitdir: /tmp/worktree\n", encoding="utf-8")
+
+    home = tmp_path / "home"
+    support = home / "Library" / "Application Support" / "Vault966"
+    app = support / "app"
+    data = support / "data"
+    venv_python = support / ".venv" / "bin" / "python"
+    app.mkdir(parents=True)
+    data.mkdir(parents=True)
+    venv_python.parent.mkdir(parents=True)
+    venv_python.write_text("", encoding="utf-8")
+    venv_python.chmod(venv_python.stat().st_mode | stat.S_IXUSR)
+
+    for stale_dir in (".codex", ".agents", "skills", "reports", "node_modules"):
+        (app / stale_dir).mkdir()
+        (app / stale_dir / "stale.txt").write_text("stale\n", encoding="utf-8")
+    for stale_file in (
+        ".git",
+        "vault.db.bak",
+        "vault.db.before-service-20260706.bak",
+        "vault.db-journal",
+        "movie 2.py",
+    ):
+        (app / stale_file).write_text("stale\n", encoding="utf-8")
+    existing_database = data / "vault.db"
+    existing_database.write_text("live database\n", encoding="utf-8")
+
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    rsync_calls = tmp_path / "rsync-calls"
+    uv_calls = tmp_path / "uv-calls"
+    write_executable(
+        bin_dir / "rsync",
+        f"""\
+        #!/usr/bin/env bash
+        printf '%s\n' "$*" > {rsync_calls!s}
+        src="${{@: -2:1}}"
+        dst="${{@: -1}}"
+        mkdir -p "$dst/scripts"
+        cp "$src/requirements.txt" "$dst/requirements.txt"
+        cp "$src/scripts/vault_runtime.sh" "$dst/scripts/vault_runtime.sh"
+        cp "$src/scripts/vault_watchdog.sh" "$dst/scripts/vault_watchdog.sh"
+        cp "$src/scripts/sqlite_maintenance.py" "$dst/scripts/sqlite_maintenance.py"
+        """,
+    )
+    write_executable(
+        bin_dir / "uv",
+        f"""\
+        #!/usr/bin/env bash
+        printf '%s\n' "$*" >> {uv_calls!s}
+        exit 0
+        """,
+    )
+    write_executable(
+        bin_dir / "launchctl",
+        """\
+        #!/usr/bin/env bash
+        if [[ "$1" == "print" ]]; then
+          exit 1
+        fi
+        exit 0
+        """,
+    )
+    for command in ("plutil", "curl"):
+        write_executable(
+            bin_dir / command,
+            """\
+            #!/usr/bin/env bash
+            exit 0
+            """,
+        )
+
+    env = os.environ.copy()
+    env.update({"HOME": str(home), "PATH": f"{bin_dir}:{env['PATH']}"})
+    result = subprocess.run(
+        ["/bin/bash", str(project / "scripts" / "vault_service.sh"), "restart"],
+        env=env,
+        capture_output=True,
+        text=True,
+        timeout=5,
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert "--exclude .git " in rsync_calls.read_text()
+    assert uv_calls.exists()
+    for stale_path in (
+        ".git",
+        ".codex",
+        ".agents",
+        "skills",
+        "reports",
+        "node_modules",
+        "vault.db.bak",
+        "vault.db.before-service-20260706.bak",
+        "vault.db-journal",
+        "movie 2.py",
+    ):
+        assert not (app / stale_path).exists()
+    assert app.joinpath("vault.db").is_symlink()
+    assert app.joinpath("vault.db").resolve() == existing_database
+    assert existing_database.read_text(encoding="utf-8") == "live database\n"
 
 
 def test_watchdog_restarts_after_repeated_health_failures(tmp_path: Path) -> None:
