@@ -181,6 +181,28 @@ prepare_database() {
   ln -s "$DATABASE" "$ROOT_DIR/vault.db"
 }
 
+clean_stale_deploy_artifacts() {
+  rm -rf \
+    "$APP_DIR/.git" \
+    "$APP_DIR/.agents" \
+    "$APP_DIR/.codex" \
+    "$APP_DIR/.pytest_cache" \
+    "$APP_DIR/.ruff_cache" \
+    "$APP_DIR/.uv-python" \
+    "$APP_DIR/.venv" \
+    "$APP_DIR/node_modules" \
+    "$APP_DIR/reports" \
+    "$APP_DIR/skills"
+
+  find "$APP_DIR" -maxdepth 1 -type f \( \
+    -name 'vault.db-journal' \
+    -o -name 'vault.db*.bak' \
+    -o -name '* 2.py' \
+    -o -name '* 2.js' \
+    -o -name '* 2.css' \
+  \) -delete
+}
+
 deploy_app() {
   command -v uv >/dev/null 2>&1 || {
     echo "Cannot install service: uv is required." >&2
@@ -188,8 +210,9 @@ deploy_app() {
   }
 
   mkdir -p "$APP_DIR" "$LOG_DIR"
+  clean_stale_deploy_artifacts
   rsync -a --delete \
-    --exclude '.git/' \
+    --exclude '.git' \
     --exclude '.agents/' \
     --exclude '.codex/' \
     --exclude '.DS_Store' \
