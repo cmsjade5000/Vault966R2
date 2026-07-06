@@ -2,6 +2,8 @@ from fastapi.testclient import TestClient
 
 from api.config import settings
 from api.models.movie import Movie
+from api.models.profile import Profile
+from api.services.profiles import get_profiles
 from api.services.session import SESSION_COOKIE_NAME, get_session_secret, parse_session_token
 from api.services.ui.grid import FILTER_COOKIE_NAME, FILTER_COOKIE_PATH
 
@@ -17,8 +19,8 @@ def test_login_page_only_shows_unlock_action(client: TestClient):
     assert "Passcode" in response.text
     assert "Your private film archive is standing by." not in response.text
     assert "Unlock the vault" in response.text
-    assert "CORY" in response.text
-    assert "DAMIAN" in response.text
+    assert "User A" in response.text
+    assert "User B" in response.text
     assert 'class="login-form"' in response.text
     assert 'name="access_key"' in response.text
     assert 'name="passcode"' in response.text
@@ -44,6 +46,24 @@ def test_public_login_uses_static_archive_art(
     assert 'src="http://testserver/static/img/app-icon.png"' in response.text
     assert '"http://testserver/static/img/app-icon.png"' in response.text
     assert "collection.example" not in response.text
+
+
+def test_default_profiles_are_placeholder_names(db_session) -> None:
+    db_session.query(Profile).delete()
+    db_session.add_all(
+        [
+            Profile(name="Private Name 1", role="reviewer"),
+            Profile(name="Private Name 2", role="reviewer"),
+        ]
+    )
+    db_session.commit()
+
+    profiles = get_profiles(db_session)
+
+    assert [(profile.name, profile.role) for profile in profiles[:2]] == [
+        ("User A", "admin"),
+        ("User B", "reviewer"),
+    ]
 
 
 def test_unlock_reveals_profile_picker_without_session(client: TestClient, monkeypatch):

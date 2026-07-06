@@ -30,7 +30,7 @@ from api.services.ui.templates import TEMPLATES
 
 router = APIRouter()
 
-PROFILE_PICKER_LABELS = ("CORY", "DAMIAN")
+PROFILE_PICKER_LABELS = ("User A", "User B")
 UNLOCK_COOKIE_NAME = "vault_unlock"
 UNLOCK_TOKEN_VERSION = 1
 UNLOCK_TTL_SECONDS = 5 * 60

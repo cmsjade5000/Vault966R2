@@ -12,23 +12,32 @@ PROFILE_COOKIE_NAME = "vault_profile_id"
 PROFILE_COOKIE_MAX_AGE = 60 * 60 * 24 * 365
 ROLE_ADMIN = "admin"
 ROLE_REVIEWER = "reviewer"
+DEFAULT_PROFILES = (
+    ("User A", ROLE_ADMIN),
+    ("User B", ROLE_REVIEWER),
+)
 
 
 def _ensure_default_profiles(db: Session) -> List[Profile]:
     profiles = db.query(Profile).order_by(Profile.id.asc()).all()
     if profiles:
         updated = False
-        for profile in profiles:
-            if not getattr(profile, "role", None):
-                profile.role = ROLE_ADMIN if profile.name == "User A" else ROLE_REVIEWER
+        for index, profile in enumerate(profiles):
+            if index < len(DEFAULT_PROFILES):
+                default_name, default_role = DEFAULT_PROFILES[index]
+                if profile.name != default_name:
+                    profile.name = default_name
+                    updated = True
+                if profile.role != default_role:
+                    profile.role = default_role
+                    updated = True
+            elif not getattr(profile, "role", None):
+                profile.role = ROLE_REVIEWER
                 updated = True
         if updated:
             db.commit()
         return profiles
-    defaults = [
-        Profile(name="User A", role=ROLE_ADMIN),
-        Profile(name="User B", role=ROLE_REVIEWER),
-    ]
+    defaults = [Profile(name=name, role=role) for name, role in DEFAULT_PROFILES]
     db.add_all(defaults)
     db.commit()
     return db.query(Profile).order_by(Profile.id.asc()).all()
