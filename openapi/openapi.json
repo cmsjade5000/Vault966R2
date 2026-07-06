@@ -7006,6 +7006,69 @@
         ]
       }
     },
+    "/ui/match": {
+      "get": {
+        "operationId": "movie_match_ui_match_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "answers",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 120,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Answers"
+            }
+          },
+          {
+            "in": "query",
+            "name": "reroll",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "maximum": 50,
+              "minimum": 0,
+              "title": "Reroll",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Movie Match",
+        "tags": [
+          "ui",
+          "ui"
+        ]
+      }
+    },
     "/ui/movies": {
       "get": {
         "operationId": "movies_grid_ui_movies_get",
