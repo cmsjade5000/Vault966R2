@@ -523,7 +523,7 @@ def test_first_import_auto_create_redirect_uses_fixed_error_code(
     )
 
     assert response.status_code == 303
-    assert response.headers["location"] == f"/ui/first-import/{snapshot.id}/preview?error=invalid_year"
+    assert response.headers["location"] == "/ui/first-import?error=invalid_year"
     assert "script" not in response.headers["location"]
     page = client.get(response.headers["location"])
     assert "Use a four-digit release year." in page.text

@@ -84,10 +84,6 @@ def _first_import_error_url(code: str) -> str:
     return f"/ui/first-import?error={code}"
 
 
-def _first_import_preview_error_url(snapshot_id: int, code: str) -> str:
-    return f"/ui/first-import/{snapshot_id}/preview?error={code}"
-
-
 def _snapshot_or_404(db: Session, snapshot_id: int) -> SourceSnapshot:
     snapshot = db.get(SourceSnapshot, snapshot_id)
     if snapshot is None:
@@ -196,7 +192,7 @@ def first_import_report_ui(
         report = first_import_report(db, snapshot_id=snapshot_id)
     except SourceSyncError as exc:
         return RedirectResponse(
-            url=_first_import_preview_error_url(snapshot_id, _source_error_code(str(exc))),
+            url=_first_import_error_url(_source_error_code(str(exc))),
             status_code=303,
         )
     response = TEMPLATES.TemplateResponse(
@@ -230,7 +226,7 @@ def auto_create_first_import_snapshot(
         )
     except SourceSyncError as exc:
         return RedirectResponse(
-            url=_first_import_preview_error_url(snapshot_id, _source_error_code(str(exc))),
+            url=_first_import_error_url(_source_error_code(str(exc))),
             status_code=303,
         )
     return RedirectResponse(
