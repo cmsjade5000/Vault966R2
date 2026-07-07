@@ -1,9 +1,45 @@
 (function () {
   const controllers = new WeakMap();
+  const focusableSelector = [
+    "a[href]",
+    "button:not([disabled])",
+    "input:not([disabled])",
+    "select:not([disabled])",
+    "textarea:not([disabled])",
+    "[tabindex]:not([tabindex='-1'])",
+  ].join(",");
+
+  const isFocusable = (element) =>
+    Boolean(
+      element &&
+      typeof element.focus === "function" &&
+      !element.disabled &&
+      element.getAttribute?.("aria-hidden") !== "true" &&
+      element.isConnected !== false,
+    );
+
+  const resolveFocusTarget = (dialog, initialFocus) => {
+    const candidate =
+      typeof initialFocus === "function" ? initialFocus(dialog) : initialFocus;
+    if (typeof candidate === "string") {
+      return dialog.querySelector(candidate);
+    }
+    if (isFocusable(candidate)) return candidate;
+    return (
+      dialog.querySelector("[data-dialog-initial-focus]") ||
+      dialog.querySelector(focusableSelector)
+    );
+  };
+
+  const focusElement = (element) => {
+    if (!isFocusable(element)) return false;
+    element.focus({ preventScroll: true });
+    return true;
+  };
 
   const bind = (
     dialog,
-    { bodyClass = "modal-open", closeSelector, onClose } = {},
+    { bodyClass = "modal-open", closeSelector, initialFocus, onClose } = {},
   ) => {
     if (!dialog) return null;
     if (controllers.has(dialog)) return controllers.get(dialog);
@@ -17,7 +53,7 @@
       dialog.setAttribute("aria-hidden", "true");
       if (bodyClass) document.body.classList.remove(bodyClass);
       onClose?.();
-      if (restoreFocus) trigger?.focus();
+      if (restoreFocus) focusElement(trigger);
       trigger = null;
       restoreFocus = true;
       closing = false;
@@ -44,9 +80,15 @@
       } else {
         dialog.setAttribute("open", "");
       }
+      focusElement(resolveFocusTarget(dialog, initialFocus));
     };
 
     dialog.addEventListener("cancel", (event) => {
+      event.preventDefault();
+      close();
+    });
+    dialog.addEventListener("keydown", (event) => {
+      if (event.key !== "Escape") return;
       event.preventDefault();
       close();
     });
