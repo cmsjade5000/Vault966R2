@@ -617,6 +617,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/setup": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Setup Ui */
+        get: operations["setup_ui_setup_get"];
+        put?: never;
+        /** Setup Submit */
+        post: operations["setup_submit_setup_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/ui/events": {
         parameters: {
             query?: never;
@@ -643,6 +661,23 @@ export interface paths {
         };
         /** First Import Ui */
         get: operations["first_import_ui_ui_first_import_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/ui/first-import/sample.csv": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** First Import Sample Csv */
+        get: operations["first_import_sample_csv_ui_first_import_sample_csv_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1145,6 +1180,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/ui/onboarding/import": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** First Import Ui */
+        get: operations["first_import_ui_ui_onboarding_import_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/ui/onboarding/import/sample.csv": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** First Import Sample Csv */
+        get: operations["first_import_sample_csv_ui_onboarding_import_sample_csv_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/ui/posters/{movie_id}/{size}": {
         parameters: {
             query?: never;
@@ -1364,6 +1433,29 @@ export interface components {
             passcode?: string | null;
             /** Profile Id */
             profile_id?: number | null;
+        };
+        /** Body_setup_submit_setup_post */
+        Body_setup_submit_setup_post: {
+            /**
+             * Access Key
+             * @default
+             */
+            access_key: string;
+            /**
+             * Passcode
+             * @default
+             */
+            passcode: string;
+            /**
+             * Passcode Confirm
+             * @default
+             */
+            passcode_confirm: string;
+            /**
+             * Profile Name
+             * @default
+             */
+            profile_name: string;
         };
         /** Body_upload_first_import_snapshot_ui_first_import_upload_post */
         Body_upload_first_import_snapshot_ui_first_import_upload_post: {
@@ -1682,6 +1774,10 @@ export interface components {
             certificate?: string | null;
             /** Collection */
             collection?: string | null;
+            /** Collection Lineup */
+            collection_lineup?: components["schemas"]["SimilarMovie"][];
+            /** Collection Lineup Label */
+            collection_lineup_label?: string | null;
             /** Countries */
             countries?: string | string[] | null;
             /** Countries Display */
@@ -3821,6 +3917,59 @@ export interface operations {
             };
         };
     };
+    setup_ui_setup_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/html": string;
+                };
+            };
+        };
+    };
+    setup_submit_setup_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/x-www-form-urlencoded": components["schemas"]["Body_setup_submit_setup_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/html": string;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     record_usage_event_ui_events_post: {
         parameters: {
             query?: never;
@@ -3868,6 +4017,26 @@ export interface operations {
                 };
                 content: {
                     "text/html": string;
+                };
+            };
+        };
+    };
+    first_import_sample_csv_ui_first_import_sample_csv_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
                 };
             };
         };
@@ -4799,6 +4968,46 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    first_import_ui_ui_onboarding_import_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/html": string;
+                };
+            };
+        };
+    };
+    first_import_sample_csv_ui_onboarding_import_sample_csv_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
                 };
             };
         };

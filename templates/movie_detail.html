@@ -357,6 +357,20 @@
       {% endif %}
 
     </div>
+    {% if collection_lineup %}
+    <section class="section-card section-card--wide detail-recs detail-recs--universe">
+      <header class="detail-recs__header">
+        <h2>{{ movie.collection_lineup_label or movie.collection or 'Same universe' }}</h2>
+        <p>The connected lineup from this universe, series, or collection.</p>
+      </header>
+      <div class="library-grid" role="list" aria-label="{{ movie.collection_lineup_label or movie.collection or 'Same universe' }} lineup">
+        {% for rec in collection_lineup %}
+        {% set pref = collection_preferences.get(rec.id, {}) %}
+        {{ movie_card(rec, pref.get('liked'), pref.get('watchlist'), [], role="listitem", event_context="collection_lineup", placeholder="966", show_rating=false, show_details=false, poster_size="w185") }}
+        {% endfor %}
+      </div>
+    </section>
+    {% endif %}
     {% if more_like %}
     <section class="section-card section-card--wide detail-recs detail-recs--more">
       <header class="detail-recs__header">

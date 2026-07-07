@@ -1,7 +1,19 @@
 (function () {
+  const prefersReducedMotion = () =>
+    Boolean(window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches);
+
+  const countLabel = (count) => {
+    const value = Number.parseInt(count, 10);
+    if (!Number.isFinite(value) || value < 0) return "0 left";
+    return `${value.toLocaleString()} left`;
+  };
+
   const setPending = (link) => {
     const page = document.querySelector("[data-match-page]");
     page?.classList.add("is-loading");
+    if (!prefersReducedMotion()) {
+      link?.classList.add("is-pressed");
+    }
     link?.setAttribute("aria-busy", "true");
     if (typeof window.setVaultBusy === "function") {
       window.setVaultBusy("Narrowing the Vault…", { delay: 0 });
@@ -18,7 +30,9 @@
 
   window.VaultMatchSupport = {
     answerCount,
+    countLabel,
     nextAnswers,
+    prefersReducedMotion,
   };
 
   document.addEventListener("click", (event) => {

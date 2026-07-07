@@ -34,6 +34,7 @@ from api.routers import (
 )
 from api.services.session import SESSION_COOKIE_NAME, get_session_secret, parse_session_token
 from api.services.profiles import ROLE_ADMIN, ROLE_REVIEWER
+from api.services.setup import is_setup_complete
 from api.services.trusted_movies import get_untrusted_movie_ids
 import api.models  # noqa: F401  # ensure all model mappers are registered
 
@@ -295,7 +296,16 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 class AuthRequiredMiddleware(BaseHTTPMiddleware):
     """Gate non-public routes behind a signed session cookie."""
 
-    _public_paths = {"/", "/login", "/logout", "/health", "/docs", "/redoc", "/openapi.json"}
+    _public_paths = {
+        "/",
+        "/login",
+        "/logout",
+        "/setup",
+        "/health",
+        "/docs",
+        "/redoc",
+        "/openapi.json",
+    }
     _public_prefixes = ("/static",)
     _api_prefixes = ("/api", "/movies", "/people", "/fliclists")
     _assistant_paths = {"/api/assistant", "/api/assistant/"}
@@ -343,6 +353,21 @@ class AuthRequiredMiddleware(BaseHTTPMiddleware):
             else:
                 db.close()
 
+    def _setup_complete(self, request: Request) -> bool:
+        db_override = request.app.dependency_overrides.get(get_db)
+        db_generator = db_override() if db_override else None
+        db = next(db_generator) if db_generator else SessionLocal()
+        try:
+            return is_setup_complete(db)
+        finally:
+            if db_generator:
+                try:
+                    next(db_generator)
+                except StopIteration:
+                    pass
+            else:
+                db.close()
+
     async def dispatch(self, request: Request, call_next):
         request.state.session_profile_id = None
         request.state.session_profile_role = None
@@ -371,6 +396,9 @@ class AuthRequiredMiddleware(BaseHTTPMiddleware):
                 return self._reject(request, message="Assistant token not configured.")
             return self._reject(request, message="Assistant token required.")
 
+        if not self._setup_complete(request):
+            return self._reject(request, message="Vault setup required.", setup_required=True)
+
         secret = get_session_secret(settings.login_session_secret)
         token = request.cookies.get(SESSION_COOKIE_NAME, "")
         session = parse_session_token(token, secret=secret)
@@ -381,17 +409,20 @@ class AuthRequiredMiddleware(BaseHTTPMiddleware):
         self._set_session_role(request)
         return await call_next(request)
 
-    def _reject(self, request: Request, *, message: str):
+    def _reject(self, request: Request, *, message: str, setup_required: bool = False):
         request_id = getattr(request.state, "request_id", str(uuid.uuid4()))
         if self._is_api(request.url.path):
             response = _json_error(
                 status.HTTP_401_UNAUTHORIZED,
-                error_code="auth_required",
+                error_code="setup_required" if setup_required else "auth_required",
                 message=message,
                 request_id=request_id,
             )
         else:
-            response = RedirectResponse(url="/login", status_code=status.HTTP_302_FOUND)
+            response = RedirectResponse(
+                url="/setup" if setup_required else "/login",
+                status_code=status.HTTP_302_FOUND,
+            )
         response.headers["X-Request-ID"] = request_id
         return response
 

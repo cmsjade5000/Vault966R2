@@ -137,6 +137,7 @@ test("builds pending filter summary and counts each visible chip", () => {
   const { buildPendingSummary, formatApplyLabel } = loadSupport();
   const summary = buildPendingSummary({
     genres: ["Drama", "Science Fiction"],
+    moods: ["Atmospheric", "Thoughtful"],
     presetName: "Thoughtful Dramas",
     runtimeMax: "120",
     yearLabel: "1990s",
@@ -146,10 +147,12 @@ test("builds pending filter summary and counts each visible chip", () => {
     { kind: "preset", label: "Fliclist: Thoughtful Dramas" },
     { kind: "genre", label: "Drama" },
     { kind: "genre", label: "Science Fiction" },
+    { kind: "mood", label: "Atmospheric" },
+    { kind: "mood", label: "Thoughtful" },
     { kind: "year", label: "1990s" },
     { kind: "runtime", label: "≤ 120 min" },
   ]);
-  assert.equal(formatApplyLabel(summary.length), "Show results · 5 filters");
+  assert.equal(formatApplyLabel(summary.length), "Show results · 7 filters");
   assert.equal(formatApplyLabel(1), "Show results · 1 filter");
   assert.equal(formatApplyLabel(0), "Show results");
 });
@@ -159,6 +162,7 @@ test("reset state clears only filter values", () => {
 
   assert.deepEqual(JSON.parse(JSON.stringify(emptyFilterState())), {
     genres: [],
+    moods: [],
     presetName: "",
     runtimeMax: "",
     yearMax: "",

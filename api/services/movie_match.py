@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from hashlib import sha256
 from typing import Iterable, Sequence
+from urllib.parse import urlencode
 
 from sqlalchemy.orm import Session, selectinload
 
@@ -51,10 +52,33 @@ class MovieMatch:
 
 
 @dataclass(frozen=True)
+class MatchStepState:
+    question_id: str
+    label: str
+    before_count: int
+    after_count: int
+
+
+@dataclass(frozen=True)
+class MatchOptionState:
+    option: MatchOption
+    before_count: int
+    after_count: int
+
+
+@dataclass(frozen=True)
 class MatchResult:
     answers: tuple[str, ...]
     answered_labels: tuple[str, ...]
     current_question: MatchQuestion | None
+    trusted_pool_count: int
+    candidate_count: int
+    strict_match_count: int
+    option_states: tuple[MatchOptionState, ...]
+    step_states: tuple[MatchStepState, ...]
+    result_quality: str
+    reroll_pool_size: int
+    library_filter_query: str
     lead: MovieMatch | None
     supporting: tuple[MovieMatch, ...]
     widened: bool
@@ -238,6 +262,13 @@ def build_match_result(
 ) -> MatchResult:
     answers = normalize_answer_ids(answer_ids)
     preferences = build_preferences(answers)
+    movies = (
+        trusted_movie_query(db).options(selectinload(Movie.genres), selectinload(Movie.moods)).all()
+    )
+    trusted_pool_count = len(movies)
+    candidate_count = len(_hard_candidate_pool(movies, answers))
+    strict_match_count = len(_strict_candidate_pool(movies, answers))
+    step_states = _build_step_states(movies, answers)
     complete = len(answers) >= len(QUESTIONS)
     current_question = None if complete else QUESTIONS[len(answers)]
     if not complete:
@@ -245,6 +276,14 @@ def build_match_result(
             answers=answers,
             answered_labels=preferences.labels,
             current_question=current_question,
+            trusted_pool_count=trusted_pool_count,
+            candidate_count=candidate_count,
+            strict_match_count=strict_match_count,
+            option_states=_build_option_states(movies, answers, current_question),
+            step_states=step_states,
+            result_quality="pending",
+            reroll_pool_size=candidate_count,
+            library_filter_query=_library_filter_query(preferences),
             lead=None,
             supporting=(),
             widened=False,
@@ -253,11 +292,14 @@ def build_match_result(
             complete=False,
         )
 
-    movies = (
-        trusted_movie_query(db).options(selectinload(Movie.genres), selectinload(Movie.moods)).all()
-    )
     candidates, fallback_tier, fallback_notice = _candidate_pool(movies, preferences)
     widened = fallback_tier != "exact"
+    result_quality = _result_quality(fallback_tier, preferences, strict_match_count)
+    if result_quality == "softened" and fallback_notice is None:
+        fallback_notice = (
+            "The Vault treated mood as a ranking signal while keeping your lane, runtime, "
+            "and era."
+        )
     ranked = _rank_movies(candidates, preferences, reroll=reroll)
     selected = ranked[: max(1, shortlist_size + 1)]
     if fallback_tier != "catalog" and len(selected) < shortlist_size + 1:
@@ -275,6 +317,14 @@ def build_match_result(
         answers=answers,
         answered_labels=preferences.labels,
         current_question=None,
+        trusted_pool_count=trusted_pool_count,
+        candidate_count=len(candidates),
+        strict_match_count=strict_match_count,
+        option_states=(),
+        step_states=step_states,
+        result_quality=result_quality,
+        reroll_pool_size=len(candidates),
+        library_filter_query=_library_filter_query(preferences),
         lead=lead,
         supporting=supporting,
         widened=widened,
@@ -340,28 +390,138 @@ def _candidate_pool(
     movies: Sequence[Movie],
     preferences: MatchPreferences,
 ) -> tuple[Sequence[Movie], str, str | None]:
-    tiers = (
-        ("exact", {}, None),
-        (
-            "relaxed_mood",
-            {"relax_moods": True},
-            "The Vault relaxed the mood layer while keeping your lane, runtime, and era.",
-        ),
-        (
+    exact = _hard_candidate_pool(movies, preferences.answer_ids)
+    if exact:
+        return exact, "exact", None
+    relaxed_lane = _hard_candidate_pool(movies, preferences.answer_ids, relax_lane=True)
+    if relaxed_lane:
+        return (
+            relaxed_lane,
             "relaxed_lane",
-            {"relax_moods": True, "relax_lane": True},
             "The Vault kept your runtime and era, then widened the lane.",
-        ),
-    )
-    for tier, options, notice in tiers:
-        matches = [movie for movie in movies if _matches(movie, preferences, **options)]
-        if matches:
-            return matches, tier, notice
+        )
     return (
         movies,
         "catalog",
         "The Vault widened to trusted titles because no movie hit the selected path.",
     )
+
+
+def _answer_options(answer_ids: Sequence[str]) -> tuple[MatchOption, ...]:
+    return tuple(_OPTION_BY_ID[answer_id] for answer_id in normalize_answer_ids(answer_ids))
+
+
+def _hard_candidate_pool(
+    movies: Sequence[Movie],
+    answer_ids: Sequence[str],
+    *,
+    relax_lane: bool = False,
+) -> list[Movie]:
+    options = _answer_options(answer_ids)
+    return [
+        movie for movie in movies if _matches_answer_options(movie, options, relax_lane=relax_lane)
+    ]
+
+
+def _strict_candidate_pool(movies: Sequence[Movie], answer_ids: Sequence[str]) -> list[Movie]:
+    options = _answer_options(answer_ids)
+    return [
+        movie for movie in movies if _matches_answer_options(movie, options, include_moods=True)
+    ]
+
+
+def _matches_answer_options(
+    movie: Movie,
+    options: Sequence[MatchOption],
+    *,
+    include_moods: bool = False,
+    relax_lane: bool = False,
+) -> bool:
+    genres = _names(getattr(movie, "genres", ()))
+    moods = _names(getattr(movie, "moods", ()))
+    runtime = getattr(movie, "runtime", None)
+    year = getattr(movie, "year", None)
+
+    for option in options:
+        if not relax_lane and option.genres and not genres.intersection(option.genres):
+            return False
+        if include_moods and option.moods and not moods.intersection(option.moods):
+            return False
+        if option.runtime_min is not None and (runtime is None or runtime < option.runtime_min):
+            return False
+        if option.runtime_max is not None and (runtime is None or runtime > option.runtime_max):
+            return False
+        if option.year_min is not None and (year is None or year < option.year_min):
+            return False
+        if option.year_max is not None and (year is None or year > option.year_max):
+            return False
+    return True
+
+
+def _build_step_states(
+    movies: Sequence[Movie],
+    answer_ids: Sequence[str],
+) -> tuple[MatchStepState, ...]:
+    states: list[MatchStepState] = []
+    accepted: list[str] = []
+    for answer_id in normalize_answer_ids(answer_ids):
+        question = QUESTIONS[len(accepted)]
+        before_count = len(_hard_candidate_pool(movies, accepted))
+        accepted.append(answer_id)
+        states.append(
+            MatchStepState(
+                question_id=question.id,
+                label=_OPTION_BY_ID[answer_id].label,
+                before_count=before_count,
+                after_count=len(_hard_candidate_pool(movies, accepted)),
+            )
+        )
+    return tuple(states)
+
+
+def _build_option_states(
+    movies: Sequence[Movie],
+    answer_ids: Sequence[str],
+    current_question: MatchQuestion | None,
+) -> tuple[MatchOptionState, ...]:
+    if current_question is None:
+        return ()
+    before_count = len(_hard_candidate_pool(movies, answer_ids))
+    return tuple(
+        MatchOptionState(
+            option=option,
+            before_count=before_count,
+            after_count=len(_hard_candidate_pool(movies, (*answer_ids, option.id))),
+        )
+        for option in current_question.options
+    )
+
+
+def _result_quality(
+    fallback_tier: str,
+    preferences: MatchPreferences,
+    strict_match_count: int,
+) -> str:
+    if fallback_tier != "exact":
+        return "widened"
+    if preferences.moods and strict_match_count == 0:
+        return "softened"
+    return "exact"
+
+
+def _library_filter_query(preferences: MatchPreferences) -> str:
+    params: list[tuple[str, str]] = []
+    for genre in preferences.genres:
+        params.append(("genres", genre))
+    if preferences.runtime_min is not None:
+        params.append(("runtime_min", str(preferences.runtime_min)))
+    if preferences.runtime_max is not None:
+        params.append(("runtime_max", str(preferences.runtime_max)))
+    if preferences.year_min is not None:
+        params.append(("year_min", str(preferences.year_min)))
+    if preferences.year_max is not None:
+        params.append(("year_max", str(preferences.year_max)))
+    return urlencode(params)
 
 
 def _rank_movies(
