@@ -85,6 +85,7 @@
 
   const buildPendingSummary = ({
     genres = [],
+    moods = [],
     presetName = "",
     runtimeMax = "",
     yearLabel = "",
@@ -94,6 +95,7 @@
       items.push({ kind: "preset", label: `Fliclist: ${presetName}` });
     }
     genres.forEach((genre) => items.push({ kind: "genre", label: genre }));
+    moods.forEach((mood) => items.push({ kind: "mood", label: mood }));
     if (yearLabel) items.push({ kind: "year", label: yearLabel });
     if (runtimeMax) {
       items.push({ kind: "runtime", label: `≤ ${runtimeMax} min` });
@@ -108,6 +110,7 @@
 
   const emptyFilterState = () => ({
     genres: [],
+    moods: [],
     presetName: "",
     runtimeMax: "",
     yearMax: "",
@@ -155,6 +158,11 @@
         '[data-filter-group="genres"] [data-filter-value]',
       ),
     );
+    const moodButtons = Array.from(
+      document.querySelectorAll(
+        '[data-filter-group="moods"] [data-filter-value]',
+      ),
+    );
     const yearButtons = Array.from(
       document.querySelectorAll("[data-year-range]"),
     );
@@ -165,6 +173,7 @@
       document.querySelectorAll(".chip-preset[data-filters]"),
     );
     const selectedGenres = new Set(parseCsv(genresInput?.value || ""));
+    const selectedMoods = new Set(parseCsv(moodsInput?.value || ""));
     let pendingPresetName = formatPresetName(presetInput?.value || "");
     let yearCustomSelected = false;
     let runtimeCustomSelected = false;
@@ -207,6 +216,12 @@
         button.classList.toggle(
           "is-active",
           selectedGenres.has(button.dataset.filterValue),
+        );
+      });
+      moodButtons.forEach((button) => {
+        button.classList.toggle(
+          "is-active",
+          selectedMoods.has(button.dataset.filterValue),
         );
       });
 
@@ -264,6 +279,7 @@
     const renderSummary = () => {
       const items = buildPendingSummary({
         genres: Array.from(selectedGenres),
+        moods: Array.from(selectedMoods),
         presetName: pendingPresetName,
         runtimeMax: runtimeInput?.value || "",
         yearLabel: getYearLabel(),
@@ -340,6 +356,19 @@
         syncFilterUi();
       });
     });
+    moodButtons.forEach((button) => {
+      const value = button.dataset.filterValue;
+      button.addEventListener("click", () => {
+        if (selectedMoods.has(value)) {
+          selectedMoods.delete(value);
+        } else {
+          selectedMoods.add(value);
+        }
+        moodsInput.value = Array.from(selectedMoods).join(", ");
+        clearPendingPreset();
+        syncFilterUi();
+      });
+    });
 
     yearButtons.forEach((button) => {
       button.addEventListener("click", () => {
@@ -406,6 +435,9 @@
         selectedGenres.clear();
         (filters.genres || []).forEach((genre) => selectedGenres.add(genre));
         genresInput.value = Array.from(selectedGenres).join(", ");
+        selectedMoods.clear();
+        (filters.moods || []).forEach((mood) => selectedMoods.add(mood));
+        if (moodsInput) moodsInput.value = Array.from(selectedMoods).join(", ");
         yearMinInput.value = filters.year_min || "";
         yearMaxInput.value = filters.year_max || "";
         runtimeInput.value = filters.runtime_max || "";
@@ -427,6 +459,7 @@
 
     resetButton?.addEventListener("click", () => {
       selectedGenres.clear();
+      selectedMoods.clear();
       if (genresInput) genresInput.value = "";
       if (moodsInput) moodsInput.value = "";
       if (yearMinInput) yearMinInput.value = "";
@@ -461,10 +494,8 @@
         genresInput.value = Array.from(selectedGenres).join(", ");
       }
       if (key === "mood" && moodsInput) {
-        const remainingMoods = parseCsv(moodsInput.value).filter(
-          (mood) => mood !== value,
-        );
-        moodsInput.value = remainingMoods.join(", ");
+        selectedMoods.delete(value);
+        moodsInput.value = Array.from(selectedMoods).join(", ");
       }
       if (key === "year") {
         yearMinInput.value = "";
