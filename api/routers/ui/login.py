@@ -25,6 +25,10 @@ from api.services.session import (
     get_session_secret,
     parse_session_token,
 )
+from api.services.setup import (
+    is_setup_complete,
+    matching_db_credential_profile_id,
+)
 from api.services.ui.grid import FILTER_COOKIE_NAME, FILTER_COOKIE_PATH
 from api.services.ui.templates import TEMPLATES
 
@@ -134,10 +138,14 @@ def _wants_json(request: Request) -> bool:
 
 def _profile_picker_options(profiles) -> list[dict[str, int | str]]:
     options = []
-    for index, profile in enumerate(profiles[:2]):
+    for index, profile in enumerate(profiles):
         if profile.id is None:
             continue
-        label = PROFILE_PICKER_LABELS[index] if index < len(PROFILE_PICKER_LABELS) else profile.name
+        label = profile.name or (
+            PROFILE_PICKER_LABELS[index]
+            if index < len(PROFILE_PICKER_LABELS)
+            else f"Profile {profile.id}"
+        )
         options.append({"id": profile.id, "label": label})
     return options
 
@@ -179,6 +187,7 @@ def _login_credentials_configured(profiles) -> bool:
 
 
 def _credentials_match(
+    db: Session,
     profiles,
     *,
     access_key: str | None,
@@ -188,6 +197,13 @@ def _credentials_match(
     candidate_passcode = (passcode or "").strip()
     if not candidate_key or not candidate_passcode:
         return None
+    db_profile_id = matching_db_credential_profile_id(
+        db,
+        access_key=candidate_key,
+        passcode=candidate_passcode,
+    )
+    if db_profile_id is not None:
+        return db_profile_id
     for profile_id, expected_key, expected_passcode in _credential_pairs(profiles):
         if hmac.compare_digest(candidate_key, expected_key) and hmac.compare_digest(
             candidate_passcode, expected_passcode
@@ -229,6 +245,8 @@ def login(
     db: Session = Depends(get_db),
 ):
     """Public login landing page (no auth required)."""
+    if not settings.disable_auth and not is_setup_complete(db):
+        return RedirectResponse(url="/setup", status_code=status.HTTP_302_FOUND)
     profiles = get_profiles(db)
     default_profile_id = profiles[0].id if profiles else None
 
@@ -279,7 +297,11 @@ def login_submit(
     profile = profile_by_id.get(profile_id) if profile_id is not None else None
 
     credentials_required = not settings.disable_auth
-    if credentials_required and not _login_credentials_configured(profiles):
+    if (
+        credentials_required
+        and not _login_credentials_configured(profiles)
+        and not is_setup_complete(db)
+    ):
         message = "Login credentials are not configured."
         if wants_json:
             return JSONResponse(
@@ -296,6 +318,7 @@ def login_submit(
     unlock_profile_id: int | None = None
     if credentials_required:
         unlock_profile_id = _credentials_match(
+            db,
             profiles,
             access_key=access_key,
             passcode=passcode,

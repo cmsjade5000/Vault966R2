@@ -28,6 +28,8 @@ class MovieDetail:
         backdrop_url (None | str | Unset):
         certificate (None | str | Unset):
         collection (None | str | Unset):
+        collection_lineup (list[SimilarMovie] | Unset):
+        collection_lineup_label (None | str | Unset):
         countries (list[str] | None | str | Unset):
         countries_display (list[str] | Unset):
         countries_iso (list[str] | Unset):
@@ -77,6 +79,8 @@ class MovieDetail:
     backdrop_url: None | str | Unset = UNSET
     certificate: None | str | Unset = UNSET
     collection: None | str | Unset = UNSET
+    collection_lineup: list[SimilarMovie] | Unset = UNSET
+    collection_lineup_label: None | str | Unset = UNSET
     countries: list[str] | None | str | Unset = UNSET
     countries_display: list[str] | Unset = UNSET
     countries_iso: list[str] | Unset = UNSET
@@ -148,6 +152,19 @@ class MovieDetail:
             collection = UNSET
         else:
             collection = self.collection
+
+        collection_lineup: list[dict[str, Any]] | Unset = UNSET
+        if not isinstance(self.collection_lineup, Unset):
+            collection_lineup = []
+            for collection_lineup_item_data in self.collection_lineup:
+                collection_lineup_item = collection_lineup_item_data.to_dict()
+                collection_lineup.append(collection_lineup_item)
+
+        collection_lineup_label: None | str | Unset
+        if isinstance(self.collection_lineup_label, Unset):
+            collection_lineup_label = UNSET
+        else:
+            collection_lineup_label = self.collection_lineup_label
 
         countries: list[str] | None | str | Unset
         if isinstance(self.countries, Unset):
@@ -402,6 +419,10 @@ class MovieDetail:
             field_dict["certificate"] = certificate
         if collection is not UNSET:
             field_dict["collection"] = collection
+        if collection_lineup is not UNSET:
+            field_dict["collection_lineup"] = collection_lineup
+        if collection_lineup_label is not UNSET:
+            field_dict["collection_lineup_label"] = collection_lineup_label
         if countries is not UNSET:
             field_dict["countries"] = countries
         if countries_display is not UNSET:
@@ -533,6 +554,24 @@ class MovieDetail:
             return cast(None | str | Unset, data)
 
         collection = _parse_collection(d.pop("collection", UNSET))
+
+        _collection_lineup = d.pop("collection_lineup", UNSET)
+        collection_lineup: list[SimilarMovie] | Unset = UNSET
+        if _collection_lineup is not UNSET:
+            collection_lineup = []
+            for collection_lineup_item_data in _collection_lineup:
+                collection_lineup_item = SimilarMovie.from_dict(collection_lineup_item_data)
+
+                collection_lineup.append(collection_lineup_item)
+
+        def _parse_collection_lineup_label(data: object) -> None | str | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(None | str | Unset, data)
+
+        collection_lineup_label = _parse_collection_lineup_label(d.pop("collection_lineup_label", UNSET))
 
         def _parse_countries(data: object) -> list[str] | None | str | Unset:
             if data is None:
@@ -880,6 +919,8 @@ class MovieDetail:
             backdrop_url=backdrop_url,
             certificate=certificate,
             collection=collection,
+            collection_lineup=collection_lineup,
+            collection_lineup_label=collection_lineup_label,
             countries=countries,
             countries_display=countries_display,
             countries_iso=countries_iso,

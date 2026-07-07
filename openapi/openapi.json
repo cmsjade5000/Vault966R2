@@ -248,6 +248,36 @@
         "title": "Body_login_submit_login_post",
         "type": "object"
       },
+      "Body_setup_submit_setup_post": {
+        "properties": {
+          "access_key": {
+            "default": "",
+            "maxLength": 128,
+            "title": "Access Key",
+            "type": "string"
+          },
+          "passcode": {
+            "default": "",
+            "maxLength": 128,
+            "title": "Passcode",
+            "type": "string"
+          },
+          "passcode_confirm": {
+            "default": "",
+            "maxLength": 128,
+            "title": "Passcode Confirm",
+            "type": "string"
+          },
+          "profile_name": {
+            "default": "",
+            "maxLength": 80,
+            "title": "Profile Name",
+            "type": "string"
+          }
+        },
+        "title": "Body_setup_submit_setup_post",
+        "type": "object"
+      },
       "Body_upload_first_import_snapshot_ui_first_import_upload_post": {
         "properties": {
           "source_file": {
@@ -1553,6 +1583,24 @@
               }
             ],
             "title": "Collection"
+          },
+          "collection_lineup": {
+            "items": {
+              "$ref": "#/components/schemas/SimilarMovie"
+            },
+            "title": "Collection Lineup",
+            "type": "array"
+          },
+          "collection_lineup_label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Collection Lineup Label"
           },
           "countries": {
             "anyOf": [
@@ -6756,6 +6804,67 @@
         ]
       }
     },
+    "/setup": {
+      "get": {
+        "operationId": "setup_ui_setup_get",
+        "responses": {
+          "200": {
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Setup Ui",
+        "tags": [
+          "ui",
+          "ui"
+        ]
+      },
+      "post": {
+        "operationId": "setup_submit_setup_post",
+        "requestBody": {
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_setup_submit_setup_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Setup Submit",
+        "tags": [
+          "ui",
+          "ui"
+        ]
+      }
+    },
     "/ui/events": {
       "post": {
         "operationId": "record_usage_event_ui_events_post",
@@ -6807,6 +6916,27 @@
           }
         },
         "summary": "First Import Ui",
+        "tags": [
+          "ui",
+          "ui",
+          "ui"
+        ]
+      }
+    },
+    "/ui/first-import/sample.csv": {
+      "get": {
+        "operationId": "first_import_sample_csv_ui_first_import_sample_csv_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "First Import Sample Csv",
         "tags": [
           "ui",
           "ui",
@@ -8425,6 +8555,50 @@
         },
         "summary": "Flag Movie For Review",
         "tags": [
+          "ui",
+          "ui"
+        ]
+      }
+    },
+    "/ui/onboarding/import": {
+      "get": {
+        "operationId": "first_import_ui_ui_onboarding_import_get",
+        "responses": {
+          "200": {
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "First Import Ui",
+        "tags": [
+          "ui",
+          "ui",
+          "ui"
+        ]
+      }
+    },
+    "/ui/onboarding/import/sample.csv": {
+      "get": {
+        "operationId": "first_import_sample_csv_ui_onboarding_import_sample_csv_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "First Import Sample Csv",
+        "tags": [
+          "ui",
           "ui",
           "ui"
         ]

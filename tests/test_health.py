@@ -39,10 +39,16 @@ def test_security_headers_apply_to_unauthenticated_api_rejects(client, monkeypat
 
 def test_security_headers_apply_to_unauthenticated_ui_redirects(client, monkeypatch):
     monkeypatch.setattr(settings, "disable_auth", False)
+    monkeypatch.setattr(settings, "login_access_key", None)
+    monkeypatch.setattr(settings, "login_passcode", None)
+    monkeypatch.setattr(settings, "login_access_key_user_a", None)
+    monkeypatch.setattr(settings, "login_passcode_user_a", None)
+    monkeypatch.setattr(settings, "login_access_key_user_b", None)
+    monkeypatch.setattr(settings, "login_passcode_user_b", None)
 
     response = client.get("/ui/movies", follow_redirects=False)
 
     assert response.status_code == 302
-    assert response.headers["location"] == "/login"
+    assert response.headers["location"] == "/setup"
     assert response.headers["Content-Security-Policy"].startswith("default-src 'self';")
     assert response.headers["X-Content-Type-Options"] == "nosniff"

@@ -7,6 +7,7 @@ from functools import lru_cache
 from typing import List, Optional, Tuple
 
 import httpx
+from sqlalchemy import func
 from sqlalchemy.exc import StatementError
 from sqlalchemy.orm import Session, selectinload
 
@@ -333,6 +334,78 @@ def _score_similar(movie: Movie, candidates: List[Movie]) -> List[SimilarMovie]:
     return [item[-1] for item in scored[:12]]
 
 
+def _normalize_collection_key(value: object | None) -> str:
+    text = str(value or "").strip().lower()
+    text = re.sub(r"\b(collection|franchise|series|saga)\b", " ", text)
+    return re.sub(r"[^a-z0-9]+", "", text)
+
+
+def _infer_collection_for_title(db: Session, movie: Movie) -> str | None:
+    title_key = _normalize_collection_key(movie.title)
+    if not title_key:
+        return None
+
+    rows = (
+        db.query(Movie.collection, func.count(Movie.id))
+        .filter(Movie.collection.isnot(None))
+        .filter(func.trim(Movie.collection) != "")
+        .group_by(Movie.collection)
+        .having(func.count(Movie.id) > 0)
+        .all()
+    )
+    matches = [
+        (collection.strip(), count)
+        for collection, count in rows
+        if collection and _normalize_collection_key(collection) == title_key
+    ]
+    if not matches:
+        return None
+
+    matches.sort(key=lambda item: (-int(item[1]), item[0].lower()))
+    return matches[0][0]
+
+
+def _collection_lineup_source(db: Session, movie: Movie) -> str | None:
+    collection = (movie.collection or "").strip()
+    if collection:
+        return collection
+    return _infer_collection_for_title(db, movie)
+
+
+def _get_collection_lineup(
+    db: Session, movie: Movie, limit: int = 12
+) -> tuple[str | None, List[SimilarMovie]]:
+    collection = _collection_lineup_source(db, movie)
+    if not collection:
+        return None, []
+
+    candidates = (
+        db.query(Movie)
+        .options(selectinload(Movie.genres))
+        .filter(Movie.id != movie.id)
+        .filter(Movie.collection == collection)
+        .order_by(Movie.year.is_(None), Movie.year.asc(), Movie.title.asc(), Movie.id.asc())
+        .limit(limit)
+        .all()
+    )
+
+    lineup = [
+        SimilarMovie(
+            id=candidate.id,
+            title=candidate.title,
+            poster_url=candidate.poster_url,
+            year=candidate.year,
+            flic_score=None,
+            poster_theme=select_poster_theme(_extract_genre_labels(candidate)),
+            genres=_extract_genre_labels(candidate),
+            imdb_rating=candidate.imdb_rating,
+            rt_score=candidate.rt_score,
+        )
+        for candidate in candidates
+    ]
+    return (collection if lineup else None), lineup
+
+
 def _merge_similar(
     primary: List[SimilarMovie], fallback: List[SimilarMovie], limit: int = 12
 ) -> List[SimilarMovie]:
@@ -427,6 +500,7 @@ def get_movie_detail(
         countries_display_from_iso(countries_iso) if countries_iso else countries_normalized.display
     )
 
+    collection_lineup_label, collection_lineup = _get_collection_lineup(db, movie)
     similar = _get_tmdb_similar(db, movie) if include_provider_similar else []
     if len(similar) < 12:
         similar_candidates = _get_similarity_candidates(db, movie)
@@ -481,6 +555,8 @@ def get_movie_detail(
         trailer_checked_at=movie.trailer_checked_at,
         trailer_available=trailer_available,
         roles=roles,
+        collection_lineup_label=collection_lineup_label,
+        collection_lineup=collection_lineup,
         similar=similar,
         poster_theme=select_poster_theme([genre.name for genre in movie.genres]),
         flagged=movie.flag is not None,

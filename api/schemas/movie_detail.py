@@ -86,6 +86,8 @@ class MovieDetail(BaseModel):
     trailer_checked_at: Optional[datetime] = None
     trailer_available: bool = False
     roles: List[RoleWithPersonRead] = Field(default_factory=list)
+    collection_lineup_label: Optional[str] = None
+    collection_lineup: List[SimilarMovie] = Field(default_factory=list)
     similar: List[SimilarMovie] = Field(default_factory=list)
     poster_theme: Optional[str] = None
     flagged: bool = False

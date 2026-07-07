@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block title %}Vault 966 · Setup{% endblock %}
+{% block head %}
+<link rel="stylesheet" href="{{ static_asset('css/login.css') }}" />
+<script src="{{ static_asset('js/setup.js') }}" defer></script>
+{% endblock %}
+{% block body_class %}auth-page setup-page{% endblock %}
+{% block content %}
+  <section class="setup-shell" aria-label="Vault 966 first setup">
+    <div class="login-card setup-card">
+      <header class="login-card__header">
+        <span class="login-card__label">First Run</span>
+        <h1>Start Vault 966</h1>
+      </header>
+      <p class="setup-card__intro">
+        Create the owner profile and the first access key before adding the collection.
+      </p>
+      <p class="login-card__error" role="alert" {% if not error %}hidden{% endif %}>{{ error or "" }}</p>
+      <form class="login-form setup-form" method="post" action="/setup" data-setup-form data-vault-busy-message="Creating your Vault…">
+        <div class="login-fields">
+          <label class="login-field">
+            <span>Profile name</span>
+            <input
+              type="text"
+              name="profile_name"
+              autocomplete="name"
+              maxlength="80"
+              value="{{ profile_name }}"
+              required
+            />
+          </label>
+          <label class="login-field">
+            <span>Access key</span>
+            <input
+              type="text"
+              name="access_key"
+              autocomplete="username"
+              maxlength="128"
+              required
+            />
+          </label>
+          <label class="login-field">
+            <span>Passcode</span>
+            <input
+              type="password"
+              name="passcode"
+              autocomplete="new-password"
+              minlength="4"
+              maxlength="128"
+              required
+            />
+          </label>
+          <label class="login-field">
+            <span>Confirm passcode</span>
+            <input
+              type="password"
+              name="passcode_confirm"
+              autocomplete="new-password"
+              minlength="4"
+              maxlength="128"
+              required
+            />
+          </label>
+        </div>
+        <div class="setup-card__note">
+          The access key and passcode are stored as salted hashes. Keep the originals somewhere safe.
+        </div>
+        <div class="login-card__actions">
+          <button class="login-button" type="submit">
+            <span class="login-button__value">Create profile</span>
+            <span class="login-button__arrow" aria-hidden="true">→</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </section>
+{% endblock %}

@@ -11,6 +11,10 @@
       <div>
         <p class="match-kicker">Movie Match</p>
         <h1>Narrow It Down</h1>
+        <p class="match-pool-readout" aria-live="polite" data-match-count>
+          {{ result.trusted_pool_count }} trusted titles
+          {% if result.answers %}&rarr; {{ result.candidate_count }} left{% endif %}
+        </p>
       </div>
       <a class="button-ghost match-reset-link" href="/ui/match" data-match-reset>Start over</a>
     </header>
@@ -27,6 +31,23 @@
         {% endfor %}
       </div>
 
+      <div class="match-console">
+        <aside class="match-trail" aria-label="Answered trail">
+          <p class="match-kicker">Trail</p>
+          {% if result.step_states %}
+          <ol>
+            {% for step in result.step_states %}
+            <li>
+              <strong>{{ step.label }}</strong>
+              <span>{{ step.before_count }} &rarr; {{ step.after_count }}</span>
+            </li>
+            {% endfor %}
+          </ol>
+          {% else %}
+          <p>Nothing locked yet.</p>
+          {% endif %}
+        </aside>
+
       {% if result.current_question %}
       <div class="match-question" data-match-question>
         <p class="match-question__count">Question {{ result.answers|length + 1 }} of {{ questions|length }}</p>
@@ -37,7 +58,8 @@
         <p class="match-question__summary">Pick the better answer. The Vault will do the narrowing.</p>
         {% endif %}
         <div class="match-option-grid">
-          {% for option in result.current_question.options %}
+          {% for option_state in result.option_states %}
+          {% set option = option_state.option %}
           {% set next_query = next_answer_query(result.answers, option.id) %}
           <a
             class="match-option"
@@ -46,6 +68,7 @@
           >
             <strong>{{ option.label }}</strong>
             <span>{{ option.description }}</span>
+            <small>{{ option_state.after_count }} left</small>
           </a>
           {% endfor %}
         </div>
@@ -71,6 +94,7 @@
           <div class="match-lead__copy">
             <p class="match-kicker">Top Match</p>
             <h2>{{ result.lead.movie.title | display_title }}</h2>
+            <p class="match-quality">Quality: {{ result.result_quality | title }} · {{ result.reroll_pool_size }} in reroll pool · {{ result.strict_match_count }} strict</p>
             <p class="match-lead__meta">
               <span>{{ result.lead.movie.year or "—" }}</span>
               {% if result.lead.movie.runtime %}<span>{{ result.lead.movie.runtime }} min</span>{% endif %}
@@ -84,6 +108,9 @@
             </div>
             <div class="match-lead__actions" aria-label="Actions for {{ result.lead.movie.title | display_title }}">
               <a class="button-primary" href="/ui/movies/{{ result.lead.movie.id }}" data-movie-detail-link data-event-context="match_open">Open</a>
+              {% if result.library_filter_query %}
+              <a class="button-secondary" href="/ui/movies?{{ result.library_filter_query }}">View these filters in Library</a>
+              {% endif %}
               <button
                 type="button"
                 class="discover-action{% if result.lead.movie.watchlist %} is-active{% endif %}"
@@ -143,6 +170,7 @@
         {% endif %}
       </div>
       {% endif %}
+      </div>
     </section>
   </div>
 {% endblock %}

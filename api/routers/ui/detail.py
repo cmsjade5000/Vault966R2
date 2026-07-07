@@ -114,8 +114,10 @@ def movie_detail(
             {
                 "movie": None,
                 "roles": [],
+                "collection_lineup": [],
                 "similar": [],
                 "similar_preferences": {},
+                "collection_preferences": {},
                 "spotlight_reason": None,
                 "review_mode": False,
                 "review_prev_id": None,
@@ -143,11 +145,24 @@ def movie_detail(
     similar_ids = {item.id for item in (detail.similar or []) if item.id is not None}
     untrusted_ids = get_untrusted_movie_ids(db, similar_ids)
     similar_list = [item for item in (detail.similar or []) if item.id not in untrusted_ids]
-    more_like = _pick_diverse(similar_list, limit=6, used_ids=set())
+    collection_ids = {item.id for item in (detail.collection_lineup or []) if item.id is not None}
+    collection_untrusted_ids = get_untrusted_movie_ids(db, collection_ids)
+    collection_lineup = [
+        item for item in (detail.collection_lineup or []) if item.id not in collection_untrusted_ids
+    ]
+    lineup_ids = {item.id for item in collection_lineup if item.id}
+    more_like = _pick_diverse(similar_list, limit=6, used_ids=set(lineup_ids))
 
-    preference_ids = [detail.id] + [item.id for item in more_like if item.id]
+    preference_ids = (
+        [detail.id]
+        + [item.id for item in collection_lineup if item.id]
+        + [item.id for item in more_like if item.id]
+    )
     preferences = get_preferences_for_movies(db, active_profile_id, preference_ids)
     pref = preferences.get(detail.id, {})
+    collection_preferences = {
+        item.id: preferences.get(item.id, {}) for item in collection_lineup if item.id
+    }
     similar_preferences = {
         item_id: preferences.get(item_id, {}) for item_id in preference_ids if item_id != detail.id
     }
@@ -163,6 +178,7 @@ def movie_detail(
         {
             "movie": detail,
             "roles": detail.roles,
+            "collection_lineup": collection_lineup,
             "similar": similar_list,
             "spotlight_reason": spotlight_reason,
             "review_mode": review,
@@ -173,6 +189,7 @@ def movie_detail(
             "can_manage_flags": can_manage_flags,
             "movie_liked": pref.get("liked", False),
             "movie_watchlist": pref.get("watchlist", False),
+            "collection_preferences": collection_preferences,
             "similar_preferences": similar_preferences,
             "similar_reasons": similar_reasons,
             "more_like": more_like,
