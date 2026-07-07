@@ -124,10 +124,7 @@ def test_movies_library_renders_quiet_inline_status_slot(client: TestClient) -> 
 
     assert response.status_code == 200
     html = response.text
-    assert (
-        '<div class="library-results-status" data-library-results-status hidden></div>'
-        in html
-    )
+    assert '<div class="library-results-status" data-library-results-status hidden></div>' in html
     assert "data-library-results-status aria-live" not in html
 
 
