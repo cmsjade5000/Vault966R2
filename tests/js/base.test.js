@@ -9,7 +9,44 @@ const script = fs.readFileSync(
   "utf8",
 );
 
-const loadBase = () => {
+const makeClassList = (initial = []) => {
+  const classes = new Set(initial);
+  return {
+    add(name) {
+      classes.add(name);
+    },
+    contains(name) {
+      return classes.has(name);
+    },
+    toggle(name, force) {
+      const next = force ?? !classes.has(name);
+      if (next) {
+        classes.add(name);
+      } else {
+        classes.delete(name);
+      }
+      return next;
+    },
+  };
+};
+
+const makeNavToggle = () => {
+  const listeners = {};
+  return {
+    attributes: {},
+    addEventListener(type, listener) {
+      listeners[type] = listener;
+    },
+    click() {
+      listeners.click?.({});
+    },
+    setAttribute(name, value) {
+      this.attributes[name] = value;
+    },
+  };
+};
+
+const loadBase = ({ withNav = false } = {}) => {
   const documentListeners = {};
   const body = {
     attributes: {},
@@ -34,6 +71,8 @@ const loadBase = () => {
       this.attributes[name] = value;
     },
   };
+  const navMenu = withNav ? { classList: makeClassList() } : null;
+  const navToggle = withNav ? makeNavToggle() : null;
   const document = {
     body,
     readyState: "complete",
@@ -45,10 +84,13 @@ const loadBase = () => {
     },
     querySelector(selector) {
       if (selector === "[data-vault-busy]") return indicator;
-      if (selector === "[data-nav-menu]") return null;
+      if (selector === "[data-nav-menu]") return navMenu;
       return null;
     },
-    querySelectorAll() {
+    querySelectorAll(selector) {
+      if (selector === "[data-nav-toggle]" && navToggle) {
+        return [navToggle];
+      }
       return [];
     },
   };
@@ -84,8 +126,32 @@ const loadBase = () => {
     URLSearchParams,
     window,
   });
-  return { body, documentListeners, indicator, messageTarget, window };
+  return {
+    body,
+    documentListeners,
+    indicator,
+    messageTarget,
+    navMenu,
+    navToggle,
+    window,
+  };
 };
+
+test("nav toggle opens and closes the primary navigation", () => {
+  const { navMenu, navToggle } = loadBase({ withNav: true });
+
+  navToggle.click();
+
+  assert.equal(navMenu.classList.contains("is-open"), true);
+  assert.equal(navToggle.attributes["aria-expanded"], "true");
+  assert.equal(navToggle.attributes["aria-label"], "Close primary navigation");
+
+  navToggle.click();
+
+  assert.equal(navMenu.classList.contains("is-open"), false);
+  assert.equal(navToggle.attributes["aria-expanded"], "false");
+  assert.equal(navToggle.attributes["aria-label"], "Open primary navigation");
+});
 
 test("global busy ignores JavaScript-handled form submissions", () => {
   const { body, documentListeners, indicator, messageTarget } = loadBase();
