@@ -382,9 +382,6 @@ class AuthRequiredMiddleware(BaseHTTPMiddleware):
         if self._is_public(path):
             return await call_next(request)
 
-        if not self._setup_complete(request):
-            return self._reject(request, message="Vault setup required.", setup_required=True)
-
         if path in self._assistant_paths:
             secret = get_session_secret(settings.login_session_secret)
             token = request.cookies.get(SESSION_COOKIE_NAME, "")
@@ -398,6 +395,9 @@ class AuthRequiredMiddleware(BaseHTTPMiddleware):
             if not settings.assistant_access_token:
                 return self._reject(request, message="Assistant token not configured.")
             return self._reject(request, message="Assistant token required.")
+
+        if not self._setup_complete(request):
+            return self._reject(request, message="Vault setup required.", setup_required=True)
 
         secret = get_session_secret(settings.login_session_secret)
         token = request.cookies.get(SESSION_COOKIE_NAME, "")

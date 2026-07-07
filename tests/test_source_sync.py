@@ -852,11 +852,17 @@ def test_latest_source_decision_can_be_undone(client: TestClient, db_session) ->
 
 def test_review_routes_require_profile_auth_when_enabled(client: TestClient, monkeypatch) -> None:
     monkeypatch.setattr(settings, "disable_auth", False)
+    monkeypatch.setattr(settings, "login_access_key", None)
+    monkeypatch.setattr(settings, "login_passcode", None)
+    monkeypatch.setattr(settings, "login_access_key_user_a", None)
+    monkeypatch.setattr(settings, "login_passcode_user_a", None)
+    monkeypatch.setattr(settings, "login_access_key_user_b", None)
+    monkeypatch.setattr(settings, "login_passcode_user_b", None)
 
     response = client.get("/ui/movies/health", follow_redirects=False)
 
     assert response.status_code == 302
-    assert response.headers["location"] == "/login"
+    assert response.headers["location"] == "/setup"
 
 
 def test_same_origin_guard_rejects_cross_origin(monkeypatch) -> None:
