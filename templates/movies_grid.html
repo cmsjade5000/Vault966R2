@@ -107,6 +107,38 @@
             </svg>
           </button>
         </div>
+
+        {% if library_presets or built_in_presets or user_presets %}
+        <div class="fliclists" id="fliclists" aria-label="Library presets">
+          {% for item in library_presets %}
+          <button
+            type="button"
+            class="chip chip-preset{% if preset == item.key %} is-active{% endif %}"
+            data-filters="{}"
+            data-preset-key="{{ item.key }}"
+            data-preset-name="{{ item.name }}"
+            title="{{ item.description }}"
+          >{{ item.name }}</button>
+          {% endfor %}
+          {% for item in built_in_presets[:6] %}
+          <button
+            type="button"
+            class="chip chip-preset"
+            data-filters='{{ item.filters | tojson }}'
+            data-preset-name="{{ item.name }}"
+            title="{{ item.description }}"
+          >{{ item.name }}</button>
+          {% endfor %}
+          {% for item in user_presets %}
+          <button
+            type="button"
+            class="chip chip-preset"
+            data-filters='{{ item.filters | tojson }}'
+            data-preset-name="{{ item.name }}"
+          >{{ item.name }}</button>
+          {% endfor %}
+        </div>
+        {% endif %}
       </section>
 
       {% set active = namespace(filters=[]) %}

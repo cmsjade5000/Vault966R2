@@ -85,6 +85,7 @@
 
   const buildPendingSummary = ({
     genres = [],
+    moods = [],
     presetName = "",
     runtimeMax = "",
     yearLabel = "",
@@ -94,6 +95,7 @@
       items.push({ kind: "preset", label: `Fliclist: ${presetName}` });
     }
     genres.forEach((genre) => items.push({ kind: "genre", label: genre }));
+    moods.forEach((mood) => items.push({ kind: "mood", label: mood }));
     if (yearLabel) items.push({ kind: "year", label: yearLabel });
     if (runtimeMax) {
       items.push({ kind: "runtime", label: `≤ ${runtimeMax} min` });
@@ -145,6 +147,7 @@
     const resetButton = document.querySelector("[data-filters-reset]");
     const summary = document.querySelector("[data-filters-summary]");
     const summaryEmpty = document.querySelector("[data-filters-summary-empty]");
+    const searchInput = document.getElementById("search-q");
     const yearCustom = document.getElementById("year-custom");
     const yearCustomMin = document.getElementById("year-custom-min");
     const yearCustomMax = document.getElementById("year-custom-max");
@@ -165,6 +168,7 @@
       document.querySelectorAll(".chip-preset[data-filters]"),
     );
     const selectedGenres = new Set(parseCsv(genresInput?.value || ""));
+    const selectedMoods = new Set(parseCsv(moodsInput?.value || ""));
     let pendingPresetName = formatPresetName(presetInput?.value || "");
     let yearCustomSelected = false;
     let runtimeCustomSelected = false;
@@ -254,9 +258,12 @@
       }
 
       presetButtons.forEach((button) => {
+        const presetKey = button.dataset.presetKey || "";
         button.classList.toggle(
           "is-active",
-          button.dataset.presetName === pendingPresetName,
+          presetKey
+            ? presetInput?.value === presetKey
+            : button.dataset.presetName === pendingPresetName,
         );
       });
     };
@@ -264,6 +271,7 @@
     const renderSummary = () => {
       const items = buildPendingSummary({
         genres: Array.from(selectedGenres),
+        moods: Array.from(selectedMoods),
         presetName: pendingPresetName,
         runtimeMax: runtimeInput?.value || "",
         yearLabel: getYearLabel(),
@@ -397,6 +405,14 @@
 
     presetButtons.forEach((button) => {
       button.addEventListener("click", () => {
+        const presetKey = button.dataset.presetKey || "";
+        if (presetKey) {
+          if (presetInput) presetInput.value = presetKey;
+          pendingPresetName =
+            button.dataset.presetName || formatPresetName(presetKey);
+          syncFilterUi();
+          return;
+        }
         let filters = {};
         try {
           filters = JSON.parse(button.dataset.filters || "{}");
@@ -406,6 +422,12 @@
         selectedGenres.clear();
         (filters.genres || []).forEach((genre) => selectedGenres.add(genre));
         genresInput.value = Array.from(selectedGenres).join(", ");
+        selectedMoods.clear();
+        (filters.moods || []).forEach((mood) => selectedMoods.add(mood));
+        if (moodsInput) moodsInput.value = Array.from(selectedMoods).join(", ");
+        if (searchInput && Object.prototype.hasOwnProperty.call(filters, "q")) {
+          searchInput.value = filters.q || "";
+        }
         yearMinInput.value = filters.year_min || "";
         yearMaxInput.value = filters.year_max || "";
         runtimeInput.value = filters.runtime_max || "";
@@ -427,6 +449,7 @@
 
     resetButton?.addEventListener("click", () => {
       selectedGenres.clear();
+      selectedMoods.clear();
       if (genresInput) genresInput.value = "";
       if (moodsInput) moodsInput.value = "";
       if (yearMinInput) yearMinInput.value = "";
