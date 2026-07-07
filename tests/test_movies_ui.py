@@ -1,3 +1,5 @@
+import re
+
 from fastapi.testclient import TestClient
 
 from api.models.movie import Movie
@@ -174,6 +176,16 @@ def test_library_card_can_be_flagged_for_review(client: TestClient, db_session) 
 
     page = client.get("/ui/movies")
     assert "data-review-flag-button" in page.text
+    flag_button_match = re.search(
+        r"<button\b[^>]*data-review-flag-button[^>]*>",
+        page.text,
+        re.DOTALL,
+    )
+    assert flag_button_match is not None
+    flag_button = flag_button_match.group(0)
+    assert 'aria-hidden="true"' not in flag_button
+    assert 'tabindex="-1"' not in flag_button
+    assert 'title="Flag for review"' in flag_button
     assert "js/card_review_flag.js?v=" in page.text
 
     response = client.post(f"/ui/movies/{movie.id}/review-flag")

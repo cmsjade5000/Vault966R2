@@ -5,9 +5,18 @@
   const movedBeyondTolerance = (startX, startY, currentX, currentY) =>
     Math.hypot(currentX - startX, currentY - startY) > MOVE_TOLERANCE_PX;
 
+  const enableKeyboardAccess = (button) => {
+    if (!button) return;
+    button.removeAttribute("aria-hidden");
+    if (button.getAttribute("tabindex") === "-1") {
+      button.removeAttribute("tabindex");
+    }
+  };
+
   window.VaultCardReviewFlagSupport = {
     HOLD_DELAY_MS,
     MOVE_TOLERANCE_PX,
+    enableKeyboardAccess,
     movedBeyondTolerance,
   };
 
@@ -26,8 +35,7 @@
       card.classList.remove("is-review-action-visible");
       const button = card.querySelector("[data-review-flag-button]");
       if (!button) return;
-      button.setAttribute("aria-hidden", "true");
-      button.tabIndex = -1;
+      enableKeyboardAccess(button);
     };
 
     const concealOtherActions = (activeCard = null) => {
@@ -41,8 +49,7 @@
       if (!card || !button) return;
       concealOtherActions(card);
       card.classList.add("is-review-action-visible");
-      button.setAttribute("aria-hidden", "false");
-      button.tabIndex = 0;
+      enableKeyboardAccess(button);
       suppressLinkCard = card;
       button.focus({ preventScroll: true });
     };
@@ -56,6 +63,8 @@
     };
 
     cards.forEach((card) => {
+      enableKeyboardAccess(card.querySelector("[data-review-flag-button]"));
+
       card.addEventListener("pointerdown", (event) => {
         if (event.pointerType === "mouse" && event.button !== 0) return;
         if (event.target.closest("button, .library-card__actions")) return;
