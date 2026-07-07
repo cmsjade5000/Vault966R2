@@ -8,17 +8,33 @@
 {% block content %}
   <div class="discover-layout page-shell">
     <header class="discover-heading">
+      <p class="discover-kicker">Watch Tonight</p>
       <h1>Discover</h1>
-      <p>Trusted picks, arranged for an easier decision.</p>
+      <p>Decision support for movie night: shorter paths, sharper picks, and fewer tabs open.</p>
     </header>
 
     <div class="discover-content">
+      <section class="discover-decisions" aria-labelledby="watch-tonight-title">
+        <div>
+          <h2 id="watch-tonight-title">What kind of night is this?</h2>
+          <p>Start with a constraint, then let the Library handle the deeper browsing.</p>
+        </div>
+        <div class="discover-decision-grid">
+          {% for link in decision_links %}
+          <a class="discover-decision" href="{{ link.href }}">
+            <span>{{ link.label }}</span>
+            <small>{{ link.description }}</small>
+          </a>
+          {% endfor %}
+        </div>
+      </section>
+
       {% if spotlight_lead %}
       <section class="discover-spotlight" id="daily-spotlight" aria-labelledby="daily-spotlight-title">
         <header class="discover-section-header">
           <div>
-            <h2 id="daily-spotlight-title">Daily Spotlight</h2>
-            <p>Four trusted picks with a fresh angle each day.</p>
+            <h2 id="daily-spotlight-title">Tonight’s Best Bet</h2>
+            <p>Flic-friendly runtime, strong signals, and a little daily rotation.</p>
           </div>
         </header>
         <div class="discover-spotlight__grid">
@@ -108,6 +124,39 @@
       </section>
       {% endif %}
 
+      {% if flic_shortlist %}
+      <section
+        class="discover-rail discover-rail--flic"
+        id="flic-shortlist"
+        aria-labelledby="rail-flic-shortlist"
+        data-discover-rail
+      >
+        <header class="discover-section-header">
+          <div>
+            <h2 id="rail-flic-shortlist">Flic Shortlist</h2>
+            <p>Ranked for a normal weeknight: roughly two hours, modern enough, and easy to commit to.</p>
+          </div>
+          <div class="discover-rail-controls" aria-label="Flic Shortlist carousel controls">
+            <button type="button" data-rail-previous aria-label="Scroll Flic Shortlist backward">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"></path></svg>
+            </button>
+            <button type="button" data-rail-next aria-label="Scroll Flic Shortlist forward">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"></path></svg>
+            </button>
+          </div>
+        </header>
+        <div class="discover-rail__viewport" data-rail-viewport>
+          <div class="discover-rail__track" role="list">
+            {% for movie in flic_shortlist %}
+            {% set genre_labels = movie.genre_display if movie.genre_display is defined else [] %}
+            {{ movie_card(movie, movie.liked, movie.watchlist, genre_labels, extra_class="discover-rail-card discover-rail-card--flic", role="listitem", event_context="flic_shortlist", poster_size="w185", reason_labels=movie.reason_labels if movie.reason_labels is defined else [], poster_src="/ui/posters/" ~ movie.id ~ "/w185", defer_image=true) }}
+            {% endfor %}
+          </div>
+        </div>
+        <div class="discover-rail-progress" aria-hidden="true"><span data-rail-progress></span></div>
+      </section>
+      {% endif %}
+
       <section
         class="discover-rail discover-rail--personalized"
         id="selected-for-you"
@@ -140,7 +189,7 @@
           <div class="discover-rail__track" role="list">
             {% for movie in selected_for_you %}
             {% set genre_labels = movie.genre_display if movie.genre_display is defined else [] %}
-            {{ movie_card(movie, movie.liked, movie.watchlist, genre_labels, extra_class="discover-rail-card discover-rail-card--personalized", role="listitem", event_context="selected_for_you", poster_size="w185", show_details=false, poster_src="/ui/posters/" ~ movie.id ~ "/w185", defer_image=true) }}
+            {{ movie_card(movie, movie.liked, movie.watchlist, genre_labels, extra_class="discover-rail-card discover-rail-card--personalized", role="listitem", event_context="selected_for_you", poster_size="w185", reason_labels=movie.reason_labels if movie.reason_labels is defined else [], poster_src="/ui/posters/" ~ movie.id ~ "/w185", defer_image=true) }}
             {% endfor %}
           </div>
         </div>
@@ -155,6 +204,47 @@
         </div>
         {% endif %}
       </section>
+
+      {% if double_features %}
+      <section class="discover-double" id="double-feature" aria-labelledby="double-feature-title">
+        <header class="discover-section-header">
+          <div>
+            <h2 id="double-feature-title">Double Feature Ideas</h2>
+            <p>Paired by runtime, genre, mood, cast, collection, or theme when the vault has a clean match.</p>
+          </div>
+        </header>
+        <div class="discover-double__grid">
+          {% for pairing in double_features %}
+          {% set pair_key = pairing.primary.id ~ '-' ~ pairing.secondary.id %}
+          <article class="discover-double-card">
+            <div class="discover-double-card__meta">
+              <h3>{{ pairing.theme_label or "Two-film night" }}</h3>
+              <p>{{ pairing.total_runtime }}</p>
+            </div>
+            <div class="discover-double-card__posters">
+              {% for movie in (pairing.primary, pairing.secondary) %}
+              <a href="/ui/movies/{{ movie.id }}" data-movie-detail-link data-movie-id="{{ movie.id }}" data-event-context="double_feature">
+                {% if movie.poster_url %}
+                <img src="/ui/posters/{{ movie.id }}/w185" alt="{{ movie.title | display_title }} poster" loading="lazy" decoding="async" />
+                {% else %}
+                <div class="poster poster--empty {{ movie.poster_theme or 'poster-theme-default' }}" aria-hidden="true">966</div>
+                {% endif %}
+                <span>{{ movie.title | display_title }}</span>
+              </a>
+              {% endfor %}
+            </div>
+            {% if double_feature_reasons.get(pair_key) %}
+            <div class="discover-double-card__reasons" aria-label="Why this double feature">
+              {% for reason in double_feature_reasons.get(pair_key) %}
+              <span>{{ reason }}</span>
+              {% endfor %}
+            </div>
+            {% endif %}
+          </article>
+          {% endfor %}
+        </div>
+      </section>
+      {% endif %}
 
       <div class="discover-topic-rails">
         {% for rail in rails %}
@@ -180,7 +270,7 @@
             <div class="discover-rail__track" role="list">
               {% for movie in rail.movies %}
               {% set genre_labels = movie.genre_display if movie.genre_display is defined else [] %}
-              {{ movie_card(movie, movie.liked, movie.watchlist, genre_labels, extra_class="discover-rail-card", role="listitem", event_context=rail.key, poster_size="w185", show_details=false, poster_src="/ui/posters/" ~ movie.id ~ "/w185", defer_image=true) }}
+              {{ movie_card(movie, movie.liked, movie.watchlist, genre_labels, extra_class="discover-rail-card", role="listitem", event_context=rail.key, poster_size="w185", reason_labels=movie.reason_labels if movie.reason_labels is defined else [], poster_src="/ui/posters/" ~ movie.id ~ "/w185", defer_image=true) }}
               {% else %}
               <p class="discover-rail__empty">No trusted titles match this rail yet.</p>
               {% endfor %}
