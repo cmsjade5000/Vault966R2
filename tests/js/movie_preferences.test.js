@@ -42,6 +42,7 @@ test("removes an unwatched card only on the watchlist page", () => {
   const card = { remove: () => (removed = true) };
   const root = {
     body: { classList: { contains: (name) => name === "watchlist-page" } },
+    querySelector: () => null,
     querySelectorAll: () => [card],
   };
 
@@ -51,4 +52,71 @@ test("removes an unwatched card only on the watchlist page", () => {
   removed = false;
   removeUnwatchedCard(root, 42, { watchlist: true });
   assert.equal(removed, false);
+});
+
+test("keeps the watchlist grid visible after removing a non-final card", () => {
+  const { removeUnwatchedCard } = loadSupport();
+  const cards = [
+    { dataset: { movieId: "42" }, remove: () => cards.splice(0, 1) },
+    { dataset: { movieId: "43" }, remove() {} },
+  ];
+  const grid = {
+    hidden: false,
+    querySelectorAll: (selector) =>
+      selector === "[data-movie-card]" ? cards : [],
+  };
+  const emptyState = { hidden: true };
+  const total = { textContent: "2" };
+  const totalLabel = { textContent: "movies" };
+  const root = {
+    body: { classList: { contains: (name) => name === "watchlist-page" } },
+    querySelector(selector) {
+      return {
+        "[data-watchlist-grid]": grid,
+        "[data-watchlist-empty]": emptyState,
+        "[data-watchlist-total]": total,
+        "[data-watchlist-total-label]": totalLabel,
+      }[selector];
+    },
+    querySelectorAll: () => [cards[0]],
+  };
+
+  removeUnwatchedCard(root, 42, { watchlist: false });
+
+  assert.equal(grid.hidden, false);
+  assert.equal(emptyState.hidden, true);
+  assert.equal(total.textContent, "1");
+  assert.equal(totalLabel.textContent, "movie");
+});
+
+test("shows the watchlist empty state after removing the final card", () => {
+  const { removeUnwatchedCard } = loadSupport();
+  const cards = [{ remove: () => cards.splice(0, 1) }];
+  const grid = {
+    hidden: false,
+    querySelectorAll: (selector) =>
+      selector === "[data-movie-card]" ? cards : [],
+  };
+  const emptyState = { hidden: true };
+  const total = { textContent: "1" };
+  const totalLabel = { textContent: "movie" };
+  const root = {
+    body: { classList: { contains: (name) => name === "watchlist-page" } },
+    querySelector(selector) {
+      return {
+        "[data-watchlist-grid]": grid,
+        "[data-watchlist-empty]": emptyState,
+        "[data-watchlist-total]": total,
+        "[data-watchlist-total-label]": totalLabel,
+      }[selector];
+    },
+    querySelectorAll: () => cards,
+  };
+
+  removeUnwatchedCard(root, 42, { watchlist: false });
+
+  assert.equal(grid.hidden, true);
+  assert.equal(emptyState.hidden, false);
+  assert.equal(total.textContent, "0");
+  assert.equal(totalLabel.textContent, "movies");
 });
