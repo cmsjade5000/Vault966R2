@@ -148,6 +148,7 @@
     const resetButton = document.querySelector("[data-filters-reset]");
     const summary = document.querySelector("[data-filters-summary]");
     const summaryEmpty = document.querySelector("[data-filters-summary-empty]");
+    const searchInput = document.getElementById("search-q");
     const yearCustom = document.getElementById("year-custom");
     const yearCustomMin = document.getElementById("year-custom-min");
     const yearCustomMax = document.getElementById("year-custom-max");
@@ -269,9 +270,12 @@
       }
 
       presetButtons.forEach((button) => {
+        const presetKey = button.dataset.presetKey || "";
         button.classList.toggle(
           "is-active",
-          button.dataset.presetName === pendingPresetName,
+          presetKey
+            ? presetInput?.value === presetKey
+            : button.dataset.presetName === pendingPresetName,
         );
       });
     };
@@ -426,6 +430,14 @@
 
     presetButtons.forEach((button) => {
       button.addEventListener("click", () => {
+        const presetKey = button.dataset.presetKey || "";
+        if (presetKey) {
+          if (presetInput) presetInput.value = presetKey;
+          pendingPresetName =
+            button.dataset.presetName || formatPresetName(presetKey);
+          syncFilterUi();
+          return;
+        }
         let filters = {};
         try {
           filters = JSON.parse(button.dataset.filters || "{}");
@@ -438,6 +450,9 @@
         selectedMoods.clear();
         (filters.moods || []).forEach((mood) => selectedMoods.add(mood));
         if (moodsInput) moodsInput.value = Array.from(selectedMoods).join(", ");
+        if (searchInput && Object.prototype.hasOwnProperty.call(filters, "q")) {
+          searchInput.value = filters.q || "";
+        }
         yearMinInput.value = filters.year_min || "";
         yearMaxInput.value = filters.year_max || "";
         runtimeInput.value = filters.runtime_max || "";

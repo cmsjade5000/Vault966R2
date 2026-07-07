@@ -2,6 +2,7 @@ import re
 
 from fastapi.testclient import TestClient
 
+from api.models.flic_preset import FlicPreset
 from api.models.movie import Movie
 from api.models.movie_flag import MovieFlag
 from api.models.movie_review import MovieReviewCheck
@@ -55,6 +56,55 @@ def test_movies_grid_explicit_clear_removes_cookie_backed_preset(
     restored_after_clear = client.get("/ui/movies")
     assert 'id="preset-input" value=""' in restored_after_clear.text
     assert 'data-clear-filter="preset"' not in restored_after_clear.text
+
+
+def test_movies_grid_preset_chip_applies_and_persists_via_cookie(
+    client: TestClient,
+) -> None:
+    selected = client.get("/ui/movies", params={"preset": "under-100", "view": "list"})
+    assert selected.status_code == 200
+    html = selected.text
+    assert 'data-preset-key="under-100"' in html
+    assert 'class="chip chip-preset is-active"' in html
+    assert 'id="preset-input" value="under-100"' in html
+    assert 'data-clear-filter="preset"' in html
+    assert "Toy Story" in html
+    assert "Blade Runner" not in html
+
+    restored = client.get("/ui/movies")
+    assert restored.status_code == 200
+    assert 'id="preset-input" value="under-100"' in restored.text
+    assert 'data-preset-key="under-100"' in restored.text
+    assert "Toy Story" in restored.text
+    assert "Blade Runner" not in restored.text
+
+
+def test_movies_grid_surfaces_saved_fliclist_chips(
+    client: TestClient,
+    db_session,
+) -> None:
+    db_session.add(
+        FlicPreset(
+            name="Thoughtful Dramas",
+            filters={
+                "genres": ["Drama"],
+                "moods": ["Atmospheric"],
+                "runtime_max": 125,
+            },
+        )
+    )
+    db_session.commit()
+
+    page = client.get("/ui/movies")
+
+    assert page.status_code == 200
+    html = page.text
+    assert 'id="fliclists"' in html
+    assert 'class="chip chip-preset"' in html
+    assert 'data-preset-name="Thoughtful Dramas"' in html
+    assert '"genres": ["Drama"]' in html
+    assert '"moods": ["Atmospheric"]' in html
+    assert '"runtime_max": 125' in html
 
 
 def test_movies_grid_ignores_invalid_cookie_backed_filters(client: TestClient) -> None:
@@ -560,8 +610,9 @@ def test_library_search_is_prominent_and_searches_identity_fields(
     assert '<p id="edit-dialog-description">Update this movie\'s metadata.</p>' in page.text
     assert 'id="year-custom" hidden' in page.text
     assert 'id="runtime-custom" hidden' in page.text
-    assert 'id="fliclists"' not in page.text
-    assert 'class="chip chip-preset"' not in page.text
+    assert 'id="fliclists"' in page.text
+    assert 'class="chip chip-preset"' in page.text
+    assert 'data-preset-key="hidden-gems"' in page.text
     assert "css/movies.css?v=" in page.text
     assert "css/movie_components.css?v=" in page.text
     assert "js/library_page.js?v=" in page.text
