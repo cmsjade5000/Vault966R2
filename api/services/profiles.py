@@ -6,7 +6,7 @@ from fastapi import Request, Response
 from sqlalchemy.orm import Session
 
 from api.models.movie import Movie
-from api.models.profile import MoviePreference, Profile
+from api.models.profile import AppSetup, MoviePreference, Profile, ProfileCredential
 
 PROFILE_COOKIE_NAME = "vault_profile_id"
 PROFILE_COOKIE_MAX_AGE = 60 * 60 * 24 * 365
@@ -22,8 +22,12 @@ def _ensure_default_profiles(db: Session) -> List[Profile]:
     profiles = db.query(Profile).order_by(Profile.id.asc()).all()
     if profiles:
         updated = False
+        setup_completed = bool(
+            db.query(AppSetup.id).filter(AppSetup.completed.is_(True)).first()
+            or db.query(ProfileCredential.id).first()
+        )
         for index, profile in enumerate(profiles):
-            if index < len(DEFAULT_PROFILES):
+            if not setup_completed and index < len(DEFAULT_PROFILES):
                 default_name, default_role = DEFAULT_PROFILES[index]
                 if profile.name != default_name:
                     profile.name = default_name

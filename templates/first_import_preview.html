@@ -24,6 +24,24 @@
     <section class="source-sync-summary">
       <h2>{{ snapshot.row_count }} movie rows staged</h2>
       <p>{{ duplicate_rows }} rows repeat the same source identity. Auto-create only imports strict high-confidence external matches.</p>
+      <div class="source-sync-metrics source-sync-metrics--health first-import-analysis" aria-label="Projected import outcome counts">
+        <div>
+          <strong>{{ import_analysis.auto_create|length }}</strong>
+          <span>Safe create</span>
+        </div>
+        <div>
+          <strong>{{ import_analysis.needs_review|length }}</strong>
+          <span>Needs review</span>
+        </div>
+        <div>
+          <strong>{{ import_analysis.duplicate_conflict|length }}</strong>
+          <span>Duplicates</span>
+        </div>
+        <div>
+          <strong>{{ import_analysis.failed_lookup|length }}</strong>
+          <span>Manual create</span>
+        </div>
+      </div>
       <form method="post" action="/ui/first-import/{{ snapshot.id }}/auto-create">
         <button class="button-primary" type="submit">Auto-create high-confidence titles</button>
         <a class="button-secondary" href="/ui/movies/health#review-workbench">Open review workbench</a>

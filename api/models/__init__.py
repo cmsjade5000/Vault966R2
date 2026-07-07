@@ -10,7 +10,7 @@ from .movie_flag import MovieFlag  # noqa: F401
 from .movie_repair import MovieIdentityRepair  # noqa: F401
 from .movie_review import MovieReviewCheck  # noqa: F401
 from .person import Person, Role  # noqa: F401
-from .profile import MoviePreference, Profile  # noqa: F401
+from .profile import AppSetup, MoviePreference, Profile, ProfileCredential  # noqa: F401
 from .semantic_search import AiCache, MovieDocument  # noqa: F401
 from .source_sync import (  # noqa: F401
     OwnedMovieCopy,
@@ -31,7 +31,9 @@ __all__ = [
     "MovieReviewCheck",
     "Person",
     "Role",
+    "AppSetup",
     "Profile",
+    "ProfileCredential",
     "MoviePreference",
     "AiCache",
     "MovieDocument",

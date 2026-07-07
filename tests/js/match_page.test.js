@@ -10,7 +10,9 @@ const script = fs.readFileSync(
 );
 
 const loadSupport = () => {
-  const window = {};
+  const window = {
+    matchMedia: () => ({ matches: false }),
+  };
   const document = {
     addEventListener() {},
   };
@@ -34,4 +36,29 @@ test("builds the next answer sequence", () => {
 
   assert.equal(nextAnswers(["funny", "short"], "older"), "funny,short,older");
   assert.equal(nextAnswers([], "scary"), "scary");
+});
+
+test("formats remaining count labels", () => {
+  const { countLabel } = loadSupport();
+
+  assert.equal(countLabel(42), "42 left");
+  assert.equal(countLabel("1"), "1 left");
+  assert.equal(countLabel("sideways"), "0 left");
+});
+
+test("exposes reduced motion preference", () => {
+  const window = {
+    matchMedia: () => ({ matches: true }),
+  };
+  const document = {
+    addEventListener() {},
+  };
+  const context = {
+    document,
+    window,
+  };
+
+  vm.runInNewContext(script, context);
+
+  assert.equal(window.VaultMatchSupport.prefersReducedMotion(), true);
 });

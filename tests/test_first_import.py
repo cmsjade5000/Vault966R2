@@ -55,6 +55,27 @@ def test_first_import_shell_renders_for_admin(client: TestClient) -> None:
         'accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"'
         in page.text
     )
+    assert "Download sample CSV" in page.text
+    assert "XLSX imports read the first worksheet." in page.text
+
+
+def test_onboarding_import_shell_uses_first_movie_copy(client: TestClient) -> None:
+    page = client.get("/ui/onboarding/import")
+
+    assert page.status_code == 200
+    assert "<h1>Add your first movies</h1>" in page.text
+
+
+def test_first_import_sample_csv_downloads_for_admin(client: TestClient) -> None:
+    response = client.get("/ui/first-import/sample.csv")
+
+    assert response.status_code == 200
+    assert response.headers["content-type"].startswith("text/csv")
+    assert (
+        response.headers["content-disposition"]
+        == 'attachment; filename="vault966-first-import-sample.csv"'
+    )
+    assert "Title,Time,Director,Year" in response.text
 
 
 def test_first_import_reviewer_cannot_open_wizard(
@@ -118,6 +139,19 @@ def test_first_import_upload_stages_source_snapshot_preview(
     assert snapshot.rows[0].runtime == 116
     assert snapshot.rows[0].year == 2016
     assert db_session.query(Movie).count() == before
+
+
+def test_first_import_upload_missing_columns_returns_recovery_copy(client: TestClient) -> None:
+    response = client.post(
+        "/ui/first-import/upload",
+        files={"source_file": ("source.csv", b"Name,Watched\nArrival,yes\n", "text/csv")},
+        follow_redirects=False,
+    )
+
+    assert response.status_code == 303
+    assert "required%20columns" in response.headers["location"]
+    page = client.get(response.headers["location"])
+    assert "start from the sample CSV" in page.text
 
 
 def test_first_import_auto_creates_high_confidence_tmdb_match(
@@ -441,3 +475,37 @@ def test_first_import_auto_create_redirects_to_report(
     assert "1 high-confidence movies created" in report.text
     assert "Download new additions CSV" in report.text
     assert f'href="/ui/source-sync/{snapshot.id}/new-additions.csv"' in report.text
+
+
+def test_first_import_preview_shows_projected_outcome_counts(
+    client: TestClient,
+    db_session,
+    monkeypatch,
+) -> None:
+    snapshot = source_sync.create_draft_snapshot(
+        db_session,
+        filename="source.csv",
+        content=_csv(
+            "Arrival,1:56:00,Denis Villeneuve,2016,Sci-Fi,PG-13,11/11/16,1",
+            "Solaris,2:46:00,Andrei Tarkovsky,1972,Sci-Fi,PG,09/26/72,1",
+            "Unknown Title,1:30:00,Unknown,2020,Drama,PG,01/01/20,0",
+        ),
+        profile_id=1,
+    )
+
+    def candidates(title: str, year: int | None, limit: int = 3) -> list[dict]:
+        if title == "Arrival":
+            return [_candidate()]
+        if title == "Solaris":
+            return [_candidate(title="Solaris", year=1972, tmdb_id=593, confidence=0.82)]
+        return []
+
+    monkeypatch.setattr(source_sync, "lookup_movie_candidates", candidates)
+
+    page = client.get(f"/ui/first-import/{snapshot.id}/preview")
+
+    assert page.status_code == 200
+    assert "Projected import outcome counts" in page.text
+    assert "Safe create" in page.text
+    assert "Needs review" in page.text
+    assert "Manual create" in page.text

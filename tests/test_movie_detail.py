@@ -93,6 +93,80 @@ def test_movie_detail_api(client: TestClient, detail_movie_setup):
     assert payload["flag_notes"] is None
     assert payload["top_billed"][0]["name"] == "Case Worker"
     assert payload["top_billed"][0]["character"] == "Dreamer"
+    assert payload["collection_lineup"] == []
+
+
+def test_movie_detail_api_includes_collection_lineup(client: TestClient, detail_movie_setup):
+    movie_id = detail_movie_setup
+    for db in _db_session(client):
+        genre = db.query(Genre).filter(Genre.name == "Cyberpunk").one()
+        sequel = Movie(
+            title="Dream Saga: Afterimage",
+            year=2021,
+            runtime=122,
+            imdb_id="tt7777777",
+            tmdb_id=777777,
+            poster_url="https://example.test/afterimage.jpg",
+            collection="Dream Saga",
+        )
+        prequel = Movie(
+            title="Dream Saga: Origin",
+            year=2017,
+            runtime=109,
+            imdb_id="tt6666666",
+            tmdb_id=666666,
+            collection="Dream Saga",
+        )
+        sequel.genres.append(genre)
+        prequel.genres.append(genre)
+        db.add_all([sequel, prequel])
+        db.commit()
+
+    resp = client.get(f"/movies/{movie_id}/detail")
+
+    assert resp.status_code == 200
+    payload = resp.json()
+    lineup_titles = [movie["title"] for movie in payload["collection_lineup"]]
+    assert lineup_titles == ["Dream Saga: Origin", "Dream Saga: Afterimage"]
+    assert "Test Detail Movie" not in lineup_titles
+
+
+def test_movie_detail_api_infers_collection_lineup_from_title(client: TestClient):
+    for db in _db_session(client):
+        root = Movie(
+            title="Dream Saga",
+            year=2016,
+            imdb_id="tt5555555",
+            tmdb_id=555555,
+        )
+        sequel = Movie(
+            title="Dream Saga II",
+            year=2018,
+            imdb_id="tt5555556",
+            tmdb_id=555556,
+            collection="Dream Saga Collection",
+        )
+        third = Movie(
+            title="Dream Saga III",
+            year=2020,
+            imdb_id="tt5555557",
+            tmdb_id=555557,
+            collection="Dream Saga Collection",
+        )
+        db.add_all([root, sequel, third])
+        db.commit()
+        movie_id = root.id
+
+    resp = client.get(f"/movies/{movie_id}/detail")
+
+    assert resp.status_code == 200
+    payload = resp.json()
+    assert payload["collection"] is None
+    assert payload["collection_lineup_label"] == "Dream Saga Collection"
+    assert [movie["title"] for movie in payload["collection_lineup"]] == [
+        "Dream Saga II",
+        "Dream Saga III",
+    ]
 
 
 def test_movie_detail_get_does_not_fetch_provider_similar(
@@ -138,6 +212,7 @@ def test_movie_detail_template(client: TestClient, detail_movie_setup):
     assert 'class="preference-button' not in html
     assert "detail-rec-card" not in html
     assert "Pair with this" not in html
+    assert "detail-recs--universe" not in html
     assert "More like this" in html
     assert "data-flag-dialog" in html
     assert "data-flag-form" in html
@@ -158,6 +233,61 @@ def test_movie_detail_template(client: TestClient, detail_movie_setup):
     trailer_action = html.split('class="trailer-action"', 1)[1].split(">", 1)[0]
     assert "hidden" in trailer_action
     assert "https://www.youtube-nocookie.com/embed/" not in html
+
+
+def test_movie_detail_template_shows_collection_lineup(client: TestClient, detail_movie_setup):
+    movie_id = detail_movie_setup
+    for db in _db_session(client):
+        genre = db.query(Genre).filter(Genre.name == "Cyberpunk").one()
+        related = Movie(
+            title="Dream Saga: Afterimage",
+            year=2021,
+            runtime=122,
+            imdb_id="tt7777777",
+            tmdb_id=777777,
+            poster_url="https://example.test/afterimage.jpg",
+            collection="Dream Saga",
+        )
+        related.genres.append(genre)
+        db.add(related)
+        db.commit()
+
+    resp = client.get(f"/ui/movies/{movie_id}")
+
+    assert resp.status_code == 200
+    html = resp.text
+    assert "detail-recs--universe" in html
+    assert "Dream Saga" in html
+    assert "Dream Saga: Afterimage" in html
+    assert 'data-event-context="collection_lineup"' in html
+
+
+def test_movie_detail_template_shows_inferred_collection_lineup(client: TestClient):
+    for db in _db_session(client):
+        root = Movie(
+            title="Dream Saga",
+            year=2016,
+            imdb_id="tt5555555",
+            tmdb_id=555555,
+        )
+        related = Movie(
+            title="Dream Saga II",
+            year=2018,
+            imdb_id="tt5555556",
+            tmdb_id=555556,
+            collection="Dream Saga Collection",
+        )
+        db.add_all([root, related])
+        db.commit()
+        movie_id = root.id
+
+    resp = client.get(f"/ui/movies/{movie_id}")
+
+    assert resp.status_code == 200
+    html = resp.text
+    assert "detail-recs--universe" in html
+    assert "Dream Saga Collection" in html
+    assert "Dream Saga II" in html
 
 
 def test_movie_detail_template_shows_cached_trailer_pill(client: TestClient, detail_movie_setup):
