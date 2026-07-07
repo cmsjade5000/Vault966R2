@@ -1841,6 +1841,8 @@
   stroke-linejoin: round;
 }
 
+.library-card:hover .library-card__review-flag,
+.library-card:focus-within .library-card__review-flag,
 .library-card.is-review-action-visible .library-card__review-flag {
   opacity: 1;
   pointer-events: auto;
