@@ -2,8 +2,18 @@
   const HOLD_DELAY_MS = 550;
   const MOVE_TOLERANCE_PX = 12;
 
-  const movedBeyondTolerance = (startX, startY, currentX, currentY) =>
-    Math.hypot(currentX - startX, currentY - startY) > MOVE_TOLERANCE_PX;
+  let holdTimer = null;
+  let holdCard = null;
+  let startX = 0;
+  let startY = 0;
+  let suppressLinkCard = null;
+
+  const movedBeyondTolerance = (startXValue, startYValue, currentX, currentY) =>
+    Math.hypot(currentX - startXValue, currentY - startYValue) >
+    MOVE_TOLERANCE_PX;
+
+  const getCards = () =>
+    document.querySelectorAll(".library-page [data-movie-card]");
 
   const enableKeyboardAccess = (button) => {
     if (!button) return;
@@ -13,57 +23,49 @@
     }
   };
 
-  window.VaultCardReviewFlagSupport = {
-    HOLD_DELAY_MS,
-    MOVE_TOLERANCE_PX,
-    enableKeyboardAccess,
-    movedBeyondTolerance,
+  const concealCardAction = (card) => {
+    if (!card) return;
+    card.classList.remove("is-review-action-visible");
+    enableKeyboardAccess(card.querySelector("[data-review-flag-button]"));
   };
 
-  document.addEventListener("DOMContentLoaded", () => {
-    const cards = document.querySelectorAll(".library-page [data-movie-card]");
+  const concealOtherActions = (activeCard = null) => {
+    getCards().forEach((card) => {
+      if (card !== activeCard) concealCardAction(card);
+    });
+  };
+
+  const revealCardAction = (card) => {
+    const button = card?.querySelector("[data-review-flag-button]");
+    if (!card || !button) return;
+    concealOtherActions(card);
+    card.classList.add("is-review-action-visible");
+    enableKeyboardAccess(button);
+    suppressLinkCard = card;
+    button.focus({ preventScroll: true });
+  };
+
+  const cancelHold = () => {
+    if (holdTimer !== null) {
+      window.clearTimeout(holdTimer);
+    }
+    holdTimer = null;
+    holdCard = null;
+  };
+
+  const initCardReviewFlags = (root = document) => {
+    const cards =
+      root.matches?.("[data-movie-card]") && root.closest(".library-page")
+        ? [root]
+        : root.querySelectorAll?.(
+            ".library-page [data-movie-card], [data-movie-card]",
+          ) || [];
     if (!cards.length) return;
-
-    let holdTimer = null;
-    let holdCard = null;
-    let startX = 0;
-    let startY = 0;
-    let suppressLinkCard = null;
-
-    const concealCardAction = (card) => {
-      if (!card) return;
-      card.classList.remove("is-review-action-visible");
-      const button = card.querySelector("[data-review-flag-button]");
-      if (!button) return;
-      enableKeyboardAccess(button);
-    };
-
-    const concealOtherActions = (activeCard = null) => {
-      cards.forEach((card) => {
-        if (card !== activeCard) concealCardAction(card);
-      });
-    };
-
-    const revealCardAction = (card) => {
-      const button = card?.querySelector("[data-review-flag-button]");
-      if (!card || !button) return;
-      concealOtherActions(card);
-      card.classList.add("is-review-action-visible");
-      enableKeyboardAccess(button);
-      suppressLinkCard = card;
-      button.focus({ preventScroll: true });
-    };
-
-    const cancelHold = () => {
-      if (holdTimer !== null) {
-        window.clearTimeout(holdTimer);
-      }
-      holdTimer = null;
-      holdCard = null;
-    };
 
     cards.forEach((card) => {
       enableKeyboardAccess(card.querySelector("[data-review-flag-button]"));
+      if (card.dataset.reviewFlagInitialized === "true") return;
+      card.dataset.reviewFlagInitialized = "true";
 
       card.addEventListener("pointerdown", (event) => {
         if (event.pointerType === "mouse" && event.button !== 0) return;
@@ -100,6 +102,11 @@
         }
       });
     });
+
+    if (document.documentElement.dataset.reviewFlagDocumentBound === "true") {
+      return;
+    }
+    document.documentElement.dataset.reviewFlagDocumentBound = "true";
 
     document.addEventListener(
       "click",
@@ -182,5 +189,17 @@
         concealOtherActions();
       }
     });
+  };
+
+  window.VaultCardReviewFlagSupport = {
+    HOLD_DELAY_MS,
+    MOVE_TOLERANCE_PX,
+    enableKeyboardAccess,
+    initCardReviewFlags,
+    movedBeyondTolerance,
+  };
+
+  document.addEventListener("DOMContentLoaded", () => {
+    initCardReviewFlags(document);
   });
 })();

@@ -171,6 +171,15 @@ def test_movies_list_view_renders_modern_list_rows(client: TestClient) -> None:
     assert "data-table-sort" in html
 
 
+def test_movies_library_renders_quiet_inline_status_slot(client: TestClient) -> None:
+    response = client.get("/ui/movies")
+
+    assert response.status_code == 200
+    html = response.text
+    assert '<div class="library-results-status" data-library-results-status hidden></div>' in html
+    assert "data-library-results-status aria-live" not in html
+
+
 def test_movies_list_view_title_sort_sets_aria_sort(client: TestClient) -> None:
     ascending = client.get(
         "/ui/movies",

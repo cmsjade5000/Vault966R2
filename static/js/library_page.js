@@ -70,6 +70,34 @@
     return url.toString();
   };
 
+  const buildFormSubmitUrl = (form, href) => {
+    const url = new URL(form.getAttribute("action") || href, href);
+    url.search = "";
+    new FormData(form).forEach((value, key) => {
+      const text = String(value);
+      if (text || key === "_filters" || key === "page") {
+        url.searchParams.set(key, text);
+      }
+    });
+    url.hash = "results";
+    return url.toString();
+  };
+
+  const buildLibraryRequestUrl = (href) => {
+    const url = new URL(href, window.location.href);
+    url.searchParams.set("_filters", "1");
+    if (!url.searchParams.get("page")) {
+      url.searchParams.set("page", "1");
+    }
+    return url.toString();
+  };
+
+  const canLoadLibraryInline = () =>
+    typeof window.fetch === "function" &&
+    typeof window.DOMParser === "function" &&
+    typeof window.AbortController === "function" &&
+    typeof window.history?.pushState === "function";
+
   const buildPickParams = (values = {}) => {
     const params = new URLSearchParams();
     [
@@ -146,8 +174,11 @@
     buildPickParams,
     buildClearAllFiltersUrl,
     buildClearFilterUrl,
+    buildFormSubmitUrl,
+    buildLibraryRequestUrl,
     buildTableSortUrl,
     buildPendingSummary,
+    canLoadLibraryInline,
     emptyFilterState,
     formatApplyLabel,
     formatPresetName,
@@ -155,7 +186,13 @@
     shouldShowCustomControl,
   };
 
-  document.addEventListener("DOMContentLoaded", () => {
+  const initLibraryPage = (root = document) => {
+    const shell = root.matches?.("[data-results-shell]")
+      ? root
+      : root.querySelector?.("[data-results-shell]");
+    if (!shell || shell.dataset.libraryInitialized === "true") return;
+    shell.dataset.libraryInitialized = "true";
+
     const form = document.getElementById("filters-form");
     const dialog = document.querySelector("[data-filters-dialog]");
     const searchInput = document.getElementById("search-q");
@@ -169,7 +206,6 @@
     const resetButton = document.querySelector("[data-filters-reset]");
     const summary = document.querySelector("[data-filters-summary]");
     const summaryEmpty = document.querySelector("[data-filters-summary-empty]");
-    const searchInput = document.getElementById("search-q");
     const yearCustom = document.getElementById("year-custom");
     const yearCustomMin = document.getElementById("year-custom-min");
     const yearCustomMax = document.getElementById("year-custom-max");
@@ -199,6 +235,78 @@
     let pendingPresetName = formatPresetName(presetInput?.value || "");
     let yearCustomSelected = false;
     let runtimeCustomSelected = false;
+    let activeLibraryRequest = null;
+
+    const status = shell.querySelector("[data-library-results-status]");
+
+    const setLibraryStatus = (message, { error = false } = {}) => {
+      if (!status) return;
+      status.textContent = message;
+      status.hidden = false;
+      status.classList.toggle("is-error", error);
+    };
+
+    const setLibraryBusy = (message) => {
+      shell.classList.add("is-loading");
+      shell.setAttribute("aria-busy", "true");
+      setLibraryStatus(message);
+    };
+
+    const loadLibraryUrl = async (
+      href,
+      { message = "Updating results…", replace = false } = {},
+    ) => {
+      if (!canLoadLibraryInline()) {
+        window.location.assign(href);
+        return;
+      }
+
+      const url = buildLibraryRequestUrl(href);
+      activeLibraryRequest?.abort();
+      activeLibraryRequest = new AbortController();
+      setLibraryBusy(message);
+
+      try {
+        const response = await fetch(url, {
+          headers: { Accept: "text/html" },
+          signal: activeLibraryRequest.signal,
+        });
+        if (!response.ok) throw new Error("Library results request failed");
+
+        const html = await response.text();
+        const doc = new DOMParser().parseFromString(html, "text/html");
+        const nextShell = doc.querySelector("[data-results-shell]");
+        if (!nextShell) throw new Error("Library results shell missing");
+
+        const importedShell = document.importNode(nextShell, true);
+        shell.replaceWith(importedShell);
+        if (replace) {
+          window.history.replaceState({}, "", url);
+        } else {
+          window.history.pushState({}, "", url);
+        }
+        window.VaultCardReviewFlagSupport?.initCardReviewFlags?.(importedShell);
+        initLibraryPage(importedShell);
+      } catch (error) {
+        if (error.name === "AbortError") return;
+        shell.classList.remove("is-loading");
+        shell.removeAttribute("aria-busy");
+        setLibraryStatus("Could not update results. Try again.", {
+          error: true,
+        });
+      }
+    };
+
+    window.VaultLibrarySupport.loadLibraryUrl = loadLibraryUrl;
+    if (!window.VaultLibrarySupport.popstateBound) {
+      window.VaultLibrarySupport.popstateBound = true;
+      window.addEventListener("popstate", () => {
+        window.VaultLibrarySupport.loadLibraryUrl?.(window.location.href, {
+          message: "Updating results…",
+          replace: true,
+        });
+      });
+    }
 
     const clearPendingPreset = () => {
       pendingPresetName = "";
@@ -517,14 +625,14 @@
 
     const clearFilter = (key, value) => {
       if (key === "q") {
-        window.location.assign(buildClearFilterUrl(window.location.href, "q"));
+        const nextUrl = buildClearFilterUrl(window.location.href, "q");
+        loadLibraryUrl(nextUrl, { message: "Clearing search…" });
         return;
       }
       if (key === "preset") {
         if (presetInput) presetInput.value = "";
-        window.location.assign(
-          buildClearFilterUrl(window.location.href, "preset"),
-        );
+        const nextUrl = buildClearFilterUrl(window.location.href, "preset");
+        loadLibraryUrl(nextUrl, { message: "Clearing fliclist…" });
         return;
       }
       if (key === "genre") {
@@ -540,7 +648,11 @@
         yearMaxInput.value = "";
       }
       if (key === "runtime") runtimeInput.value = "";
-      form?.requestSubmit();
+      if (form) {
+        loadLibraryUrl(buildFormSubmitUrl(form, window.location.href), {
+          message: "Updating results…",
+        });
+      }
     };
     document.querySelectorAll("[data-clear-filter]").forEach((button) => {
       button.addEventListener("click", () =>
@@ -550,10 +662,12 @@
     document
       .getElementById("clear-active-filters")
       ?.addEventListener("click", () => {
-        window.location.assign(buildClearAllFiltersUrl(window.location.href));
+        loadLibraryUrl(buildClearAllFiltersUrl(window.location.href), {
+          message: "Clearing filters…",
+        });
       });
 
-    form?.addEventListener("submit", () => {
+    form?.addEventListener("submit", (event) => {
       const hasFilters = Boolean(
         genresInput?.value ||
         moodsInput?.value ||
@@ -568,11 +682,23 @@
           : "filters_applied",
         { context: hasFilters ? "filtered" : "all" },
       );
+      if (canLoadLibraryInline()) {
+        event.preventDefault();
+        closeFilters();
+        loadLibraryUrl(buildFormSubmitUrl(form, window.location.href), {
+          message: document.getElementById("search-q")?.value
+            ? "Searching library…"
+            : "Updating results…",
+        });
+      }
     });
 
     document.querySelectorAll("[data-view-change]").forEach((link) => {
-      link.addEventListener("click", () => {
+      link.addEventListener("click", (event) => {
         recordEvent("view_changed", { context: link.dataset.viewChange });
+        if (!canLoadLibraryInline()) return;
+        event.preventDefault();
+        loadLibraryUrl(link.href, { message: "Changing view…" });
       });
     });
     document.querySelectorAll("[data-table-sort]").forEach((button) => {
@@ -590,7 +716,19 @@
           values,
         });
         recordEvent("sort_changed", { context: button.dataset.orderByAsc });
-        window.location.assign(nextUrl);
+        loadLibraryUrl(nextUrl, { message: "Sorting results…" });
+      });
+    });
+    document.querySelectorAll("[data-results-pager] a").forEach((link) => {
+      link.addEventListener("click", (event) => {
+        if (
+          link.getAttribute("aria-disabled") === "true" ||
+          !canLoadLibraryInline()
+        ) {
+          return;
+        }
+        event.preventDefault();
+        loadLibraryUrl(link.href, { message: "Loading page…" });
       });
     });
     document.querySelectorAll("[data-movie-detail-link]").forEach((link) => {
@@ -603,12 +741,15 @@
       });
     });
 
-    document.addEventListener("vault:preference-updated", (event) => {
-      recordEvent("preference_toggled", {
-        movie_id: event.detail.movieId,
-        context: event.detail.type,
+    if (!window.VaultLibrarySupport.preferenceEventBound) {
+      window.VaultLibrarySupport.preferenceEventBound = true;
+      document.addEventListener("vault:preference-updated", (event) => {
+        recordEvent("preference_toggled", {
+          movie_id: event.detail.movieId,
+          context: event.detail.type,
+        });
       });
-    });
+    }
 
     const pickButton = document.getElementById("pick-button");
     pickButton?.addEventListener("click", async () => {
@@ -664,5 +805,11 @@
         }
       }
     });
+  };
+
+  window.VaultLibrarySupport.initLibraryPage = initLibraryPage;
+
+  document.addEventListener("DOMContentLoaded", () => {
+    initLibraryPage(document);
   });
 })();
