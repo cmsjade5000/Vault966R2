@@ -7,6 +7,7 @@ from fastapi.testclient import TestClient
 
 from api.models.movie import Movie, MovieIngestProvenance
 from api.models.source_sync import SourceMovieRow, SourceReconciliationMatch, SourceSnapshot
+from api.routers.ui import first_import as first_import_ui
 from api.routers.ui.source_sync import _neutralize_spreadsheet_formula
 from api.services import source_sync
 
@@ -149,9 +150,31 @@ def test_first_import_upload_missing_columns_returns_recovery_copy(client: TestC
     )
 
     assert response.status_code == 303
-    assert "required%20columns" in response.headers["location"]
+    assert response.headers["location"] == "/ui/first-import?error=missing_columns"
     page = client.get(response.headers["location"])
     assert "start from the sample CSV" in page.text
+
+
+def test_first_import_upload_redirect_uses_fixed_error_code_for_source_error(
+    client: TestClient,
+) -> None:
+    response = client.post(
+        "/ui/first-import/upload",
+        files={
+            "source_file": (
+                "source.csv",
+                _csv("Arrival,not-a-runtime,Denis Villeneuve,2016,Sci-Fi,PG-13,11/11/16,1"),
+                "text/csv",
+            )
+        },
+        follow_redirects=False,
+    )
+
+    assert response.status_code == 303
+    assert response.headers["location"] == "/ui/first-import?error=invalid_runtime"
+    assert "not-a-runtime" not in response.headers["location"]
+    page = client.get(response.headers["location"])
+    assert "Use minutes, H:MM, or H:MM:SS." in page.text
 
 
 def test_first_import_auto_creates_high_confidence_tmdb_match(
@@ -475,6 +498,35 @@ def test_first_import_auto_create_redirects_to_report(
     assert "1 high-confidence movies created" in report.text
     assert "Download new additions CSV" in report.text
     assert f'href="/ui/source-sync/{snapshot.id}/new-additions.csv"' in report.text
+
+
+def test_first_import_auto_create_redirect_uses_fixed_error_code(
+    client: TestClient,
+    db_session,
+    monkeypatch,
+) -> None:
+    snapshot = source_sync.create_draft_snapshot(
+        db_session,
+        filename="source.csv",
+        content=_csv("Arrival,1:56:00,Denis Villeneuve,2016,Sci-Fi,PG-13,11/11/16,1"),
+        profile_id=1,
+    )
+
+    def fail_auto_create(*args, **kwargs):
+        raise source_sync.SourceSyncError("Invalid year '<script>remote</script>'")
+
+    monkeypatch.setattr(first_import_ui, "apply_first_import_auto_create", fail_auto_create)
+
+    response = client.post(
+        f"/ui/first-import/{snapshot.id}/auto-create",
+        follow_redirects=False,
+    )
+
+    assert response.status_code == 303
+    assert response.headers["location"] == f"/ui/first-import/{snapshot.id}/preview?error=invalid_year"
+    assert "script" not in response.headers["location"]
+    page = client.get(response.headers["location"])
+    assert "Use a four-digit release year." in page.text
 
 
 def test_first_import_preview_shows_projected_outcome_counts(

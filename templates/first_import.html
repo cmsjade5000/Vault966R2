@@ -14,8 +14,8 @@
       <a class="button-secondary" href="/ui/movies">Back to Library</a>
     </header>
 
-    {% if request.query_params.get('error') %}
-      <p class="source-sync-error" role="alert">{{ request.query_params.get('error') }}</p>
+    {% if error %}
+      <p class="source-sync-error" role="alert">{{ error }}</p>
     {% endif %}
 
     <section class="source-sync-upload first-import-upload" aria-labelledby="first-import-upload-title">

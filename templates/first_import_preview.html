@@ -17,8 +17,8 @@
     {% if request.query_params.get('message') %}
       <p class="review-message" role="status">{{ request.query_params.get('message') }}</p>
     {% endif %}
-    {% if request.query_params.get('error') %}
-      <p class="source-sync-error" role="alert">{{ request.query_params.get('error') }}</p>
+    {% if error %}
+      <p class="source-sync-error" role="alert">{{ error }}</p>
     {% endif %}
 
     <section class="source-sync-summary">
