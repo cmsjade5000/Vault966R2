@@ -18,6 +18,7 @@ const loadSupport = () => {
     },
     window,
   };
+  window.location = { href: "http://127.0.0.1:8000/ui/movies" };
   vm.runInNewContext(script, context);
   return window.VaultLibrarySupport;
 };
@@ -131,6 +132,30 @@ test("table sort preserves form-backed filters and switches inactive column to a
   assert.equal(result.searchParams.get("year_min"), "1990");
   assert.equal(result.searchParams.get("view"), "list");
   assert.equal(result.searchParams.get("page"), "1");
+});
+
+test("library request URLs mark filter state and default to the first page", () => {
+  const { buildLibraryRequestUrl } = loadSupport();
+  const result = new URL(
+    buildLibraryRequestUrl("http://127.0.0.1:8000/ui/movies?view=list"),
+  );
+
+  assert.equal(result.searchParams.get("view"), "list");
+  assert.equal(result.searchParams.get("_filters"), "1");
+  assert.equal(result.searchParams.get("page"), "1");
+});
+
+test("library request URLs preserve explicit pagination", () => {
+  const { buildLibraryRequestUrl } = loadSupport();
+  const result = new URL(
+    buildLibraryRequestUrl(
+      "http://127.0.0.1:8000/ui/movies?view=grid&page=3&_filters=1",
+    ),
+  );
+
+  assert.equal(result.searchParams.get("view"), "grid");
+  assert.equal(result.searchParams.get("_filters"), "1");
+  assert.equal(result.searchParams.get("page"), "3");
 });
 
 test("builds pending filter summary and counts each visible chip", () => {

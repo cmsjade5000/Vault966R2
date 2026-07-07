@@ -2,60 +2,66 @@
   const HOLD_DELAY_MS = 550;
   const MOVE_TOLERANCE_PX = 12;
 
-  const movedBeyondTolerance = (startX, startY, currentX, currentY) =>
-    Math.hypot(currentX - startX, currentY - startY) > MOVE_TOLERANCE_PX;
+  let holdTimer = null;
+  let holdCard = null;
+  let startX = 0;
+  let startY = 0;
+  let suppressLinkCard = null;
 
-  window.VaultCardReviewFlagSupport = {
-    HOLD_DELAY_MS,
-    MOVE_TOLERANCE_PX,
-    movedBeyondTolerance,
+  const movedBeyondTolerance = (startXValue, startYValue, currentX, currentY) =>
+    Math.hypot(currentX - startXValue, currentY - startYValue) >
+    MOVE_TOLERANCE_PX;
+
+  const getCards = () =>
+    document.querySelectorAll(".library-page [data-movie-card]");
+
+  const concealCardAction = (card) => {
+    if (!card) return;
+    card.classList.remove("is-review-action-visible");
+    const button = card.querySelector("[data-review-flag-button]");
+    if (!button) return;
+    button.setAttribute("aria-hidden", "true");
+    button.tabIndex = -1;
   };
 
-  document.addEventListener("DOMContentLoaded", () => {
-    const cards = document.querySelectorAll(".library-page [data-movie-card]");
+  const concealOtherActions = (activeCard = null) => {
+    getCards().forEach((card) => {
+      if (card !== activeCard) concealCardAction(card);
+    });
+  };
+
+  const revealCardAction = (card) => {
+    const button = card?.querySelector("[data-review-flag-button]");
+    if (!card || !button) return;
+    concealOtherActions(card);
+    card.classList.add("is-review-action-visible");
+    button.setAttribute("aria-hidden", "false");
+    button.tabIndex = 0;
+    suppressLinkCard = card;
+    button.focus({ preventScroll: true });
+  };
+
+  const cancelHold = () => {
+    if (holdTimer !== null) {
+      window.clearTimeout(holdTimer);
+    }
+    holdTimer = null;
+    holdCard = null;
+  };
+
+  const initCardReviewFlags = (root = document) => {
+    const cards =
+      root.matches?.("[data-movie-card]") && root.closest(".library-page")
+        ? [root]
+        : root.querySelectorAll?.(
+            ".library-page [data-movie-card], [data-movie-card]",
+          ) || [];
     if (!cards.length) return;
 
-    let holdTimer = null;
-    let holdCard = null;
-    let startX = 0;
-    let startY = 0;
-    let suppressLinkCard = null;
-
-    const concealCardAction = (card) => {
-      if (!card) return;
-      card.classList.remove("is-review-action-visible");
-      const button = card.querySelector("[data-review-flag-button]");
-      if (!button) return;
-      button.setAttribute("aria-hidden", "true");
-      button.tabIndex = -1;
-    };
-
-    const concealOtherActions = (activeCard = null) => {
-      cards.forEach((card) => {
-        if (card !== activeCard) concealCardAction(card);
-      });
-    };
-
-    const revealCardAction = (card) => {
-      const button = card?.querySelector("[data-review-flag-button]");
-      if (!card || !button) return;
-      concealOtherActions(card);
-      card.classList.add("is-review-action-visible");
-      button.setAttribute("aria-hidden", "false");
-      button.tabIndex = 0;
-      suppressLinkCard = card;
-      button.focus({ preventScroll: true });
-    };
-
-    const cancelHold = () => {
-      if (holdTimer !== null) {
-        window.clearTimeout(holdTimer);
-      }
-      holdTimer = null;
-      holdCard = null;
-    };
-
     cards.forEach((card) => {
+      if (card.dataset.reviewFlagInitialized === "true") return;
+      card.dataset.reviewFlagInitialized = "true";
+
       card.addEventListener("pointerdown", (event) => {
         if (event.pointerType === "mouse" && event.button !== 0) return;
         if (event.target.closest("button, .library-card__actions")) return;
@@ -91,6 +97,11 @@
         }
       });
     });
+
+    if (document.documentElement.dataset.reviewFlagDocumentBound === "true") {
+      return;
+    }
+    document.documentElement.dataset.reviewFlagDocumentBound = "true";
 
     document.addEventListener(
       "click",
@@ -173,5 +184,16 @@
         concealOtherActions();
       }
     });
+  };
+
+  window.VaultCardReviewFlagSupport = {
+    HOLD_DELAY_MS,
+    MOVE_TOLERANCE_PX,
+    initCardReviewFlags,
+    movedBeyondTolerance,
+  };
+
+  document.addEventListener("DOMContentLoaded", () => {
+    initCardReviewFlags(document);
   });
 })();
