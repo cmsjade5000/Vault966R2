@@ -70,6 +70,25 @@
     return url.toString();
   };
 
+  const buildPickParams = (values = {}) => {
+    const params = new URLSearchParams();
+    [
+      "q",
+      "genres",
+      "moods",
+      "year_min",
+      "year_max",
+      "runtime_min",
+      "runtime_max",
+    ].forEach((key) => {
+      const value = values[key];
+      if (value !== undefined && value !== null && String(value).trim()) {
+        params.set(key, String(value).trim());
+      }
+    });
+    return params;
+  };
+
   const parseCsv = (value = "") =>
     value
       .split(",")
@@ -121,6 +140,7 @@
   } = {}) => selected || Boolean(value && !hasPresetMatch);
 
   window.VaultLibrarySupport = {
+    buildPickParams,
     buildClearAllFiltersUrl,
     buildClearFilterUrl,
     buildTableSortUrl,
@@ -135,6 +155,7 @@
   document.addEventListener("DOMContentLoaded", () => {
     const form = document.getElementById("filters-form");
     const dialog = document.querySelector("[data-filters-dialog]");
+    const searchInput = document.getElementById("search-q");
     const genresInput = document.getElementById("genres-input");
     const moodsInput = document.getElementById("moods-input");
     const yearMinInput = document.getElementById("year-min-input");
@@ -556,14 +577,14 @@
       let navigating = false;
       try {
         recordEvent("random_pick_requested", { context: "toolbar" });
-        const params = new URLSearchParams();
-        const firstGenre = selectedGenres.values().next().value;
-        const firstMood = parseCsv(moodsInput?.value || "")[0];
-        if (firstGenre) params.set("genre", firstGenre);
-        if (firstMood) params.set("mood", firstMood);
-        if (yearMinInput?.value) params.set("year_min", yearMinInput.value);
-        if (yearMaxInput?.value) params.set("year_max", yearMaxInput.value);
-        if (runtimeInput?.value) params.set("runtime_max", runtimeInput.value);
+        const params = buildPickParams({
+          q: searchInput?.value || "",
+          genres: Array.from(selectedGenres).join(", "),
+          moods: moodsInput?.value || "",
+          year_min: yearMinInput?.value || "",
+          year_max: yearMaxInput?.value || "",
+          runtime_max: runtimeInput?.value || "",
+        });
         const response = await fetch(`/movies/picks?${params.toString()}`);
         if (response.status === 404) {
           window.showToast?.("Nothing matched—try widening the filters.");
