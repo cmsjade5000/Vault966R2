@@ -9,19 +9,18 @@
       return;
     }
 
-    const isMobileNav = () => window.matchMedia("(max-width: 820px)").matches;
-
     const setExpanded = (next) => {
-      navToggles.forEach((toggle) =>
-        toggle.setAttribute("aria-expanded", String(next)),
-      );
+      navToggles.forEach((toggle) => {
+        toggle.setAttribute("aria-expanded", String(next));
+        toggle.setAttribute(
+          "aria-label",
+          `${next ? "Close" : "Open"} primary navigation`,
+        );
+      });
     };
 
     navToggles.forEach((toggle) => {
-      toggle.addEventListener("click", (event) => {
-        if (isMobileNav()) {
-          event.preventDefault();
-        }
+      toggle.addEventListener("click", () => {
         const expanded = navMenu.classList.contains("is-open");
         const next = !expanded;
         navMenu.classList.toggle("is-open", next);

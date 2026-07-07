@@ -76,32 +76,41 @@
           <a
             class="brand"
             href="/ui/movies"
-            data-nav-toggle
-            aria-expanded="false"
-            aria-controls="primary-nav"
           >
             <span class="brand-mark">Vault 966</span>
           </a>
-          <nav class="primary-nav" id="primary-nav" data-nav-menu>
-            <div class="nav-group" role="menubar">
+          <button
+            type="button"
+            class="nav-toggle"
+            data-nav-toggle
+            aria-expanded="false"
+            aria-controls="primary-nav"
+            aria-label="Open primary navigation"
+          >
+            Menu
+          </button>
+          <nav
+            class="primary-nav"
+            id="primary-nav"
+            data-nav-menu
+            aria-label="Primary navigation"
+          >
+            <div class="nav-group">
               <a
                 class="nav-link{% if current_path == '/ui/movies' %} is-active{% endif %}"
                 href="/ui/movies"
-                role="menuitem"
                 {% if current_path == '/ui/movies' %}aria-current="page"{% endif %}
                 >Library</a
               >
               <a
                 class="nav-link{% if current_path == '/ui/match' %} is-active{% endif %}"
                 href="/ui/match"
-                role="menuitem"
                 {% if current_path == '/ui/match' %}aria-current="page"{% endif %}
                 >Match</a
               >
               <a
                 class="nav-link{% if current_path == '/ui/watchlist' %} is-active{% endif %}"
                 href="/ui/watchlist"
-                role="menuitem"
                 {% if current_path == '/ui/watchlist' %}aria-current="page"{% endif %}
                 >Watchlist</a
               >
@@ -109,7 +118,6 @@
               <a
                 class="nav-link{% if current_path.startswith('/ui/movies/health') or current_path.startswith('/ui/source-sync/') %} is-active{% endif %}"
                 href="/ui/movies/health"
-                role="menuitem"
                 data-vault-busy-message="Checking Vault Health…"
                 {% if current_path.startswith('/ui/movies/health') or current_path.startswith('/ui/source-sync/') %}aria-current="page"{% endif %}
                 >Vault Health</a

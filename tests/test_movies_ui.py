@@ -555,6 +555,14 @@ def test_library_search_is_prominent_and_searches_identity_fields(
     assert "js/library_page.js?v=" in page.text
     assert "css/base.css?v=" in page.text
     assert '<span class="brand-mark">Vault 966</span>' in page.text
+    assert 'class="brand"\n            href="/ui/movies"' in page.text
+    assert 'data-nav-toggle\n            aria-expanded="false"' in page.text
+    assert 'aria-controls="primary-nav"' in page.text
+    assert 'aria-label="Open primary navigation"' in page.text
+    assert '<nav\n            class="primary-nav"' in page.text
+    assert 'aria-label="Primary navigation"' in page.text
+    assert 'role="menubar"' not in page.text
+    assert 'role="menuitem"' not in page.text
     assert "Movie dispatch" not in page.text
     assert "js/base.js?v=" in page.text
 
