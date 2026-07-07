@@ -3087,12 +3087,19 @@ export interface operations {
     get_pick_movies_picks_get: {
         parameters: {
             query?: {
+                /** @description Case-insensitive search filter */
+                q?: string | null;
                 /** @description Desired mood name */
                 mood?: string | null;
                 /** @description Restrict to this genre */
                 genre?: string | null;
+                /** @description Comma separated list of mood names */
+                moods?: string | null;
+                /** @description Comma separated list of genre names */
+                genres?: string | null;
                 year_min?: string | null;
                 year_max?: string | null;
+                runtime_min?: string | null;
                 runtime_max?: string | null;
             };
             header?: never;
