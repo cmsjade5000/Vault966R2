@@ -13,6 +13,7 @@ const loadSupport = () => {
   const window = {};
   const context = {
     URL,
+    URLSearchParams,
     document: {
       addEventListener() {},
     },
@@ -131,6 +132,40 @@ test("table sort preserves form-backed filters and switches inactive column to a
   assert.equal(result.searchParams.get("year_min"), "1990");
   assert.equal(result.searchParams.get("view"), "list");
   assert.equal(result.searchParams.get("page"), "1");
+});
+
+test("random pick params include the full selected filter set", () => {
+  const { buildPickParams } = loadSupport();
+  const params = buildPickParams({
+    genres: "Sci-Fi, Action",
+    moods: "High-energy, Mind-bending",
+    q: "Matrix",
+    runtime_max: "140",
+    runtime_min: "120",
+    year_max: "2000",
+    year_min: "1990",
+  });
+
+  assert.equal(params.get("q"), "Matrix");
+  assert.equal(params.get("genres"), "Sci-Fi, Action");
+  assert.equal(params.get("moods"), "High-energy, Mind-bending");
+  assert.equal(params.get("year_min"), "1990");
+  assert.equal(params.get("year_max"), "2000");
+  assert.equal(params.get("runtime_min"), "120");
+  assert.equal(params.get("runtime_max"), "140");
+  assert.equal(params.has("genre"), false);
+  assert.equal(params.has("mood"), false);
+});
+
+test("random pick params omit blank filters", () => {
+  const { buildPickParams } = loadSupport();
+  const params = buildPickParams({
+    genres: "  ",
+    moods: "",
+    q: " Blade Runner ",
+  });
+
+  assert.deepEqual(Array.from(params.entries()), [["q", "Blade Runner"]]);
 });
 
 test("builds pending filter summary and counts each visible chip", () => {

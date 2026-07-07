@@ -12,13 +12,24 @@ from ...types import UNSET, Response, Unset
 
 def _get_kwargs(
     *,
+    q: None | str | Unset = UNSET,
     mood: None | str | Unset = UNSET,
     genre: None | str | Unset = UNSET,
+    moods: None | str | Unset = UNSET,
+    genres: None | str | Unset = UNSET,
     year_min: None | str | Unset = UNSET,
     year_max: None | str | Unset = UNSET,
+    runtime_min: None | str | Unset = UNSET,
     runtime_max: None | str | Unset = UNSET,
 ) -> dict[str, Any]:
     params: dict[str, Any] = {}
+
+    json_q: None | str | Unset
+    if isinstance(q, Unset):
+        json_q = UNSET
+    else:
+        json_q = q
+    params["q"] = json_q
 
     json_mood: None | str | Unset
     if isinstance(mood, Unset):
@@ -34,6 +45,20 @@ def _get_kwargs(
         json_genre = genre
     params["genre"] = json_genre
 
+    json_moods: None | str | Unset
+    if isinstance(moods, Unset):
+        json_moods = UNSET
+    else:
+        json_moods = moods
+    params["moods"] = json_moods
+
+    json_genres: None | str | Unset
+    if isinstance(genres, Unset):
+        json_genres = UNSET
+    else:
+        json_genres = genres
+    params["genres"] = json_genres
+
     json_year_min: None | str | Unset
     if isinstance(year_min, Unset):
         json_year_min = UNSET
@@ -47,6 +72,13 @@ def _get_kwargs(
     else:
         json_year_max = year_max
     params["year_max"] = json_year_max
+
+    json_runtime_min: None | str | Unset
+    if isinstance(runtime_min, Unset):
+        json_runtime_min = UNSET
+    else:
+        json_runtime_min = runtime_min
+    params["runtime_min"] = json_runtime_min
 
     json_runtime_max: None | str | Unset
     if isinstance(runtime_max, Unset):
@@ -99,19 +131,27 @@ def _build_response(
 def sync_detailed(
     *,
     client: AuthenticatedClient | Client,
+    q: None | str | Unset = UNSET,
     mood: None | str | Unset = UNSET,
     genre: None | str | Unset = UNSET,
+    moods: None | str | Unset = UNSET,
+    genres: None | str | Unset = UNSET,
     year_min: None | str | Unset = UNSET,
     year_max: None | str | Unset = UNSET,
+    runtime_min: None | str | Unset = UNSET,
     runtime_max: None | str | Unset = UNSET,
 ) -> Response[HTTPValidationError | MovieRead]:
     """Get Pick
 
     Args:
+        q (None | str | Unset): Case-insensitive search filter
         mood (None | str | Unset): Desired mood name
         genre (None | str | Unset): Restrict to this genre
+        moods (None | str | Unset): Comma separated list of mood names
+        genres (None | str | Unset): Comma separated list of genre names
         year_min (None | str | Unset):
         year_max (None | str | Unset):
+        runtime_min (None | str | Unset):
         runtime_max (None | str | Unset):
 
     Raises:
@@ -123,10 +163,14 @@ def sync_detailed(
     """
 
     kwargs = _get_kwargs(
+        q=q,
         mood=mood,
         genre=genre,
+        moods=moods,
+        genres=genres,
         year_min=year_min,
         year_max=year_max,
+        runtime_min=runtime_min,
         runtime_max=runtime_max,
     )
 
@@ -140,19 +184,27 @@ def sync_detailed(
 def sync(
     *,
     client: AuthenticatedClient | Client,
+    q: None | str | Unset = UNSET,
     mood: None | str | Unset = UNSET,
     genre: None | str | Unset = UNSET,
+    moods: None | str | Unset = UNSET,
+    genres: None | str | Unset = UNSET,
     year_min: None | str | Unset = UNSET,
     year_max: None | str | Unset = UNSET,
+    runtime_min: None | str | Unset = UNSET,
     runtime_max: None | str | Unset = UNSET,
 ) -> HTTPValidationError | MovieRead | None:
     """Get Pick
 
     Args:
+        q (None | str | Unset): Case-insensitive search filter
         mood (None | str | Unset): Desired mood name
         genre (None | str | Unset): Restrict to this genre
+        moods (None | str | Unset): Comma separated list of mood names
+        genres (None | str | Unset): Comma separated list of genre names
         year_min (None | str | Unset):
         year_max (None | str | Unset):
+        runtime_min (None | str | Unset):
         runtime_max (None | str | Unset):
 
     Raises:
@@ -165,10 +217,14 @@ def sync(
 
     return sync_detailed(
         client=client,
+        q=q,
         mood=mood,
         genre=genre,
+        moods=moods,
+        genres=genres,
         year_min=year_min,
         year_max=year_max,
+        runtime_min=runtime_min,
         runtime_max=runtime_max,
     ).parsed
 
@@ -176,19 +232,27 @@ def sync(
 async def asyncio_detailed(
     *,
     client: AuthenticatedClient | Client,
+    q: None | str | Unset = UNSET,
     mood: None | str | Unset = UNSET,
     genre: None | str | Unset = UNSET,
+    moods: None | str | Unset = UNSET,
+    genres: None | str | Unset = UNSET,
     year_min: None | str | Unset = UNSET,
     year_max: None | str | Unset = UNSET,
+    runtime_min: None | str | Unset = UNSET,
     runtime_max: None | str | Unset = UNSET,
 ) -> Response[HTTPValidationError | MovieRead]:
     """Get Pick
 
     Args:
+        q (None | str | Unset): Case-insensitive search filter
         mood (None | str | Unset): Desired mood name
         genre (None | str | Unset): Restrict to this genre
+        moods (None | str | Unset): Comma separated list of mood names
+        genres (None | str | Unset): Comma separated list of genre names
         year_min (None | str | Unset):
         year_max (None | str | Unset):
+        runtime_min (None | str | Unset):
         runtime_max (None | str | Unset):
 
     Raises:
@@ -200,10 +264,14 @@ async def asyncio_detailed(
     """
 
     kwargs = _get_kwargs(
+        q=q,
         mood=mood,
         genre=genre,
+        moods=moods,
+        genres=genres,
         year_min=year_min,
         year_max=year_max,
+        runtime_min=runtime_min,
         runtime_max=runtime_max,
     )
 
@@ -215,19 +283,27 @@ async def asyncio_detailed(
 async def asyncio(
     *,
     client: AuthenticatedClient | Client,
+    q: None | str | Unset = UNSET,
     mood: None | str | Unset = UNSET,
     genre: None | str | Unset = UNSET,
+    moods: None | str | Unset = UNSET,
+    genres: None | str | Unset = UNSET,
     year_min: None | str | Unset = UNSET,
     year_max: None | str | Unset = UNSET,
+    runtime_min: None | str | Unset = UNSET,
     runtime_max: None | str | Unset = UNSET,
 ) -> HTTPValidationError | MovieRead | None:
     """Get Pick
 
     Args:
+        q (None | str | Unset): Case-insensitive search filter
         mood (None | str | Unset): Desired mood name
         genre (None | str | Unset): Restrict to this genre
+        moods (None | str | Unset): Comma separated list of mood names
+        genres (None | str | Unset): Comma separated list of genre names
         year_min (None | str | Unset):
         year_max (None | str | Unset):
+        runtime_min (None | str | Unset):
         runtime_max (None | str | Unset):
 
     Raises:
@@ -241,10 +317,14 @@ async def asyncio(
     return (
         await asyncio_detailed(
             client=client,
+            q=q,
             mood=mood,
             genre=genre,
+            moods=moods,
+            genres=genres,
             year_min=year_min,
             year_max=year_max,
+            runtime_min=runtime_min,
             runtime_max=runtime_max,
         )
     ).parsed

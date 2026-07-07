@@ -5500,6 +5500,24 @@
         "operationId": "get_pick_movies_picks_get",
         "parameters": [
           {
+            "description": "Case-insensitive search filter",
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Case-insensitive search filter",
+              "title": "Q"
+            }
+          },
+          {
             "description": "Desired mood name",
             "in": "query",
             "name": "mood",
@@ -5536,6 +5554,42 @@
             }
           },
           {
+            "description": "Comma separated list of mood names",
+            "in": "query",
+            "name": "moods",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Comma separated list of mood names",
+              "title": "Moods"
+            }
+          },
+          {
+            "description": "Comma separated list of genre names",
+            "in": "query",
+            "name": "genres",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Comma separated list of genre names",
+              "title": "Genres"
+            }
+          },
+          {
             "in": "query",
             "name": "year_min",
             "required": false,
@@ -5565,6 +5619,22 @@
                 }
               ],
               "title": "Year Max"
+            }
+          },
+          {
+            "in": "query",
+            "name": "runtime_min",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Runtime Min"
             }
           },
           {

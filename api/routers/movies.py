@@ -43,7 +43,6 @@ from core.movie_filters import (
     parse_movie_filters,
 )
 from core.movie_metadata import MovieMetadata
-from core.moods import normalize_mood_labels
 from core.vault_ids import allocate_vault_id, retire_movie_vault_id
 from api.utils.pagination import paginate
 from api.services.movie_lookup import (
@@ -148,49 +147,42 @@ def _record_pick_memory(db: Session, movie_id: int) -> None:
 
 @router.get("/picks", response_model=MovieRead)
 def get_pick(
+    q: Optional[str] = Query(default=None, description="Case-insensitive search filter"),
     mood: Optional[str] = Query(default=None, description="Desired mood name"),
     genre: Optional[str] = Query(default=None, description="Restrict to this genre"),
+    moods: Optional[str] = Query(default=None, description="Comma separated list of mood names"),
+    genres: Optional[str] = Query(default=None, description="Comma separated list of genre names"),
     year_min: Optional[str] = Query(default=None),
     year_max: Optional[str] = Query(default=None),
+    runtime_min: Optional[str] = Query(default=None),
     runtime_max: Optional[str] = Query(default=None),
     db: Session = Depends(get_db),
 ):
-    if mood:
-        mood = (normalize_mood_labels((mood,)) or (mood,))[0]
-    year_min = parse_optional_non_negative_int(year_min, "year_min")
-    year_max = parse_optional_non_negative_int(year_max, "year_max")
-    runtime_max = parse_optional_non_negative_int(runtime_max, "runtime_max")
-    if year_min is not None and year_max is not None and year_min > year_max:
-        raise HTTPException(status_code=400, detail="year_min cannot be greater than year_max")
+    genre_values = ",".join(value for value in (genres, genre) if value)
+    mood_values = ",".join(value for value in (moods, mood) if value)
+    params = parse_movie_filters(
+        q=q,
+        year_min=year_min,
+        year_max=year_max,
+        runtime_min=runtime_min,
+        runtime_max=runtime_max,
+        genres=genre_values or None,
+        moods=mood_values or None,
+        order_by="title_asc",
+    )
 
     query = (
         trusted_movie_query(db)
         .options(selectinload(Movie.genres), selectinload(Movie.moods))
         .order_by(Movie.title.asc())
     )
-
-    if genre:
-        query = query.filter(Movie.genres.any(Genre.name == genre))
-    if year_min is not None:
-        query = query.filter(Movie.year >= year_min)
-    if year_max is not None:
-        query = query.filter(Movie.year <= year_max)
-    if runtime_max is not None:
-        query = query.filter(Movie.runtime <= runtime_max)
-    if mood:
-        query = query.filter(Movie.moods.any(Mood.name == mood))
+    query = apply_filters(query, params)
 
     movies = query.all()
     if not movies:
         raise HTTPException(status_code=404, detail="No movies found for the given filters")
 
-    filters = PickerFilters.from_values(
-        moods=[mood] if mood else (),
-        genres=[genre] if genre else (),
-        year_min=year_min,
-        year_max=year_max,
-        runtime_max=runtime_max,
-    ).to_payload()
+    filters = PickerFilters.from_params(params).to_payload()
 
     candidates = []
     for movie in movies:
