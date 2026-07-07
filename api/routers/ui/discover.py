@@ -8,7 +8,7 @@ from typing import Iterable, Optional
 from zoneinfo import ZoneInfo
 
 from fastapi import APIRouter, Depends, Query, Request
-from fastapi.responses import RedirectResponse
+from fastapi.responses import HTMLResponse
 from sqlalchemy import desc, func, or_
 from sqlalchemy.orm import Session, selectinload
 
@@ -16,12 +16,17 @@ from api.db import get_db
 from api.models.movie import Genre, Movie, movie_genres
 from api.models.profile import MoviePreference
 from api.services.double_feature import DEFAULT_DOUBLE_FEATURE_RUNTIME, pick_double_feature
+from api.services.flic_ordering import fetch_movies_in_rank_order, rank_movie_ids_by_flic
 from api.services.profiles import (
+    ensure_profile_cookie,
     get_active_profile_id,
     get_preferences_for_movies,
+    get_profiles,
 )
-from api.services.ui.grid import attach_poster_themes
+from api.services.ui.grid import attach_genre_display, attach_poster_themes
+from api.services.ui.templates import TEMPLATES
 from api.services.trusted_movies import get_untrusted_movie_ids, trusted_movie_query
+from core.picker import PickerFilters
 
 router = APIRouter()
 
@@ -235,6 +240,10 @@ def _movie_genres(movie: Movie) -> list[str]:
     return [genre.name for genre in getattr(movie, "genres", []) if genre.name]
 
 
+def _movie_moods(movie: Movie) -> list[str]:
+    return [mood.name for mood in getattr(movie, "moods", []) if mood.name]
+
+
 def _reason_tags_for_movie(
     movie: Movie,
     *,
@@ -261,6 +270,112 @@ def _reason_tags_for_movie(
             tags.append(genres[0])
 
     return tags[:2]
+
+
+def _watch_tonight_reason(movie: Movie, *, prefix: str = "Tonight") -> list[str]:
+    tags: list[str] = []
+    if movie.runtime:
+        if movie.runtime <= 100:
+            tags.append("Short runtime")
+        elif movie.runtime <= 125:
+            tags.append("One-night runtime")
+    moods = _movie_moods(movie)
+    if moods:
+        tags.append(moods[0])
+    if len(tags) < 2 and movie.imdb_rating is not None:
+        tags.append(f"IMDb {movie.imdb_rating:.1f}")
+    if len(tags) < 2:
+        genres = _movie_genres(movie)
+        if genres:
+            tags.append(genres[0])
+    if not tags:
+        tags.append(f"{prefix} pick")
+    return tags[:2]
+
+
+def _build_flic_shortlist(
+    db: Session,
+    *,
+    used_ids: set[int],
+    limit: int = 6,
+) -> list[Movie]:
+    filters = PickerFilters.from_values(runtime_max=125, year_min=1990).to_payload()
+    base_query = trusted_movie_query(db).filter(
+        or_(Movie.runtime.is_(None), Movie.runtime <= 150),
+        or_(Movie.imdb_rating.isnot(None), Movie.rt_score.isnot(None)),
+    )
+    if used_ids:
+        base_query = base_query.filter(~Movie.id.in_(used_ids))
+
+    ranked = rank_movie_ids_by_flic(db, base_query=base_query, filters=filters)
+    ranked_ids = [movie_id for _score, movie_id in ranked[: limit * 3]]
+    score_by_id = {movie_id: score for score, movie_id in ranked}
+    candidates = fetch_movies_in_rank_order(
+        db,
+        ranked_ids=ranked_ids,
+        options=[selectinload(Movie.genres), selectinload(Movie.moods)],
+    )
+
+    selected: list[Movie] = []
+    for movie in candidates:
+        if movie.id is None or movie.id in used_ids:
+            continue
+        setattr(movie, "flic_score", score_by_id.get(movie.id, float("-inf")))
+        setattr(movie, "reason_labels", _watch_tonight_reason(movie, prefix="Flic"))
+        selected.append(movie)
+        if len(selected) >= limit:
+            break
+
+    if len(selected) < limit:
+        selected_ids = {movie.id for movie in selected if movie.id is not None}
+        fallback_query = trusted_movie_query(db).options(
+            selectinload(Movie.genres),
+            selectinload(Movie.moods),
+        )
+        excluded = set(used_ids) | selected_ids
+        if excluded:
+            fallback_query = fallback_query.filter(~Movie.id.in_(excluded))
+        fallback_movies = (
+            fallback_query.order_by(
+                Movie.imdb_rating.desc().nullslast(),
+                Movie.rt_score.desc().nullslast(),
+                Movie.title.asc(),
+            )
+            .limit(limit - len(selected))
+            .all()
+        )
+        for movie in fallback_movies:
+            setattr(movie, "reason_labels", _watch_tonight_reason(movie, prefix="Flic"))
+        selected.extend(fallback_movies)
+
+    used_ids.update(movie.id for movie in selected if movie.id is not None)
+    return selected
+
+
+def _collect_movies(*groups: object) -> list[Movie]:
+    movies: dict[int, Movie] = {}
+
+    def add(movie: object) -> None:
+        if isinstance(movie, Movie) and movie.id is not None:
+            movies[movie.id] = movie
+
+    for group in groups:
+        if isinstance(group, Movie):
+            add(group)
+        elif isinstance(group, dict):
+            for value in group.values():
+                add(value)
+        elif isinstance(group, Iterable):
+            for item in group:
+                if isinstance(item, dict):
+                    for value in item.values():
+                        add(value)
+                elif hasattr(item, "primary") and hasattr(item, "secondary"):
+                    add(getattr(item, "primary"))
+                    add(getattr(item, "secondary"))
+                else:
+                    add(item)
+    return list(movies.values())
 
 
 def _pairing_reason_tags(primary: Movie, secondary: Movie, theme_label: Optional[str]) -> list[str]:
@@ -466,7 +581,7 @@ def _pick_pairings(
             runtime_cap=DEFAULT_DOUBLE_FEATURE_RUNTIME,
             genre=genre_name,
             seed=seeds[idx % len(seeds)],
-            require_poster=True,
+            require_poster=False,
         )
         if selection:
             register(selection)
@@ -478,7 +593,7 @@ def _pick_pairings(
             db,
             runtime_cap=DEFAULT_DOUBLE_FEATURE_RUNTIME,
             seed=seeds[-1],
-            require_poster=True,
+            require_poster=False,
         )
         if selection:
             register(selection)
@@ -606,6 +721,105 @@ def discover_refresh(
     }
 
 
-@router.get("/ui/discover", include_in_schema=False)
-def discover():
-    return RedirectResponse("/ui/movies", status_code=307)
+@router.get("/ui/discover", response_class=HTMLResponse, include_in_schema=False)
+def discover(request: Request, db: Session = Depends(get_db)):
+    day = _discover_day()
+    active_profile_id = get_active_profile_id(request, db)
+    profiles = get_profiles(db)
+    used_ids: set[int] = set()
+
+    flic_shortlist = _build_flic_shortlist(db, used_ids=used_ids, limit=7)
+    spotlight_lead = flic_shortlist[0] if flic_shortlist else None
+    spotlight_supporting = flic_shortlist[1:4]
+
+    selected_for_you, selected_for_you_genres = _pick_selected_for_you(
+        db,
+        active_profile_id,
+        limit=6,
+        exclude_ids=used_ids,
+    )
+    used_ids.update(movie.id for movie in selected_for_you if movie.id is not None)
+    for movie in selected_for_you:
+        setattr(movie, "reason_labels", [_personalized_reason(movie, selected_for_you_genres)])
+
+    top_genres = _top_genre_names(db, limit=8)
+    double_features = _pick_pairings(db, top_genres, used_ids, limit=2, seed=day.toordinal())
+    rails = _build_discover_rails(db, used_ids=used_ids, limit=5, day=day)
+    for rail in rails:
+        for movie in rail["movies"]:
+            if isinstance(movie, Movie):
+                setattr(movie, "reason_labels", _watch_tonight_reason(movie))
+
+    all_movies = _collect_movies(
+        flic_shortlist,
+        selected_for_you,
+        double_features,
+        *(rail["movies"] for rail in rails),
+    )
+    attach_poster_themes(all_movies)
+    attach_genre_display(all_movies)
+    preferences = get_preferences_for_movies(
+        db,
+        active_profile_id,
+        {movie.id for movie in all_movies if movie.id is not None},
+    )
+    for movie in all_movies:
+        pref = preferences.get(movie.id or 0, {})
+        setattr(movie, "liked", pref.get("liked", False))
+        setattr(movie, "watchlist", pref.get("watchlist", False))
+
+    spotlight_reasons = {
+        movie.id: " · ".join(_watch_tonight_reason(movie, prefix="Spotlight"))
+        for movie in flic_shortlist
+        if movie.id is not None
+    }
+    double_feature_reasons = {
+        f"{selection.primary.id}-{selection.secondary.id}": _pairing_reason_tags(
+            selection.primary,
+            selection.secondary,
+            selection.theme_label,
+        )
+        for selection in double_features
+        if selection.primary.id is not None and selection.secondary.id is not None
+    }
+    decision_links = [
+        {
+            "label": "Short night",
+            "description": "Under 100 minutes",
+            "href": "/ui/movies?preset=under-100&view=grid&page=1",
+        },
+        {
+            "label": "Hidden gem",
+            "description": "Strong, less obvious picks",
+            "href": "/ui/movies?preset=hidden-gems&view=grid&page=1",
+        },
+        {
+            "label": "From watchlist",
+            "description": "Already saved for later",
+            "href": "/ui/watchlist",
+        },
+        {
+            "label": "Flic ranked",
+            "description": "Runtime-friendly scoring",
+            "href": "/ui/movies?order_by=flic&runtime_max=125&year_min=1990&view=grid&page=1",
+        },
+    ]
+
+    context = {
+        "request": request,
+        "profiles": profiles,
+        "active_profile_id": active_profile_id,
+        "spotlight_lead": spotlight_lead,
+        "spotlight_supporting": spotlight_supporting,
+        "spotlight_reasons": spotlight_reasons,
+        "flic_shortlist": flic_shortlist,
+        "selected_for_you": selected_for_you,
+        "selected_for_you_genres": selected_for_you_genres,
+        "double_features": double_features,
+        "double_feature_reasons": double_feature_reasons,
+        "rails": rails,
+        "decision_links": decision_links,
+    }
+    response = TEMPLATES.TemplateResponse(request, "movies_discover.html", context)
+    ensure_profile_cookie(request, response, db)
+    return response

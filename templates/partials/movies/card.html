@@ -80,9 +80,8 @@
     data-movie-id="{{ movie.id }}"
     data-movie-title="{{ movie.title | display_title }}"
     aria-label="{{ movie.title | display_title }} {{ 'is already flagged for review' if movie.flagged else 'flag for review' }}"
-    aria-hidden="true"
     aria-pressed="{{ 'true' if movie.flagged else 'false' }}"
-    tabindex="-1"
+    title="{{ 'Already flagged for review' if movie.flagged else 'Flag for review' }}"
   >
     <svg viewBox="0 0 24 24" aria-hidden="true">
       <path d="M6 21V4"></path>

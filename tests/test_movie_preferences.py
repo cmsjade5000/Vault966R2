@@ -94,7 +94,8 @@ def test_watchlist_uses_library_movie_cards(client) -> None:
     assert 'class="library-shell page-shell"' in page.text
     assert 'class="library-heading"' in page.text
     assert "<h1>Watchlist</h1>" in page.text
-    assert "saved movie" in page.text
+    assert "<strong data-watchlist-total>1</strong> saved" in page.text
+    assert "<span data-watchlist-total-label>movie</span>" in page.text
     assert "Personal picks" not in page.text
     assert "Back to movies" not in page.text
     assert 'class="results-shell page-shell"' not in page.text

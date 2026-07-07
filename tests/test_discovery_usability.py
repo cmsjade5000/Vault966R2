@@ -132,11 +132,32 @@ def test_poster_image_url_uses_one_smaller_tmdb_origin() -> None:
     assert poster_image_url("https://example.com/poster.jpg") == ("https://example.com/poster.jpg")
 
 
-def test_discover_page_redirects_to_library(client) -> None:
-    response = client.get("/ui/discover", follow_redirects=False)
+def test_discover_page_renders_watch_tonight_surface(client) -> None:
+    response = client.get("/ui/discover")
 
-    assert response.status_code == 307
-    assert response.headers["location"] == "/ui/movies"
+    assert response.status_code == 200
+    html = response.text
+    assert "Watch Tonight" in html
+    assert "Tonight’s Best Bet" in html
+    assert "Flic Shortlist" in html
+    assert "Double Feature Ideas" in html
+    assert 'href="/ui/movies?preset=under-100&amp;view=grid&amp;page=1"' in html
+    assert 'href="/ui/watchlist"' in html
+    assert 'class="nav-link is-active"' in html
+    assert ">Discover</a" in html
+
+
+def test_discover_page_uses_preference_controls_and_safe_event_contexts(client) -> None:
+    response = client.get("/ui/discover")
+
+    assert response.status_code == 200
+    html = response.text
+    assert 'data-preference-type="like"' in html
+    assert 'data-preference-type="watchlist"' in html
+    assert 'data-event-context="flic_shortlist"' in html
+    assert 'data-event-context="double_feature"' in html
+    assert "liked_titles" not in html
+    assert "search_text" not in html
 
 
 def test_discover_rails_default_to_five_movies(db_session) -> None:

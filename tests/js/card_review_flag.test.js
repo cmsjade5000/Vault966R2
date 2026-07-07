@@ -34,3 +34,24 @@ test("cancels a hold when the finger moves far enough to scroll", () => {
   assert.equal(movedBeyondTolerance(10, 10, 16, 16), false);
   assert.equal(movedBeyondTolerance(10, 10, 23, 10), true);
 });
+
+test("keeps the review flag reachable to keyboard and assistive tech", () => {
+  const { enableKeyboardAccess } = loadSupport();
+  const attributes = new Map([
+    ["aria-hidden", "true"],
+    ["tabindex", "-1"],
+  ]);
+  const button = {
+    getAttribute(name) {
+      return attributes.get(name) ?? null;
+    },
+    removeAttribute(name) {
+      attributes.delete(name);
+    },
+  };
+
+  enableKeyboardAccess(button);
+
+  assert.equal(attributes.has("aria-hidden"), false);
+  assert.equal(attributes.has("tabindex"), false);
+});

@@ -74,11 +74,16 @@
   z-index: -2;
   overflow: hidden;
   opacity: 0.82;
+  pointer-events: none;
   transition:
     opacity 1.4s ease,
     transform 1.4s ease,
     filter 1.4s ease;
   filter: saturate(1.02) brightness(0.94) contrast(1.04);
+}
+
+.login-archive * {
+  pointer-events: none;
 }
 
 .login-archive::after {
@@ -1053,5 +1058,57 @@
 
   .login-archive__poster img {
     transform: none;
+  }
+}
+
+.setup-page .site-nav,
+.setup-page .bottom-nav {
+  display: none;
+}
+
+.setup-shell {
+  align-items: center;
+  display: grid;
+  min-height: calc(100svh - 2rem);
+  padding: clamp(1rem, 4vw, 2rem);
+  place-items: center;
+}
+
+.setup-card {
+  box-sizing: border-box;
+  height: auto;
+  max-width: 560px;
+  max-height: none;
+  width: min(100%, calc(100vw - 2rem), 560px);
+}
+
+.setup-card .login-card__header h1 {
+  font-size: 3rem;
+  line-height: 1;
+  overflow-wrap: anywhere;
+}
+
+.setup-card__intro,
+.setup-card__note {
+  color: rgba(226, 232, 240, 0.76);
+  line-height: 1.5;
+  margin: 0;
+}
+
+.setup-card__note {
+  background: rgba(148, 163, 184, 0.08);
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  border-radius: 6px;
+  font-size: 0.9rem;
+  padding: 0.75rem;
+}
+
+@media (max-width: 520px) {
+  .setup-card {
+    padding-inline: 1.25rem;
+  }
+
+  .setup-card .login-card__header h1 {
+    font-size: 2.05rem;
   }
 }

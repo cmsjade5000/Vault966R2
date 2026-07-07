@@ -7,6 +7,7 @@ from .assistant_movie import AssistantMovie
 from .assistant_request import AssistantRequest
 from .assistant_response import AssistantResponse
 from .body_login_submit_login_post import BodyLoginSubmitLoginPost
+from .body_setup_submit_setup_post import BodySetupSubmitSetupPost
 from .body_upload_first_import_snapshot_ui_first_import_upload_post import (
     BodyUploadFirstImportSnapshotUiFirstImportUploadPost,
 )
@@ -109,6 +110,7 @@ __all__ = (
     "AssistantRequest",
     "AssistantResponse",
     "BodyLoginSubmitLoginPost",
+    "BodySetupSubmitSetupPost",
     "BodyUploadFirstImportSnapshotUiFirstImportUploadPost",
     "BodyUploadSourceSnapshotUiSourceSyncUploadPost",
     "DiscoverRefreshApiDiscoverRefreshGetResponseDiscoverRefreshApiDiscoverRefreshGet",

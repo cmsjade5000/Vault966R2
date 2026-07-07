@@ -74,6 +74,38 @@ LIBRARY_PRESETS = {
     "before-2000",
     "edition-cuts",
 }
+LIBRARY_PRESET_CHIPS = [
+    {
+        "key": "recently-added",
+        "name": "Recently Added",
+        "description": "Newest Vault entries first.",
+    },
+    {
+        "key": "under-100",
+        "name": "Under 100",
+        "description": "Shorter movie-night picks.",
+    },
+    {
+        "key": "highly-rated",
+        "name": "Highly Rated",
+        "description": "Strong IMDb or Rotten Tomatoes scores.",
+    },
+    {
+        "key": "hidden-gems",
+        "name": "Hidden Gems",
+        "description": "Well-liked titles with fewer IMDb votes.",
+    },
+    {
+        "key": "before-2000",
+        "name": "Before 2000",
+        "description": "Older shelf favorites.",
+    },
+    {
+        "key": "edition-cuts",
+        "name": "Edition Cuts",
+        "description": "Extended, unrated, and named editions.",
+    },
+]
 
 LIBRARY_PAGE_SIZE = 36
 LIBRARY_FILTER_QUERY_KEYS = {
@@ -434,6 +466,7 @@ def movies_grid(
         "taglines": taglines,
         "initial_tagline": initial_tagline,
         "built_in_presets": built_in_presets,
+        "library_presets": LIBRARY_PRESET_CHIPS,
         "user_presets": user_presets,
         "year_min": year_min_value,
         "year_max": year_max_value,

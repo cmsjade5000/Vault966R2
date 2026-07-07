@@ -2,10 +2,37 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Index, String, UniqueConstraint, func, text
+from sqlalchemy import (
+    Boolean,
+    DateTime,
+    ForeignKey,
+    Index,
+    Integer,
+    String,
+    UniqueConstraint,
+    func,
+    text,
+)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from api.db import Base
+
+
+class AppSetup(Base):
+    __tablename__ = "app_setup"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    completed: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("false"))
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    owner_profile_id: Mapped[int | None] = mapped_column(
+        ForeignKey("profiles.id", ondelete="SET NULL"), nullable=True
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
 
 
 class Profile(Base):
@@ -23,6 +50,40 @@ class Profile(Base):
         back_populates="profile",
         cascade="all, delete-orphan",
     )
+    credential = relationship(
+        "ProfileCredential",
+        back_populates="profile",
+        cascade="all, delete-orphan",
+        uselist=False,
+    )
+
+
+class ProfileCredential(Base):
+    __tablename__ = "profile_credentials"
+    __table_args__ = (UniqueConstraint("profile_id", name="uq_profile_credentials_profile_id"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    profile_id: Mapped[int] = mapped_column(
+        ForeignKey("profiles.id", ondelete="CASCADE"), nullable=False
+    )
+    access_key_salt: Mapped[str] = mapped_column(String(64), nullable=False)
+    access_key_hash: Mapped[str] = mapped_column(String(128), nullable=False)
+    passcode_salt: Mapped[str] = mapped_column(String(64), nullable=False)
+    passcode_hash: Mapped[str] = mapped_column(String(128), nullable=False)
+    kdf_name: Mapped[str] = mapped_column(
+        String(40), nullable=False, server_default=text("'pbkdf2_sha256'")
+    )
+    kdf_iterations: Mapped[int] = mapped_column(
+        Integer, nullable=False, server_default=text("200000")
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+
+    profile = relationship("Profile", back_populates="credential")
 
 
 class MoviePreference(Base):

@@ -14,11 +14,13 @@ from . import (
     match,
     posters,
     review,
+    setup,
     source_sync,
     top,
 )
 
 router = APIRouter(tags=["ui"])
+router.include_router(setup.router, tags=["ui"])
 router.include_router(login.router, tags=["ui"])
 router.include_router(grid.router, tags=["ui"])
 router.include_router(discover.router, tags=["ui"])

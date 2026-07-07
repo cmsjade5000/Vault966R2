@@ -210,6 +210,52 @@ def _ensure_sqlite_movie_columns() -> None:
 
         _create_movie_identity_indexes(connection)
 
+        app_setup_exists = connection.execute(
+            text("SELECT name FROM sqlite_master WHERE type='table' AND name='app_setup'")
+        ).first()
+        if not app_setup_exists:
+            connection.execute(
+                text(
+                    """
+                    CREATE TABLE app_setup (
+                        id INTEGER PRIMARY KEY,
+                        completed BOOLEAN NOT NULL DEFAULT false,
+                        completed_at TIMESTAMP,
+                        owner_profile_id INTEGER REFERENCES profiles(id) ON DELETE SET NULL,
+                        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                        updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+                    )
+                    """
+                )
+            )
+
+        profile_credentials_exists = connection.execute(
+            text(
+                "SELECT name FROM sqlite_master "
+                "WHERE type='table' AND name='profile_credentials'"
+            )
+        ).first()
+        if not profile_credentials_exists:
+            connection.execute(
+                text(
+                    """
+                    CREATE TABLE profile_credentials (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        profile_id INTEGER NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+                        access_key_salt TEXT NOT NULL,
+                        access_key_hash TEXT NOT NULL,
+                        passcode_salt TEXT NOT NULL,
+                        passcode_hash TEXT NOT NULL,
+                        kdf_name TEXT NOT NULL DEFAULT 'pbkdf2_sha256',
+                        kdf_iterations INTEGER NOT NULL DEFAULT 200000,
+                        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                        updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                        UNIQUE(profile_id)
+                    )
+                    """
+                )
+            )
+
         # Minimal boot-strap for legacy SQLite dumps; keep in sync with models.
         flags_exists = connection.execute(
             text("SELECT name FROM sqlite_master WHERE type='table' AND name='movie_flags'")

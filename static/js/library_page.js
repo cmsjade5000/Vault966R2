@@ -98,6 +98,25 @@
     typeof window.AbortController === "function" &&
     typeof window.history?.pushState === "function";
 
+  const buildPickParams = (values = {}) => {
+    const params = new URLSearchParams();
+    [
+      "q",
+      "genres",
+      "moods",
+      "year_min",
+      "year_max",
+      "runtime_min",
+      "runtime_max",
+    ].forEach((key) => {
+      const value = values[key];
+      if (value !== undefined && value !== null && String(value).trim()) {
+        params.set(key, String(value).trim());
+      }
+    });
+    return params;
+  };
+
   const parseCsv = (value = "") =>
     value
       .split(",")
@@ -113,6 +132,7 @@
 
   const buildPendingSummary = ({
     genres = [],
+    moods = [],
     presetName = "",
     runtimeMax = "",
     yearLabel = "",
@@ -122,6 +142,7 @@
       items.push({ kind: "preset", label: `Fliclist: ${presetName}` });
     }
     genres.forEach((genre) => items.push({ kind: "genre", label: genre }));
+    moods.forEach((mood) => items.push({ kind: "mood", label: mood }));
     if (yearLabel) items.push({ kind: "year", label: yearLabel });
     if (runtimeMax) {
       items.push({ kind: "runtime", label: `≤ ${runtimeMax} min` });
@@ -136,6 +157,7 @@
 
   const emptyFilterState = () => ({
     genres: [],
+    moods: [],
     presetName: "",
     runtimeMax: "",
     yearMax: "",
@@ -149,6 +171,7 @@
   } = {}) => selected || Boolean(value && !hasPresetMatch);
 
   window.VaultLibrarySupport = {
+    buildPickParams,
     buildClearAllFiltersUrl,
     buildClearFilterUrl,
     buildFormSubmitUrl,
@@ -172,6 +195,7 @@
 
     const form = document.getElementById("filters-form");
     const dialog = document.querySelector("[data-filters-dialog]");
+    const searchInput = document.getElementById("search-q");
     const genresInput = document.getElementById("genres-input");
     const moodsInput = document.getElementById("moods-input");
     const yearMinInput = document.getElementById("year-min-input");
@@ -192,6 +216,11 @@
         '[data-filter-group="genres"] [data-filter-value]',
       ),
     );
+    const moodButtons = Array.from(
+      document.querySelectorAll(
+        '[data-filter-group="moods"] [data-filter-value]',
+      ),
+    );
     const yearButtons = Array.from(
       document.querySelectorAll("[data-year-range]"),
     );
@@ -202,6 +231,7 @@
       document.querySelectorAll(".chip-preset[data-filters]"),
     );
     const selectedGenres = new Set(parseCsv(genresInput?.value || ""));
+    const selectedMoods = new Set(parseCsv(moodsInput?.value || ""));
     let pendingPresetName = formatPresetName(presetInput?.value || "");
     let yearCustomSelected = false;
     let runtimeCustomSelected = false;
@@ -318,6 +348,12 @@
           selectedGenres.has(button.dataset.filterValue),
         );
       });
+      moodButtons.forEach((button) => {
+        button.classList.toggle(
+          "is-active",
+          selectedMoods.has(button.dataset.filterValue),
+        );
+      });
 
       const matchingYearButton = getMatchingYearButton();
       const hasYear = Boolean(yearMinInput?.value || yearMaxInput?.value);
@@ -363,9 +399,12 @@
       }
 
       presetButtons.forEach((button) => {
+        const presetKey = button.dataset.presetKey || "";
         button.classList.toggle(
           "is-active",
-          button.dataset.presetName === pendingPresetName,
+          presetKey
+            ? presetInput?.value === presetKey
+            : button.dataset.presetName === pendingPresetName,
         );
       });
     };
@@ -373,6 +412,7 @@
     const renderSummary = () => {
       const items = buildPendingSummary({
         genres: Array.from(selectedGenres),
+        moods: Array.from(selectedMoods),
         presetName: pendingPresetName,
         runtimeMax: runtimeInput?.value || "",
         yearLabel: getYearLabel(),
@@ -420,6 +460,8 @@
     const dialogController = window.VaultDialog?.bind(dialog, {
       bodyClass: "filters-open",
       closeSelector: "[data-filters-close]",
+      initialFocus:
+        "[data-dialog-initial-focus], [data-filter-value], [data-year-range], [data-runtime-max], [data-filters-apply]",
     });
 
     const openFilters = (event) => {
@@ -445,6 +487,19 @@
           selectedGenres.add(value);
         }
         genresInput.value = Array.from(selectedGenres).join(", ");
+        clearPendingPreset();
+        syncFilterUi();
+      });
+    });
+    moodButtons.forEach((button) => {
+      const value = button.dataset.filterValue;
+      button.addEventListener("click", () => {
+        if (selectedMoods.has(value)) {
+          selectedMoods.delete(value);
+        } else {
+          selectedMoods.add(value);
+        }
+        moodsInput.value = Array.from(selectedMoods).join(", ");
         clearPendingPreset();
         syncFilterUi();
       });
@@ -506,6 +561,14 @@
 
     presetButtons.forEach((button) => {
       button.addEventListener("click", () => {
+        const presetKey = button.dataset.presetKey || "";
+        if (presetKey) {
+          if (presetInput) presetInput.value = presetKey;
+          pendingPresetName =
+            button.dataset.presetName || formatPresetName(presetKey);
+          syncFilterUi();
+          return;
+        }
         let filters = {};
         try {
           filters = JSON.parse(button.dataset.filters || "{}");
@@ -515,6 +578,12 @@
         selectedGenres.clear();
         (filters.genres || []).forEach((genre) => selectedGenres.add(genre));
         genresInput.value = Array.from(selectedGenres).join(", ");
+        selectedMoods.clear();
+        (filters.moods || []).forEach((mood) => selectedMoods.add(mood));
+        if (moodsInput) moodsInput.value = Array.from(selectedMoods).join(", ");
+        if (searchInput && Object.prototype.hasOwnProperty.call(filters, "q")) {
+          searchInput.value = filters.q || "";
+        }
         yearMinInput.value = filters.year_min || "";
         yearMaxInput.value = filters.year_max || "";
         runtimeInput.value = filters.runtime_max || "";
@@ -536,6 +605,7 @@
 
     resetButton?.addEventListener("click", () => {
       selectedGenres.clear();
+      selectedMoods.clear();
       if (genresInput) genresInput.value = "";
       if (moodsInput) moodsInput.value = "";
       if (yearMinInput) yearMinInput.value = "";
@@ -570,10 +640,8 @@
         genresInput.value = Array.from(selectedGenres).join(", ");
       }
       if (key === "mood" && moodsInput) {
-        const remainingMoods = parseCsv(moodsInput.value).filter(
-          (mood) => mood !== value,
-        );
-        moodsInput.value = remainingMoods.join(", ");
+        selectedMoods.delete(value);
+        moodsInput.value = Array.from(selectedMoods).join(", ");
       }
       if (key === "year") {
         yearMinInput.value = "";
@@ -698,14 +766,14 @@
       let navigating = false;
       try {
         recordEvent("random_pick_requested", { context: "toolbar" });
-        const params = new URLSearchParams();
-        const firstGenre = selectedGenres.values().next().value;
-        const firstMood = parseCsv(moodsInput?.value || "")[0];
-        if (firstGenre) params.set("genre", firstGenre);
-        if (firstMood) params.set("mood", firstMood);
-        if (yearMinInput?.value) params.set("year_min", yearMinInput.value);
-        if (yearMaxInput?.value) params.set("year_max", yearMaxInput.value);
-        if (runtimeInput?.value) params.set("runtime_max", runtimeInput.value);
+        const params = buildPickParams({
+          q: searchInput?.value || "",
+          genres: Array.from(selectedGenres).join(", "),
+          moods: moodsInput?.value || "",
+          year_min: yearMinInput?.value || "",
+          year_max: yearMaxInput?.value || "",
+          runtime_max: runtimeInput?.value || "",
+        });
         const response = await fetch(`/movies/picks?${params.toString()}`);
         if (response.status === 404) {
           window.showToast?.("Nothing matched—try widening the filters.");

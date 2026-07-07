@@ -34,6 +34,33 @@
       });
   };
 
+  const updateWatchlistEmptyState = (root) => {
+    if (!root.body?.classList.contains("watchlist-page")) {
+      return;
+    }
+
+    const grid = root.querySelector("[data-watchlist-grid]");
+    const emptyState = root.querySelector("[data-watchlist-empty]");
+    if (!grid || !emptyState) {
+      return;
+    }
+
+    const count = grid.querySelectorAll("[data-movie-card]").length;
+    const isEmpty = count === 0;
+    grid.hidden = isEmpty;
+    emptyState.hidden = !isEmpty;
+
+    const total = root.querySelector("[data-watchlist-total]");
+    if (total) {
+      total.textContent = String(count);
+    }
+
+    const totalLabel = root.querySelector("[data-watchlist-total-label]");
+    if (totalLabel) {
+      totalLabel.textContent = count === 1 ? "movie" : "movies";
+    }
+  };
+
   const removeUnwatchedCard = (root, movieId, payload) => {
     if (!root.body?.classList.contains("watchlist-page") || payload.watchlist) {
       return;
@@ -41,6 +68,7 @@
     root
       .querySelectorAll(`[data-movie-card][data-movie-id="${movieId}"]`)
       .forEach((card) => card.remove());
+    updateWatchlistEmptyState(root);
   };
 
   window.VaultMoviePreferencesSupport = {
@@ -48,6 +76,7 @@
     getPreferenceState,
     removeUnwatchedCard,
     updatePreferenceButtons,
+    updateWatchlistEmptyState,
   };
 
   document.addEventListener("click", async (event) => {
