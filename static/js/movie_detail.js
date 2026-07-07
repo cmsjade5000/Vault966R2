@@ -229,6 +229,7 @@
 
     const flagDialogController = window.VaultDialog?.bind(flagDialog, {
       closeSelector: "[data-flag-close]",
+      initialFocus: "[data-flag-reason]",
       onClose: () => {
         resolveArmed = false;
         if (flagResolve) flagResolve.textContent = "Resolve flag";
@@ -286,7 +287,6 @@
     flagButtons.forEach((button) => {
       button.addEventListener("click", () => {
         flagDialogController?.open(button);
-        flagReason?.focus();
       });
     });
 

@@ -115,6 +115,7 @@
 
     const dialogController = window.VaultDialog?.bind(dialog, {
       closeSelector: "[data-edit-close], [data-edit-cancel]",
+      initialFocus: "#edit-title",
       onClose: () => {
         resetForm();
         currentDetail = null;

@@ -352,6 +352,8 @@
     const dialogController = window.VaultDialog?.bind(dialog, {
       bodyClass: "filters-open",
       closeSelector: "[data-filters-close]",
+      initialFocus:
+        "[data-dialog-initial-focus], [data-filter-value], [data-year-range], [data-runtime-max], [data-filters-apply]",
     });
 
     const openFilters = (event) => {

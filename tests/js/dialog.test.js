@@ -18,10 +18,20 @@ const makeClassList = () => {
   };
 };
 
-const loadDialog = () => {
+const makeFocusable = () => ({
+  disabled: false,
+  focused: false,
+  isConnected: true,
+  focus() {
+    this.focused = true;
+  },
+});
+
+const loadDialog = ({ selectors = {}, trigger = makeFocusable() } = {}) => {
   const listeners = {};
   const dialog = {
     classList: makeClassList(),
+    attributes: {},
     open: false,
     addEventListener(type, listener) {
       listeners[type] = listener;
@@ -30,17 +40,18 @@ const loadDialog = () => {
       this.open = false;
       listeners.close?.();
     },
+    getAttribute(name) {
+      return this.attributes[name];
+    },
+    querySelector(selector) {
+      return selectors[selector] || null;
+    },
     setAttribute(name, value) {
+      this.attributes[name] = value;
       this[name] = value;
     },
     showModal() {
       this.open = true;
-    },
-  };
-  const trigger = {
-    focused: false,
-    focus() {
-      this.focused = true;
     },
   };
   const document = {
@@ -83,4 +94,37 @@ test("cancel and backdrop requests close the bound dialog", () => {
   controller.open();
   listeners.click({ target: dialog });
   assert.equal(dialog.open, false);
+});
+
+test("moves focus to the requested initial target and restores it on Escape", () => {
+  const field = makeFocusable();
+  const { dialog, listeners, trigger, window } = loadDialog({
+    selectors: { "#field": field },
+  });
+  const controller = window.VaultDialog.bind(dialog, {
+    initialFocus: "#field",
+  });
+  let prevented = false;
+
+  controller.open(trigger);
+  assert.equal(field.focused, true);
+
+  listeners.keydown({
+    key: "Escape",
+    preventDefault: () => (prevented = true),
+  });
+  assert.equal(prevented, true);
+  assert.equal(dialog.open, false);
+  assert.equal(trigger.focused, true);
+});
+
+test("skips restoring focus when the opener is no longer focusable", () => {
+  const trigger = makeFocusable();
+  trigger.isConnected = false;
+  const { dialog, window } = loadDialog({ trigger });
+  const controller = window.VaultDialog.bind(dialog);
+
+  controller.open(trigger);
+  controller.close();
+  assert.equal(trigger.focused, false);
 });
