@@ -2,6 +2,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from api.schemas.ai_search import SearchPlan
+from api.services.ai_search import AiSearchError, AiSearchProviderUnavailable
 
 
 @pytest.mark.parametrize(
@@ -87,3 +88,39 @@ def test_ai_search_normalizes_decade_and_runtime() -> None:
     assert normalized.year_min == 1990
     assert normalized.year_max == 1999
     assert normalized.runtime_max == 90
+
+
+@pytest.mark.parametrize(
+    ("error", "expected_status", "expected_message"),
+    [
+        (
+            AiSearchProviderUnavailable("LLM_API_KEY is not configured"),
+            503,
+            "AI search is temporarily unavailable.",
+        ),
+        (
+            AiSearchError("LLM request failed: connection reset"),
+            502,
+            "AI search could not be completed. Please try again.",
+        ),
+    ],
+)
+def test_ai_search_hides_provider_error_details(
+    client: TestClient,
+    monkeypatch,
+    error: Exception,
+    expected_status: int,
+    expected_message: str,
+) -> None:
+    from api.routers import ai as ai_router
+
+    def fail_generate_search_plan(*args, **kwargs):
+        raise error
+
+    monkeypatch.setattr(ai_router, "generate_search_plan", fail_generate_search_plan)
+
+    response = client.post("/api/ai/search", json={"query": "moody sci-fi"})
+
+    assert response.status_code == expected_status
+    assert response.json()["message"] == expected_message
+    assert "LLM" not in response.json()["message"]

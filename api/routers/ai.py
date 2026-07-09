@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import logging
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import func
 from sqlalchemy.orm import Session, selectinload
@@ -26,6 +28,7 @@ from api.routers.movies import _attach_flag_status
 
 
 router = APIRouter(prefix="/api/ai", tags=["ai"])
+logger = logging.getLogger("vault966")
 
 
 @router.post("/search", response_model=AiSearchResponse)
@@ -46,9 +49,17 @@ def ai_search(
             allowed_moods=allowed_moods,
         )
     except AiSearchProviderUnavailable as exc:
-        raise HTTPException(status_code=503, detail=str(exc)) from exc
+        logger.warning("ai_search_provider_unavailable: %s", type(exc).__name__)
+        raise HTTPException(
+            status_code=503,
+            detail="AI search is temporarily unavailable.",
+        ) from exc
     except AiSearchError as exc:
-        raise HTTPException(status_code=502, detail=str(exc)) from exc
+        logger.warning("ai_search_provider_failed: %s", type(exc).__name__)
+        raise HTTPException(
+            status_code=502,
+            detail="AI search could not be completed. Please try again.",
+        ) from exc
 
     params: MovieFilterParams = parse_movie_filters(
         q=plan.q,
