@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections.abc import Sequence
 from datetime import datetime, timezone
 import math
-from typing import Optional
+from typing import Callable, Optional
 
 from sqlalchemy import func
 from sqlalchemy.orm import Session
@@ -12,8 +12,34 @@ from api.models.movie import Genre, Movie
 from api.schemas.movie import MovieUpdate
 from api.services.movie_review import apply_title_year_authority
 from api.utils.providers import merge_providers
-from core.enriched_csv import normalize_countries, normalize_languages
+from core.enriched_csv import NormalizedCodes, normalize_countries, normalize_languages
 from core.genres import split_and_normalize
+
+
+_OPTIONAL_TEXT_FIELDS = (
+    "plot",
+    "awards",
+    "certificate",
+    "imdb_id",
+    "poster_url",
+    "backdrop_url",
+    "collection",
+    "tmdb_etag",
+    "tmdb_payload_sha",
+    "omdb_payload_sha",
+)
+_DATETIME_FIELDS = ("last_tmdb_fetch_at", "last_omdb_fetch_at")
+_RANGE_RULES = {
+    "year": (1888, 2100, "Year must be between 1888 and 2100"),
+    "runtime": (0, None, "Runtime cannot be negative"),
+    "tmdb_id": (0, None, "TMDB id cannot be negative"),
+    "imdb_rating": (0, 10, "IMDb rating must be between 0 and 10"),
+    "imdb_votes": (0, None, "IMDb votes cannot be negative"),
+    "metascore": (0, 100, "Metascore must be between 0 and 100"),
+    "tomato_meter": (0, 100, "Tomatometer score must be between 0 and 100"),
+    "tomato_audience": (0, 100, "Audience score must be between 0 and 100"),
+    "rt_score": (0, 100, "Rotten Tomatoes score must be between 0 and 100"),
+}
 
 
 def _normalize_genres(db: Session, names: Optional[Sequence[str]]) -> Optional[list[Genre]]:
@@ -49,144 +75,120 @@ def _normalize_datetime(value: Optional[datetime]) -> Optional[datetime]:
     return value
 
 
-def apply_movie_update(db: Session, movie: Movie, payload: MovieUpdate) -> Movie:
-    has_changes = False
+def _set_attr(movie: Movie, attr: str, value: object) -> bool:
+    if getattr(movie, attr) == value:
+        return False
+    setattr(movie, attr, value)
+    return True
 
-    def _set_attr(attr: str, value) -> None:
-        nonlocal has_changes
-        if getattr(movie, attr) != value:
-            setattr(movie, attr, value)
-            has_changes = True
 
-    if payload.title is not None:
-        title = payload.title.strip()
-        if not title:
-            raise ValueError("Title cannot be blank")
-        _set_attr("title", title)
-
-    if payload.year is not None:
-        if payload.year < 1888 or payload.year > 2100:
-            raise ValueError("Year must be between 1888 and 2100")
-        _set_attr("year", payload.year)
-
-    if payload.runtime is not None:
-        if payload.runtime < 0:
-            raise ValueError("Runtime cannot be negative")
-        _set_attr("runtime", payload.runtime)
-
-    if payload.plot is not None:
-        _set_attr("plot", _normalize_optional_text(payload.plot))
-
-    if payload.awards is not None:
-        _set_attr("awards", _normalize_optional_text(payload.awards))
-
-    if payload.certificate is not None:
-        _set_attr("certificate", _normalize_optional_text(payload.certificate))
-
-    if payload.keywords is not None:
-        keywords = []
-        seen = set()
-        for item in payload.keywords:
-            cleaned = str(item).strip()
-            key = cleaned.casefold()
-            if not cleaned or key in seen:
-                continue
+def _normalize_keywords(values: Sequence[str]) -> list[str] | None:
+    keywords: list[str] = []
+    seen: set[str] = set()
+    for item in values:
+        cleaned = str(item).strip()
+        key = cleaned.casefold()
+        if cleaned and key not in seen:
             seen.add(key)
             keywords.append(cleaned)
-        _set_attr("keywords", keywords or None)
+    return keywords or None
 
-    if payload.imdb_id is not None:
-        _set_attr("imdb_id", _normalize_optional_text(payload.imdb_id))
 
-    if payload.tmdb_id is not None:
-        if payload.tmdb_id < 0:
-            raise ValueError("TMDB id cannot be negative")
-        _set_attr("tmdb_id", payload.tmdb_id)
+def _normalize_code_values(
+    value: str | list[str],
+    normalizer: Callable[[str | None], NormalizedCodes],
+) -> list[str] | None:
+    if isinstance(value, list):
+        raw_text = "; ".join(str(item) for item in value if item is not None)
+    else:
+        raw_text = str(value)
+    return normalizer(raw_text).iso or None
 
-    if payload.imdb_rating is not None:
-        if math.isnan(payload.imdb_rating) or not (0 <= payload.imdb_rating <= 10):
-            raise ValueError("IMDb rating must be between 0 and 10")
-        _set_attr("imdb_rating", payload.imdb_rating)
 
-    if payload.imdb_votes is not None:
-        if payload.imdb_votes < 0:
-            raise ValueError("IMDb votes cannot be negative")
-        _set_attr("imdb_votes", payload.imdb_votes)
+def _apply_title(movie: Movie, title_value: str | None) -> bool:
+    if title_value is None:
+        return False
+    title = title_value.strip()
+    if not title:
+        raise ValueError("Title cannot be blank")
+    return _set_attr(movie, "title", title)
 
-    if payload.metascore is not None:
-        if payload.metascore < 0 or payload.metascore > 100:
-            raise ValueError("Metascore must be between 0 and 100")
-        _set_attr("metascore", payload.metascore)
 
-    if payload.tomato_meter is not None:
-        if payload.tomato_meter < 0 or payload.tomato_meter > 100:
-            raise ValueError("Tomatometer score must be between 0 and 100")
-        _set_attr("tomato_meter", payload.tomato_meter)
+def _apply_ranged_fields(movie: Movie, payload: MovieUpdate) -> bool:
+    changed = False
+    for field_name, (minimum, maximum, message) in _RANGE_RULES.items():
+        value = getattr(payload, field_name)
+        if value is None:
+            continue
+        if isinstance(value, float) and math.isnan(value):
+            raise ValueError(message)
+        if value < minimum or (maximum is not None and value > maximum):
+            raise ValueError(message)
+        changed |= _set_attr(movie, field_name, value)
+    return changed
 
-    if payload.tomato_audience is not None:
-        if payload.tomato_audience < 0 or payload.tomato_audience > 100:
-            raise ValueError("Audience score must be between 0 and 100")
-        _set_attr("tomato_audience", payload.tomato_audience)
 
-    if payload.rt_score is not None:
-        if payload.rt_score < 0 or payload.rt_score > 100:
-            raise ValueError("Rotten Tomatoes score must be between 0 and 100")
-        _set_attr("rt_score", payload.rt_score)
+def _apply_optional_text_fields(movie: Movie, payload: MovieUpdate) -> bool:
+    changed = False
+    for field_name in _OPTIONAL_TEXT_FIELDS:
+        value = getattr(payload, field_name)
+        if value is not None:
+            changed |= _set_attr(movie, field_name, _normalize_optional_text(value))
+    return changed
 
-    if payload.poster_url is not None:
-        _set_attr("poster_url", _normalize_optional_text(payload.poster_url))
 
-    if payload.backdrop_url is not None:
-        _set_attr("backdrop_url", _normalize_optional_text(payload.backdrop_url))
-
+def _apply_collection_fields(movie: Movie, payload: MovieUpdate) -> bool:
+    changed = False
+    if payload.keywords is not None:
+        changed |= _set_attr(movie, "keywords", _normalize_keywords(payload.keywords))
     if payload.where_to_watch is not None:
-        merged = merge_providers(payload.where_to_watch)
-        normalized = merged or None
-        _set_attr("where_to_watch", normalized)
-
+        changed |= _set_attr(
+            movie, "where_to_watch", merge_providers(payload.where_to_watch) or None
+        )
     if payload.languages is not None:
-        raw = payload.languages
-        if isinstance(raw, list):
-            raw_text = "; ".join(str(item) for item in raw if item is not None)
-        else:
-            raw_text = str(raw) if raw is not None else ""
-        codes = normalize_languages(raw_text).iso
-        _set_attr("languages", codes or None)
-
+        changed |= _set_attr(
+            movie,
+            "languages",
+            _normalize_code_values(payload.languages, normalize_languages),
+        )
     if payload.countries is not None:
-        raw = payload.countries
-        if isinstance(raw, list):
-            raw_text = "; ".join(str(item) for item in raw if item is not None)
-        else:
-            raw_text = str(raw) if raw is not None else ""
-        codes = normalize_countries(raw_text).iso
-        _set_attr("countries", codes or None)
+        changed |= _set_attr(
+            movie,
+            "countries",
+            _normalize_code_values(payload.countries, normalize_countries),
+        )
+    return changed
 
-    if payload.collection is not None:
-        _set_attr("collection", _normalize_optional_text(payload.collection))
 
-    if payload.last_tmdb_fetch_at is not None:
-        _set_attr("last_tmdb_fetch_at", _normalize_datetime(payload.last_tmdb_fetch_at))
+def _apply_datetime_fields(movie: Movie, payload: MovieUpdate) -> bool:
+    changed = False
+    for field_name in _DATETIME_FIELDS:
+        value = getattr(payload, field_name)
+        if value is not None:
+            changed |= _set_attr(movie, field_name, _normalize_datetime(value))
+    return changed
 
-    if payload.last_omdb_fetch_at is not None:
-        _set_attr("last_omdb_fetch_at", _normalize_datetime(payload.last_omdb_fetch_at))
 
-    if payload.tmdb_etag is not None:
-        _set_attr("tmdb_etag", _normalize_optional_text(payload.tmdb_etag))
+def _apply_genres(db: Session, movie: Movie, names: Optional[Sequence[str]]) -> bool:
+    if names is None:
+        return False
+    genres = _normalize_genres(db, names) or []
+    if {genre.name for genre in movie.genres} == {genre.name for genre in genres}:
+        return False
+    movie.genres = genres
+    return True
 
-    if payload.tmdb_payload_sha is not None:
-        _set_attr("tmdb_payload_sha", _normalize_optional_text(payload.tmdb_payload_sha))
 
-    if payload.omdb_payload_sha is not None:
-        _set_attr("omdb_payload_sha", _normalize_optional_text(payload.omdb_payload_sha))
-
-    if payload.genres is not None:
-        genre_objs = _normalize_genres(db, payload.genres) or []
-        current_names = {genre.name for genre in movie.genres}
-        new_names = {genre.name for genre in genre_objs}
-        if current_names != new_names:
-            movie.genres = genre_objs
-            has_changes = True
+def apply_movie_update(db: Session, movie: Movie, payload: MovieUpdate) -> Movie:
+    changes = (
+        _apply_title(movie, payload.title),
+        _apply_ranged_fields(movie, payload),
+        _apply_optional_text_fields(movie, payload),
+        _apply_collection_fields(movie, payload),
+        _apply_datetime_fields(movie, payload),
+        _apply_genres(db, movie, payload.genres),
+    )
+    has_changes = any(changes)
 
     if payload.resolve_flag and movie.flag is not None:
         db.delete(movie.flag)
