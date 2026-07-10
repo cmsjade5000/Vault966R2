@@ -3,30 +3,46 @@ from fastapi.testclient import TestClient
 from api.models.movie import Movie
 from api.models.movie_flag import MovieFlag
 from api.services.movie_match import (
+    QUESTIONS,
     build_match_result,
     build_preferences,
     normalize_answer_ids,
 )
 
 
-MATCH_ANSWERS = "funny,short,older,light,keep"
+MATCH_ANSWERS = "cozy,low,short,family,retro"
 
 
 def test_match_preferences_compile_answers_to_constraints() -> None:
-    preferences = build_preferences(("funny", "short", "older", "light", "keep"))
+    preferences = build_preferences(("cozy", "low", "short", "family", "retro"))
 
-    assert preferences.runtime_max == 100
+    assert preferences.answer_ids == ("cozy", "low", "short", "family", "retro")
+    assert preferences.runtime_max == 99
+    assert preferences.year_min == 1980
     assert preferences.year_max == 1999
-    assert "Comedy" in preferences.genres
     assert "Animation" in preferences.genres
     assert "Family" in preferences.moods
     assert "Light" in preferences.moods
+    assert preferences.energy == "low"
+    assert preferences.genre_label == "Animation & family"
+
+
+def test_match_questions_cover_each_requested_dimension_once() -> None:
+    assert [question.id for question in QUESTIONS] == [
+        "mood",
+        "energy",
+        "runtime",
+        "genre",
+        "era",
+    ]
+    option_ids = [option.id for question in QUESTIONS for option in question.options]
+    assert len(option_ids) == len(set(option_ids))
 
 
 def test_match_normalizes_only_valid_question_sequence() -> None:
-    assert normalize_answer_ids("funny,short,older") == ("funny", "short", "older")
+    assert normalize_answer_ids("funny,high,standard") == ("funny", "high", "standard")
     assert normalize_answer_ids("short,funny") == ()
-    assert normalize_answer_ids("funny,sideways,older") == ("funny",)
+    assert normalize_answer_ids("funny,sideways,retro") == ("funny",)
 
 
 def test_match_result_returns_lead_and_shortlist(db_session) -> None:
@@ -39,9 +55,11 @@ def test_match_result_returns_lead_and_shortlist(db_session) -> None:
     assert result.result_quality in {"exact", "softened", "widened"}
     assert result.lead is not None
     assert result.lead.movie.title == "Toy Story"
-    assert len(result.supporting) <= 6
-    assert "Keeps it tight" in result.lead.reasons
-    assert "genres=Comedy" in result.library_filter_query
+    assert len(result.supporting) == 4
+    assert result.lead.why_it_fits
+    assert "81-minute runtime" in result.lead.reasons
+    assert "genres=Animation" in result.library_filter_query
+    assert len({match.movie.id for match in (result.lead, *result.supporting)}) == 5
 
 
 def test_match_result_excludes_flagged_movies(db_session) -> None:
@@ -60,7 +78,7 @@ def test_match_result_excludes_flagged_movies(db_session) -> None:
 def test_match_result_widens_when_no_title_hits_every_answer(db_session) -> None:
     result = build_match_result(
         db_session,
-        answer_ids="scary,long,newer,light,keep",
+        answer_ids="intense,high,long,family,recent",
     )
 
     assert result.complete is True
@@ -71,22 +89,22 @@ def test_match_result_widens_when_no_title_hits_every_answer(db_session) -> None
 
 
 def test_match_state_counts_options_and_answer_trail(db_session) -> None:
-    result = build_match_result(db_session, answer_ids="funny,short")
+    result = build_match_result(db_session, answer_ids="funny,high")
 
     assert result.complete is False
     assert result.candidate_count <= result.trusted_pool_count
-    assert [step.label for step in result.step_states] == ["Funny", "Short"]
+    assert [step.label for step in result.step_states] == ["Funny", "High-energy"]
     assert all(step.after_count <= step.before_count for step in result.step_states)
-    assert {state.option.id for state in result.option_states} == {"newer", "older"}
+    assert {state.option.id for state in result.option_states} == {"short", "standard", "long"}
     assert all(state.after_count <= state.before_count for state in result.option_states)
 
 
-def test_match_moods_are_soft_when_strict_mood_path_is_empty(db_session) -> None:
-    result = build_match_result(db_session, answer_ids=MATCH_ANSWERS)
+def test_match_mood_and_energy_are_ranking_signals(db_session) -> None:
+    result = build_match_result(db_session, answer_ids="thoughtful,high")
 
-    assert result.strict_match_count == 0
-    assert result.result_quality in {"softened", "widened"}
-    assert result.lead is not None
+    assert result.complete is False
+    assert result.candidate_count == result.trusted_pool_count
+    assert all(state.after_count == state.before_count for state in result.step_states)
 
 
 def test_match_page_renders_first_question_and_active_nav(client: TestClient) -> None:
@@ -94,23 +112,25 @@ def test_match_page_renders_first_question_and_active_nav(client: TestClient) ->
 
     assert response.status_code == 200
     html = response.text
-    assert "Narrow It Down" in html
+    assert "Set the tone. Skip the scroll." in html
     assert 'href="/ui/match"' in html
     assert 'aria-current="page"' in html
-    assert "Scary" in html
+    assert "Movie Night Picker" in html
+    assert "Cozy" in html
     assert "Funny" in html
     assert "Flic" not in html
 
 
 def test_match_page_renders_option_counts_and_trail(client: TestClient) -> None:
-    response = client.get("/ui/match", params={"answers": "funny,short"})
+    response = client.get("/ui/match", params={"answers": "funny,high"})
 
     assert response.status_code == 200
     html = response.text
     assert "trusted titles" in html
-    assert "Trail" in html
+    assert "Your night" in html
     assert "Funny" in html
-    assert "Short" in html
+    assert "High-energy" in html
+    assert "Under 100 minutes" in html
     assert "left" in html
 
 
@@ -119,10 +139,11 @@ def test_match_page_renders_result_shortlist(client: TestClient) -> None:
 
     assert response.status_code == 200
     html = response.text
-    assert "Top Match" in html
+    assert "Top Pick" in html
     assert "Toy Story" in html
-    assert "Also in the Mix" in html
+    assert "More picks for this night" in html
     assert "Try another" in html
     assert "View these filters in Library" in html
-    assert "Quality:" in html
+    assert "Why it fits:" in html
+    assert "Quality:" not in html
     assert "Flic" not in html
