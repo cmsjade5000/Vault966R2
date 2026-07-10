@@ -333,9 +333,7 @@ def test_restart_cleans_stale_deploy_artifacts(tmp_path: Path) -> None:
     assert "--exclude .git " in rsync_calls.read_text()
     assert uv_calls.exists()
     event_lines = events.read_text(encoding="utf-8").splitlines()
-    assert event_lines.index("rsync") > event_lines.index(
-        f"bootout {domain}/com.vault966.server"
-    )
+    assert event_lines.index("rsync") > event_lines.index(f"bootout {domain}/com.vault966.server")
     for stale_path in (
         ".git",
         ".codex",
