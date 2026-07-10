@@ -124,6 +124,7 @@ def test_update_movie_metadata_handles_optional_fields(
         "poster_url": " https://example.com/poster.jpg ",
         "backdrop_url": "https://example.com/backdrop.jpg",
         "where_to_watch": ["Netflix", "Vudu", "Netflix"],
+        "keywords": [" neo-noir ", "NEO-NOIR", "", "cyberpunk"],
         "languages": "English, Japanese",
         "countries": "United States",
         "collection": "Blade Runner Collection",
@@ -148,6 +149,7 @@ def test_update_movie_metadata_handles_optional_fields(
     assert body["poster_url"] == "https://example.com/poster.jpg"
     assert body["backdrop_url"] == "https://example.com/backdrop.jpg"
     assert body["where_to_watch"] == ["Netflix", "Vudu"]
+    assert body["keywords"] == ["neo-noir", "cyberpunk"]
     assert body["languages"] == "English, Japanese"
     assert body["countries"] == "United States"
     assert body["collection"] == "Blade Runner Collection"
@@ -177,6 +179,7 @@ def test_update_movie_uses_terminal_title_year_as_authority(
 @pytest.mark.parametrize(
     ("payload", "message"),
     [
+        ({"title": "   "}, "Title cannot be blank"),
         ({"year": 1700}, "Year must be between 1888 and 2100"),
         ({"runtime": -5}, "Runtime cannot be negative"),
         ({"imdb_rating": 11}, "IMDb rating must be between 0 and 10"),

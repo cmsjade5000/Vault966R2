@@ -99,7 +99,10 @@ def _xlsx_archive(
     shared_strings_xml: str | None = None,
     compression: int = zipfile.ZIP_STORED,
     extra_members: int = 0,
+    sheet_target: str = "worksheets/sheet1.xml",
+    target_mode: str | None = None,
 ) -> bytes:
+    target_mode_attribute = f' TargetMode="{target_mode}"' if target_mode else ""
     buffer = io.BytesIO()
     with zipfile.ZipFile(buffer, "w", compression=compression) as archive:
         archive.writestr(
@@ -122,7 +125,8 @@ def _xlsx_archive(
             "xl/_rels/workbook.xml.rels",
             '<?xml version="1.0" encoding="UTF-8"?>'
             '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
-            '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>'
+            '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" '
+            f'Target="{sheet_target}"{target_mode_attribute}/>'
             "</Relationships>",
         )
         if shared_strings_xml is not None:
@@ -390,6 +394,144 @@ def test_source_sync_rejects_xlsx_row_and_cell_caps(monkeypatch) -> None:
     monkeypatch.setattr(source_sync, "MAX_XLSX_CELLS", 2)
     with pytest.raises(SourceSyncError, match="too many cells"):
         source_sync.parse_source_xlsx(_xlsx_archive(three_cells))
+
+
+@pytest.mark.parametrize("cell_ref", ["BM1", "é1", "A0", ""])
+def test_source_sync_rejects_unsafe_xlsx_cell_references(cell_ref: str) -> None:
+    sheet_xml = (
+        '<?xml version="1.0" encoding="UTF-8"?>'
+        '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
+        f'<sheetData><row r="1"><c r="{cell_ref}"><v>1</v></c></row></sheetData>'
+        "</worksheet>"
+    )
+
+    with pytest.raises(SourceSyncError, match="cell reference|too many columns"):
+        source_sync.parse_source_xlsx(_xlsx_archive(sheet_xml))
+
+
+@pytest.mark.parametrize(
+    ("parser", "value"),
+    [
+        ("parse_runtime", "nan:00"),
+        ("parse_runtime", "inf:00"),
+        ("parse_runtime", "1e309:00"),
+        ("parse_runtime", "9" * 5000),
+        ("parse_year", "9" * 5000),
+    ],
+)
+def test_source_sync_numeric_parsers_keep_failures_in_domain_error_boundary(
+    parser: str,
+    value: str,
+) -> None:
+    with pytest.raises(SourceSyncError, match="Invalid runtime|Invalid year"):
+        getattr(source_sync, parser)(value)
+
+
+def test_source_sync_rejects_ambiguous_header_aliases() -> None:
+    content = (
+        "Title,Movie,Time,Director,Year\n" "Blade Runner,Arrival,117,Ridley Scott,1982\n"
+    ).encode()
+
+    with pytest.raises(SourceSyncError, match="ambiguous columns for: title"):
+        source_sync.parse_source_csv(content)
+
+
+@pytest.mark.parametrize(
+    "cell_xml",
+    [
+        '<c r="A1" t="s"><v>-1</v></c>',
+        '<c r="A1" t="b"><v>2</v></c>',
+    ],
+)
+def test_source_sync_rejects_invalid_xlsx_typed_cell_values(cell_xml: str) -> None:
+    sheet_xml = (
+        '<?xml version="1.0" encoding="UTF-8"?>'
+        '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
+        f'<sheetData><row r="1">{cell_xml}</row></sheetData>'
+        "</worksheet>"
+    )
+    shared_strings = (
+        '<?xml version="1.0" encoding="UTF-8"?>'
+        '<sst xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
+        "<si><t>Title</t></si>"
+        "</sst>"
+    )
+
+    with pytest.raises(SourceSyncError, match="shared string reference|boolean cell value"):
+        source_sync.parse_source_xlsx(_xlsx_archive(sheet_xml, shared_strings_xml=shared_strings))
+
+
+def test_source_sync_rejects_oversized_shared_string_index() -> None:
+    sheet_xml = (
+        '<?xml version="1.0" encoding="UTF-8"?>'
+        '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
+        f'<sheetData><row r="1"><c r="A1" t="s"><v>{"9" * 5000}</v></c></row></sheetData>'
+        "</worksheet>"
+    )
+    shared_strings = (
+        '<?xml version="1.0" encoding="UTF-8"?>'
+        '<sst xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
+        "<si><t>Title</t></si>"
+        "</sst>"
+    )
+
+    with pytest.raises(SourceSyncError, match="shared string reference"):
+        source_sync.parse_source_xlsx(_xlsx_archive(sheet_xml, shared_strings_xml=shared_strings))
+
+
+@pytest.mark.parametrize(
+    ("sheet_target", "target_mode"),
+    [
+        ("../outside.xml", None),
+        ("https://example.test/sheet.xml", None),
+        (r"worksheets\sheet1.xml", None),
+        ("worksheets/sheet1.xml", "External"),
+    ],
+)
+def test_source_sync_rejects_unsafe_worksheet_relationships(
+    sheet_target: str,
+    target_mode: str | None,
+) -> None:
+    sheet_xml = (
+        '<?xml version="1.0" encoding="UTF-8"?>'
+        '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
+        "<sheetData/>"
+        "</worksheet>"
+    )
+
+    with pytest.raises(SourceSyncError, match="first worksheet"):
+        source_sync.parse_source_xlsx(
+            _xlsx_archive(
+                sheet_xml,
+                sheet_target=sheet_target,
+                target_mode=target_mode,
+            )
+        )
+
+
+def test_source_sync_rejects_wide_csv_before_row_materialization() -> None:
+    content = (",".join(f"column_{index}" for index in range(65)) + "\n").encode()
+
+    with pytest.raises(SourceSyncError, match="too many columns"):
+        source_sync.parse_source_csv(content)
+
+
+def test_source_upload_does_not_reflect_oversized_cell_values(client: TestClient) -> None:
+    response = client.post(
+        "/ui/source-sync/upload",
+        files={
+            "source_file": (
+                "source.csv",
+                _csv(f"Movie,{'9' * 9000},Director,2020,Drama,PG,1/1/20,1"),
+                "text/csv",
+            )
+        },
+        follow_redirects=False,
+    )
+
+    assert response.status_code == 303
+    assert len(response.headers["location"]) < 512
+    assert "9" * 100 not in response.headers["location"]
 
 
 def test_source_sync_rejects_malformed_and_repeated_files(client: TestClient) -> None:

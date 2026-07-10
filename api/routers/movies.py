@@ -1,3 +1,4 @@
+import logging
 from typing import List, Optional, Sequence
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
@@ -99,6 +100,7 @@ def _build_facets(db: Session, filtered_query) -> dict:
 
 
 router = APIRouter(prefix="/movies", tags=["movies"])
+logger = logging.getLogger("vault966")
 
 
 def _attach_flag_status(db: Session, movies: Sequence[Movie]) -> None:
@@ -470,9 +472,17 @@ def llm_search_movies(
             allowed_moods=allowed_moods,
         )
     except LlmProviderUnavailable as exc:
-        raise HTTPException(status_code=503, detail=str(exc)) from exc
+        logger.warning("llm_movie_search_provider_unavailable: %s", type(exc).__name__)
+        raise HTTPException(
+            status_code=503,
+            detail="Smart search is temporarily unavailable.",
+        ) from exc
     except LlmFilterError as exc:
-        raise HTTPException(status_code=502, detail=str(exc)) from exc
+        logger.warning("llm_movie_search_provider_failed: %s", type(exc).__name__)
+        raise HTTPException(
+            status_code=502,
+            detail="Smart search could not be completed. Please try again.",
+        ) from exc
 
     params: MovieFilterParams = parse_movie_filters(
         q=llm_filters.q,

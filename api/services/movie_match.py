@@ -9,6 +9,17 @@ from sqlalchemy.orm import Session, selectinload
 
 from api.models.movie import Movie
 from api.services.trusted_movies import trusted_movie_query
+from core.moods import score_moods
+
+
+PICK_COUNT = 5
+
+_HIGH_ENERGY_MOODS = frozenset({"High-energy", "Intense", "Scary", "Gritty", "Epic", "Bleak"})
+_LOW_ENERGY_MOODS = frozenset({"Cozy", "Light", "Thoughtful", "Atmospheric", "Romantic"})
+_HIGH_ENERGY_GENRES = frozenset({"Action", "Adventure", "Crime", "Horror", "Thriller", "War"})
+_LOW_ENERGY_GENRES = frozenset(
+    {"Animation", "Documentary", "Drama", "Family", "History", "Romance"}
+)
 
 
 @dataclass(frozen=True)
@@ -22,14 +33,15 @@ class MatchOption:
     runtime_max: int | None = None
     year_min: int | None = None
     year_max: int | None = None
-    variety: bool = False
+    energy: str | None = None
+    ranking_only: bool = False
 
 
 @dataclass(frozen=True)
 class MatchQuestion:
     id: str
     prompt: str
-    options: tuple[MatchOption, MatchOption]
+    options: tuple[MatchOption, ...]
 
 
 @dataclass(frozen=True)
@@ -42,13 +54,19 @@ class MatchPreferences:
     runtime_max: int | None
     year_min: int | None
     year_max: int | None
-    variety: bool
+    energy: str | None
+    mood_label: str | None
+    energy_label: str | None
+    runtime_label: str | None
+    genre_label: str | None
+    era_label: str | None
 
 
 @dataclass(frozen=True)
 class MovieMatch:
     movie: Movie
     reasons: tuple[str, ...]
+    why_it_fits: str
 
 
 @dataclass(frozen=True)
@@ -89,95 +107,156 @@ class MatchResult:
 
 QUESTIONS: tuple[MatchQuestion, ...] = (
     MatchQuestion(
-        id="vibe",
-        prompt="What lane should tonight take?",
+        id="mood",
+        prompt="What mood are you after?",
         options=(
             MatchOption(
-                id="scary",
-                label="Scary",
-                description="Tension, shadows, and a little dread.",
-                genres=("Horror", "Thriller"),
-                moods=("Scary", "Atmospheric"),
+                id="cozy",
+                label="Cozy",
+                description="Warm, easygoing, and comfortable.",
+                moods=("Cozy", "Light", "Family", "Romantic"),
+                ranking_only=True,
             ),
             MatchOption(
                 id="funny",
                 label="Funny",
-                description="Jokes, charm, and an easier landing.",
-                genres=("Comedy",),
+                description="Jokes, charm, and a lighter landing.",
                 moods=("Funny", "Light"),
-            ),
-        ),
-    ),
-    MatchQuestion(
-        id="runtime",
-        prompt="How much movie do you want?",
-        options=(
-            MatchOption(
-                id="short",
-                label="Short",
-                description="Keep it tight.",
-                runtime_max=100,
+                ranking_only=True,
             ),
             MatchOption(
-                id="long",
-                label="Long",
-                description="Settle in for a bigger swing.",
-                runtime_min=125,
-            ),
-        ),
-    ),
-    MatchQuestion(
-        id="era",
-        prompt="Which shelf feels better?",
-        options=(
-            MatchOption(
-                id="newer",
-                label="Newer",
-                description="Modern pacing and recent releases.",
-                year_min=2000,
+                id="thoughtful",
+                label="Thoughtful",
+                description="Something absorbing with ideas to chew on.",
+                moods=("Thoughtful", "Mind-bending", "Atmospheric"),
+                ranking_only=True,
             ),
             MatchOption(
-                id="older",
-                label="Older",
-                description="Earlier favorites and older textures.",
-                year_max=1999,
+                id="intense",
+                label="Intense",
+                description="Tension, danger, and a sharper edge.",
+                moods=("Intense", "Scary", "Gritty", "Bleak"),
+                ranking_only=True,
             ),
         ),
     ),
     MatchQuestion(
         id="energy",
-        prompt="What kind of energy?",
+        prompt="How much energy should it have?",
         options=(
             MatchOption(
-                id="light",
-                label="Light",
-                description="Easy, warm, or playful.",
-                genres=("Animation", "Family", "Comedy"),
-                moods=("Light", "Cozy", "Family", "Romantic"),
+                id="low",
+                label="Low-key",
+                description="Gentle, measured, or quietly immersive.",
+                energy="low",
+                ranking_only=True,
             ),
             MatchOption(
-                id="intense",
-                label="Intense",
-                description="Louder, sharper, or more absorbing.",
-                genres=("Action", "Crime", "Thriller"),
-                moods=("Intense", "Gritty", "High-energy", "Bleak"),
+                id="balanced",
+                label="Balanced",
+                description="Enough momentum without going full throttle.",
+                energy="medium",
+                ranking_only=True,
+            ),
+            MatchOption(
+                id="high",
+                label="High-energy",
+                description="Fast, forceful, or edge-of-the-seat.",
+                energy="high",
+                ranking_only=True,
             ),
         ),
     ),
     MatchQuestion(
-        id="finish",
-        prompt="Last move?",
+        id="runtime",
+        prompt="How long should tonight's watch be?",
         options=(
             MatchOption(
-                id="surprise",
-                label="Surprise me",
-                description="Keep the answers, but loosen the final cut.",
-                variety=True,
+                id="short",
+                label="Under 100 minutes",
+                description="Keep it tight and leave the night intact.",
+                runtime_max=99,
             ),
             MatchOption(
-                id="keep",
-                label="Keep narrowing",
-                description="Stay close to every answer.",
+                id="standard",
+                label="100–130 minutes",
+                description="A full feature without an intermission strategy.",
+                runtime_min=100,
+                runtime_max=130,
+            ),
+            MatchOption(
+                id="long",
+                label="131+ minutes",
+                description="Settle in for a bigger swing.",
+                runtime_min=131,
+            ),
+        ),
+    ),
+    MatchQuestion(
+        id="genre",
+        prompt="Which genre lane sounds best?",
+        options=(
+            MatchOption(
+                id="action",
+                label="Action & adventure",
+                description="Movement, stakes, and a bigger canvas.",
+                genres=("Action", "Adventure"),
+            ),
+            MatchOption(
+                id="comedy",
+                label="Comedy",
+                description="Let the genre do some of the emotional lifting.",
+                genres=("Comedy",),
+            ),
+            MatchOption(
+                id="drama",
+                label="Drama",
+                description="Character, consequence, and human mess.",
+                genres=("Drama",),
+            ),
+            MatchOption(
+                id="family",
+                label="Animation & family",
+                description="Accessible, imaginative, and crowd-friendly.",
+                genres=("Animation", "Family"),
+            ),
+            MatchOption(
+                id="speculative",
+                label="Sci-fi & fantasy",
+                description="Other worlds, strange rules, and big ideas.",
+                genres=("Sci-Fi", "Science Fiction", "Fantasy"),
+            ),
+        ),
+    ),
+    MatchQuestion(
+        id="era",
+        prompt="Which era should we pull from?",
+        options=(
+            MatchOption(
+                id="classic",
+                label="Before 1980",
+                description="Classic craft and earlier cinematic textures.",
+                year_max=1979,
+            ),
+            MatchOption(
+                id="retro",
+                label="1980s & 1990s",
+                description="Analog edges, practical effects, and video-store DNA.",
+                year_min=1980,
+                year_max=1999,
+            ),
+            MatchOption(
+                id="modern",
+                label="2000–2014",
+                description="Modern filmmaking before the current streaming era.",
+                year_min=2000,
+                year_max=2014,
+            ),
+            MatchOption(
+                id="recent",
+                label="2015 to now",
+                description="Contemporary pacing and recent releases.",
+                year_min=2015,
             ),
         ),
     ),
@@ -216,6 +295,7 @@ def previous_answers(answers: Sequence[str]) -> tuple[str, ...]:
 
 
 def build_preferences(answer_ids: Sequence[str]) -> MatchPreferences:
+    normalized_ids = normalize_answer_ids(answer_ids)
     labels: list[str] = []
     genres: list[str] = []
     moods: list[str] = []
@@ -223,11 +303,14 @@ def build_preferences(answer_ids: Sequence[str]) -> MatchPreferences:
     runtime_max: int | None = None
     year_min: int | None = None
     year_max: int | None = None
-    variety = False
+    energy: str | None = None
+    dimension_labels: dict[str, str] = {}
 
-    for answer_id in normalize_answer_ids(answer_ids):
+    for index, answer_id in enumerate(normalized_ids):
         option = _OPTION_BY_ID[answer_id]
+        question = QUESTIONS[index]
         labels.append(option.label)
+        dimension_labels[question.id] = option.label
         genres.extend(option.genres)
         moods.extend(option.moods)
         if option.runtime_min is not None:
@@ -238,10 +321,10 @@ def build_preferences(answer_ids: Sequence[str]) -> MatchPreferences:
             year_min = max(year_min or option.year_min, option.year_min)
         if option.year_max is not None:
             year_max = min(year_max or option.year_max, option.year_max)
-        variety = variety or option.variety
+        energy = option.energy or energy
 
     return MatchPreferences(
-        answer_ids=tuple(answer_ids),
+        answer_ids=normalized_ids,
         labels=tuple(labels),
         genres=_dedupe(genres),
         moods=_dedupe(moods),
@@ -249,7 +332,12 @@ def build_preferences(answer_ids: Sequence[str]) -> MatchPreferences:
         runtime_max=runtime_max,
         year_min=year_min,
         year_max=year_max,
-        variety=variety,
+        energy=energy,
+        mood_label=dimension_labels.get("mood"),
+        energy_label=dimension_labels.get("energy"),
+        runtime_label=dimension_labels.get("runtime"),
+        genre_label=dimension_labels.get("genre"),
+        era_label=dimension_labels.get("era"),
     )
 
 
@@ -258,7 +346,7 @@ def build_match_result(
     *,
     answer_ids: str | Sequence[str] | None = None,
     reroll: int = 0,
-    shortlist_size: int = 6,
+    shortlist_size: int = PICK_COUNT - 1,
 ) -> MatchResult:
     answers = normalize_answer_ids(answer_ids)
     preferences = build_preferences(answers)
@@ -297,19 +385,28 @@ def build_match_result(
     result_quality = _result_quality(fallback_tier, preferences, strict_match_count)
     if result_quality == "softened" and fallback_notice is None:
         fallback_notice = (
-            "The Vault treated mood as a ranking signal while keeping your lane, runtime, "
-            "and era."
+            "The Vault used mood and energy to rank the strongest matches while keeping "
+            "your genre, runtime, and era."
         )
     ranked = _rank_movies(candidates, preferences, reroll=reroll)
-    selected = ranked[: max(1, shortlist_size + 1)]
-    if fallback_tier != "catalog" and len(selected) < shortlist_size + 1:
+    pick_count = min(max(shortlist_size + 1, 3), PICK_COUNT)
+    selected = ranked[:pick_count]
+    if fallback_tier != "catalog" and len(selected) < pick_count:
+        exact_count = len(selected)
         selected_ids = {match.movie.id for match in selected}
         extras = [
             match
             for match in _rank_movies(movies, preferences, reroll=reroll)
             if match.movie.id not in selected_ids
         ]
-        selected.extend(extras[: shortlist_size + 1 - len(selected)])
+        selected.extend(extras[: pick_count - len(selected)])
+        if len(selected) > exact_count:
+            widened = True
+            result_quality = "widened"
+            fallback_notice = (
+                f"The Vault found {exact_count} exact {('match' if exact_count == 1 else 'matches')}, "
+                "then filled the shortlist with the closest trusted options."
+            )
     lead = selected[0] if selected else None
     supporting = tuple(selected[1:])
 
@@ -351,39 +448,31 @@ def _names(items: Iterable[object]) -> set[str]:
     return names
 
 
-def _strictly_matches(movie: Movie, preferences: MatchPreferences) -> bool:
-    return _matches(movie, preferences)
+def _movie_moods(movie: Movie, genres: set[str] | None = None) -> set[str]:
+    """Combine curated mood tags with deterministic metadata-derived tags."""
+
+    stored = _names(getattr(movie, "moods", ()))
+    genre_names = genres if genres is not None else _names(getattr(movie, "genres", ()))
+    inferred = score_moods(
+        genre_names,
+        keywords=getattr(movie, "keywords", None),
+        plot=getattr(movie, "plot", None),
+        certificate=getattr(movie, "certificate", None),
+        runtime=getattr(movie, "runtime", None),
+    )
+    return stored.union(inferred)
 
 
-def _matches(
-    movie: Movie,
-    preferences: MatchPreferences,
-    *,
-    relax_moods: bool = False,
-    relax_lane: bool = False,
-) -> bool:
-    genres = _names(getattr(movie, "genres", ()))
-    moods = _names(getattr(movie, "moods", ()))
-    runtime = getattr(movie, "runtime", None)
-    year = getattr(movie, "year", None)
+def _movie_energy(movie: Movie, *, genres: set[str] | None = None) -> str:
+    """Infer an energy lane without adding a database-only energy field."""
 
-    if not relax_lane and preferences.genres and not genres.intersection(preferences.genres):
-        return False
-    if not relax_moods and preferences.moods and not moods.intersection(preferences.moods):
-        return False
-    if preferences.runtime_min is not None and (
-        runtime is None or runtime < preferences.runtime_min
-    ):
-        return False
-    if preferences.runtime_max is not None and (
-        runtime is None or runtime > preferences.runtime_max
-    ):
-        return False
-    if preferences.year_min is not None and (year is None or year < preferences.year_min):
-        return False
-    if preferences.year_max is not None and (year is None or year > preferences.year_max):
-        return False
-    return True
+    genre_names = genres if genres is not None else _names(getattr(movie, "genres", ()))
+    moods = _movie_moods(movie, genre_names)
+    if moods.intersection(_HIGH_ENERGY_MOODS) or genre_names.intersection(_HIGH_ENERGY_GENRES):
+        return "high"
+    if moods.intersection(_LOW_ENERGY_MOODS) or genre_names.intersection(_LOW_ENERGY_GENRES):
+        return "low"
+    return "medium"
 
 
 def _candidate_pool(
@@ -438,7 +527,8 @@ def _matches_answer_options(
     relax_lane: bool = False,
 ) -> bool:
     genres = _names(getattr(movie, "genres", ()))
-    moods = _names(getattr(movie, "moods", ()))
+    moods = _movie_moods(movie, genres)
+    energy = _movie_energy(movie, genres=genres)
     runtime = getattr(movie, "runtime", None)
     year = getattr(movie, "year", None)
 
@@ -446,6 +536,8 @@ def _matches_answer_options(
         if not relax_lane and option.genres and not genres.intersection(option.genres):
             return False
         if include_moods and option.moods and not moods.intersection(option.moods):
+            return False
+        if include_moods and option.energy and option.energy != energy:
             return False
         if option.runtime_min is not None and (runtime is None or runtime < option.runtime_min):
             return False
@@ -504,15 +596,17 @@ def _result_quality(
 ) -> str:
     if fallback_tier != "exact":
         return "widened"
-    if preferences.moods and strict_match_count == 0:
+    if (preferences.moods or preferences.energy) and strict_match_count == 0:
         return "softened"
     return "exact"
 
 
 def _library_filter_query(preferences: MatchPreferences) -> str:
     params: list[tuple[str, str]] = []
-    for genre in preferences.genres:
-        params.append(("genres", genre))
+    # A picker genre option may include aliases or an adjacent lane, while Library
+    # genre query parameters are ANDed. Use the primary label to avoid over-filtering.
+    if preferences.genres:
+        params.append(("genres", preferences.genres[0]))
     if preferences.runtime_min is not None:
         params.append(("runtime_min", str(preferences.runtime_min)))
     if preferences.runtime_max is not None:
@@ -530,56 +624,73 @@ def _rank_movies(
     ranked = [
         (
             _score_movie(movie, preferences),
+            _quality_score(movie),
             _stable_tiebreak(movie, preferences, reroll=reroll),
             movie,
         )
         for movie in movies
     ]
-    ranked.sort(key=lambda item: (-item[0], item[1]))
+    ranked.sort(key=lambda item: (-item[0], -item[1], item[2]))
     return [
-        MovieMatch(movie=movie, reasons=_reason_labels(movie, preferences))
-        for _, _, movie in ranked
+        MovieMatch(
+            movie=movie,
+            reasons=_reason_labels(movie, preferences),
+            why_it_fits=_why_it_fits(movie, preferences),
+        )
+        for _, _, _, movie in ranked
     ]
 
 
 def _score_movie(movie: Movie, preferences: MatchPreferences) -> float:
     score = 0.0
     genres = _names(getattr(movie, "genres", ()))
-    moods = _names(getattr(movie, "moods", ()))
+    moods = _movie_moods(movie, genres)
     runtime = getattr(movie, "runtime", None)
     year = getattr(movie, "year", None)
 
-    score += 20.0 * len(genres.intersection(preferences.genres))
-    score += 24.0 * len(moods.intersection(preferences.moods))
+    if genres.intersection(preferences.genres):
+        score += 24.0
+    if moods.intersection(preferences.moods):
+        score += 24.0
+    if preferences.energy:
+        energy_distance = abs(
+            {"low": 0, "medium": 1, "high": 2}[_movie_energy(movie, genres=genres)]
+            - {"low": 0, "medium": 1, "high": 2}[preferences.energy]
+        )
+        score += 20.0 if energy_distance == 0 else (5.0 if energy_distance == 1 else -8.0)
 
-    if preferences.runtime_max is not None and runtime is not None:
-        score += (
-            16.0
-            if runtime <= preferences.runtime_max
-            else -min((runtime - preferences.runtime_max) / 3, 24)
-        )
-    if preferences.runtime_min is not None and runtime is not None:
-        score += (
-            16.0
-            if runtime >= preferences.runtime_min
-            else -min((preferences.runtime_min - runtime) / 3, 24)
-        )
-    if preferences.year_min is not None and year is not None:
-        score += (
-            12.0 if year >= preferences.year_min else -min((preferences.year_min - year) / 2, 18)
-        )
-    if preferences.year_max is not None and year is not None:
-        score += (
-            12.0 if year <= preferences.year_max else -min((year - preferences.year_max) / 2, 18)
-        )
+    if preferences.runtime_min is not None or preferences.runtime_max is not None:
+        if runtime is None:
+            score -= 12.0
+        elif (preferences.runtime_min is None or runtime >= preferences.runtime_min) and (
+            preferences.runtime_max is None or runtime <= preferences.runtime_max
+        ):
+            score += 16.0
+        elif preferences.runtime_min is not None and runtime < preferences.runtime_min:
+            score -= min((preferences.runtime_min - runtime) / 3, 24)
+        elif preferences.runtime_max is not None:
+            score -= min((runtime - preferences.runtime_max) / 3, 24)
 
-    if getattr(movie, "imdb_rating", None) is not None:
-        score += float(movie.imdb_rating or 0) / 2
-    if getattr(movie, "rt_score", None) is not None:
-        score += float(movie.rt_score or 0) / 25
-    if preferences.variety:
-        score += _variety_bonus(movie, preferences)
+    if preferences.year_min is not None or preferences.year_max is not None:
+        if year is None:
+            score -= 10.0
+        elif (preferences.year_min is None or year >= preferences.year_min) and (
+            preferences.year_max is None or year <= preferences.year_max
+        ):
+            score += 12.0
+        elif preferences.year_min is not None and year < preferences.year_min:
+            score -= min((preferences.year_min - year) / 2, 18)
+        elif preferences.year_max is not None:
+            score -= min((year - preferences.year_max) / 2, 18)
     return score
+
+
+def _quality_score(movie: Movie) -> float:
+    """Use ratings only to break equal preference-fit scores."""
+
+    imdb = float(getattr(movie, "imdb_rating", None) or 0) * 10
+    rt = float(getattr(movie, "rt_score", None) or 0)
+    return max(imdb, rt)
 
 
 def _stable_tiebreak(movie: Movie, preferences: MatchPreferences, *, reroll: int) -> str:
@@ -588,41 +699,50 @@ def _stable_tiebreak(movie: Movie, preferences: MatchPreferences, *, reroll: int
     return sha256(raw.encode("utf-8")).hexdigest()
 
 
-def _variety_bonus(movie: Movie, preferences: MatchPreferences) -> float:
-    digest = _stable_tiebreak(movie, preferences, reroll=7)
-    return int(digest[:2], 16) / 255
-
-
-def _reason_labels(movie: Movie, preferences: MatchPreferences) -> tuple[str, ...]:
-    reasons: list[str] = []
+def _fit_fragments(movie: Movie, preferences: MatchPreferences) -> list[str]:
+    fragments: list[str] = []
     genres = _names(getattr(movie, "genres", ()))
-    moods = _names(getattr(movie, "moods", ()))
+    moods = _movie_moods(movie, genres)
     runtime = getattr(movie, "runtime", None)
     year = getattr(movie, "year", None)
 
-    if genres.intersection(preferences.genres):
-        reasons.append("Matches the lane")
-    if moods.intersection(preferences.moods):
-        reasons.append("Fits the mood")
+    if preferences.mood_label and moods.intersection(preferences.moods):
+        fragments.append(f"{preferences.mood_label} mood")
+    if preferences.energy_label and preferences.energy == _movie_energy(movie, genres=genres):
+        fragments.append(f"{preferences.energy_label} energy")
     if (
-        preferences.runtime_max is not None
+        preferences.runtime_label
         and runtime is not None
-        and runtime <= preferences.runtime_max
+        and (preferences.runtime_min is None or runtime >= preferences.runtime_min)
+        and (preferences.runtime_max is None or runtime <= preferences.runtime_max)
     ):
-        reasons.append("Keeps it tight")
+        fragments.append(f"{runtime}-minute runtime")
+    if preferences.genre_label and genres.intersection(preferences.genres):
+        fragments.append(preferences.genre_label)
     if (
-        preferences.runtime_min is not None
-        and runtime is not None
-        and runtime >= preferences.runtime_min
+        preferences.era_label
+        and year is not None
+        and (preferences.year_min is None or year >= preferences.year_min)
+        and (preferences.year_max is None or year <= preferences.year_max)
     ):
-        reasons.append("Longer watch")
-    if preferences.year_min is not None and year is not None and year >= preferences.year_min:
-        reasons.append("Newer shelf")
-    if preferences.year_max is not None and year is not None and year <= preferences.year_max:
-        reasons.append("Older shelf")
-    if not reasons:
-        reasons.append("Closest trusted match")
-    return tuple(reasons[:3])
+        fragments.append(f"{year} fits {preferences.era_label}")
+    return fragments
+
+
+def _reason_labels(movie: Movie, preferences: MatchPreferences) -> tuple[str, ...]:
+    fragments = _fit_fragments(movie, preferences)
+    return tuple(fragments[:3] or ["Closest trusted match"])
+
+
+def _why_it_fits(movie: Movie, preferences: MatchPreferences) -> str:
+    fragments = _fit_fragments(movie, preferences)[:3]
+    if not fragments:
+        return "Closest trusted option after widening the selected preferences."
+    if len(fragments) == 1:
+        detail = fragments[0]
+    else:
+        detail = f"{', '.join(fragments[:-1])}, and {fragments[-1]}"
+    return f"{detail[0].upper()}{detail[1:]}."
 
 
 __all__ = [

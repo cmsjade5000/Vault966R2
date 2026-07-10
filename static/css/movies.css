@@ -2134,8 +2134,14 @@ body.filters-open {
   margin: 0;
 }
 
-.match-pool-readout,
-.match-quality {
+.match-heading__intro {
+  max-width: 46rem;
+  margin: 0.55rem 0 0;
+  color: #94a3b8;
+  line-height: 1.5;
+}
+
+.match-pool-readout {
   margin: 0.45rem 0 0;
   color: #cbd5e1;
   font-weight: 800;
@@ -2146,6 +2152,34 @@ body.filters-open {
   grid-template-columns: minmax(12rem, 16rem) minmax(0, 1fr);
   gap: 1rem;
   align-items: start;
+}
+
+.match-console.is-complete {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.match-console.is-complete .match-trail {
+  position: static;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+}
+
+.match-console.is-complete .match-trail ol {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.match-console.is-complete .match-trail li {
+  display: block;
+  padding: 0.35rem 0.6rem;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 999px;
+  background: rgba(30, 144, 255, 0.08);
+}
+
+.match-console.is-complete .match-trail li span {
+  display: none;
 }
 
 .match-trail {
@@ -2209,6 +2243,9 @@ body.filters-open {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 0.45rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
 
 .match-progress__step {
@@ -2377,6 +2414,23 @@ body.filters-open {
   padding-left: 0.75rem;
 }
 
+.match-why,
+.library-card__why {
+  margin: 0;
+  color: #cbd5e1;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.match-why strong,
+.library-card__why strong {
+  color: #f8fafc;
+}
+
+.library-card__why {
+  margin-top: 0.15rem;
+}
+
 .match-shortlist {
   display: grid;
   gap: 1rem;
@@ -2435,6 +2489,18 @@ body.filters-open {
     grid-template-columns: 1fr;
   }
 
+  .match-console:not(.is-complete) .match-trail {
+    order: 2;
+  }
+
+  .match-console:not(.is-complete) .match-question {
+    order: 1;
+  }
+
+  .match-console.is-complete .match-trail {
+    grid-template-columns: 1fr;
+  }
+
   .match-trail {
     position: static;
   }
@@ -2450,6 +2516,7 @@ body.filters-open {
 
   .match-lead__poster {
     max-width: 14rem;
+    margin-inline: auto;
   }
 }
 

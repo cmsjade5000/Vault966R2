@@ -15,7 +15,8 @@
   poster_size="w342",
   show_details=true,
   poster_src="",
-  defer_image=false
+  defer_image=false,
+  reason_note=""
 ) -%}
 <article
   class="library-card{% if extra_class %} {{ extra_class }}{% endif %}{% if not show_details %} library-card--poster-only{% endif %}{% if show_review and movie.flagged %} library-card--review{% endif %}"
@@ -68,6 +69,9 @@
       <div class="library-card__reasons" aria-label="Why this movie">
         {% for reason in reason_labels[:2] %}<span>{{ reason }}</span>{% endfor %}
       </div>
+      {% endif %}
+      {% if reason_note %}
+      <p class="library-card__why"><strong>Why it fits:</strong> {{ reason_note }}</p>
       {% endif %}
     </div>
     {% endif %}

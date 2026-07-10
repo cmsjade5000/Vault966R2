@@ -138,6 +138,76 @@ def test_start_force_restarts_loaded_service(tmp_path: Path) -> None:
     assert "kickstart -k gui/" in calls.read_text()
 
 
+def test_start_retries_transient_bootstrap_failure(tmp_path: Path) -> None:
+    home = tmp_path / "home"
+    plist = home / "Library" / "LaunchAgents" / "com.vault966.server.plist"
+    plist.parent.mkdir(parents=True)
+    plist.touch()
+
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    calls = tmp_path / "launchctl-calls"
+    loaded = tmp_path / "loaded-targets"
+    attempts = tmp_path / "bootstrap-attempts"
+    write_executable(
+        bin_dir / "launchctl",
+        f"""\
+        #!/usr/bin/env bash
+        printf '%s\n' "$*" >> {calls!s}
+        case "$1" in
+          print)
+            grep -qx "$2" {loaded!s} 2>/dev/null
+            ;;
+          bootstrap)
+            label="$(basename "$3" .plist)"
+            if [[ "$label" == "com.vault966.server" ]]; then
+              count="$(cat {attempts!s} 2>/dev/null || echo 0)"
+              count=$((count + 1))
+              printf '%s' "$count" > {attempts!s}
+              if [[ "$count" -eq 1 ]]; then
+                echo "Bootstrap failed: transient launchd state" >&2
+                exit 5
+              fi
+            fi
+            printf '%s/%s\n' "$2" "$label" >> {loaded!s}
+            ;;
+          bootout)
+            touch {loaded!s}
+            grep -vx "$2" {loaded!s} > {loaded!s}.next || true
+            mv {loaded!s}.next {loaded!s}
+            ;;
+        esac
+        """,
+    )
+    write_executable(
+        bin_dir / "curl",
+        """\
+        #!/usr/bin/env bash
+        exit 0
+        """,
+    )
+
+    env = os.environ.copy()
+    env.update(
+        {
+            "HOME": str(home),
+            "PATH": f"{bin_dir}:{env['PATH']}",
+            "LAUNCHCTL_BOOTSTRAP_DELAY": "0",
+        }
+    )
+    result = subprocess.run(
+        ["/bin/bash", str(SERVICE), "start"],
+        env=env,
+        capture_output=True,
+        text=True,
+        timeout=5,
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert attempts.read_text() == "2"
+    assert "bootout gui/" in calls.read_text()
+
+
 def test_restart_cleans_stale_deploy_artifacts(tmp_path: Path) -> None:
     project = tmp_path / "project"
     project.mkdir()
@@ -180,12 +250,27 @@ def test_restart_cleans_stale_deploy_artifacts(tmp_path: Path) -> None:
 
     bin_dir = tmp_path / "bin"
     bin_dir.mkdir()
+    events = tmp_path / "events"
+    loaded = tmp_path / "loaded-targets"
+    domain = f"gui/{os.getuid()}"
+    loaded.write_text(
+        "\n".join(
+            (
+                f"{domain}/com.vault966.server",
+                f"{domain}/com.vault966.watchdog",
+                f"{domain}/com.vault966.maintenance",
+            )
+        )
+        + "\n",
+        encoding="utf-8",
+    )
     rsync_calls = tmp_path / "rsync-calls"
     uv_calls = tmp_path / "uv-calls"
     write_executable(
         bin_dir / "rsync",
         f"""\
         #!/usr/bin/env bash
+        printf 'rsync\n' >> {events!s}
         printf '%s\n' "$*" > {rsync_calls!s}
         src="${{@: -2:1}}"
         dst="${{@: -1}}"
@@ -206,12 +291,23 @@ def test_restart_cleans_stale_deploy_artifacts(tmp_path: Path) -> None:
     )
     write_executable(
         bin_dir / "launchctl",
-        """\
+        f"""\
         #!/usr/bin/env bash
-        if [[ "$1" == "print" ]]; then
-          exit 1
-        fi
-        exit 0
+        printf '%s\n' "$*" >> {events!s}
+        case "$1" in
+          print)
+            grep -qx "$2" {loaded!s} 2>/dev/null
+            ;;
+          bootout)
+            touch {loaded!s}
+            grep -vx "$2" {loaded!s} > {loaded!s}.next || true
+            mv {loaded!s}.next {loaded!s}
+            ;;
+          bootstrap)
+            label="$(basename "$3" .plist)"
+            printf '%s/%s\n' "$2" "$label" >> {loaded!s}
+            ;;
+        esac
         """,
     )
     for command in ("plutil", "curl"):
@@ -236,6 +332,8 @@ def test_restart_cleans_stale_deploy_artifacts(tmp_path: Path) -> None:
     assert result.returncode == 0, result.stderr
     assert "--exclude .git " in rsync_calls.read_text()
     assert uv_calls.exists()
+    event_lines = events.read_text(encoding="utf-8").splitlines()
+    assert event_lines.index("rsync") > event_lines.index(f"bootout {domain}/com.vault966.server")
     for stale_path in (
         ".git",
         ".codex",

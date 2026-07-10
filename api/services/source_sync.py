@@ -1,15 +1,9 @@
 from __future__ import annotations
 
-import csv
 import hashlib
-import io
-import re
-import zipfile
-from collections import Counter, defaultdict
-from dataclasses import dataclass
+from collections import defaultdict
 from datetime import datetime, timedelta, timezone
-from urllib.parse import urlencode
-from xml.etree import ElementTree
+from xml.etree import ElementTree as ElementTree
 
 from sqlalchemy import func
 from sqlalchemy.orm import Session, selectinload
@@ -31,6 +25,35 @@ from api.services.movie_lookup import (
     standardize_title_for_identity_search,
 )
 from api.services.movie_review import apply_title_year_authority
+from api.services.source_sync_contracts import (
+    BulkSourceDecisionResult,
+    FirstImportAnalysis,
+    FirstImportApplyResult,
+    FirstImportDecision,
+    FirstImportReport,
+    ParsedSourceRow,
+    ResearchLink,
+    ResearchLinkSet,
+    SourceFieldConflict,
+    SourceReviewItem,
+    SourceSyncError,
+)
+from api.services.source_sync_identity import (
+    build_research_links,
+    clean_research_title,
+    normalize_title,
+    normalized_directors,
+    parse_directors,
+)
+from api.services.source_sync_parsing import (
+    ParseLimits,
+    parse_hd as _parse_hd,
+    parse_runtime as _parse_runtime,
+    parse_source_csv as _parse_source_csv,
+    parse_source_file as _parse_source_file,
+    parse_source_xlsx as _parse_source_xlsx,
+    parse_year as _parse_year,
+)
 from core.movie_metadata import MovieMetadata
 from core.genres import split_and_normalize
 from core.vault_ids import next_vault_id
@@ -45,277 +68,8 @@ MAX_XLSX_SHARED_STRINGS = 100_000
 MAX_XLSX_SHARED_STRING_BYTES = 5 * 1024 * 1024
 MAX_XLSX_ROWS = MAX_SOURCE_ROWS + 25
 MAX_XLSX_CELLS = MAX_XLSX_ROWS * 64
-REQUIRED_FIELDS = ("title", "time", "director", "year")
-FIELD_ALIASES = {
-    "title": ("Title", "Name", "Movie", "Movie Title", "Film", "Film Title"),
-    "time": ("Time", "Total Time", "Runtime", "Run Time", "Duration", "Minutes", "Runtime Min"),
-    "director": ("Director", "Directors", "Director(s)", "Artist"),
-    "year": ("Year", "Release Year", "Movie Year"),
-    "genre": ("Genre", "Genres"),
-    "content_rating": ("Content Rating", "Rating", "Rated", "Certificate"),
-    "release_date": ("Release Date", "Released", "Date"),
-    "hd": ("HD", "High Definition", "Quality"),
-}
 IDENTITY_FIELDS = ("title", "year", "runtime", "director")
-SPACE_RE = re.compile(r"\s+")
-DIRECTOR_SPLIT_RE = re.compile(r"\s*(?:,|&|;|\band\b)\s*", re.IGNORECASE)
-IMDB_ID_RE = re.compile(r"^tt[0-9]{7,10}$")
-TRAILING_YEAR_RE = re.compile(r"\s*\((?:18|19|20)\d{2}\)\s*$")
-EDITION_SUFFIX_RE = re.compile(
-    r"\s*(?:\(|[-:])\s*(?:unrated|extended(?: edition| cut)?|director'?s cut|"
-    r"special edition|theatrical cut|restored edition)\)?\s*$",
-    re.IGNORECASE,
-)
-EDITION_PAREN_RE = re.compile(
-    r"\s*\((?=[^)]*(?:unrated|extended|director'?s cut|special edition|"
-    r"theatrical cut|restored edition))[^)]*\)\s*$",
-    re.IGNORECASE,
-)
 UNDO_WINDOW = timedelta(minutes=10)
-
-
-class SourceSyncError(ValueError):
-    pass
-
-
-@dataclass(frozen=True)
-class ParsedSourceRow:
-    row_number: int
-    title: str
-    normalized_title: str
-    runtime: int | None
-    director: str | None
-    normalized_directors: tuple[str, ...]
-    year: int | None
-    genre: str | None
-    content_rating: str | None
-    release_date: str | None
-    hd: bool | None
-    duplicate_group: str | None
-    raw_data: dict[str, str]
-
-
-@dataclass(frozen=True)
-class SourceFieldConflict:
-    field_name: str
-    label: str
-    source_value: str
-    vault_value: str
-    research: bool = False
-
-
-@dataclass(frozen=True)
-class ResearchLink:
-    label: str
-    url: str
-    provider: str
-    link_type: str
-
-
-@dataclass(frozen=True)
-class ResearchLinkSet:
-    current: tuple[ResearchLink, ...]
-    searches: tuple[ResearchLink, ...]
-    search_title: str
-
-
-@dataclass(frozen=True)
-class SourceReviewItem:
-    source_row: SourceMovieRow
-    match: SourceReconciliationMatch
-    movie: Movie | None
-    conflicts: tuple[SourceFieldConflict, ...]
-    candidate_movies: tuple[Movie, ...] = ()
-    research_links: ResearchLinkSet | None = None
-    candidate_research_links: dict[int, ResearchLinkSet] | None = None
-
-
-@dataclass(frozen=True)
-class BulkSourceDecisionResult:
-    snapshot_id: int
-    movie_count: int
-    field_count: int
-    skipped_field_count: int
-
-
-@dataclass(frozen=True)
-class FirstImportDecision:
-    row: SourceMovieRow
-    bucket: str
-    reason: str
-    candidate: dict | None = None
-    confidence: float = 0.0
-
-
-@dataclass(frozen=True)
-class FirstImportAnalysis:
-    snapshot_id: int
-    auto_create: tuple[FirstImportDecision, ...]
-    needs_review: tuple[FirstImportDecision, ...]
-    duplicate_conflict: tuple[FirstImportDecision, ...]
-    failed_lookup: tuple[FirstImportDecision, ...]
-
-    @property
-    def total_rows(self) -> int:
-        return (
-            len(self.auto_create)
-            + len(self.needs_review)
-            + len(self.duplicate_conflict)
-            + len(self.failed_lookup)
-        )
-
-
-@dataclass(frozen=True)
-class FirstImportApplyResult:
-    snapshot_id: int
-    created_count: int
-    review_count: int
-    duplicate_conflict_count: int
-    failed_lookup_count: int
-    created_movie_ids: tuple[int, ...]
-
-
-@dataclass(frozen=True)
-class FirstImportReport:
-    snapshot: SourceSnapshot
-    created_count: int
-    review_count: int
-    duplicate_conflict_count: int
-    source_only_count: int
-
-    @property
-    def remaining_count(self) -> int:
-        return self.review_count + self.duplicate_conflict_count + self.source_only_count
-
-
-def clean_text(value: object) -> str | None:
-    text = str(value or "").strip()
-    return text or None
-
-
-def limited_text(
-    value: object,
-    *,
-    field_name: str,
-    max_length: int,
-    row_number: int,
-) -> str | None:
-    text = clean_text(value)
-    if text is not None and len(text) > max_length:
-        raise SourceSyncError(f"Row {row_number} {field_name} exceeds {max_length} characters")
-    return text
-
-
-def normalize_title(value: object) -> str:
-    text = str(value or "").casefold()
-    text = re.sub(r"[^a-z0-9]+", " ", text)
-    return SPACE_RE.sub(" ", text).strip()
-
-
-def clean_research_title(value: object) -> str:
-    title = clean_text(value) or ""
-    title = TRAILING_YEAR_RE.sub("", title)
-    title = EDITION_PAREN_RE.sub("", title)
-    title = EDITION_SUFFIX_RE.sub("", title)
-    return SPACE_RE.sub(" ", title).strip()[:200]
-
-
-def _valid_imdb_id(value: object) -> str | None:
-    text = clean_text(value)
-    if text and IMDB_ID_RE.fullmatch(text):
-        return text
-    return None
-
-
-def _valid_tmdb_id(value: object) -> int | None:
-    if isinstance(value, bool):
-        return None
-    try:
-        number = int(value)
-    except (TypeError, ValueError):
-        return None
-    if 0 < number <= 2_147_483_647:
-        return number
-    return None
-
-
-def build_research_links(
-    *,
-    source_title: str,
-    source_year: int | None,
-    source_director: str | None = None,
-    movie: Movie | None = None,
-) -> ResearchLinkSet:
-    search_title = clean_research_title(source_title) or source_title[:200]
-    query_parts = [search_title]
-    if source_year:
-        query_parts.append(str(source_year))
-    director_names = parse_directors(source_director)
-    if director_names:
-        query_parts.append(" and ".join(director_names)[:100])
-    query = " ".join(query_parts)[:320]
-
-    current: list[ResearchLink] = []
-    tmdb_id = _valid_tmdb_id(movie.tmdb_id if movie else None)
-    if tmdb_id is not None:
-        current.append(
-            ResearchLink(
-                label="Open current TMDB",
-                url=f"https://www.themoviedb.org/movie/{tmdb_id}",
-                provider="tmdb",
-                link_type="current",
-            )
-        )
-    imdb_id = _valid_imdb_id(movie.imdb_id if movie else None)
-    if imdb_id is not None:
-        current.append(
-            ResearchLink(
-                label="Open current IMDb",
-                url=f"https://www.imdb.com/title/{imdb_id}/",
-                provider="imdb",
-                link_type="current",
-            )
-        )
-
-    searches = (
-        ResearchLink(
-            label="Search TMDB",
-            url="https://www.themoviedb.org/search/movie?" + urlencode({"query": query}),
-            provider="tmdb",
-            link_type="search",
-        ),
-        ResearchLink(
-            label="Search IMDb",
-            url="https://www.imdb.com/find/?" + urlencode({"q": query, "s": "tt", "ttype": "ft"}),
-            provider="imdb",
-            link_type="search",
-        ),
-    )
-    return ResearchLinkSet(
-        current=tuple(current),
-        searches=searches,
-        search_title=search_title,
-    )
-
-
-def parse_directors(value: object) -> tuple[str, ...]:
-    text = clean_text(value)
-    if text is None or text.casefold() in {"unknown", "not found", "n/a"}:
-        return ()
-    names: list[str] = []
-    seen: set[str] = set()
-    for part in DIRECTOR_SPLIT_RE.split(text):
-        name = SPACE_RE.sub(" ", part).strip()
-        key = normalize_title(name)
-        if not key or key in seen:
-            continue
-        seen.add(key)
-        names.append(name)
-    return tuple(names)
-
-
-def normalized_directors(value: object) -> tuple[str, ...]:
-    return tuple(sorted(normalize_title(name) for name in parse_directors(value)))
 
 
 def _metadata_genres(db: Session, names: list[str]) -> list[Genre]:
@@ -356,411 +110,44 @@ def _external_id_owner(
     return None
 
 
-def parse_runtime(value: object) -> int | None:
-    text = clean_text(value)
-    if text is None:
-        return None
-    lowered = text.casefold()
-    minute_match = re.fullmatch(r"(\d+(?:\.\d+)?)\s*(?:m|min|mins|minute|minutes)", lowered)
-    hour_minute_match = re.fullmatch(
-        r"(?:(\d+(?:\.\d+)?)\s*h(?:ours?)?)?\s*(?:(\d+(?:\.\d+)?)\s*m(?:in(?:ute)?s?)?)?",
-        lowered,
+def _facade_parse_limits() -> ParseLimits:
+    return ParseLimits(
+        max_source_bytes=MAX_SOURCE_BYTES,
+        max_source_rows=MAX_SOURCE_ROWS,
+        max_csv_rows=MAX_SOURCE_ROWS + 25,
+        max_xlsx_members=MAX_XLSX_MEMBERS,
+        max_xlsx_uncompressed_bytes=MAX_XLSX_UNCOMPRESSED_BYTES,
+        max_xlsx_member_bytes=MAX_XLSX_MEMBER_BYTES,
+        max_xlsx_compression_ratio=MAX_XLSX_COMPRESSION_RATIO,
+        max_xlsx_shared_strings=MAX_XLSX_SHARED_STRINGS,
+        max_xlsx_shared_string_bytes=MAX_XLSX_SHARED_STRING_BYTES,
+        max_xlsx_rows=MAX_XLSX_ROWS,
+        max_xlsx_cells=MAX_XLSX_CELLS,
     )
-    if minute_match:
-        runtime = round(float(minute_match.group(1)))
-    elif hour_minute_match and any(hour_minute_match.groups()):
-        hours = float(hour_minute_match.group(1) or 0)
-        minutes = float(hour_minute_match.group(2) or 0)
-        runtime = round(hours * 60 + minutes)
-    if text.isdigit():
-        runtime = int(text)
-    elif "runtime" not in locals():
-        parts = text.split(":")
-        if len(parts) not in {2, 3}:
-            raise SourceSyncError(f"Invalid runtime '{text}'")
-        try:
-            numbers = [float(part) for part in parts]
-        except ValueError as exc:
-            raise SourceSyncError(f"Invalid runtime '{text}'") from exc
-        if len(numbers) == 3:
-            hours, minutes, seconds = numbers
-        else:
-            hours = 0
-            minutes, seconds = numbers
-        runtime = round(hours * 60 + minutes + seconds / 60)
-    if runtime <= 0 or runtime > 1000:
-        raise SourceSyncError(f"Runtime '{text}' is outside the accepted range")
-    return runtime
+
+
+def parse_runtime(value: object) -> int | None:
+    return _parse_runtime(value, limits=_facade_parse_limits())
 
 
 def parse_year(value: object) -> int | None:
-    text = clean_text(value)
-    if text is None:
-        return None
-    if re.fullmatch(r"\d{4}\.0+", text):
-        text = text.split(".", 1)[0]
-    if not text.isdigit():
-        raise SourceSyncError(f"Invalid year '{text}'")
-    year = int(text)
-    if year < 1888 or year > 2100:
-        raise SourceSyncError(f"Year '{text}' is outside the accepted range")
-    return year
+    return _parse_year(value, limits=_facade_parse_limits())
 
 
 def parse_hd(value: object) -> bool | None:
-    text = clean_text(value)
-    if text is None:
-        return None
-    lowered = text.casefold()
-    if lowered in {"1", "true", "yes", "y", "hd"}:
-        return True
-    if lowered in {"0", "false", "no", "n", "sd"}:
-        return False
-    raise SourceSyncError(f"Invalid HD value '{text}'")
-
-
-def _header_key(value: object) -> str:
-    text = str(value or "").replace("\ufeff", "").casefold()
-    text = re.sub(r"[^a-z0-9]+", " ", text)
-    return SPACE_RE.sub(" ", text).strip()
-
-
-def _find_header(rows: list[list[str]]) -> tuple[int, dict[str, int]]:
-    alias_lookup = {
-        field: {_header_key(alias) for alias in aliases} for field, aliases in FIELD_ALIASES.items()
-    }
-    for index, row in enumerate(rows):
-        names = {
-            _header_key(value): position for position, value in enumerate(row) if _header_key(value)
-        }
-        resolved: dict[str, int] = {}
-        for field, aliases in alias_lookup.items():
-            for alias in aliases:
-                if alias and alias in names:
-                    resolved[field] = names[alias]
-                    break
-        if all(field in resolved for field in REQUIRED_FIELDS):
-            return index, resolved
-    raise SourceSyncError(
-        "Upload must contain title, runtime, director, and year columns. "
-        "Common headers such as Name, Movie Title, Total Time, Runtime, Artist, "
-        "Director, Release Year, and Year are accepted."
-    )
-
-
-def _parse_source_rows(raw_rows: list[list[str]]) -> list[ParsedSourceRow]:
-    header_index, columns = _find_header(raw_rows)
-    data_rows = [row for row in raw_rows[header_index + 1 :] if any(cell.strip() for cell in row)]
-    if not data_rows:
-        raise SourceSyncError("The upload contains no movie rows")
-    if len(data_rows) > MAX_SOURCE_ROWS:
-        raise SourceSyncError(f"The upload contains more than {MAX_SOURCE_ROWS} rows")
-
-    parsed: list[ParsedSourceRow] = []
-    duplicate_keys: list[str] = []
-    provisional: list[dict] = []
-    for offset, row in enumerate(data_rows, start=header_index + 2):
-
-        def value(field: str) -> str:
-            column = columns.get(field)
-            if column is None or column >= len(row):
-                return ""
-            return row[column].strip()
-
-        title = limited_text(
-            value("title"),
-            field_name="title",
-            max_length=300,
-            row_number=offset,
-        )
-        if title is None:
-            raise SourceSyncError(f"Row {offset} has no title")
-        runtime = parse_runtime(value("time"))
-        year = parse_year(value("year"))
-        director = limited_text(
-            value("director"),
-            field_name="director",
-            max_length=500,
-            row_number=offset,
-        )
-        directors = normalized_directors(director)
-        raw_data = {
-            label: value(field)
-            for field, label in (
-                ("title", "Title"),
-                ("time", "Time"),
-                ("director", "Director"),
-                ("year", "Year"),
-                ("genre", "Genre"),
-                ("content_rating", "Content Rating"),
-                ("release_date", "Release Date"),
-                ("hd", "HD"),
-            )
-        }
-        duplicate_key = hashlib.sha256(
-            "\x1f".join(
-                [
-                    normalize_title(title),
-                    str(year or ""),
-                    str(runtime or ""),
-                    "|".join(directors),
-                ]
-            ).encode("utf-8")
-        ).hexdigest()
-        duplicate_keys.append(duplicate_key)
-        provisional.append(
-            {
-                "row_number": offset,
-                "title": title,
-                "normalized_title": normalize_title(title),
-                "runtime": runtime,
-                "director": director,
-                "normalized_directors": directors,
-                "year": year,
-                "genre": limited_text(
-                    value("genre"),
-                    field_name="genre",
-                    max_length=200,
-                    row_number=offset,
-                ),
-                "content_rating": limited_text(
-                    value("content_rating"),
-                    field_name="content rating",
-                    max_length=100,
-                    row_number=offset,
-                ),
-                "release_date": limited_text(
-                    value("release_date"),
-                    field_name="release date",
-                    max_length=80,
-                    row_number=offset,
-                ),
-                "hd": parse_hd(value("hd")),
-                "raw_data": raw_data,
-                "duplicate_key": duplicate_key,
-            }
-        )
-
-    duplicate_counts = Counter(duplicate_keys)
-    for row in provisional:
-        parsed.append(
-            ParsedSourceRow(
-                row_number=row["row_number"],
-                title=row["title"],
-                normalized_title=row["normalized_title"],
-                runtime=row["runtime"],
-                director=row["director"],
-                normalized_directors=row["normalized_directors"],
-                year=row["year"],
-                genre=row["genre"],
-                content_rating=row["content_rating"],
-                release_date=row["release_date"],
-                hd=row["hd"],
-                duplicate_group=(
-                    row["duplicate_key"] if duplicate_counts[row["duplicate_key"]] > 1 else None
-                ),
-                raw_data=row["raw_data"],
-            )
-        )
-    return parsed
+    return _parse_hd(value, limits=_facade_parse_limits())
 
 
 def parse_source_csv(content: bytes) -> tuple[str, list[ParsedSourceRow]]:
-    if not content:
-        raise SourceSyncError("The uploaded CSV is empty")
-    if len(content) > MAX_SOURCE_BYTES:
-        raise SourceSyncError("The uploaded CSV is larger than 5 MB")
-    try:
-        text = content.decode("utf-8-sig")
-    except UnicodeDecodeError as exc:
-        raise SourceSyncError("The CSV must use UTF-8 encoding") from exc
-
-    try:
-        raw_rows = list(csv.reader(io.StringIO(text)))
-    except csv.Error as exc:
-        raise SourceSyncError(f"CSV parsing failed: {exc}") from exc
-    return text, _parse_source_rows(raw_rows)
-
-
-def _xlsx_column_index(cell_ref: str) -> int:
-    letters = "".join(char for char in cell_ref if char.isalpha())
-    if not letters:
-        return 0
-    index = 0
-    for char in letters.upper():
-        index = index * 26 + (ord(char) - ord("A") + 1)
-    return index - 1
-
-
-def _xlsx_text(element: ElementTree.Element) -> str:
-    return "".join(element.itertext())
-
-
-def _xlsx_member_info(workbook: zipfile.ZipFile, name: str) -> zipfile.ZipInfo:
-    try:
-        return workbook.getinfo(name)
-    except KeyError as exc:
-        raise SourceSyncError(f"XLSX member {name} is missing") from exc
-
-
-def _validate_xlsx_member(info: zipfile.ZipInfo) -> None:
-    if info.file_size > MAX_XLSX_MEMBER_BYTES:
-        raise SourceSyncError("The XLSX file expands beyond the supported import size")
-    if info.compress_size > 0 and info.file_size / info.compress_size > MAX_XLSX_COMPRESSION_RATIO:
-        raise SourceSyncError("The XLSX file compression ratio is too high")
-
-
-def _validate_xlsx_archive(workbook: zipfile.ZipFile) -> None:
-    members = workbook.infolist()
-    if len(members) > MAX_XLSX_MEMBERS:
-        raise SourceSyncError("The XLSX file contains too many parts")
-    total_uncompressed = 0
-    for info in members:
-        _validate_xlsx_member(info)
-        total_uncompressed += info.file_size
-        if total_uncompressed > MAX_XLSX_UNCOMPRESSED_BYTES:
-            raise SourceSyncError("The XLSX file expands beyond the supported import size")
-
-
-def _xlsx_read_xml(workbook: zipfile.ZipFile, name: str, error_message: str) -> ElementTree.Element:
-    info = _xlsx_member_info(workbook, name)
-    _validate_xlsx_member(info)
-    try:
-        return ElementTree.fromstring(workbook.read(info))
-    except ElementTree.ParseError as exc:
-        raise SourceSyncError(error_message) from exc
-
-
-def _xlsx_shared_strings(workbook: zipfile.ZipFile) -> list[str]:
-    try:
-        info = workbook.getinfo("xl/sharedStrings.xml")
-    except KeyError:
-        return []
-    _validate_xlsx_member(info)
-
-    shared_strings: list[str] = []
-    total_text_bytes = 0
-    try:
-        with workbook.open(info) as member:
-            for _event, element in ElementTree.iterparse(member, events=("end",)):
-                if element.tag.rsplit("}", 1)[-1] != "si":
-                    continue
-                if len(shared_strings) >= MAX_XLSX_SHARED_STRINGS:
-                    raise SourceSyncError("The XLSX file contains too many shared strings")
-                text = _xlsx_text(element)
-                total_text_bytes += len(text.encode("utf-8"))
-                if total_text_bytes > MAX_XLSX_SHARED_STRING_BYTES:
-                    raise SourceSyncError("The XLSX shared strings are too large")
-                shared_strings.append(text)
-                element.clear()
-    except ElementTree.ParseError as exc:
-        raise SourceSyncError("XLSX shared strings could not be read") from exc
-    return shared_strings
-
-
-def _xlsx_first_sheet_path(workbook: zipfile.ZipFile) -> str:
-    workbook_root = _xlsx_read_xml(
-        workbook, "xl/workbook.xml", "XLSX workbook metadata could not be read"
-    )
-    rels_root = _xlsx_read_xml(
-        workbook, "xl/_rels/workbook.xml.rels", "XLSX workbook metadata could not be read"
-    )
-
-    first_sheet = workbook_root.find(".//{*}sheet")
-    relationship_id = (
-        first_sheet.attrib.get(
-            "{http://schemas.openxmlformats.org/officeDocument/2006/relationships}id"
-        )
-        if first_sheet is not None
-        else None
-    )
-    if relationship_id is None:
-        raise SourceSyncError("XLSX workbook has no worksheets")
-
-    for relationship in rels_root.findall(".//{*}Relationship"):
-        if relationship.attrib.get("Id") == relationship_id:
-            target = relationship.attrib.get("Target", "")
-            if target.startswith("/"):
-                return target.lstrip("/")
-            return "xl/" + target.lstrip("/")
-    raise SourceSyncError("XLSX first worksheet could not be resolved")
-
-
-def _xlsx_cell_value(cell: ElementTree.Element, shared_strings: list[str]) -> str:
-    cell_type = cell.attrib.get("t")
-    if cell_type == "inlineStr":
-        inline = cell.find(".//{*}t")
-        return _xlsx_text(inline) if inline is not None else ""
-    value = cell.find("{*}v")
-    if value is None or value.text is None:
-        return ""
-    if cell_type == "s":
-        try:
-            return shared_strings[int(value.text)]
-        except (ValueError, IndexError) as exc:
-            raise SourceSyncError("XLSX shared string reference is invalid") from exc
-    if cell_type == "b":
-        return "true" if value.text == "1" else "false"
-    return value.text
-
-
-def _xlsx_rows(content: bytes) -> list[list[str]]:
-    try:
-        with zipfile.ZipFile(io.BytesIO(content)) as workbook:
-            _validate_xlsx_archive(workbook)
-            shared_strings = _xlsx_shared_strings(workbook)
-            sheet_path = _xlsx_first_sheet_path(workbook)
-            sheet_info = _xlsx_member_info(workbook, sheet_path)
-            _validate_xlsx_member(sheet_info)
-            rows: list[list[str]] = []
-            cell_count = 0
-            with workbook.open(sheet_info) as sheet:
-                for _event, row in ElementTree.iterparse(sheet, events=("end",)):
-                    if row.tag.rsplit("}", 1)[-1] != "row":
-                        continue
-                    if len(rows) >= MAX_XLSX_ROWS:
-                        raise SourceSyncError(
-                            f"The XLSX file contains more than {MAX_SOURCE_ROWS} rows"
-                        )
-                    values: list[str] = []
-                    for cell in row.findall("{*}c"):
-                        cell_count += 1
-                        if cell_count > MAX_XLSX_CELLS:
-                            raise SourceSyncError("The XLSX file contains too many cells")
-                        column = _xlsx_column_index(cell.attrib.get("r", ""))
-                        while len(values) <= column:
-                            values.append("")
-                        values[column] = _xlsx_cell_value(cell, shared_strings).strip()
-                    rows.append(values)
-                    row.clear()
-            return rows
-    except zipfile.BadZipFile as exc:
-        raise SourceSyncError("The XLSX file could not be opened") from exc
-    except KeyError as exc:
-        raise SourceSyncError("The XLSX first worksheet could not be read") from exc
-    except ElementTree.ParseError as exc:
-        raise SourceSyncError("The XLSX first worksheet is malformed") from exc
+    return _parse_source_csv(content, limits=_facade_parse_limits())
 
 
 def parse_source_xlsx(content: bytes) -> tuple[str, list[ParsedSourceRow]]:
-    if not content:
-        raise SourceSyncError("The uploaded XLSX is empty")
-    if len(content) > MAX_SOURCE_BYTES:
-        raise SourceSyncError("The uploaded XLSX is larger than 5 MB")
-    rows = _xlsx_rows(content)
-    normalized_csv = io.StringIO()
-    writer = csv.writer(normalized_csv)
-    writer.writerows(rows)
-    return normalized_csv.getvalue(), _parse_source_rows(rows)
+    return _parse_source_xlsx(content, limits=_facade_parse_limits())
 
 
 def parse_source_file(filename: str, content: bytes) -> tuple[str, list[ParsedSourceRow]]:
-    suffix = filename.rsplit(".", 1)[-1].casefold() if "." in filename else "csv"
-    if suffix == "xlsx":
-        return parse_source_xlsx(content)
-    if suffix == "csv":
-        return parse_source_csv(content)
-    raise SourceSyncError("Upload must be a CSV or XLSX file")
+    return _parse_source_file(filename, content, limits=_facade_parse_limits())
 
 
 def create_draft_snapshot(
@@ -1961,11 +1348,14 @@ __all__ = [
     "get_source_review_queue",
     "latest_active_snapshot",
     "parse_source_csv",
+    "parse_source_xlsx",
+    "parse_directors",
     "partition_source_review_queue",
     "reconcile_snapshot",
     "snapshot_summary",
     "source_bulk_decision_counts",
     "source_new_addition_rows",
     "source_provenance_for_movie",
+    "source_row_conflicts",
     "undo_source_field_decision",
 ]

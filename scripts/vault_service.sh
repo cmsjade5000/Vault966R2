@@ -259,6 +259,45 @@ is_loaded() {
   is_target_loaded "$SERVICE_TARGET"
 }
 
+bootstrap_target() {
+  local target="$1"
+  local plist="$2"
+  local attempts="${LAUNCHCTL_BOOTSTRAP_ATTEMPTS:-5}"
+  local delay="${LAUNCHCTL_BOOTSTRAP_DELAY:-0.25}"
+  local last_error
+  last_error="$(mktemp "${TMPDIR:-/tmp}/vault966-bootstrap-error.XXXXXX")"
+
+  if is_target_loaded "$target"; then
+    rm -f "$last_error"
+    return
+  fi
+
+  for ((attempt = 1; attempt <= attempts; attempt++)); do
+    : >"$last_error"
+    if launchctl bootstrap "$DOMAIN" "$plist" 2>"$last_error"; then
+      rm -f "$last_error"
+      return
+    fi
+
+    if is_target_loaded "$target"; then
+      rm -f "$last_error"
+      return
+    fi
+
+    if ((attempt < attempts)); then
+      launchctl bootout "$target" >/dev/null 2>&1 || true
+      sleep "$delay"
+    fi
+  done
+
+  echo "Could not load launchd job after $attempts attempts: $target" >&2
+  if [[ -s "$last_error" ]]; then
+    cat "$last_error" >&2
+  fi
+  rm -f "$last_error"
+  exit 1
+}
+
 bootout_target() {
   local target="$1"
   if is_target_loaded "$target"; then
@@ -276,24 +315,28 @@ bootout_target() {
   fi
 }
 
-load_service() {
+stop_all_targets() {
   bootout_target "$WATCHDOG_TARGET"
   bootout_target "$MAINTENANCE_TARGET"
   bootout_target "$SERVICE_TARGET"
-  launchctl bootstrap "$DOMAIN" "$PLIST"
+}
+
+load_service() {
+  stop_all_targets
+  bootstrap_target "$SERVICE_TARGET" "$PLIST"
 }
 
 load_auxiliary_services() {
-  launchctl bootstrap "$DOMAIN" "$MAINTENANCE_PLIST"
-  launchctl bootstrap "$DOMAIN" "$WATCHDOG_PLIST"
+  bootstrap_target "$MAINTENANCE_TARGET" "$MAINTENANCE_PLIST"
+  bootstrap_target "$WATCHDOG_TARGET" "$WATCHDOG_PLIST"
 }
 
 ensure_auxiliary_services() {
   if ! is_target_loaded "$MAINTENANCE_TARGET"; then
-    launchctl bootstrap "$DOMAIN" "$MAINTENANCE_PLIST"
+    bootstrap_target "$MAINTENANCE_TARGET" "$MAINTENANCE_PLIST"
   fi
   if ! is_target_loaded "$WATCHDOG_TARGET"; then
-    launchctl bootstrap "$DOMAIN" "$WATCHDOG_PLIST"
+    bootstrap_target "$WATCHDOG_TARGET" "$WATCHDOG_PLIST"
   fi
 }
 
@@ -373,7 +416,7 @@ case "${1:-}" in
       exit 1
     fi
     if ! is_loaded; then
-      launchctl bootstrap "$DOMAIN" "$PLIST"
+      bootstrap_target "$SERVICE_TARGET" "$PLIST"
     else
       launchctl kickstart -k "$SERVICE_TARGET"
     fi
@@ -383,9 +426,7 @@ case "${1:-}" in
     ;;
   stop)
     if is_loaded || is_target_loaded "$WATCHDOG_TARGET" || is_target_loaded "$MAINTENANCE_TARGET"; then
-      bootout_target "$WATCHDOG_TARGET"
-      bootout_target "$MAINTENANCE_TARGET"
-      bootout_target "$SERVICE_TARGET"
+      stop_all_targets
       echo "Vault service stopped."
     else
       echo "Vault service is already stopped."
@@ -393,9 +434,10 @@ case "${1:-}" in
     ;;
   restart)
     prepare_database
+    stop_all_targets
     deploy_app
     write_plist
-    load_service
+    bootstrap_target "$SERVICE_TARGET" "$PLIST"
     wait_for_health
     load_auxiliary_services
     echo "Vault service restarted."

@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% from "partials/movies/card.html" import movie_card %}
-{% block title %}Vault 966 · Match{% endblock %}
+{% block title %}Vault 966 · Movie Night Picker{% endblock %}
 {% block head %}
   <link rel="stylesheet" href="{{ static_asset('css/movies.css') }}" />
 {% endblock %}
@@ -9,8 +9,9 @@
   <div class="match-shell page-shell" data-match-page>
     <header class="match-heading">
       <div>
-        <p class="match-kicker">Movie Match</p>
-        <h1>Narrow It Down</h1>
+        <p class="match-kicker">Movie Night Picker</p>
+        <h1>Set the tone. Skip the scroll.</h1>
+        <p class="match-heading__intro">Choose a mood, energy, runtime, genre, and era. The Vault will return three to five strong options with a reason for each.</p>
         <p class="match-pool-readout" aria-live="polite" data-match-count>
           {{ result.trusted_pool_count }} trusted titles
           {% if result.answers %}&rarr; {{ result.candidate_count }} left{% endif %}
@@ -19,43 +20,47 @@
       <a class="button-ghost match-reset-link" href="/ui/match" data-match-reset>Start over</a>
     </header>
 
-    <section class="match-flow" aria-labelledby="match-flow-title">
-      <div class="match-progress" aria-label="Match progress">
+    <section class="match-flow" aria-label="Movie Night Picker">
+      <ol class="match-progress" aria-label="Picker progress">
         {% for question in questions %}
         {% set step_done = loop.index <= result.answers|length %}
         {% set step_current = result.current_question and result.current_question.id == question.id %}
-        <span
+        <li
           class="match-progress__step{% if step_done %} is-complete{% endif %}{% if step_current %} is-current{% endif %}"
-          aria-label="Step {{ loop.index }} of {{ questions|length }}"
-        ></span>
+          {% if step_current %}aria-current="step"{% endif %}
+        ><span class="sr-only">Step {{ loop.index }} of {{ questions|length }}: {{ question.id | title }}{% if step_done %}, complete{% elif step_current %}, current{% endif %}</span></li>
         {% endfor %}
-      </div>
+      </ol>
 
-      <div class="match-console">
-        <aside class="match-trail" aria-label="Answered trail">
-          <p class="match-kicker">Trail</p>
+      <div class="match-console{% if result.complete %} is-complete{% endif %}">
+        <aside class="match-trail" aria-label="Selected preferences">
+          <p class="match-kicker">Your night</p>
           {% if result.step_states %}
           <ol>
             {% for step in result.step_states %}
             <li>
               <strong>{{ step.label }}</strong>
+              {% if step.before_count == step.after_count %}
+              <span>Shapes ranking</span>
+              {% else %}
               <span>{{ step.before_count }} &rarr; {{ step.after_count }}</span>
+              {% endif %}
             </li>
             {% endfor %}
           </ol>
           {% else %}
-          <p>Nothing locked yet.</p>
+          <p>No preferences selected yet.</p>
           {% endif %}
         </aside>
 
       {% if result.current_question %}
       <div class="match-question" data-match-question>
         <p class="match-question__count">Question {{ result.answers|length + 1 }} of {{ questions|length }}</p>
-        <h2 id="match-flow-title">{{ result.current_question.prompt }}</h2>
+        <h2>{{ result.current_question.prompt }}</h2>
         {% if result.answered_labels %}
         <p class="match-question__summary">So far: {{ result.answered_labels | join(" · ") }}</p>
         {% else %}
-        <p class="match-question__summary">Pick the better answer. The Vault will do the narrowing.</p>
+        <p class="match-question__summary">Pick the option that feels right. Mood and energy shape the ranking; runtime, genre, and era narrow the shelf.</p>
         {% endif %}
         <div class="match-option-grid">
           {% for option_state in result.option_states %}
@@ -68,7 +73,7 @@
           >
             <strong>{{ option.label }}</strong>
             <span>{{ option.description }}</span>
-            <small>{{ option_state.after_count }} left</small>
+            <small>{% if option.ranking_only %}Shapes ranking{% else %}{{ option_state.after_count }} left{% endif %}</small>
           </a>
           {% endfor %}
         </div>
@@ -92,9 +97,8 @@
             {% endif %}
           </a>
           <div class="match-lead__copy">
-            <p class="match-kicker">Top Match</p>
+            <p class="match-kicker">Top Pick</p>
             <h2>{{ result.lead.movie.title | display_title }}</h2>
-            <p class="match-quality">Quality: {{ result.result_quality | title }} · {{ result.reroll_pool_size }} in reroll pool · {{ result.strict_match_count }} strict</p>
             <p class="match-lead__meta">
               <span>{{ result.lead.movie.year or "—" }}</span>
               {% if result.lead.movie.runtime %}<span>{{ result.lead.movie.runtime }} min</span>{% endif %}
@@ -106,6 +110,7 @@
             <div class="match-reasons" aria-label="Why this matched">
               {% for reason in result.lead.reasons %}<span>{{ reason }}</span>{% endfor %}
             </div>
+            <p class="match-why"><strong>Why it fits:</strong> {{ result.lead.why_it_fits }}</p>
             <div class="match-lead__actions" aria-label="Actions for {{ result.lead.movie.title | display_title }}">
               <a class="button-primary" href="/ui/movies/{{ result.lead.movie.id }}" data-movie-detail-link data-event-context="match_open">Open</a>
               {% if result.library_filter_query %}
@@ -145,8 +150,8 @@
         <section class="match-shortlist" aria-labelledby="match-shortlist-title">
           <header class="discover-section-header">
             <div>
-              <h2 id="match-shortlist-title">Also in the Mix</h2>
-              <p>A compact shortlist from the same answers.</p>
+              <h2 id="match-shortlist-title">More picks for this night</h2>
+              <p>Four alternatives ranked from the same five preferences.</p>
             </div>
             <div class="match-result-actions">
               <a class="button-secondary" href="/ui/match?answers={{ answers_query | urlencode }}&reroll={{ reroll + 1 }}" data-match-reroll>Try another</a>
@@ -156,7 +161,7 @@
           <div class="match-shortlist__grid">
             {% for match in result.supporting %}
             {% set genre_labels = match.movie.genre_display if match.movie.genre_display is defined else [] %}
-            {{ movie_card(match.movie, match.movie.liked, match.movie.watchlist, genre_labels, extra_class="match-card", event_context="match_shortlist", reason_labels=match.reasons, poster_size="w185", show_review=false) }}
+            {{ movie_card(match.movie, match.movie.liked, match.movie.watchlist, genre_labels, extra_class="match-card", event_context="match_shortlist", reason_labels=match.reasons, poster_size="w185", show_review=false, reason_note=match.why_it_fits) }}
             {% endfor %}
           </div>
         </section>
