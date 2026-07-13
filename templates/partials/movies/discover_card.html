@@ -1,0 +1,75 @@
+{% macro discover_card(movie, event_context, image_loading="lazy", fetch_priority="auto", reason="") -%}
+<article
+  class="discover-card"
+  data-movie-card
+  data-movie-id="{{ movie.id }}"
+  data-liked="{{ 'true' if movie.liked else 'false' }}"
+  data-watchlist="{{ 'true' if movie.watchlist else 'false' }}"
+>
+  <a
+    class="discover-card__link"
+    href="/ui/movies/{{ movie.id }}"
+    data-movie-detail-link
+    data-movie-id="{{ movie.id }}"
+    data-event-context="{{ event_context }}"
+  >
+    <div class="discover-card__media" data-discover-poster-frame>
+      {% if movie.poster_url %}
+      <img
+        src="/ui/posters/{{ movie.id }}/w185"
+        alt="{{ movie.title | display_title }} poster"
+        width="185"
+        height="278"
+        loading="{{ image_loading }}"
+        decoding="async"
+        data-discover-poster
+        {% if fetch_priority != "auto" %}fetchpriority="{{ fetch_priority }}"{% endif %}
+      />
+      <div
+        class="poster poster--empty discover-card__fallback {{ movie.poster_theme or 'poster-theme-default' }}"
+        data-discover-poster-fallback
+        hidden
+        aria-hidden="true"
+      >966</div>
+      {% else %}
+      <div class="poster poster--empty discover-card__fallback {{ movie.poster_theme or 'poster-theme-default' }}" aria-hidden="true">966</div>
+      {% endif %}
+    </div>
+    <div class="discover-card__body">
+      <h3>{{ movie.title | display_title }}</h3>
+      <p class="discover-card__meta">
+        <span>{{ movie.year or '—' }}</span>
+        {% if movie.runtime %}<span>{{ movie.runtime }} min</span>{% endif %}
+      </p>
+      {% set resolved_reason = reason or (movie.reason_labels[0] if movie.reason_labels is defined and movie.reason_labels else '') %}
+      {% if resolved_reason %}<p class="discover-card__reason">{{ resolved_reason }}</p>{% endif %}
+    </div>
+  </a>
+  <div class="discover-card__actions" aria-label="Preferences for {{ movie.title | display_title }}">
+    <button
+      type="button"
+      class="preference-icon{% if movie.liked %} is-active{% endif %}"
+      data-preference-button
+      data-preference-type="like"
+      data-movie-id="{{ movie.id }}"
+      data-movie-title="{{ movie.title | display_title }}"
+      aria-label="{{ 'Unlike' if movie.liked else 'Like' }} {{ movie.title | display_title }}"
+      aria-pressed="{{ 'true' if movie.liked else 'false' }}"
+    >
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8l1.1 1.1L12 21.2l7.8-7.7 1.1-1.1a5.5 5.5 0 0 0-.1-7.8z"></path></svg>
+    </button>
+    <button
+      type="button"
+      class="preference-icon{% if movie.watchlist %} is-active{% endif %}"
+      data-preference-button
+      data-preference-type="watchlist"
+      data-movie-id="{{ movie.id }}"
+      data-movie-title="{{ movie.title | display_title }}"
+      aria-label="{{ 'Remove' if movie.watchlist else 'Add' }} {{ movie.title | display_title }} {{ 'from' if movie.watchlist else 'to' }} watchlist"
+      aria-pressed="{{ 'true' if movie.watchlist else 'false' }}"
+    >
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1z"></path></svg>
+    </button>
+  </div>
+</article>
+{%- endmacro %}

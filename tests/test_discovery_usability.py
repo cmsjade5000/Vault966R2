@@ -1,5 +1,7 @@
 from datetime import date
 
+from sqlalchemy import event
+
 from api.models.usage_event import UsageEvent
 from api.models.movie import Movie
 from api.models.movie_flag import MovieFlag
@@ -7,6 +9,7 @@ from api.models.profile import MoviePreference, Profile
 from api.routers.ui.discover import (
     RAIL_DEFINITIONS,
     _build_discover_rails,
+    _build_tonight_shortlist,
     _ordered_rail_definitions,
     _pick_selected_for_you,
     _rail_candidates,
@@ -15,6 +18,14 @@ from api.routers.ui.discover import (
 from api.services.ui.templates import poster_image_url
 from api.services.trusted_movies import get_untrusted_movie_ids, trusted_movie_query
 from core.genres import split_and_normalize
+
+
+def _make_discover_candidates(db_session) -> None:
+    for movie in db_session.query(Movie).limit(16).all():
+        movie.poster_url = f"https://example.com/posters/{movie.id}.jpg"
+        movie.imdb_rating = movie.imdb_rating or 8.0
+        movie.imdb_votes = movie.imdb_votes or 20_000
+    db_session.commit()
 
 
 def test_genre_normalizer_treats_a_string_as_one_value() -> None:
@@ -132,32 +143,71 @@ def test_poster_image_url_uses_one_smaller_tmdb_origin() -> None:
     assert poster_image_url("https://example.com/poster.jpg") == ("https://example.com/poster.jpg")
 
 
-def test_discover_page_renders_watch_tonight_surface(client) -> None:
+def test_discover_page_renders_watch_tonight_surface(client, db_session) -> None:
+    _make_discover_candidates(db_session)
     response = client.get("/ui/discover")
 
     assert response.status_code == 200
     html = response.text
     assert "Watch Tonight" in html
     assert "Tonight’s Best Bet" in html
-    assert "Flic Shortlist" in html
-    assert "Double Feature Ideas" in html
+    assert "Tonight’s Shortlist" in html
+    assert "Explore the Vault" in html
     assert 'href="/ui/movies?preset=under-100&amp;view=grid&amp;page=1"' in html
     assert 'href="/ui/watchlist"' in html
     assert 'class="nav-link is-active"' in html
     assert ">Discover</a" in html
 
 
-def test_discover_page_uses_preference_controls_and_safe_event_contexts(client) -> None:
+def test_discover_page_uses_preference_controls_and_safe_event_contexts(client, db_session) -> None:
+    _make_discover_candidates(db_session)
     response = client.get("/ui/discover")
 
     assert response.status_code == 200
     html = response.text
     assert 'data-preference-type="like"' in html
     assert 'data-preference-type="watchlist"' in html
-    assert 'data-event-context="flic_shortlist"' in html
-    assert 'data-event-context="double_feature"' in html
+    assert 'data-event-context="tonight_shortlist"' in html
     assert "liked_titles" not in html
     assert "search_text" not in html
+
+
+def test_discover_page_keeps_the_initial_render_bounded(client, db_session) -> None:
+    _make_discover_candidates(db_session)
+    query_count = 0
+
+    def count_query(*_args) -> None:
+        nonlocal query_count
+        query_count += 1
+
+    engine = db_session.get_bind()
+    event.listen(engine, "before_cursor_execute", count_query)
+    try:
+        response = client.get("/ui/discover")
+    finally:
+        event.remove(engine, "before_cursor_execute", count_query)
+
+    assert response.status_code == 200
+    html = response.text
+    assert query_count <= 50
+    assert html.count("<img") <= 13
+    assert len(response.content) < 80_000
+    assert "data-deferred-poster" not in html
+    assert "data-rail-viewport" not in html
+    assert "data-rail-next" not in html
+
+
+def test_tonight_shortlist_is_bounded_stable_and_eager_loads_moods(db_session) -> None:
+    _make_discover_candidates(db_session)
+    day = date(2026, 6, 14)
+
+    first = _build_tonight_shortlist(db_session, used_ids=set(), limit=7, day=day)
+    repeated = _build_tonight_shortlist(db_session, used_ids=set(), limit=7, day=day)
+
+    assert len(first) <= 7
+    assert [movie.id for movie in first] == [movie.id for movie in repeated]
+    assert len({movie.id for movie in first}) == len(first)
+    assert all("moods" in movie.__dict__ for movie in first)
 
 
 def test_discover_rails_default_to_five_movies(db_session) -> None:
