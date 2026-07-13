@@ -4,6 +4,12 @@ Vault 966 is a self-hosted application that may run near private media metadata,
 local credentials, and personal usage logs. Treat private runtime data as out of
 scope for source control and public discussion.
 
+First-run setup is intentionally public only until the owner profile exists. Open
+`/setup` in the Vault browser UI and submit the form from that page: setup POSTs
+require a matching browser `Origin` and are rejected when the origin is missing or
+does not match the Vault host. After the first successful setup, the route cannot
+replace the owner credentials.
+
 ## Supported Versions
 
 Security fixes are accepted for the current `public-main` branch. If release
