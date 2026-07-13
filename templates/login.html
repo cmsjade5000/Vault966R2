@@ -42,13 +42,25 @@
           {% for duplicate in range(2) %}
           <div class="login-ticker__group"{% if duplicate %} aria-hidden="true"{% endif %}>
             {% for item in range(6) %}
-            <span>{{ "Vault Unlocked" if unlocked else "Vault Secured" }}</span>
+            <span>{{ "Vault Unlocked" if unlocked else "Configuration Required" if credentials_unavailable else "Vault Secured" }}</span>
             {% endfor %}
           </div>
           {% endfor %}
         </div>
       </div>
       <p class="login-card__error" role="alert" {% if not error %}hidden{% endif %}>{{ error or "" }}</p>
+      {% if credentials_unavailable %}
+      <section class="login-recovery" aria-labelledby="login-recovery-title">
+        <h2 id="login-recovery-title">Maintainer action required</h2>
+        <p>
+          A maintainer must restore the configured login credentials before anyone can sign in.
+        </p>
+        <p>
+          Use the deployment's documented setup or recovery procedure, then restart Vault 966.
+          Never send access keys or passcodes through support messages.
+        </p>
+      </section>
+      {% else %}
       <form
         class="login-form"
         method="post"
@@ -112,6 +124,7 @@
         </form>
         {% endfor %}
       </div>
+      {% endif %}
     </div>
   </section>
 {% endblock %}

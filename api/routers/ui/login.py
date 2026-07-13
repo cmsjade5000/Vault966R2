@@ -26,6 +26,7 @@ from api.services.session import (
     parse_session_token,
 )
 from api.services.setup import (
+    db_credentials_configured,
     is_setup_complete,
     matching_db_credential_profile_id,
 )
@@ -186,6 +187,10 @@ def _login_credentials_configured(profiles) -> bool:
     return bool(_credential_pairs(profiles))
 
 
+def _credentials_available(db: Session, profiles) -> bool:
+    return _login_credentials_configured(profiles) or db_credentials_configured(db)
+
+
 def _credentials_match(
     db: Session,
     profiles,
@@ -212,28 +217,47 @@ def _credentials_match(
     return None
 
 
+def _login_template_context(
+    request: Request,
+    profiles,
+    *,
+    active_profile_id: int | None = None,
+    default_profile_id: int | None = None,
+    error: str | None = None,
+    unlocked: bool = False,
+    credentials_unavailable: bool = False,
+) -> dict:
+    archive_poster_urls = _public_archive_image_urls(request)
+    return {
+        "profiles": profiles,
+        "active_profile_id": active_profile_id,
+        "error": error,
+        "unlocked": unlocked,
+        "credentials_unavailable": credentials_unavailable,
+        "default_profile_id": default_profile_id,
+        "profile_options": _profile_picker_options(profiles),
+        "archive_tiles": _archive_tiles(archive_poster_urls),
+        "archive_poster_urls": archive_poster_urls,
+    }
+
+
 def _render_login_error(
     request: Request,
     profiles,
     *,
     message: str,
     status_code: int,
+    credentials_unavailable: bool = False,
 ):
-    archive_poster_urls = _public_archive_image_urls(request)
-    archive_tiles = _archive_tiles(archive_poster_urls)
     return TEMPLATES.TemplateResponse(
         request,
         "login.html",
-        {
-            "profiles": profiles,
-            "active_profile_id": None,
-            "error": message,
-            "unlocked": False,
-            "default_profile_id": None,
-            "profile_options": _profile_picker_options(profiles),
-            "archive_tiles": archive_tiles,
-            "archive_poster_urls": archive_poster_urls,
-        },
+        _login_template_context(
+            request,
+            profiles,
+            error=message,
+            credentials_unavailable=credentials_unavailable,
+        ),
         status_code=status_code,
     )
 
@@ -254,6 +278,15 @@ def login(
     if _session_profile_id(request) and not unlocked_state:
         return RedirectResponse(url="/ui/movies", status_code=status.HTTP_302_FOUND)
 
+    if not settings.disable_auth and not _credentials_available(db, profiles):
+        return _render_login_error(
+            request,
+            profiles,
+            message="Login credentials are not configured.",
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            credentials_unavailable=True,
+        )
+
     active_profile_id = None
     if request.cookies.get(PROFILE_COOKIE_NAME):
         try:
@@ -261,22 +294,16 @@ def login(
         except (TypeError, ValueError):
             active_profile_id = None
 
-    archive_poster_urls = _public_archive_image_urls(request)
-    archive_tiles = _archive_tiles(archive_poster_urls)
-
     response = TEMPLATES.TemplateResponse(
         request,
         "login.html",
-        {
-            "profiles": profiles,
-            "active_profile_id": active_profile_id,
-            "error": None,
-            "unlocked": unlocked_state,
-            "default_profile_id": default_profile_id,
-            "profile_options": _profile_picker_options(profiles),
-            "archive_tiles": archive_tiles,
-            "archive_poster_urls": archive_poster_urls,
-        },
+        _login_template_context(
+            request,
+            profiles,
+            active_profile_id=active_profile_id,
+            default_profile_id=default_profile_id,
+            unlocked=unlocked_state,
+        ),
     )
     if active_profile_id is not None:
         ensure_profile_cookie(request, response, db)
@@ -297,11 +324,7 @@ def login_submit(
     profile = profile_by_id.get(profile_id) if profile_id is not None else None
 
     credentials_required = not settings.disable_auth
-    if (
-        credentials_required
-        and not _login_credentials_configured(profiles)
-        and not is_setup_complete(db)
-    ):
+    if credentials_required and not _credentials_available(db, profiles):
         message = "Login credentials are not configured."
         if wants_json:
             return JSONResponse(
@@ -313,6 +336,7 @@ def login_submit(
             profiles,
             message=message,
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            credentials_unavailable=True,
         )
 
     unlock_profile_id: int | None = None
@@ -364,21 +388,15 @@ def login_submit(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 content={"error": "Unknown profile."},
             )
-        archive_poster_urls = _public_archive_image_urls(request)
-        archive_tiles = _archive_tiles(archive_poster_urls)
         return TEMPLATES.TemplateResponse(
             request,
             "login.html",
-            {
-                "profiles": profiles,
-                "active_profile_id": None,
-                "error": "Unknown profile.",
-                "unlocked": True,
-                "default_profile_id": None,
-                "profile_options": _profile_picker_options(profiles),
-                "archive_tiles": archive_tiles,
-                "archive_poster_urls": archive_poster_urls,
-            },
+            _login_template_context(
+                request,
+                profiles,
+                error="Unknown profile.",
+                unlocked=True,
+            ),
             status_code=status.HTTP_400_BAD_REQUEST,
         )
 

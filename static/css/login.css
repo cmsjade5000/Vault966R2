@@ -548,10 +548,40 @@
 }
 
 .login-form,
-.login-profiles {
+.login-profiles,
+.login-recovery {
   grid-row: 3;
   grid-column: 1;
   align-self: stretch;
+}
+
+.login-recovery {
+  display: grid;
+  gap: 0.8rem;
+  align-content: center;
+  padding: clamp(1rem, 3vw, 1.4rem);
+  border: 1px solid rgba(253, 164, 175, 0.3);
+  border-radius: 1rem;
+  color: rgba(229, 246, 255, 0.82);
+  background: rgba(42, 15, 27, 0.34);
+  text-align: center;
+}
+
+.login-recovery h2,
+.login-recovery p {
+  margin: 0;
+}
+
+.login-recovery h2 {
+  color: #fecdd3;
+  font-size: 1rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.login-recovery p {
+  font-size: 0.86rem;
+  line-height: 1.55;
 }
 
 .login-form {
