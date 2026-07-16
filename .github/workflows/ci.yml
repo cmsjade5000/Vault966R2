@@ -33,7 +33,7 @@ jobs:
           pip install black==24.10.0 openapi-python-client==0.29.0 ruff==0.7.1 pytest
 
       - name: Set up Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: "20"
           cache: "npm"
