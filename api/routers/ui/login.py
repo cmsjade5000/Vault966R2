@@ -29,10 +29,12 @@ from api.services.setup import (
     is_setup_complete,
     matching_db_credential_profile_id,
 )
+from api.services.login_throttle import LoginAttemptLimiter
 from api.services.ui.grid import FILTER_COOKIE_NAME, FILTER_COOKIE_PATH
 from api.services.ui.templates import TEMPLATES
 
 router = APIRouter()
+login_attempt_limiter = LoginAttemptLimiter()
 
 PROFILE_PICKER_LABELS = ("User A", "User B")
 UNLOCK_COOKIE_NAME = "vault_unlock"
@@ -134,6 +136,13 @@ def _archive_tiles(urls: list[str], *, limit: int = 12) -> list[Optional[str]]:
 def _wants_json(request: Request) -> bool:
     accept = (request.headers.get("accept") or "").lower()
     return "application/json" in accept
+
+
+def _login_client_key(request: Request) -> str | None:
+    """Return the ASGI/Uvicorn-derived client address without inspecting headers."""
+    if request.client is None or not request.client.host:
+        return None
+    return request.client.host
 
 
 def _profile_picker_options(profiles) -> list[dict[str, int | str]]:
@@ -316,15 +325,38 @@ def login_submit(
         )
 
     unlock_profile_id: int | None = None
+    client_key = _login_client_key(request) if credentials_required else None
     if credentials_required:
-        unlock_profile_id = _credentials_match(
-            db,
-            profiles,
-            access_key=access_key,
-            passcode=passcode,
-        )
+        # A signed unlock token is already a valid credential.  Preserve the
+        # profile-selection step without routing it through failed-attempt
+        # throttling.
+        unlock_profile_id = _parse_unlock_token(request.cookies.get(UNLOCK_COOKIE_NAME, ""))
         if unlock_profile_id is None:
-            unlock_profile_id = _parse_unlock_token(request.cookies.get(UNLOCK_COOKIE_NAME, ""))
+            if client_key is None or not login_attempt_limiter.begin_attempt(client_key):
+                message = "Too many login attempts. Please try again later."
+                if wants_json:
+                    return JSONResponse(
+                        status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                        content={"error": message},
+                    )
+                return _render_login_error(
+                    request,
+                    profiles,
+                    message=message,
+                    status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                )
+            try:
+                unlock_profile_id = _credentials_match(
+                    db,
+                    profiles,
+                    access_key=access_key,
+                    passcode=passcode,
+                )
+            except Exception:
+                login_attempt_limiter.cancel_attempt(client_key)
+                raise
+            if unlock_profile_id is None:
+                login_attempt_limiter.record_failure(client_key)
 
     if credentials_required and unlock_profile_id is None:
         message = "Invalid login credentials."
@@ -339,6 +371,9 @@ def login_submit(
             message=message,
             status_code=status.HTTP_401_UNAUTHORIZED,
         )
+
+    if credentials_required and client_key is not None:
+        login_attempt_limiter.clear(client_key)
 
     if not profile:
         if profile_id is None:
