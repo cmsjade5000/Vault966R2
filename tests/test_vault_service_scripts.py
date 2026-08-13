@@ -3,10 +3,10 @@ import shlex
 import shutil
 import stat
 import subprocess
+import sys
 import textwrap
 import time
 from pathlib import Path
-
 
 ROOT = Path(__file__).resolve().parents[1]
 RUNTIME = ROOT / "scripts" / "vault_runtime.sh"
@@ -324,6 +324,301 @@ def test_runtime_preserves_child_exit_status(tmp_path: Path) -> None:
     assert time.monotonic() - started < 2
     assert result.returncode == 23
     assert "health monitor stopped unexpectedly" not in result.stderr
+
+
+def test_runtime_ignores_forwarded_headers_without_trusted_proxy_config(
+    tmp_path: Path,
+) -> None:
+    calls = tmp_path / "python-calls"
+    env = runtime_env(
+        tmp_path,
+        f"""\
+        #!/usr/bin/env bash
+        printf '%s\\n' "$*" > {calls!s}
+        exit 0
+        """,
+        curl_exit=0,
+    )
+
+    result = subprocess.run(
+        ["/bin/bash", str(RUNTIME)],
+        env=env,
+        capture_output=True,
+        text=True,
+        timeout=5,
+    )
+
+    assert result.returncode == 0, result.stderr
+    command = calls.read_text(encoding="utf-8")
+    assert "--proxy-headers" not in command
+    assert "--forwarded-allow-ips" not in command
+    assert "--no-proxy-headers" in command
+
+
+def test_runtime_trusts_only_explicitly_configured_proxy_ips(tmp_path: Path) -> None:
+    calls = tmp_path / "python-calls"
+    env = runtime_env(
+        tmp_path,
+        f"""\
+        #!/usr/bin/env bash
+        if [[ "$1" == *"validate_trusted_proxy_ips.py" ]]; then
+          exec {sys.executable!s} "$@"
+        fi
+        printf '%s\\n' "$*" > {calls!s}
+        exit 0
+        """,
+        curl_exit=0,
+    )
+    env["VAULT_TRUSTED_PROXY_IPS"] = "127.0.0.1,::1"
+
+    result = subprocess.run(
+        ["/bin/bash", str(RUNTIME)],
+        env=env,
+        capture_output=True,
+        text=True,
+        timeout=5,
+    )
+
+    assert result.returncode == 0, result.stderr
+    command = calls.read_text(encoding="utf-8")
+    assert "--proxy-headers" in command
+    assert "--forwarded-allow-ips=127.0.0.1,::1" in command
+
+
+def test_runtime_rejects_ambiguous_trusted_proxy_config(tmp_path: Path) -> None:
+    env = runtime_env(
+        tmp_path,
+        f"""\
+        #!/usr/bin/env bash
+        if [[ "$1" == *"validate_trusted_proxy_ips.py" ]]; then
+          exec {sys.executable!s} "$@"
+        fi
+        exit 99
+        """,
+        curl_exit=0,
+    )
+    env["VAULT_TRUSTED_PROXY_IPS"] = "*"
+
+    result = subprocess.run(
+        ["/bin/bash", str(RUNTIME)],
+        env=env,
+        capture_output=True,
+        text=True,
+        timeout=5,
+    )
+
+    assert result.returncode == 2
+    assert "VAULT_TRUSTED_PROXY_IPS is invalid" in result.stderr
+
+
+def test_trusted_proxy_validator_accepts_exact_ips_and_rejects_wildcards() -> None:
+    validator = ROOT / "scripts" / "validate_trusted_proxy_ips.py"
+    accepted = subprocess.run(
+        [sys.executable, str(validator)],
+        env={**os.environ, "VAULT_TRUSTED_PROXY_IPS": "127.0.0.1,::1"},
+        capture_output=True,
+        text=True,
+        timeout=5,
+    )
+    assert accepted.returncode == 0, accepted.stderr
+    for invalid_value in ("*", "127.0.0.1/8", "localhost", "127.0.0.1,", " 127.0.0.1"):
+        rejected = subprocess.run(
+            [sys.executable, str(validator)],
+            env={**os.environ, "VAULT_TRUSTED_PROXY_IPS": invalid_value},
+            capture_output=True,
+            text=True,
+            timeout=5,
+        )
+        assert rejected.returncode == 2
+        assert "exact proxy IP addresses" in rejected.stderr
+
+
+def test_docker_compose_uses_direct_mode_without_proxy_header_trust() -> None:
+    compose = (ROOT / "docker-compose.yml").read_text(encoding="utf-8")
+
+    assert "--proxy-headers" not in compose
+    assert '--forwarded-allow-ips="*"' not in compose
+    assert "--no-proxy-headers" in compose
+
+
+def test_all_supported_direct_uvicorn_launchers_disable_proxy_headers() -> None:
+    dockerfile = (ROOT / "Dockerfile").read_text(encoding="utf-8")
+    server = (ROOT / "scripts" / "vault_server.sh").read_text(encoding="utf-8")
+    makefile = (ROOT / "Makefile.txt").read_text(encoding="utf-8")
+    aliases = (ROOT / "scripts" / "dev_aliases.sh").read_text(encoding="utf-8")
+    siri = (ROOT / "docs" / "siri-shortcut.md").read_text(encoding="utf-8")
+
+    assert "--no-proxy-headers" in dockerfile
+    assert "--no-proxy-headers" in server
+    assert makefile.count("--no-proxy-headers") == 2
+    assert aliases.count("--no-proxy-headers") == 2
+    assert "--no-proxy-headers" in siri
+
+
+def test_service_copies_only_validated_trusted_proxy_config_to_launchd(
+    tmp_path: Path,
+) -> None:
+    project = tmp_path / "project"
+    scripts = project / "scripts"
+    scripts.mkdir(parents=True)
+    shutil.copy2(SERVICE, scripts / "vault_service.sh")
+    for script_name in (
+        "vault_runtime.sh",
+        "vault_watchdog.sh",
+        "sqlite_maintenance.py",
+        "validate_trusted_proxy_ips.py",
+    ):
+        shutil.copy2(ROOT / "scripts" / script_name, scripts)
+    (project / "requirements.txt").write_text("", encoding="utf-8")
+    (project / "vault.db").write_text("seed database\n", encoding="utf-8")
+
+    home = tmp_path / "home"
+    support = home / "Library" / "Application Support" / "Vault966"
+    venv = support / ".venv" / "bin"
+    venv.mkdir(parents=True)
+    python = venv / "python"
+    python.symlink_to(Path(sys.executable))
+    config = support / "config" / "trusted_proxy_ips"
+    config.parent.mkdir()
+    config.write_text("127.0.0.1,::1\n", encoding="utf-8")
+
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    write_executable(bin_dir / "uv", "#!/usr/bin/env bash\nexit 0\n")
+    write_executable(
+        bin_dir / "rsync",
+        """\
+        #!/usr/bin/env bash
+        src="${@: -2:1}"
+        dst="${@: -1}"
+        mkdir -p "$dst/scripts"
+        cp "$src/requirements.txt" "$dst/requirements.txt"
+        for script in vault_runtime.sh vault_watchdog.sh sqlite_maintenance.py validate_trusted_proxy_ips.py; do
+          cp "$src/scripts/$script" "$dst/scripts/$script"
+        done
+        """,
+    )
+    write_executable(
+        bin_dir / "launchctl", '#!/usr/bin/env bash\n[[ "$1" == print ]] && exit 1\nexit 0\n'
+    )
+    write_executable(bin_dir / "curl", "#!/usr/bin/env bash\nexit 0\n")
+    write_executable(bin_dir / "plutil", "#!/usr/bin/env bash\nexit 0\n")
+    env = os.environ.copy()
+    env.update({"HOME": str(home), "PATH": f"{bin_dir}:{env['PATH']}"})
+
+    result = subprocess.run(
+        ["/bin/bash", str(scripts / "vault_service.sh"), "restart"],
+        env=env,
+        capture_output=True,
+        text=True,
+        timeout=5,
+    )
+    assert result.returncode == 0, result.stderr
+    plist = home / "Library" / "LaunchAgents" / "com.vault966.server.plist"
+    assert "<key>VAULT_TRUSTED_PROXY_IPS</key>" in plist.read_text(encoding="utf-8")
+    assert "<string>127.0.0.1,::1</string>" in plist.read_text(encoding="utf-8")
+
+
+def test_service_rejects_invalid_trusted_proxy_config_before_writing_plist(
+    tmp_path: Path,
+) -> None:
+    project = tmp_path / "project"
+    scripts = project / "scripts"
+    scripts.mkdir(parents=True)
+    shutil.copy2(SERVICE, scripts / "vault_service.sh")
+    for script_name in (
+        "vault_runtime.sh",
+        "vault_watchdog.sh",
+        "sqlite_maintenance.py",
+        "validate_trusted_proxy_ips.py",
+    ):
+        shutil.copy2(ROOT / "scripts" / script_name, scripts)
+    (project / "requirements.txt").write_text("", encoding="utf-8")
+    (project / "vault.db").write_text("seed database\n", encoding="utf-8")
+
+    home = tmp_path / "home"
+    support = home / "Library" / "Application Support" / "Vault966"
+    (support / "config").mkdir(parents=True)
+    (support / "config" / "trusted_proxy_ips").write_text("*\n", encoding="utf-8")
+    python = support / ".venv" / "bin" / "python"
+    python.parent.mkdir(parents=True)
+    python.symlink_to(Path(sys.executable))
+
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    write_executable(bin_dir / "uv", "#!/usr/bin/env bash\nexit 0\n")
+    write_executable(
+        bin_dir / "rsync",
+        """\
+        #!/usr/bin/env bash
+        src="${@: -2:1}"
+        dst="${@: -1}"
+        mkdir -p "$dst/scripts"
+        cp "$src/scripts/validate_trusted_proxy_ips.py" "$dst/scripts/validate_trusted_proxy_ips.py"
+        """,
+    )
+    write_executable(
+        bin_dir / "launchctl",
+        '#!/usr/bin/env bash\n[[ "$1" == print ]] && exit 1\nexit 0\n',
+    )
+    write_executable(bin_dir / "plutil", "#!/usr/bin/env bash\nexit 0\n")
+    env = os.environ.copy()
+    env.update({"HOME": str(home), "PATH": f"{bin_dir}:{env['PATH']}"})
+
+    result = subprocess.run(
+        ["/bin/bash", str(scripts / "vault_service.sh"), "restart"],
+        env=env,
+        capture_output=True,
+        text=True,
+        timeout=5,
+    )
+
+    assert result.returncode == 2
+    assert "VAULT_TRUSTED_PROXY_IPS is invalid" in result.stderr
+    assert not (home / "Library" / "LaunchAgents" / "com.vault966.server.plist").exists()
+
+
+def test_service_rejects_dangling_trusted_proxy_config_symlink(tmp_path: Path) -> None:
+    project = tmp_path / "project"
+    scripts = project / "scripts"
+    scripts.mkdir(parents=True)
+    shutil.copy2(SERVICE, scripts / "vault_service.sh")
+    for script_name in ("vault_runtime.sh", "vault_watchdog.sh", "sqlite_maintenance.py"):
+        (scripts / script_name).write_text("", encoding="utf-8")
+    (project / "requirements.txt").write_text("", encoding="utf-8")
+    (project / "vault.db").write_text("seed database\n", encoding="utf-8")
+
+    home = tmp_path / "home"
+    config = home / "Library" / "Application Support" / "Vault966" / "config"
+    config.mkdir(parents=True)
+    (config / "trusted_proxy_ips").symlink_to(config / "missing")
+    support = home / "Library" / "Application Support" / "Vault966"
+    python = support / ".venv" / "bin" / "python"
+    python.parent.mkdir(parents=True)
+    python.symlink_to(Path(sys.executable))
+
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    write_executable(bin_dir / "uv", "#!/usr/bin/env bash\nexit 0\n")
+    write_executable(bin_dir / "rsync", "#!/usr/bin/env bash\nexit 0\n")
+    write_executable(
+        bin_dir / "launchctl",
+        '#!/usr/bin/env bash\n[[ "$1" == print ]] && exit 1\nexit 0\n',
+    )
+    write_executable(bin_dir / "plutil", "#!/usr/bin/env bash\nexit 0\n")
+    env = os.environ.copy()
+    env.update({"HOME": str(home), "PATH": f"{bin_dir}:{env['PATH']}"})
+
+    result = subprocess.run(
+        ["/bin/bash", str(scripts / "vault_service.sh"), "restart"],
+        env=env,
+        capture_output=True,
+        text=True,
+        timeout=5,
+    )
+
+    assert result.returncode == 1
+    assert "Trusted proxy configuration must be a regular file" in result.stderr
 
 
 def test_start_force_restarts_loaded_service(tmp_path: Path) -> None:
