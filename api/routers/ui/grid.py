@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session, selectinload
 
 from api.config import settings
 from api.db import get_db
-from api.deps.auth import require_profile_role, require_same_origin
+from api.deps.auth import require_profile_role, require_provider_work_budget, require_same_origin
 from api.models.movie import Movie
 from api.models.source_sync import SourceSnapshot
 from api.schemas.movie import MovieFlagCreate, MovieFlagRead
@@ -353,6 +353,7 @@ def movies_grid(
         current_page = min(max(current_page, 1), total_pages)
         offset = (current_page - 1) * page_size
         if semantic_active and params.q and semantic_search_enabled(db):
+            require_provider_work_budget(request, scope="semantic_search")
 
             def apply_semantic_filters(queryset):
                 return apply_filters(queryset, semantic_filters)

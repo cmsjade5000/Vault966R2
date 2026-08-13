@@ -2,13 +2,18 @@ from __future__ import annotations
 
 from typing import List, Optional
 
-from fastapi import APIRouter, BackgroundTasks, Body, Depends, HTTPException, status
+from fastapi import APIRouter, BackgroundTasks, Body, Depends, HTTPException, Request, status
 from pydantic import BaseModel, Field, field_validator
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from api.db import get_db
-from api.deps.auth import require_profile_role, require_same_origin
+from api.deps.auth import (
+    require_profile_role,
+    require_provider_work_budget,
+    require_same_origin,
+    require_same_origin_provider_work,
+)
 from api.models.movie import Genre, Movie, MovieIngestProvenance
 from api.services.manual_add import (
     append_movie_to_cleaned_csv,
@@ -143,7 +148,7 @@ def manual_add_preview(
     payload: ManualMovieCreate = Body(...),
     db: Session = Depends(get_db),
     _: str = Depends(require_profile_role(ROLE_ADMIN)),
-    __: None = Depends(require_same_origin),
+    __: None = Depends(require_same_origin_provider_work("manual_add_lookup")),
 ):
     title = payload.title.strip()
     year = payload.year
@@ -170,6 +175,7 @@ def manual_add_preview(
 @router.post("/ui/movies/manual-add", status_code=status.HTTP_201_CREATED)
 def manual_add_movie(
     background_tasks: BackgroundTasks,
+    request: Request,
     payload: ManualMovieCreate = Body(...),
     db: Session = Depends(get_db),
     _: str = Depends(require_profile_role(ROLE_ADMIN)),
@@ -187,6 +193,7 @@ def manual_add_movie(
     metadata_dict = payload.metadata.model_dump() if payload.metadata is not None else None
 
     if metadata_dict is None:
+        require_provider_work_budget(request, scope="manual_add_lookup")
         try:
             metadata_dict = lookup_movie(title, year)
         except MovieLookupUnavailable:

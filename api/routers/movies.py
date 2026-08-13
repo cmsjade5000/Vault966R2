@@ -458,6 +458,7 @@ def search_movies(
 def llm_search_movies(
     payload: LlmMovieSearchRequest,
     db: Session = Depends(get_db),
+    _: None = Depends(require_same_origin_provider_work("llm_movie_search")),
 ):
     allowed_genres = [
         row[0] for row in db.query(Genre.name).order_by(Genre.name.asc()).all() if row[0]

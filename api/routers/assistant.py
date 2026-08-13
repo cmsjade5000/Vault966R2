@@ -12,7 +12,7 @@ from sqlalchemy.orm import Session, selectinload
 
 from api.config import settings
 from api.db import get_db
-from api.deps.auth import require_same_origin
+from api.deps.auth import require_provider_work_budget, require_same_origin
 from api.models.movie import Movie
 from api.schemas.assistant import AssistantMovie, AssistantRequest, AssistantResponse
 from api.services.assistant import (
@@ -281,11 +281,16 @@ def _require_same_origin_for_session(request: Request) -> None:
         require_same_origin(request)
 
 
+def _require_assistant_provider_work(request: Request) -> None:
+    _require_same_origin_for_session(request)
+    require_provider_work_budget(request, scope="assistant")
+
+
 @router.post("", response_model=AssistantResponse)
 def assistant_reply(
     payload: AssistantRequest,
     request: Request,
-    _: None = Depends(_require_same_origin_for_session),
+    _: None = Depends(_require_assistant_provider_work),
     db: Session = Depends(get_db),
 ):
     return _assistant_logic(
