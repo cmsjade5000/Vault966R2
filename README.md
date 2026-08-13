@@ -58,6 +58,7 @@ pip install -r requirements.txt
 cp .env.example .env
 # Update .env with a strong `ADMIN_TOKEN`
 # Optional: set `TMDB_API_KEY` / `OMDB_API_KEY` for lookup + enrichment endpoints.
+# SQLite is the default; no separate database service is required.
 
 # Run the API
 make dev          # alias: make devserver; uses .env.local (or .env fallback) automatically
@@ -130,11 +131,13 @@ The deployed server-rendered app currently exposes:
 ## Postgres via Docker Compose
 
 ```bash
-cp .env.example .env  # updates DATABASE_URL to use Postgres
+cp .env.example .env
+# In .env, replace DATABASE_URL with:
+# DATABASE_URL=postgresql+psycopg://vault_user:vault_pass@localhost:5432/vault966
 make db.up            # start pgvector-enabled postgres in docker
 
 # once the container reports healthy, run migrations
-make db.migrate
+make db.migrate       # builds/runs a disposable API container; API need not be running
 
 # optional: seed a few movies through the archived-but-supported ETL importer
 python legacy/etl/etl_seed.py --path legacy/etl/samples/sample_movies.json --format json
@@ -198,11 +201,11 @@ make codex.full
 make codex.live
 ```
 
-For the small JavaScript helpers under `static/js/`, install Prettier once and
-run the formatter as needed:
+For the small JavaScript helpers under `static/js/`, install the locked Node
+dependencies and run the formatter as needed:
 
 ```bash
-npm install
+npm ci
 npm run lint
 ```
 
@@ -258,7 +261,7 @@ make openapi
 
 This command freezes `openapi/openapi.json`, regenerates the Python client in
 `client_py/`, and emits TypeScript definitions in `client_ts/`. The TypeScript
-step uses the pinned `openapi-typescript` dev dependency, so run `npm install`
+step uses the pinned `openapi-typescript` dev dependency, so run `npm ci`
 before regenerating clients. CI pins both client generators through the Python
 environment and `package-lock.json`.
 
