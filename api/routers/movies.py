@@ -726,7 +726,13 @@ def unwatchlist_movie(
 
 @router.get("/", response_model=List[MovieRead])
 def list_movies(db: Session = Depends(get_db)):
-    movies = db.query(Movie).order_by(Movie.title).limit(200).all()
+    movies = (
+        db.query(Movie)
+        .options(selectinload(Movie.genres), selectinload(Movie.moods))
+        .order_by(Movie.title)
+        .limit(200)
+        .all()
+    )
     _attach_flag_status(db, movies)
     return movies
 
