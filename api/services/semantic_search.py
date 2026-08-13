@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import json
 import logging
+import math
 import re
 import time
 from dataclasses import dataclass, replace
@@ -256,17 +257,15 @@ def _fetch_embeddings(texts: List[str]) -> List[List[float]]:
             )
         else:
             if response.status_code == 200:
-                data = response.json()
-                items = data.get("data")
-                if not isinstance(items, list):
+                try:
+                    data = response.json()
+                except (TypeError, ValueError):
+                    malformed_response = True
+                else:
+                    malformed_response = False
+                if malformed_response:
                     raise SemanticSearchError("Embeddings response was malformed")
-                embeddings: List[List[float]] = []
-                for entry in sorted(items, key=lambda item: item.get("index", 0)):
-                    embedding = entry.get("embedding")
-                    if not isinstance(embedding, list):
-                        raise SemanticSearchError("Embeddings response missing vectors")
-                    embeddings.append(embedding)
-                return embeddings
+                return _validate_embeddings_response(data, expected_count=len(texts))
 
             if response.status_code in {429, 500, 502, 503, 504}:
                 last_error = SemanticSearchError(
@@ -283,6 +282,54 @@ def _fetch_embeddings(texts: List[str]) -> List[List[float]]:
         extra={"status": "failed", "attempts": EMBEDDING_MAX_RETRIES},
     )
     raise SemanticSearchError("Embeddings request failed") from last_error
+
+
+def _validate_embedding_vector(value: object) -> List[float]:
+    if not isinstance(value, list) or len(value) != settings.llm_embedding_dim:
+        raise SemanticSearchError("Embeddings response contained an invalid vector dimension")
+
+    vector: List[float] = []
+    for element in value:
+        if isinstance(element, bool) or not isinstance(element, (int, float)):
+            raise SemanticSearchError("Embeddings response contained a non-numeric vector value")
+        try:
+            normalized = float(element)
+        except (OverflowError, TypeError, ValueError) as exc:
+            raise SemanticSearchError(
+                "Embeddings response contained a non-numeric vector value"
+            ) from exc
+        if not math.isfinite(normalized):
+            raise SemanticSearchError("Embeddings response contained a non-finite vector value")
+        vector.append(normalized)
+    return vector
+
+
+def _validate_embeddings_response(value: object, *, expected_count: int) -> List[List[float]]:
+    if not isinstance(value, dict):
+        raise SemanticSearchError("Embeddings response was malformed")
+
+    items = value.get("data")
+    if not isinstance(items, list) or len(items) != expected_count:
+        raise SemanticSearchError("Embeddings response contained an invalid vector count")
+
+    ordered: List[List[float] | None] = [None] * expected_count
+    for entry in items:
+        if not isinstance(entry, dict):
+            raise SemanticSearchError("Embeddings response contained an invalid item")
+        index = entry.get("index")
+        if (
+            isinstance(index, bool)
+            or not isinstance(index, int)
+            or index < 0
+            or index >= expected_count
+            or ordered[index] is not None
+        ):
+            raise SemanticSearchError("Embeddings response contained invalid indices")
+        ordered[index] = _validate_embedding_vector(entry.get("embedding"))
+
+    if any(vector is None for vector in ordered):
+        raise SemanticSearchError("Embeddings response contained invalid indices")
+    return [vector for vector in ordered if vector is not None]
 
 
 def _cache_key(prefix: str, value: str) -> str:
@@ -322,7 +369,10 @@ def get_query_embedding(db: Session, query: str) -> List[float]:
     cache_key = _cache_key("embedding", f"{settings.llm_embedding_model}:{normalized}")
     cached = _cache_get(db, cache_key)
     if cached and isinstance(cached.get("embedding"), list):
-        return cached["embedding"]
+        try:
+            return _validate_embedding_vector(cached["embedding"])
+        except SemanticSearchError:
+            pass
 
     embedding = _fetch_embeddings([normalized])[0]
     _cache_set(
@@ -380,7 +430,7 @@ def backfill_movie_documents(
     for batch in _chunked(to_embed, settings.semantic_backfill_batch):
         embeddings = _fetch_embeddings([entry[1] for entry in batch])
         now = datetime.now(timezone.utc)
-        for (movie, content), vector in zip(batch, embeddings):
+        for (movie, content), vector in zip(batch, embeddings, strict=True):
             current = existing.get(movie.id)
             if current:
                 current.doc_version = DOC_VERSION
@@ -405,6 +455,21 @@ def backfill_movie_documents(
     return created, updated
 
 
+def _build_semantic_candidate_query(
+    db: Session,
+    *,
+    embedding: List[float],
+    filtered_query,
+    limit: int,
+):
+    distance = MovieDocument.embedding.l2_distance(embedding)
+    candidate_query = db.query(Movie, distance.label("distance")).join(
+        MovieDocument, MovieDocument.movie_id == Movie.id
+    )
+    candidate_query = filtered_query(candidate_query)
+    return candidate_query.order_by(distance.asc(), Movie.id.asc()).limit(limit)
+
+
 def semantic_search_movies(
     db: Session,
     *,
@@ -420,30 +485,13 @@ def semantic_search_movies(
 
     embedding = get_query_embedding(db, query)
 
-    base_query = (
-        db.query(Movie.id, MovieDocument.embedding.l2_distance(embedding).label("distance"))
-        .join(MovieDocument, MovieDocument.movie_id == Movie.id)
-        .order_by(text("distance asc"))
-        .limit(limit)
+    candidate_query = _build_semantic_candidate_query(
+        db,
+        embedding=embedding,
+        filtered_query=filtered_query,
+        limit=limit,
     )
-
-    top_rows = base_query.all()
-    if not top_rows:
-        return [], 0
-
-    top_ids = [row[0] for row in top_rows if row[0] is not None]
-    if not top_ids:
-        return [], 0
-
-    filtered_base = (
-        db.query(Movie, MovieDocument.embedding.l2_distance(embedding).label("distance"))
-        .join(MovieDocument, MovieDocument.movie_id == Movie.id)
-        .filter(Movie.id.in_(top_ids))
-    )
-    filtered_query = filtered_query(filtered_base)
-    filtered_query = filtered_query.order_by(text("distance asc"))
-
-    rows = filtered_query.options(selectinload(Movie.genres), selectinload(Movie.moods)).all()
+    rows = candidate_query.options(selectinload(Movie.genres), selectinload(Movie.moods)).all()
     if not rows:
         return [], 0
 
@@ -470,7 +518,7 @@ def semantic_search_movies(
                 score += 0.03
         scored_rows.append((movie, distance, score))
 
-    scored_rows.sort(key=lambda row: (-row[2], row[1]))
+    scored_rows.sort(key=lambda row: (-row[2], float(row[1]), row[0].id))
     page_offset = (page - 1) * page_size
     paged = scored_rows[page_offset : page_offset + page_size]
     return [(row[0], row[1]) for row in paged], total
