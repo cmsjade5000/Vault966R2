@@ -56,6 +56,7 @@ class ProvenanceContext:
 
 
 from api.models.person import Person, Role, RoleType
+from api.utils.provider_errors import format_provider_error
 from api.utils.providers import collect_provider_tokens, merge_providers
 
 logger = logging.getLogger(__name__)
@@ -207,7 +208,13 @@ def _http_get_with_retries(
         except httpx.HTTPError as exc:
             attempt += 1
             if attempt > max_retries:
-                logger.warning("%s lookup failed after %s attempts: %s", tag, attempt - 1, exc)
+                logger.warning(
+                    "%s",
+                    format_provider_error(
+                        f"{tag} lookup failed after {attempt - 1} attempts",
+                        exc,
+                    ),
+                )
                 return None
             time.sleep(retry_delay)
 
@@ -825,7 +832,7 @@ def resolve_imdb_via_network(
                 if resolved:
                     return resolved, "tmdb", tmdb_candidate
         except httpx.HTTPError as exc:
-            logger.warning("TMDb lookup failed: %s", exc)
+            logger.warning("%s", format_provider_error("TMDb lookup failed", exc))
 
     def _omdb_lookup(params: Dict[str, Any], tag: str) -> Optional[Tuple[str, str, Optional[int]]]:
         # Use a copy so we can mutate for logging/testing without affecting callers.

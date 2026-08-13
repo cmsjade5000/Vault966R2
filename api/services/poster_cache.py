@@ -12,6 +12,7 @@ import httpx
 
 from api.db import SessionLocal
 from api.models.movie import Movie
+from api.utils.provider_errors import format_provider_error
 
 logger = logging.getLogger("vault966")
 
@@ -142,9 +143,10 @@ def cache_movie_posters(
 def cache_movie_posters_safely(movie_id: int) -> None:
     try:
         downloaded, cached = cache_movie_posters(movie_id)
-    except (httpx.HTTPError, OSError, ValueError):
-        logger.exception(
-            "poster_cache_failed",
+    except (httpx.HTTPError, OSError, ValueError) as exc:
+        logger.error(
+            "%s",
+            format_provider_error("poster_cache_failed", exc),
             extra={"extra": {"movie_id": movie_id}},
         )
         return

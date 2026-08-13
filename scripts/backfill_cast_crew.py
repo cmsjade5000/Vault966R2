@@ -19,6 +19,7 @@ from api.config import settings  # noqa: E402
 from api.db import SessionLocal  # noqa: E402
 from api.models.movie import Movie  # noqa: E402
 from api.models.person import Person, Role, RoleType  # noqa: E402
+from api.utils.provider_errors import run_provider_cli  # noqa: E402
 
 TMDB_BASE = "https://api.themoviedb.org/3"
 
@@ -146,4 +147,4 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    raise SystemExit(run_provider_cli(main))

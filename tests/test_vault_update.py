@@ -231,3 +231,50 @@ def test_run_task_reports_timeout(monkeypatch, tmp_path):
 
     assert code == 124
     assert summary == "timed out after 1 seconds"
+
+
+def test_provider_key_is_redacted_from_persisted_maintenance_status(monkeypatch, tmp_path) -> None:
+    _use_temp_state(monkeypatch, tmp_path)
+    scripts_dir = tmp_path / "scripts"
+    scripts_dir.mkdir()
+    (scripts_dir / "provider.py").write_text("print('provider')", encoding="utf-8")
+    monkeypatch.setattr(vault_update, "ROOT_DIR", tmp_path)
+    monkeypatch.setattr(
+        vault_update,
+        "_task_list",
+        lambda: [
+            {
+                "id": "provider",
+                "name": "Provider task",
+                "cmd": ["scripts/provider.py"],
+                "report_path": "reports/provider.csv",
+            }
+        ],
+    )
+
+    sentinel = "SENTINEL_OMDB_STATUS_SECRET"
+    stderr = (
+        "httpx.HTTPStatusError: Client error '401 Unauthorized' for url "
+        f"'https://www.omdbapi.com/?apikey={sentinel}&i=tt1234567'"
+    )
+    monkeypatch.setattr(
+        vault_update.subprocess,
+        "run",
+        lambda *args, **kwargs: subprocess.CompletedProcess(
+            args=args[0],
+            returncode=1,
+            stdout="",
+            stderr=stderr,
+        ),
+    )
+
+    started, _ = vault_update.start_update("provider")
+    status = vault_update.run_update_tasks("provider")
+    persisted = vault_update.STATUS_PATH.read_text(encoding="utf-8")
+
+    assert started is True
+    assert status["state"] == "failed"
+    assert sentinel not in persisted
+    assert "[REDACTED]" in persisted
+    assert "401 Unauthorized" in status["steps"][0]["summary"]
+    assert "tt1234567" in status["steps"][0]["summary"]

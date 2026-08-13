@@ -42,6 +42,7 @@ from api.models.person import Role  # noqa: E402,F401  # ensure mapper registrat
 from api.services import movie_lookup  # noqa: E402
 from api.services.movie_review import get_review_queue  # noqa: E402
 from api.services.source_sync import get_source_review_queue  # noqa: E402
+from api.utils.provider_errors import run_provider_cli  # noqa: E402
 from scripts.backfill_db_backup import backup_active_sqlite_database  # noqa: E402
 
 TMDB_IMAGE_HOSTS = {"image.tmdb.org", "media.themoviedb.org"}
@@ -468,4 +469,4 @@ def main() -> int:
 
 
 if __name__ == "__main__":  # pragma: no cover
-    raise SystemExit(main())
+    raise SystemExit(run_provider_cli(main))

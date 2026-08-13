@@ -1,5 +1,7 @@
+import logging
 import pathlib
 
+import httpx
 import pytest
 from sqlalchemy import create_engine, select
 from sqlalchemy.orm import sessionmaker
@@ -403,6 +405,60 @@ def test_normalize_imdb_id_variants():
 def test_sanitize_title_for_search_strips_parentheticals():
     assert etl_seed.sanitize_title_for_search("Dirty Harry (Unrated)") == "dirty harry"
     assert etl_seed.sanitize_title_for_search("Alien (1979) (Director's Cut)") == "alien"
+
+
+def test_http_retry_log_redacts_query_provider_secret(monkeypatch, caplog) -> None:
+    sentinel = "SENTINEL_LEGACY_RETRY_SECRET"
+
+    def unauthorized_response(url, *, params, timeout):
+        request = httpx.Request("GET", url, params=params)
+        return httpx.Response(401, request=request)
+
+    monkeypatch.setattr(etl_seed.httpx, "get", unauthorized_response)
+    caplog.set_level(logging.WARNING, logger=etl_seed.__name__)
+
+    response = etl_seed._http_get_with_retries(
+        "https://api.themoviedb.org/3/search/movie",
+        params={"api_key": sentinel, "query": "Alien"},
+        timeout=1.0,
+        max_retries=0,
+        retry_delay=0.0,
+        tag="TMDb search",
+    )
+
+    assert response is None
+    message = caplog.messages[-1]
+    assert sentinel not in message
+    assert "[REDACTED]" in message
+    assert "401 Unauthorized" in message
+    assert "query=Alien" in message
+
+
+def test_network_resolver_outer_log_redacts_query_provider_secret(monkeypatch, caplog) -> None:
+    sentinel = "SENTINEL_LEGACY_OUTER_SECRET"
+
+    def fail_lookup(url, **_kwargs):
+        request = httpx.Request("GET", url, params={"api_key": sentinel, "query": "Alien"})
+        response = httpx.Response(502, request=request)
+        response.raise_for_status()
+
+    monkeypatch.setattr(etl_seed, "_http_get_with_retries", fail_lookup)
+    caplog.set_level(logging.WARNING, logger=etl_seed.__name__)
+
+    etl_seed.resolve_imdb_via_network(
+        {"title": "Alien", "year": 1979},
+        allow_network=True,
+        tmdb_key=sentinel,
+        omdb_key=None,
+        max_retries=0,
+        retry_delay=0.0,
+    )
+
+    message = caplog.messages[-1]
+    assert sentinel not in message
+    assert "[REDACTED]" in message
+    assert "502 Bad Gateway" in message
+    assert "query=Alien" in message
 
 
 def test_resolve_imdb_via_network_tmdb_handles_parenthetical_titles(monkeypatch):

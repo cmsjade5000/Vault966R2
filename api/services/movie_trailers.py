@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session
 
 from api.config import settings
 from api.models.movie import Movie
+from api.utils.provider_errors import format_provider_error
 
 TMDB_API_BASE = "https://api.themoviedb.org/3"
 YOUTUBE_KEY_RE = re.compile(r"^[A-Za-z0-9_-]{6,128}$")
@@ -116,6 +117,7 @@ def _fetch_tmdb_videos(tmdb_id: int) -> dict[str, Any]:
     api_key = settings.tmdb_api_key
     if not api_key:
         raise MovieTrailerUnavailable("TMDb trailer lookup is not configured")
+    provider_error: MovieTrailerUnavailable | None = None
     try:
         response = httpx.get(
             f"{TMDB_API_BASE}/movie/{tmdb_id}/videos",
@@ -124,7 +126,11 @@ def _fetch_tmdb_videos(tmdb_id: int) -> dict[str, Any]:
         )
         response.raise_for_status()
     except httpx.HTTPError as exc:
-        raise MovieTrailerUnavailable("TMDb trailer lookup failed") from exc
+        provider_error = MovieTrailerUnavailable(
+            format_provider_error("TMDb trailer lookup failed", exc)
+        )
+    if provider_error is not None:
+        raise provider_error from None
     return response.json()
 
 

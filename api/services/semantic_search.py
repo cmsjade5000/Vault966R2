@@ -16,6 +16,7 @@ from sqlalchemy.orm import Session, selectinload
 from api.config import settings
 from api.models.movie import Movie
 from api.models.semantic_search import AiCache, MovieDocument
+from api.utils.provider_errors import format_provider_error
 from core.movie_filters import MovieFilterParams
 
 DOC_VERSION = 1
@@ -250,7 +251,9 @@ def _fetch_embeddings(texts: List[str]) -> List[List[float]]:
                 timeout=EMBEDDING_TIMEOUT,
             )
         except httpx.HTTPError as exc:
-            last_error = exc
+            last_error = SemanticSearchError(
+                format_provider_error("Embeddings request failed", exc)
+            )
         else:
             if response.status_code == 200:
                 data = response.json()

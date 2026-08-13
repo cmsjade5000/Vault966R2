@@ -7,6 +7,7 @@ from typing import Iterable
 import httpx
 
 from api.config import settings
+from api.utils.provider_errors import format_provider_error
 
 
 class AssistantError(Exception):
@@ -100,15 +101,18 @@ def generate_assistant_template(
     created_client = client is None
     if client is None:
         client = httpx.Client(timeout=15.0)
+    provider_error: AssistantError | None = None
     try:
         response = client.post(f"{base_url}/chat/completions", json=payload, headers=headers)
         response.raise_for_status()
         raw_json = _extract_llm_json(response.json())
     except httpx.HTTPError as exc:
-        raise AssistantError(f"LLM request failed: {exc}") from exc
+        provider_error = AssistantError(format_provider_error("LLM request failed", exc))
     finally:
         if created_client:
             client.close()
+    if provider_error is not None:
+        raise provider_error from None
 
     return _parse_template(raw_json)
 

@@ -1,3 +1,6 @@
+import logging
+
+import httpx
 import pytest
 from sqlalchemy import text
 from fastapi.testclient import TestClient
@@ -183,6 +186,26 @@ def test_movie_detail_get_does_not_fetch_provider_similar(
 
     assert resp.status_code == 200
     assert resp.json()["similar"]
+
+
+def test_tmdb_related_failure_log_redacts_provider_key(monkeypatch, caplog) -> None:
+    sentinel = "SENTINEL_TMDB_LOG_SECRET"
+
+    def unauthorized_response(url, *, params, timeout):
+        request = httpx.Request("GET", url, params=params)
+        return httpx.Response(401, request=request)
+
+    monkeypatch.setattr(movies_detail.httpx, "get", unauthorized_response)
+    caplog.set_level(logging.WARNING, logger=movies_detail.__name__)
+
+    result = movies_detail._tmdb_related_ids(sentinel, 9_999_991, "recommendations")
+
+    assert result == ()
+    message = caplog.messages[-1]
+    assert sentinel not in message
+    assert "[REDACTED]" in message
+    assert "401 Unauthorized" in message
+    assert "recommendations" in message
 
 
 def test_movie_detail_template(client: TestClient, detail_movie_setup):

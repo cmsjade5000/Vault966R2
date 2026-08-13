@@ -29,6 +29,7 @@ DATA_DIR = ROOT / "data"
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
+from api.utils.provider_errors import run_provider_cli  # noqa: E402
 from core.enriched_csv import parse_int  # noqa: E402
 
 
@@ -429,4 +430,4 @@ def main() -> int:
 
 
 if __name__ == "__main__":  # pragma: no cover
-    raise SystemExit(main())
+    raise SystemExit(run_provider_cli(main))

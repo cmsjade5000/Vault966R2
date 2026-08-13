@@ -7,6 +7,7 @@ import httpx
 
 from api.config import settings
 from api.schemas.llm_filters import ALLOWED_ORDER_BY, LlmMovieFilters
+from api.utils.provider_errors import format_provider_error
 from core.genres import split_and_normalize
 
 
@@ -139,15 +140,18 @@ def generate_llm_filters(
     created_client = client is None
     if client is None:
         client = httpx.Client(timeout=15.0)
+    provider_error: LlmFilterError | None = None
     try:
         response = client.post(f"{base_url}/chat/completions", json=payload, headers=headers)
         response.raise_for_status()
         raw_json = _extract_llm_json(response.json())
     except httpx.HTTPError as exc:
-        raise LlmFilterError(f"LLM request failed: {exc}") from exc
+        provider_error = LlmFilterError(format_provider_error("LLM request failed", exc))
     finally:
         if created_client:
             client.close()
+    if provider_error is not None:
+        raise provider_error from None
 
     filters = _parse_llm_filters(raw_json)
     return normalize_llm_filters(filters, allowed_genres, allowed_moods)
