@@ -46,8 +46,45 @@ const makeNavToggle = () => {
   };
 };
 
-const loadBase = ({ withNav = false } = {}) => {
+const makeAnchor = ({
+  backLink = false,
+  download = false,
+  href = "http://testserver/ui/movies?page=2",
+  target = "",
+} = {}) => ({
+  dataset: {},
+  href,
+  target,
+  hasAttribute(name) {
+    return (
+      (name === "data-back-link" && backLink) ||
+      (name === "download" && download)
+    );
+  },
+});
+
+const makeAnchorClick = (link, overrides = {}) => ({
+  altKey: false,
+  button: 0,
+  ctrlKey: false,
+  defaultPrevented: false,
+  metaKey: false,
+  shiftKey: false,
+  target: {
+    closest(selector) {
+      return selector === "a[href]" ? link : null;
+    },
+  },
+  preventDefault() {
+    this.defaultPrevented = true;
+  },
+  ...overrides,
+});
+
+const loadBase = ({ runScheduled = true, withNav = false } = {}) => {
   const documentListeners = {};
+  const assignedUrls = [];
+  const timeoutDelays = [];
   const body = {
     attributes: {},
     classList: { add() {} },
@@ -94,15 +131,25 @@ const loadBase = ({ withNav = false } = {}) => {
       return [];
     },
   };
+  const currentUrl = new URL("http://testserver/ui/movies");
   const window = {
     clearTimeout,
-    location: { href: "http://testserver/ui/movies" },
+    location: {
+      assign(url) {
+        assignedUrls.push(url);
+      },
+      href: currentUrl.href,
+      origin: currentUrl.origin,
+      pathname: currentUrl.pathname,
+      search: currentUrl.search,
+    },
     matchMedia() {
       return { matches: false };
     },
     navigator: {},
-    setTimeout(callback) {
-      callback();
+    setTimeout(callback, delay) {
+      timeoutDelays.push(delay);
+      if (runScheduled) callback();
       return 1;
     },
     addEventListener() {},
@@ -127,12 +174,14 @@ const loadBase = ({ withNav = false } = {}) => {
     window,
   });
   return {
+    assignedUrls,
     body,
     documentListeners,
     indicator,
     messageTarget,
     navMenu,
     navToggle,
+    timeoutDelays,
     window,
   };
 };
@@ -177,4 +226,82 @@ test("global busy still handles normal form submissions", () => {
   assert.equal(indicator.attributes.hidden, undefined);
   assert.equal(body.attributes["aria-busy"], "true");
   assert.equal(messageTarget.textContent, "Searching the Vault…");
+});
+
+test("ordinary same-origin links set busy state and navigate immediately", () => {
+  const {
+    assignedUrls,
+    body,
+    documentListeners,
+    indicator,
+    messageTarget,
+    timeoutDelays,
+  } = loadBase({ runScheduled: false });
+  const event = makeAnchorClick(makeAnchor());
+
+  documentListeners.click(event);
+
+  assert.equal(event.defaultPrevented, true);
+  assert.equal(body.attributes["aria-busy"], "true");
+  assert.equal(indicator.attributes.hidden, undefined);
+  assert.equal(messageTarget.textContent, "Opening the Vault…");
+  assert.deepEqual(assignedUrls, ["http://testserver/ui/movies?page=2"]);
+  assert.deepEqual(timeoutDelays, []);
+});
+
+test("global navigation observes a click canceled by the Library pager", () => {
+  const { assignedUrls, body, documentListeners, timeoutDelays } = loadBase({
+    runScheduled: false,
+  });
+  const event = makeAnchorClick(makeAnchor(), { defaultPrevented: true });
+
+  documentListeners.click(event);
+
+  assert.deepEqual(assignedUrls, []);
+  assert.deepEqual(timeoutDelays, []);
+  assert.equal(body.attributes["aria-busy"], undefined);
+});
+
+test("global navigation preserves native handling for special links", () => {
+  const cases = [
+    {
+      event: { metaKey: true },
+      label: "modifier click",
+      link: makeAnchor(),
+    },
+    {
+      label: "new tab target",
+      link: makeAnchor({ target: "_blank" }),
+    },
+    {
+      label: "download",
+      link: makeAnchor({ download: true }),
+    },
+    {
+      label: "same-page hash",
+      link: makeAnchor({ href: "http://testserver/ui/movies#results" }),
+    },
+    {
+      label: "external origin",
+      link: makeAnchor({ href: "https://example.com/movies" }),
+    },
+    {
+      label: "dedicated back link",
+      link: makeAnchor({ backLink: true }),
+    },
+  ];
+
+  cases.forEach(({ event: eventOverrides, label, link }) => {
+    const { assignedUrls, body, documentListeners, timeoutDelays } = loadBase({
+      runScheduled: false,
+    });
+    const event = makeAnchorClick(link, eventOverrides);
+
+    documentListeners.click(event);
+
+    assert.equal(event.defaultPrevented, false, label);
+    assert.deepEqual(assignedUrls, [], label);
+    assert.deepEqual(timeoutDelays, [], label);
+    assert.equal(body.attributes["aria-busy"], undefined, label);
+  });
 });

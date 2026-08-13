@@ -75,9 +75,7 @@
           { delay: 0 },
         );
       }
-      window.setTimeout(() => {
-        window.location.href = url;
-      }, 400);
+      window.location.href = url;
     } catch (err) {
       console.warn("Failed to restore filters", err);
     }
