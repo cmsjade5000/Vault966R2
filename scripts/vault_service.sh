@@ -29,6 +29,7 @@ WATCHDOG_STDERR_LOG="$LOG_DIR/vault_watchdog.error.log"
 MAINTENANCE_STDOUT_LOG="$LOG_DIR/vault_maintenance.log"
 MAINTENANCE_STDERR_LOG="$LOG_DIR/vault_maintenance.error.log"
 HEALTH_URL="http://127.0.0.1:8000/health"
+TRUSTED_PROXY_CONFIG="$SUPPORT_DIR/config/trusted_proxy_ips"
 
 usage() {
   cat <<USAGE
@@ -46,8 +47,38 @@ Usage: scripts/vault_service.sh <install|uninstall|start|stop|restart|status|log
 USAGE
 }
 
+trusted_proxy_ips() {
+  if [[ ! -e "$TRUSTED_PROXY_CONFIG" && ! -L "$TRUSTED_PROXY_CONFIG" ]]; then
+    return
+  fi
+  if [[ -L "$TRUSTED_PROXY_CONFIG" || ! -f "$TRUSTED_PROXY_CONFIG" ]]; then
+    echo "Trusted proxy configuration must be a regular file: $TRUSTED_PROXY_CONFIG" >&2
+    exit 1
+  fi
+
+  local value
+  value="$(<"$TRUSTED_PROXY_CONFIG")"
+  if [[ -z "$value" ]]; then
+    return
+  fi
+
+  local validation_status=0
+  VAULT_TRUSTED_PROXY_IPS="$value" "$VENV_DIR/bin/python" \
+    "$APP_DIR/scripts/validate_trusted_proxy_ips.py" || validation_status=$?
+  if (( validation_status != 0 )); then
+    return "$validation_status"
+  fi
+  printf '%s' "$value"
+}
+
 write_plist() {
   mkdir -p "$(dirname "$PLIST")" "$LOG_DIR"
+  local trusted_proxy_ips
+  local trusted_proxy_status=0
+  trusted_proxy_ips="$(trusted_proxy_ips)" || trusted_proxy_status=$?
+  if (( trusted_proxy_status != 0 )); then
+    return "$trusted_proxy_status"
+  fi
   cat >"$PLIST" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -82,6 +113,9 @@ write_plist() {
     <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
     <key>PYTHONUNBUFFERED</key>
     <string>1</string>
+$(if [[ -n "$trusted_proxy_ips" ]]; then
+  printf '    <key>VAULT_TRUSTED_PROXY_IPS</key>\n    <string>%s</string>\n' "$trusted_proxy_ips"
+fi)
   </dict>
 </dict>
 </plist>

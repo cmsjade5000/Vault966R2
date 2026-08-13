@@ -11,6 +11,7 @@ HEALTH_FAILURE_LIMIT="${HEALTH_FAILURE_LIMIT:-3}"
 STARTUP_GRACE="${STARTUP_GRACE:-20}"
 SHUTDOWN_GRACE="${SHUTDOWN_GRACE:-10}"
 SUPERVISOR_INTERVAL="${SUPERVISOR_INTERVAL:-1}"
+VAULT_TRUSTED_PROXY_IPS="${VAULT_TRUSTED_PROXY_IPS:-}"
 
 if [[ ! -x "$PYTHON" ]]; then
   echo "Vault Python environment is missing: $PYTHON" >&2
@@ -18,6 +19,16 @@ if [[ ! -x "$PYTHON" ]]; then
 fi
 
 cd "$ROOT_DIR"
+
+uvicorn_args=(-m uvicorn api.main:app --host "$HOST" --port "$PORT")
+if [[ -n "$VAULT_TRUSTED_PROXY_IPS" ]]; then
+  "$PYTHON" "$ROOT_DIR/scripts/validate_trusted_proxy_ips.py"
+  uvicorn_args+=(--proxy-headers "--forwarded-allow-ips=$VAULT_TRUSTED_PROXY_IPS")
+else
+  # Direct connections must never let a caller choose its apparent client IP.
+  uvicorn_args+=(--no-proxy-headers)
+fi
+uvicorn_args+=(--log-level info --access-log)
 
 child_pid=""
 monitor_pid=""
@@ -94,13 +105,7 @@ handle_signal() {
 trap stop_processes EXIT
 trap handle_signal INT TERM
 
-"$PYTHON" -m uvicorn api.main:app \
-  --host "$HOST" \
-  --port "$PORT" \
-  --proxy-headers \
-  --forwarded-allow-ips="*" \
-  --log-level info \
-  --access-log &
+"$PYTHON" "${uvicorn_args[@]}" &
 child_pid=$!
 
 monitor_health() {

@@ -3,7 +3,7 @@
 Use this to get voice responses from the `/api/assistant` endpoint on your local network.
 
 ## Prereqs
-- Server running on your LAN: `uvicorn api.main:app --host 0.0.0.0 --port 8000`
+- Server running on your LAN: `uvicorn api.main:app --host 0.0.0.0 --port 8000 --no-proxy-headers`
 - `ASSISTANT_API_TOKEN` set in `.env`
 - Your Mac's LAN IP (example: `192.168.1.20`)
 
