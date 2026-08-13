@@ -1,4 +1,5 @@
 import os
+import shlex
 import shutil
 import stat
 import subprocess
@@ -11,6 +12,7 @@ ROOT = Path(__file__).resolve().parents[1]
 RUNTIME = ROOT / "scripts" / "vault_runtime.sh"
 SERVICE = ROOT / "scripts" / "vault_service.sh"
 WATCHDOG = ROOT / "scripts" / "vault_watchdog.sh"
+CODEX_CHECK = ROOT / "scripts" / "codex_check.sh"
 
 
 def write_executable(path: Path, contents: str) -> None:
@@ -44,6 +46,233 @@ def runtime_env(tmp_path: Path, python_script: str, curl_exit: int) -> dict[str,
         }
     )
     return env
+
+
+def _curl_headers(status: str, content_type: str | None = None, location: str | None = None) -> str:
+    lines = [f"HTTP/1.1 {status} Test"]
+    if content_type:
+        lines.append(f"Content-Type: {content_type}")
+    if location:
+        lines.append(f"Location: {location}")
+    return "\\r\\n".join(lines) + "\\r\\n\\r\\n"
+
+
+def verify_env(
+    tmp_path: Path,
+    *,
+    status: str,
+    content_type: str | None = None,
+    location: str | None = None,
+    followed_status: str | None = None,
+    followed_content_type: str | None = None,
+) -> tuple[dict[str, str], Path]:
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir(exist_ok=True)
+    calls = tmp_path / "curl-calls"
+    initial_headers = _curl_headers(status, content_type, location)
+    final_headers = _curl_headers(
+        followed_status or status,
+        followed_content_type if followed_status else content_type,
+    )
+    write_executable(
+        bin_dir / "curl",
+        f"""\
+        #!/usr/bin/env bash
+        printf '%s\n' "$@" > {shlex.quote(str(calls))}
+        headers=""
+        body=""
+        follow=0
+        while (( $# )); do
+          case "$1" in
+            --dump-header)
+              headers="$2"
+              shift 2
+              ;;
+            --output)
+              body="$2"
+              shift 2
+              ;;
+            --location)
+              follow=1
+              shift
+              ;;
+            *)
+              shift
+              ;;
+          esac
+        done
+        : > "$body"
+        if (( follow )) && [[ -n {shlex.quote(followed_status or '')} ]]; then
+          printf '%b' {shlex.quote(final_headers)} > "$headers"
+          printf '%s' {shlex.quote(followed_status or '')}
+        else
+          printf '%b' {shlex.quote(initial_headers)} > "$headers"
+          printf '%s' {shlex.quote(status)}
+        fi
+        """,
+    )
+
+    home = tmp_path / "home"
+    home.mkdir(exist_ok=True)
+    env = os.environ.copy()
+    env.update(
+        {
+            "HOME": str(home),
+            "PATH": f"{bin_dir}:{env['PATH']}",
+            "TMPDIR": str(tmp_path),
+        }
+    )
+    return env, calls
+
+
+def test_verify_requires_an_explicit_response_contract(tmp_path: Path) -> None:
+    env, calls = verify_env(tmp_path, status="200", content_type="application/json")
+
+    result = subprocess.run(
+        ["/bin/bash", str(SERVICE), "verify", "/health"],
+        env=env,
+        capture_output=True,
+        text=True,
+        timeout=5,
+    )
+
+    assert result.returncode == 2
+    assert "verify <path> <status> <mime|none> [location]" in result.stderr
+    assert not calls.exists()
+
+
+def test_verify_rejects_an_initial_redirect_instead_of_following_it(
+    tmp_path: Path,
+) -> None:
+    env, calls = verify_env(
+        tmp_path,
+        status="302",
+        content_type="text/html; charset=utf-8",
+        location="/login",
+        followed_status="200",
+        followed_content_type="application/json",
+    )
+
+    result = subprocess.run(
+        [
+            "/bin/bash",
+            str(SERVICE),
+            "verify",
+            "/readyz",
+            "200",
+            "application/json",
+        ],
+        env=env,
+        capture_output=True,
+        text=True,
+        timeout=5,
+    )
+
+    assert result.returncode == 1
+    assert "returned initial HTTP 302; expected 200" in result.stderr
+    assert "--location" not in calls.read_text().splitlines()
+
+
+def test_verify_requires_the_exact_response_mime(tmp_path: Path) -> None:
+    env, _calls = verify_env(tmp_path, status="200", content_type="text/html; charset=utf-8")
+
+    accepted = subprocess.run(
+        ["/bin/bash", str(SERVICE), "verify", "/login", "200", "text/html"],
+        env=env,
+        capture_output=True,
+        text=True,
+        timeout=5,
+    )
+    rejected = subprocess.run(
+        [
+            "/bin/bash",
+            str(SERVICE),
+            "verify",
+            "/login",
+            "200",
+            "application/json",
+        ],
+        env=env,
+        capture_output=True,
+        text=True,
+        timeout=5,
+    )
+
+    assert accepted.returncode == 0
+    assert "initial HTTP 200 MIME text/html" in accepted.stdout
+    assert rejected.returncode == 1
+    assert "returned MIME text/html; expected application/json" in rejected.stderr
+
+
+def test_verify_requires_the_exact_redirect_location(tmp_path: Path) -> None:
+    env, _calls = verify_env(tmp_path, status="303", location="/login")
+
+    accepted = subprocess.run(
+        [
+            "/bin/bash",
+            str(SERVICE),
+            "verify",
+            "/logout",
+            "303",
+            "none",
+            "/login",
+        ],
+        env=env,
+        capture_output=True,
+        text=True,
+        timeout=5,
+    )
+    rejected = subprocess.run(
+        [
+            "/bin/bash",
+            str(SERVICE),
+            "verify",
+            "/logout",
+            "303",
+            "none",
+            "/setup",
+        ],
+        env=env,
+        capture_output=True,
+        text=True,
+        timeout=5,
+    )
+
+    assert accepted.returncode == 0
+    assert "Location: /login" in accepted.stdout
+    assert rejected.returncode == 1
+    assert "returned Location /login; expected /setup" in rejected.stderr
+
+
+def test_codex_live_requires_database_readiness(tmp_path: Path) -> None:
+    project = tmp_path / "project"
+    scripts = project / "scripts"
+    scripts.mkdir(parents=True)
+    shutil.copy2(CODEX_CHECK, scripts / "codex_check.sh")
+    calls = tmp_path / "vault-service-calls"
+    write_executable(
+        scripts / "vault_service.sh",
+        f"""\
+        #!/usr/bin/env bash
+        printf '%s\n' "$*" >> {shlex.quote(str(calls))}
+        """,
+    )
+
+    result = subprocess.run(
+        ["/bin/bash", str(scripts / "codex_check.sh"), "live"],
+        capture_output=True,
+        text=True,
+        timeout=5,
+    )
+
+    assert result.returncode == 0
+    assert calls.read_text().splitlines() == [
+        "restart",
+        "verify /health 200 application/json",
+        "verify /readyz 200 application/json",
+        "verify /login 200 text/html",
+    ]
+    assert "Live service verified: /health, /readyz, and /login" in result.stdout
 
 
 def test_runtime_terminates_unhealthy_child_to_exit(tmp_path: Path) -> None:

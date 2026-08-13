@@ -302,6 +302,8 @@ class AuthRequiredMiddleware(BaseHTTPMiddleware):
         "/logout",
         "/setup",
         "/health",
+        "/livez",
+        "/readyz",
         "/docs",
         "/redoc",
         "/openapi.json",
