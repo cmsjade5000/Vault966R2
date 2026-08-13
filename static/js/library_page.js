@@ -721,12 +721,11 @@
     });
     document.querySelectorAll("[data-results-pager] a").forEach((link) => {
       link.addEventListener("click", (event) => {
-        if (
-          link.getAttribute("aria-disabled") === "true" ||
-          !canLoadLibraryInline()
-        ) {
+        if (link.getAttribute("aria-disabled") === "true") {
+          event.preventDefault();
           return;
         }
+        if (!canLoadLibraryInline()) return;
         event.preventDefault();
         loadLibraryUrl(link.href, { message: "Loading page…" });
       });

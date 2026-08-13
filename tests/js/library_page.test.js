@@ -24,6 +24,70 @@ const loadSupport = () => {
   return window.VaultLibrarySupport;
 };
 
+const loadDisabledPager = (pagerHref) => {
+  let clickListener = null;
+  const nativeNavigations = [];
+  const pagerLink = {
+    href: pagerHref,
+    addEventListener(type, listener) {
+      if (type === "click") clickListener = listener;
+    },
+    getAttribute(name) {
+      return name === "aria-disabled" ? "true" : null;
+    },
+  };
+  const shell = {
+    dataset: {},
+    classList: { add() {}, remove() {} },
+    matches(selector) {
+      return selector === "[data-results-shell]";
+    },
+    querySelector() {
+      return null;
+    },
+    removeAttribute() {},
+    setAttribute() {},
+  };
+  const document = {
+    addEventListener() {},
+    getElementById() {
+      return null;
+    },
+    querySelector() {
+      return null;
+    },
+    querySelectorAll(selector) {
+      if (selector === "[data-results-pager] a") return [pagerLink];
+      return [];
+    },
+  };
+  const window = {
+    addEventListener() {},
+    location: { href: "http://127.0.0.1:8000/ui/movies" },
+  };
+
+  vm.runInNewContext(script, { document, URL, URLSearchParams, window });
+  window.VaultLibrarySupport.initLibraryPage(shell);
+
+  const clickPager = () => {
+    const event = {
+      defaultPrevented: false,
+      preventDefault() {
+        this.defaultPrevented = true;
+      },
+    };
+    clickListener(event);
+    if (!event.defaultPrevented) nativeNavigations.push(pagerLink.href);
+    return event;
+  };
+
+  return {
+    clickPager,
+    nativeNavigations,
+    shell,
+  };
+};
+
 test("clearing a preset removes Hidden Gems and preserves other filters", () => {
   const { buildClearFilterUrl } = loadSupport();
   const result = new URL(
@@ -157,6 +221,30 @@ test("library request URLs preserve explicit pagination", () => {
   assert.equal(result.searchParams.get("view"), "grid");
   assert.equal(result.searchParams.get("_filters"), "1");
   assert.equal(result.searchParams.get("page"), "3");
+});
+
+test("disabled Library page boundaries cancel DOM navigation", () => {
+  const boundaries = [
+    {
+      label: "previous on the first page",
+      pagerHref: "http://127.0.0.1:8000/ui/movies?page=1#results",
+    },
+    {
+      label: "next on the last page",
+      pagerHref: "http://127.0.0.1:8000/ui/movies?page=5#results",
+    },
+  ];
+
+  boundaries.forEach(({ label, pagerHref }) => {
+    const { clickPager, nativeNavigations, shell } =
+      loadDisabledPager(pagerHref);
+
+    const event = clickPager();
+
+    assert.equal(shell.dataset.libraryInitialized, "true", label);
+    assert.equal(event.defaultPrevented, true, label);
+    assert.deepEqual(nativeNavigations, [], label);
+  });
 });
 
 test("random pick params include the full selected filter set", () => {

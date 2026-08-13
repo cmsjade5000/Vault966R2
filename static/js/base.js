@@ -147,9 +147,7 @@ window.persistToastMessage = function (message) {
         : "Opening the Vault…");
     event.preventDefault();
     window.setVaultBusy(message, { delay: 0 });
-    window.setTimeout(() => {
-      window.location.assign(url.toString());
-    }, 400);
+    window.location.assign(url.toString());
   });
 
   document.addEventListener("submit", (event) => {
