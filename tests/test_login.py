@@ -6,6 +6,7 @@ from api.models.profile import Profile
 from api.services.profiles import get_profiles
 from api.services.session import SESSION_COOKIE_NAME, get_session_secret, parse_session_token
 from api.services.ui.grid import FILTER_COOKIE_NAME, FILTER_COOKIE_PATH
+from api.routers.ui.login import UNLOCK_COOKIE_NAME, _create_unlock_token
 
 
 def test_login_page_only_shows_unlock_action(client: TestClient):
@@ -163,6 +164,76 @@ def test_login_rejects_invalid_credentials(client: TestClient, monkeypatch):
     assert response.status_code == 401
     assert response.json() == {"error": "Invalid login credentials."}
     assert response.cookies.get(SESSION_COOKIE_NAME) is None
+
+
+def test_login_throttles_failed_credential_checks_and_preserves_success(
+    client: TestClient, monkeypatch
+) -> None:
+    monkeypatch.setattr(settings, "disable_auth", False)
+    monkeypatch.setattr(settings, "login_session_secret", None)
+    monkeypatch.setattr(settings, "login_access_key", "vault")
+    monkeypatch.setattr(settings, "login_passcode", "966")
+
+    for _ in range(4):
+        rejected = client.post(
+            "/login",
+            data={"access_key": "vault", "passcode": "wrong"},
+            headers={"Accept": "application/json"},
+        )
+        assert rejected.status_code == 401
+
+    unlocked = client.post(
+        "/login",
+        data={"access_key": "vault", "passcode": "966"},
+        headers={"Accept": "application/json"},
+    )
+    assert unlocked.status_code == 200
+    assert unlocked.json() == {"unlocked": True}
+    client.cookies.clear()
+
+    for _ in range(5):
+        rejected = client.post(
+            "/login",
+            data={"access_key": "vault", "passcode": "wrong"},
+            headers={"Accept": "application/json"},
+        )
+        assert rejected.status_code == 401
+
+    throttled = client.post(
+        "/login",
+        data={"access_key": "vault", "passcode": "wrong"},
+        headers={"Accept": "application/json"},
+    )
+    assert throttled.status_code == 429
+    assert throttled.json() == {"error": "Too many login attempts. Try again shortly."}
+
+
+def test_login_throttle_does_not_block_unlock_cookie_profile_selection(
+    client: TestClient, monkeypatch
+) -> None:
+    monkeypatch.setattr(settings, "disable_auth", False)
+    monkeypatch.setattr(settings, "login_session_secret", None)
+    monkeypatch.setattr(settings, "login_access_key", "vault")
+    monkeypatch.setattr(settings, "login_passcode", "966")
+
+    for _ in range(5):
+        rejected = client.post(
+            "/login",
+            data={"access_key": "vault", "passcode": "wrong"},
+            headers={"Accept": "application/json"},
+        )
+        assert rejected.status_code == 401
+
+    profile = client.post(
+        "/login",
+        data={"profile_id": "1"},
+        headers={
+            "Accept": "application/json",
+            "Cookie": f"{UNLOCK_COOKIE_NAME}={_create_unlock_token(None)}",
+        },
+    )
+    assert profile.status_code == 200
+    assert profile.json() == {"ok": True, "redirect_url": "/ui/movies"}
 
 
 def test_login_error_uses_static_archive_art(

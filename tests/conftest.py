@@ -20,6 +20,7 @@ os.environ.setdefault("DISABLE_AUTH", "true")
 from api.config import settings
 from api.db import Base, get_db
 from api.deps.auth import clear_provider_work_budgets_for_tests
+from api.services.login_attempts import clear_login_attempts_for_tests
 from api.main import app
 from api.models.movie import Genre, Mood, Movie
 from api.models.person import Role  # noqa: F401 - ensure mapper registration
@@ -28,8 +29,10 @@ from api.models.person import Role  # noqa: F401 - ensure mapper registration
 @pytest.fixture(autouse=True)
 def _reset_provider_work_budgets():
     clear_provider_work_budgets_for_tests()
+    clear_login_attempts_for_tests()
     yield
     clear_provider_work_budgets_for_tests()
+    clear_login_attempts_for_tests()
 
 
 def _get_or_create(session: Session, model, name: str):

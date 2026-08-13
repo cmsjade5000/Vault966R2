@@ -19,6 +19,7 @@ from api.services.profiles import (
     get_profiles,
     set_active_profile_cookie,
 )
+from api.services.login_attempts import clear_login_attempts, reserve_login_attempt
 from api.services.session import (
     SESSION_COOKIE_NAME,
     create_session_token,
@@ -317,14 +318,29 @@ def login_submit(
 
     unlock_profile_id: int | None = None
     if credentials_required:
-        unlock_profile_id = _credentials_match(
-            db,
-            profiles,
-            access_key=access_key,
-            passcode=passcode,
-        )
+        unlock_profile_id = _parse_unlock_token(request.cookies.get(UNLOCK_COOKIE_NAME, ""))
         if unlock_profile_id is None:
-            unlock_profile_id = _parse_unlock_token(request.cookies.get(UNLOCK_COOKIE_NAME, ""))
+            if not reserve_login_attempt(request):
+                message = "Too many login attempts. Try again shortly."
+                if wants_json:
+                    return JSONResponse(
+                        status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                        content={"error": message},
+                    )
+                return _render_login_error(
+                    request,
+                    profiles,
+                    message=message,
+                    status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                )
+            unlock_profile_id = _credentials_match(
+                db,
+                profiles,
+                access_key=access_key,
+                passcode=passcode,
+            )
+            if unlock_profile_id is not None:
+                clear_login_attempts(request)
 
     if credentials_required and unlock_profile_id is None:
         message = "Invalid login credentials."
