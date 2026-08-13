@@ -2,6 +2,8 @@ from sqlalchemy.exc import OperationalError
 
 from api.config import settings
 from api.db import get_db
+from api.schemas.common import ErrorResponse
+from api.schemas.health import LivenessResponse, ReadinessResponse
 
 
 def test_health_is_public_and_omits_database_details(client):
@@ -25,7 +27,7 @@ def test_liveness_is_public_and_does_not_depend_on_database(client, monkeypatch)
         client.app.dependency_overrides[get_db] = original_override
 
     assert response.status_code == 200
-    assert response.json() == {"status": "alive"}
+    assert LivenessResponse.model_validate(response.json()) == LivenessResponse(status="alive")
     assert "location" not in response.headers
 
 
@@ -34,7 +36,7 @@ def test_readiness_is_public_and_succeeds_when_database_responds(client, monkeyp
     response = client.get("/readyz", follow_redirects=False)
 
     assert response.status_code == 200
-    assert response.json() == {"status": "ready"}
+    assert ReadinessResponse.model_validate(response.json()) == ReadinessResponse(status="ready")
     assert "location" not in response.headers
 
 
@@ -56,9 +58,25 @@ def test_readiness_returns_503_when_database_check_fails(client, monkeypatch):
         client.app.dependency_overrides[get_db] = original_override
 
     assert response.status_code == 503
-    assert response.json()["error_code"] == "http_error"
-    assert response.json()["message"] == "Database readiness check failed."
+    error = ErrorResponse.model_validate(response.json())
+    assert error.error_code == "http_error"
+    assert error.message == "Database readiness check failed."
+    assert error.request_id == response.headers["X-Request-ID"]
     assert "location" not in response.headers
+
+
+def test_probe_openapi_contracts_are_typed(client):
+    paths = client.get("/openapi.json").json()["paths"]
+
+    assert paths["/livez"]["get"]["responses"]["200"]["content"]["application/json"]["schema"] == {
+        "$ref": "#/components/schemas/LivenessResponse"
+    }
+    assert paths["/readyz"]["get"]["responses"]["200"]["content"]["application/json"]["schema"] == {
+        "$ref": "#/components/schemas/ReadinessResponse"
+    }
+    assert paths["/readyz"]["get"]["responses"]["503"]["content"]["application/json"]["schema"] == {
+        "$ref": "#/components/schemas/ErrorResponse"
+    }
 
 
 def test_api_docs_are_intentionally_public_with_auth_enabled(client, monkeypatch):

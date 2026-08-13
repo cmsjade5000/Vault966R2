@@ -1501,6 +1501,15 @@ export interface components {
             /** Source File */
             source_file: string;
         };
+        /** ErrorResponse */
+        ErrorResponse: {
+            /** Error Code */
+            error_code: string;
+            /** Message */
+            message: string;
+            /** Request Id */
+            request_id: string;
+        };
         /** FlicFilters */
         FlicFilters: {
             /** Genres */
@@ -1558,6 +1567,14 @@ export interface components {
         HTTPValidationError: {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
+        };
+        /** LivenessResponse */
+        LivenessResponse: {
+            /**
+             * Status
+             * @constant
+             */
+            status: "alive";
         };
         /** LlmMovieFilters */
         LlmMovieFilters: {
@@ -2251,6 +2268,14 @@ export interface components {
             name: string;
             /** Tmdb Id */
             tmdb_id?: number | null;
+        };
+        /** ReadinessResponse */
+        ReadinessResponse: {
+            /**
+             * Status
+             * @constant
+             */
+            status: "ready";
         };
         /** RoleAttach */
         RoleAttach: {
@@ -3022,7 +3047,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["LivenessResponse"];
                 };
             };
         };
@@ -3993,7 +4018,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["ReadinessResponse"];
                 };
             };
             /** @description Database readiness check failed. */
@@ -4001,7 +4026,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
             };
         };
     };

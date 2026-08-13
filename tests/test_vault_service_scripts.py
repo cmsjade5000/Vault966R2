@@ -12,6 +12,7 @@ ROOT = Path(__file__).resolve().parents[1]
 RUNTIME = ROOT / "scripts" / "vault_runtime.sh"
 SERVICE = ROOT / "scripts" / "vault_service.sh"
 WATCHDOG = ROOT / "scripts" / "vault_watchdog.sh"
+CODEX_CHECK = ROOT / "scripts" / "codex_check.sh"
 
 
 def write_executable(path: Path, contents: str) -> None:
@@ -241,6 +242,37 @@ def test_verify_requires_the_exact_redirect_location(tmp_path: Path) -> None:
     assert "Location: /login" in accepted.stdout
     assert rejected.returncode == 1
     assert "returned Location /login; expected /setup" in rejected.stderr
+
+
+def test_codex_live_requires_database_readiness(tmp_path: Path) -> None:
+    project = tmp_path / "project"
+    scripts = project / "scripts"
+    scripts.mkdir(parents=True)
+    shutil.copy2(CODEX_CHECK, scripts / "codex_check.sh")
+    calls = tmp_path / "vault-service-calls"
+    write_executable(
+        scripts / "vault_service.sh",
+        f"""\
+        #!/usr/bin/env bash
+        printf '%s\n' "$*" >> {shlex.quote(str(calls))}
+        """,
+    )
+
+    result = subprocess.run(
+        ["/bin/bash", str(scripts / "codex_check.sh"), "live"],
+        capture_output=True,
+        text=True,
+        timeout=5,
+    )
+
+    assert result.returncode == 0
+    assert calls.read_text().splitlines() == [
+        "restart",
+        "verify /health 200 application/json",
+        "verify /readyz 200 application/json",
+        "verify /login 200 text/html",
+    ]
+    assert "Live service verified: /health, /readyz, and /login" in result.stdout
 
 
 def test_runtime_terminates_unhealthy_child_to_exit(tmp_path: Path) -> None:
