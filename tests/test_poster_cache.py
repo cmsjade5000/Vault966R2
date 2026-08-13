@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import logging
+
 import httpx
 
 from api.models.movie import Movie
@@ -129,10 +131,25 @@ def test_background_cache_downloads_missing_poster(
     assert (tmp_path / f"{stem}.jpg").read_bytes() == f"poster:{source_url}".encode("utf-8")
 
 
-def test_background_cache_failure_is_isolated(monkeypatch) -> None:
+def test_background_cache_failure_is_isolated(monkeypatch, caplog) -> None:
+    sentinel = "SENTINEL_POSTER_QUERY_SECRET"
+
     def fail_cache(_movie_id):
-        raise httpx.ConnectTimeout("timed out")
+        request = httpx.Request(
+            "GET",
+            "https://image.tmdb.org/t/p/w185/example.jpg",
+            params={"api_key": sentinel, "language": "en"},
+        )
+        response = httpx.Response(503, request=request)
+        response.raise_for_status()
 
     monkeypatch.setattr(poster_cache, "cache_movie_posters", fail_cache)
+    caplog.set_level(logging.ERROR, logger="vault966")
 
     poster_cache.cache_movie_posters_safely(42)
+
+    message = caplog.messages[-1]
+    assert sentinel not in message
+    assert "[REDACTED]" in message
+    assert "503 Service Unavailable" in message
+    assert "language=en" in message

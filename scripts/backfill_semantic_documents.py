@@ -14,6 +14,7 @@ from api.db import SessionLocal  # noqa: E402
 from api.models.movie import Movie  # noqa: E402
 from api.models.person import Role  # noqa: F401,E402  # ensure mapper registration
 from api.services.semantic_search import (  # noqa: E402
+    SemanticSearchError,
     SemanticSearchUnavailable,
     backfill_movie_documents,
 )
@@ -63,6 +64,9 @@ def main() -> int:
             )
         except SemanticSearchUnavailable as exc:
             print(f"Semantic search unavailable: {exc}")
+            return 1
+        except SemanticSearchError as exc:
+            print(f"Semantic search failed: {exc}")
             return 1
 
     last_id = ids[-1]

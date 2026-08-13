@@ -21,6 +21,7 @@ from api.schemas.movie_detail import (
     SimilarMovie,
     TopBilledEntry,
 )
+from api.utils.provider_errors import format_provider_error
 from core.poster_theme import select_poster_theme
 from core.genres import split_and_normalize
 from api.utils.providers import split_providers
@@ -45,7 +46,10 @@ def _tmdb_related_ids(api_key: str, tmdb_id: int, endpoint: str) -> tuple[int, .
         response.raise_for_status()
     except httpx.HTTPError as exc:
         logger = logging.getLogger(__name__)
-        logger.warning("TMDb %s fetch failed for %s: %s", endpoint, tmdb_id, exc)
+        logger.warning(
+            "%s",
+            format_provider_error(f"TMDb {endpoint} fetch failed for {tmdb_id}", exc),
+        )
         return ()
 
     payload = response.json()

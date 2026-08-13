@@ -31,6 +31,7 @@ from api.utils.omdb import (
     parse_imdb_rating,
     parse_imdb_votes,
 )  # noqa: E402
+from api.utils.provider_errors import run_provider_cli  # noqa: E402
 
 
 def parse_args() -> argparse.Namespace:
@@ -163,4 +164,4 @@ def main() -> int:
 
 
 if __name__ == "__main__":  # pragma: no cover
-    raise SystemExit(main())
+    raise SystemExit(run_provider_cli(main))

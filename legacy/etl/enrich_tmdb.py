@@ -37,6 +37,7 @@ if str(REPO_ROOT) not in sys.path:
 from api.db import SessionLocal  # noqa: E402
 from api.models.movie import Movie  # noqa: E402
 from api.models.person import Role  # noqa: E402,F401  # ensure mapper registration
+from api.utils.provider_errors import format_provider_error  # noqa: E402
 from api.utils.providers import split_providers  # noqa: E402
 
 
@@ -438,7 +439,7 @@ def fetch_tmdb_payload(
         logging.warning("TMDb %s failed (%s)", tmdb_id, exc.response.status_code)
         return None
     except httpx.HTTPError as exc:
-        logging.warning("TMDb %s error: %s", tmdb_id, exc)
+        logging.warning("%s", format_provider_error(f"TMDb {tmdb_id} error", exc))
         return None
 
     if not isinstance(data, dict):

@@ -29,6 +29,7 @@ from api.utils.omdb import (
     parse_imdb_rating,
     parse_imdb_votes,
 )  # noqa: E402
+from api.utils.provider_errors import run_provider_cli  # noqa: E402
 from scripts.backfill_db_backup import backup_active_sqlite_database  # noqa: E402
 
 DEFAULT_REPORT = ROOT_DIR / "reports" / "ratings_backfill.csv"
@@ -183,4 +184,4 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    raise SystemExit(run_provider_cli(main))

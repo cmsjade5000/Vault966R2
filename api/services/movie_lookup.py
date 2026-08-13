@@ -11,6 +11,7 @@ from sqlalchemy import func, or_
 from sqlalchemy.orm import Session, selectinload
 
 from api.config import settings
+from api.utils.provider_errors import format_provider_error
 from api.models.movie import Movie
 from api.utils.omdb import extract_rotten_tomatoes_score, parse_imdb_rating, parse_imdb_votes
 from api.utils.providers import merge_providers
@@ -185,6 +186,7 @@ def _tmdb_search_ids(api_key: str, title: str, year: Optional[int]) -> tuple[int
     if year is not None:
         params["year"] = year
 
+    provider_error: MovieLookupError | None = None
     try:
         search_response = httpx.get(
             "https://api.themoviedb.org/3/search/movie",
@@ -193,7 +195,9 @@ def _tmdb_search_ids(api_key: str, title: str, year: Optional[int]) -> tuple[int
         )
         search_response.raise_for_status()
     except httpx.HTTPError as exc:
-        raise MovieLookupError(f"TMDb search failed: {exc}") from exc
+        provider_error = MovieLookupError(format_provider_error("TMDb search failed", exc))
+    if provider_error is not None:
+        raise provider_error from None
 
     results = search_response.json().get("results", [])
     if not results:
@@ -225,6 +229,7 @@ def _tmdb_movie_detail(api_key: str, tmdb_id: int) -> Dict:
         "append_to_response": "external_ids,release_dates,keywords,images,watch/providers",
     }
 
+    provider_error: MovieLookupError | None = None
     try:
         detail_response = httpx.get(
             f"https://api.themoviedb.org/3/movie/{tmdb_id}",
@@ -233,7 +238,9 @@ def _tmdb_movie_detail(api_key: str, tmdb_id: int) -> Dict:
         )
         detail_response.raise_for_status()
     except httpx.HTTPError as exc:
-        raise MovieLookupError(f"TMDb detail fetch failed: {exc}") from exc
+        provider_error = MovieLookupError(format_provider_error("TMDb detail fetch failed", exc))
+    if provider_error is not None:
+        raise provider_error from None
 
     return detail_response.json()
 
@@ -241,11 +248,14 @@ def _tmdb_movie_detail(api_key: str, tmdb_id: int) -> Dict:
 @lru_cache(maxsize=256)
 def _omdb_details(api_key: str, imdb_id: str) -> Optional[Dict]:
     params = {"apikey": api_key, "i": imdb_id}
+    provider_error: MovieLookupError | None = None
     try:
         response = httpx.get("https://www.omdbapi.com/", params=params, timeout=10.0)
         response.raise_for_status()
     except httpx.HTTPError as exc:
-        raise MovieLookupError(f"OMDb lookup failed: {exc}") from exc
+        provider_error = MovieLookupError(format_provider_error("OMDb lookup failed", exc))
+    if provider_error is not None:
+        raise provider_error from None
 
     data = response.json()
     if not data or str(data.get("Response")) != "True":
@@ -554,6 +564,7 @@ def lookup_omdb_candidates(
     }
     if year is not None:
         params["y"] = year
+    provider_error: MovieLookupError | None = None
     try:
         response = httpx.get(
             "https://www.omdbapi.com/",
@@ -562,7 +573,9 @@ def lookup_omdb_candidates(
         )
         response.raise_for_status()
     except httpx.HTTPError as exc:
-        raise MovieLookupError(f"OMDb search failed: {exc}") from exc
+        provider_error = MovieLookupError(format_provider_error("OMDb search failed", exc))
+    if provider_error is not None:
+        raise provider_error from None
 
     payload = response.json()
     if payload.get("Response") != "True":

@@ -1,12 +1,14 @@
 import csv
 from typing import Optional
 
+import httpx
 from fastapi.testclient import TestClient
 
+from api.config import settings
 from api.db import get_db
 from api.models.movie import Movie
 from api.routers.ui.manual_add import ManualMovieCreate, ManualMovieMetadata
-from api.services import manual_add
+from api.services import manual_add, movie_lookup
 
 
 EXPECTED_ENRICHED_FIELDNAMES = [
@@ -178,6 +180,35 @@ def test_manual_add_requires_same_origin_for_admin_session(
     assert preview_cross_origin.status_code == 403
     assert submit_missing_origin.status_code == 403
     assert submit_cross_origin.status_code == 403
+
+
+def test_manual_add_preview_redacts_provider_key_from_http_error(
+    client: TestClient,
+    admin_headers: dict[str, str],
+    monkeypatch,
+) -> None:
+    sentinel = "SENTINEL_TMDB_PROVIDER_SECRET"
+    monkeypatch.setattr(settings, "tmdb_api_key", sentinel)
+    monkeypatch.setattr(settings, "omdb_api_key", None)
+
+    def unauthorized_response(url, *, params, timeout):
+        request = httpx.Request("GET", url, params=params)
+        return httpx.Response(401, request=request)
+
+    monkeypatch.setattr(movie_lookup.httpx, "get", unauthorized_response)
+
+    response = client.post(
+        "/ui/movies/manual-add/preview",
+        json={"title": "Sentinel Boundary Movie", "year": 2026},
+        headers=admin_headers,
+    )
+
+    assert response.status_code == 404
+    message = response.json()["message"]
+    assert sentinel not in message
+    assert "[REDACTED]" in message
+    assert "401 Unauthorized" in message
+    assert "TMDb search failed" in message
 
 
 def test_manual_add_rejects_duplicate_imdb(client: TestClient, admin_headers: dict[str, str]):

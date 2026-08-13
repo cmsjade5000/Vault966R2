@@ -16,6 +16,7 @@ from api.models.movie_flag import MovieFlag
 from api.models.semantic_search import AiCache
 from api.config import settings
 from api.services.collection_integrity import get_structural_issue_count
+from api.utils.provider_errors import format_provider_error
 from core.genres import split_and_normalize
 
 
@@ -226,6 +227,7 @@ def _fetch_recommendation_text(fact: dict, *, client: httpx.Client | None = None
     created_client = client is None
     if client is None:
         client = httpx.Client(timeout=12.0)
+    provider_error: RecommendationError | None = None
     try:
         response = client.post(f"{base_url}/chat/completions", json=payload, headers=headers)
         response.raise_for_status()
@@ -238,10 +240,12 @@ def _fetch_recommendation_text(fact: dict, *, client: httpx.Client | None = None
             raise RecommendationError("LLM response missing content")
         return content.strip()
     except httpx.HTTPError as exc:
-        raise RecommendationError(f"LLM request failed: {exc}") from exc
+        provider_error = RecommendationError(format_provider_error("LLM request failed", exc))
     finally:
         if created_client:
             client.close()
+    if provider_error is not None:
+        raise provider_error from None
 
 
 def get_collection_recommendation(

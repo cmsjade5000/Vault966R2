@@ -15,6 +15,7 @@ from api.config import settings
 from api.db import SessionLocal
 from api.models.maintenance import MaintenanceJob
 from api.models.movie import Movie
+from api.utils.provider_errors import sanitize_provider_diagnostic
 from core.genres import split_and_normalize
 from core.moods import DEFAULT_MAX_MOODS, DEFAULT_MIN_SCORE, score_moods
 
@@ -544,7 +545,7 @@ def _compact_output(stdout: str, stderr: str) -> str:
     lines = [line for line in combined.splitlines() if line.strip()]
     if not lines:
         return ""
-    return lines[-1][:240]
+    return sanitize_provider_diagnostic(lines[-1])[:240]
 
 
 def _run_task(command: List[str]) -> Tuple[int, str]:
