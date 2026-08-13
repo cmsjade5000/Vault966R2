@@ -206,7 +206,7 @@ scripts/vault_service.sh restart
 Then verify:
 
 ```text
-scripts/vault_service.sh verify /health
+scripts/vault_service.sh verify /health 200 application/json
 ```
 
 For Health page changes, also verify `/ui/movies/health` is responsive through

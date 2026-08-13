@@ -32,7 +32,8 @@ HEALTH_URL="http://127.0.0.1:8000/health"
 
 usage() {
   cat <<USAGE
-Usage: scripts/vault_service.sh <install|uninstall|start|stop|restart|status|logs|verify> [path]
+Usage: scripts/vault_service.sh <install|uninstall|start|stop|restart|status|logs>
+       scripts/vault_service.sh verify <path> <status> <mime|none> [location]
 
   install    Install, load, and start the macOS background service
   uninstall  Stop and remove the background service
@@ -41,7 +42,7 @@ Usage: scripts/vault_service.sh <install|uninstall|start|stop|restart|status|log
   restart    Reload the service and restart the Vault
   status     Show launchd state and check the HTTP health endpoint
   logs       Follow service output and error logs
-  verify     Check a live route or asset path (default: /health)
+  verify     Require an exact initial status and MIME; redirects also require Location
 USAGE
 }
 
@@ -355,7 +356,38 @@ wait_for_health() {
 }
 
 verify_path() {
-  local path="${1:-/health}"
+  if [[ "$#" -lt 3 || "$#" -gt 4 ]]; then
+    echo "Usage: scripts/vault_service.sh verify <path> <status> <mime|none> [location]" >&2
+    exit 2
+  fi
+
+  local path="$1"
+  local expected_status="$2"
+  local expected_mime="$3"
+  local expected_location="${4:-}"
+
+  if [[ -z "$path" ]]; then
+    echo "Live verify path must not be empty." >&2
+    exit 2
+  fi
+  if [[ ! "$expected_status" =~ ^[1-5][0-9][0-9]$ ]]; then
+    echo "Live verify expected status must be a three-digit HTTP status." >&2
+    exit 2
+  fi
+  if [[ "$expected_mime" != "none" && "$expected_mime" != */* ]]; then
+    echo "Live verify expected MIME must be a media type or 'none'." >&2
+    exit 2
+  fi
+  if [[ "$expected_status" =~ ^3[0-9][0-9]$ ]]; then
+    if [[ -z "$expected_location" ]]; then
+      echo "Live verify redirects require an expected Location." >&2
+      exit 2
+    fi
+  elif [[ -n "$expected_location" ]]; then
+    echo "Live verify Location is only valid with an expected redirect status." >&2
+    exit 2
+  fi
+
   if [[ "$path" != /* ]]; then
     path="/$path"
   fi
@@ -367,7 +399,7 @@ verify_path() {
   body="$(mktemp "${TMPDIR:-/tmp}/vault966-verify-body.XXXXXX")"
   local status
 
-  if ! status="$(curl --silent --show-error --location --max-time 10 \
+  if ! status="$(curl --silent --show-error --max-time 10 \
     --dump-header "$headers" \
     --output "$body" \
     --write-out '%{http_code}' \
@@ -378,17 +410,40 @@ verify_path() {
   fi
 
   local content_type
-  content_type="$(sed -n '/^[Cc]ontent-[Tt]ype:/ { s/\r$//; p; q; }' "$headers")"
+  content_type="$(awk 'tolower($0) ~ /^content-type[[:space:]]*:/ { sub(/^[^:]*:[[:space:]]*/, ""); sub(/\r$/, ""); print; exit }' "$headers")"
+  local location
+  location="$(awk 'tolower($0) ~ /^location[[:space:]]*:/ { sub(/^[^:]*:[[:space:]]*/, ""); sub(/\r$/, ""); print; exit }' "$headers")"
   rm -f "$headers" "$body"
 
-  if [[ ! "$status" =~ ^[23] ]]; then
-    echo "Live verify failed: $url returned HTTP $status" >&2
+  if [[ "$status" != "$expected_status" ]]; then
+    echo "Live verify failed: $url returned initial HTTP $status; expected $expected_status" >&2
     exit 1
   fi
 
-  echo "Live verify: $url HTTP $status"
-  if [[ -n "$content_type" ]]; then
-    echo "$content_type"
+  local actual_mime="${content_type%%;*}"
+  local normalized_actual_mime
+  normalized_actual_mime="$(printf '%s' "$actual_mime" | tr '[:upper:]' '[:lower:]')"
+  local normalized_expected_mime
+  normalized_expected_mime="$(printf '%s' "$expected_mime" | tr '[:upper:]' '[:lower:]')"
+
+  if [[ "$normalized_expected_mime" == "none" ]]; then
+    if [[ -n "$actual_mime" ]]; then
+      echo "Live verify failed: $url returned MIME $actual_mime; expected no Content-Type" >&2
+      exit 1
+    fi
+  elif [[ "$normalized_actual_mime" != "$normalized_expected_mime" ]]; then
+    echo "Live verify failed: $url returned MIME ${actual_mime:-none}; expected $expected_mime" >&2
+    exit 1
+  fi
+
+  if [[ "$expected_status" =~ ^3[0-9][0-9]$ && "$location" != "$expected_location" ]]; then
+    echo "Live verify failed: $url returned Location ${location:-none}; expected $expected_location" >&2
+    exit 1
+  fi
+
+  echo "Live verify: $url initial HTTP $status MIME ${actual_mime:-none}"
+  if [[ -n "$expected_location" ]]; then
+    echo "Location: $location"
   fi
 }
 
@@ -482,7 +537,7 @@ case "${1:-}" in
     tail -n 80 -F "$STDOUT_LOG" "$STDERR_LOG"
     ;;
   verify)
-    verify_path "${2:-/health}"
+    verify_path "${@:2}"
     ;;
   *)
     usage

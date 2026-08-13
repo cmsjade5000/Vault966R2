@@ -5128,6 +5128,25 @@
         ]
       }
     },
+    "/livez": {
+      "get": {
+        "operationId": "liveness_livez_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Liveness",
+        "tags": [
+          "health"
+        ]
+      }
+    },
     "/login": {
       "get": {
         "description": "Public login landing page (no auth required).",
@@ -6871,6 +6890,28 @@
         "summary": "Create Person",
         "tags": [
           "people"
+        ]
+      }
+    },
+    "/readyz": {
+      "get": {
+        "operationId": "readiness_readyz_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "503": {
+            "description": "Database readiness check failed."
+          }
+        },
+        "summary": "Readiness",
+        "tags": [
+          "health"
         ]
       }
     },
