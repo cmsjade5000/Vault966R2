@@ -13,12 +13,19 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import JSONResponse, RedirectResponse
+from fastapi.routing import APIRoute, iter_route_contexts
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.exceptions import HTTPException as StarletteHTTPException
+from starlette.routing import Match
 
 from api.config import settings
 from api.db import SessionLocal, bootstrap_sqlite_schema, engine, get_db
+from api.deps.auth import (
+    admin_bearer_token_valid,
+    require_admin,
+    require_admin_or_profile_admin,
+)
 from api.models.profile import Profile
 from api.routers import (
     ai,
@@ -294,7 +301,7 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 
 
 class AuthRequiredMiddleware(BaseHTTPMiddleware):
-    """Gate non-public routes behind a signed session cookie."""
+    """Gate non-public routes behind a session or route-scoped API token."""
 
     _public_paths = {
         "/",
@@ -309,6 +316,7 @@ class AuthRequiredMiddleware(BaseHTTPMiddleware):
     _public_prefixes = ("/static",)
     _api_prefixes = ("/api", "/movies", "/people", "/fliclists")
     _assistant_paths = {"/api/assistant", "/api/assistant/"}
+    _admin_bearer_dependencies = {require_admin, require_admin_or_profile_admin}
 
     def _is_public(self, path: str) -> bool:
         if path in self._public_paths:
@@ -317,6 +325,22 @@ class AuthRequiredMiddleware(BaseHTTPMiddleware):
 
     def _is_api(self, path: str) -> bool:
         return any(path.startswith(prefix) for prefix in self._api_prefixes)
+
+    def _route_accepts_admin_bearer(self, request: Request) -> bool:
+        for route in iter_route_contexts(request.app.routes):
+            if not isinstance(route.original_route, APIRoute):
+                continue
+            match, _ = route.matches(request.scope)
+            if match is not Match.FULL:
+                continue
+            dependencies = list(route.dependant.dependencies)
+            while dependencies:
+                dependency = dependencies.pop()
+                if dependency.call in self._admin_bearer_dependencies:
+                    return True
+                dependencies.extend(dependency.dependencies)
+            return False
+        return False
 
     def _assistant_token_valid(self, request: Request) -> bool:
         token = settings.assistant_access_token
@@ -371,6 +395,7 @@ class AuthRequiredMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         request.state.session_profile_id = None
         request.state.session_profile_role = None
+        request.state.admin_bearer_authorized = False
         if request.method == "OPTIONS":
             return await call_next(request)
 
@@ -398,6 +423,14 @@ class AuthRequiredMiddleware(BaseHTTPMiddleware):
 
         if not self._setup_complete(request):
             return self._reject(request, message="Vault setup required.", setup_required=True)
+
+        if (
+            self._is_api(path)
+            and admin_bearer_token_valid(request)
+            and self._route_accepts_admin_bearer(request)
+        ):
+            request.state.admin_bearer_authorized = True
+            return await call_next(request)
 
         secret = get_session_secret(settings.login_session_secret)
         token = request.cookies.get(SESSION_COOKIE_NAME, "")
