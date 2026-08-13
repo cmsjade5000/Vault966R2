@@ -18,6 +18,14 @@ _provider_work_windows: dict[tuple[str, str], deque[float]] = defaultdict(deque)
 _SAFE_METHODS = {"GET", "HEAD", "OPTIONS"}
 
 
+def admin_bearer_token_valid(request: Request) -> bool:
+    token = settings.admin_token
+    if not token:
+        return False
+    scheme, _, candidate = request.headers.get("Authorization", "").partition(" ")
+    return scheme.lower() == "bearer" and candidate.strip() == token
+
+
 def require_same_origin(request: Request) -> None:
     """Reject cross-origin browser mutations while preserving local/test workflows."""
     if settings.disable_auth:
@@ -75,7 +83,8 @@ def require_same_origin_provider_work(
     window_seconds: int = 60,
 ):
     def _checker(request: Request) -> None:
-        require_same_origin(request)
+        if not getattr(request.state, "admin_bearer_authorized", False):
+            require_same_origin(request)
         require_provider_work_budget(
             request,
             scope=scope,
