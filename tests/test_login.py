@@ -1,8 +1,11 @@
 from fastapi.testclient import TestClient
+from starlette.requests import Request
 
 from api.config import settings
 from api.models.movie import Movie
 from api.models.profile import Profile
+from api.routers.ui import login as login_router
+from api.services.login_throttle import LoginAttemptLimiter
 from api.services.profiles import get_profiles
 from api.services.session import SESSION_COOKIE_NAME, get_session_secret, parse_session_token
 from api.services.ui.grid import FILTER_COOKIE_NAME, FILTER_COOKIE_PATH
@@ -28,6 +31,21 @@ def test_login_page_only_shows_unlock_action(client: TestClient):
     assert "login-crt" not in response.text
     assert "css/login.css?v=" in response.text
     assert "js/login_archive.js?v=" in response.text
+
+
+def test_login_client_key_uses_asgi_client_not_forwarded_headers() -> None:
+    request = Request(
+        {
+            "type": "http",
+            "method": "POST",
+            "scheme": "http",
+            "path": "/login",
+            "headers": [(b"x-forwarded-for", b"198.51.100.20")],
+            "client": ("203.0.113.10", 1234),
+        }
+    )
+
+    assert login_router._login_client_key(request) == "203.0.113.10"
 
 
 def test_public_login_uses_static_archive_art(
@@ -163,6 +181,94 @@ def test_login_rejects_invalid_credentials(client: TestClient, monkeypatch):
     assert response.status_code == 401
     assert response.json() == {"error": "Invalid login credentials."}
     assert response.cookies.get(SESSION_COOKIE_NAME) is None
+
+
+def test_login_throttles_repeated_invalid_credentials(client: TestClient, monkeypatch) -> None:
+    monkeypatch.setattr(settings, "disable_auth", False)
+    monkeypatch.setattr(settings, "login_session_secret", None)
+    monkeypatch.setattr(settings, "login_access_key", "vault")
+    monkeypatch.setattr(settings, "login_passcode", "966")
+    monkeypatch.setattr("api.routers.ui.login.login_attempt_limiter", LoginAttemptLimiter())
+
+    for _ in range(5):
+        response = client.post(
+            "/login",
+            data={"access_key": "vault", "passcode": "wrong"},
+            headers={"Accept": "application/json"},
+        )
+        assert response.status_code == 401
+
+    blocked = client.post(
+        "/login",
+        data={"access_key": "vault", "passcode": "966"},
+        headers={"Accept": "application/json"},
+    )
+    assert blocked.status_code == 429
+    assert blocked.json() == {"error": "Too many login attempts. Please try again later."}
+
+
+def test_valid_login_clears_its_failed_attempts(client: TestClient, monkeypatch) -> None:
+    monkeypatch.setattr(settings, "disable_auth", False)
+    monkeypatch.setattr(settings, "login_session_secret", None)
+    monkeypatch.setattr(settings, "login_access_key", "vault")
+    monkeypatch.setattr(settings, "login_passcode", "966")
+    monkeypatch.setattr("api.routers.ui.login.login_attempt_limiter", LoginAttemptLimiter())
+
+    for _ in range(4):
+        assert (
+            client.post(
+                "/login",
+                data={"access_key": "vault", "passcode": "wrong"},
+                headers={"Accept": "application/json"},
+            ).status_code
+            == 401
+        )
+
+    assert (
+        client.post(
+            "/login",
+            data={"access_key": "vault", "passcode": "966"},
+            headers={"Accept": "application/json"},
+        ).status_code
+        == 200
+    )
+    client.cookies.clear()
+
+    for _ in range(4):
+        assert (
+            client.post(
+                "/login",
+                data={"access_key": "vault", "passcode": "wrong"},
+                headers={"Accept": "application/json"},
+            ).status_code
+            == 401
+        )
+
+
+def test_signed_unlock_token_bypasses_login_attempt_limit(client: TestClient, monkeypatch) -> None:
+    monkeypatch.setattr(settings, "disable_auth", False)
+    monkeypatch.setattr(settings, "login_session_secret", None)
+    monkeypatch.setattr(settings, "login_access_key", "vault")
+    monkeypatch.setattr(settings, "login_passcode", "966")
+    monkeypatch.setattr("api.routers.ui.login.login_attempt_limiter", LoginAttemptLimiter())
+
+    unlock = client.post(
+        "/login",
+        data={"access_key": "vault", "passcode": "966"},
+        headers={"Accept": "application/json"},
+    )
+    assert unlock.status_code == 200
+
+    for _ in range(5):
+        assert login_router.login_attempt_limiter.begin_attempt("testclient")
+        login_router.login_attempt_limiter.record_failure("testclient")
+
+    response = client.post(
+        "/login",
+        data={"profile_id": "1"},
+        headers={"Accept": "application/json"},
+    )
+    assert response.status_code == 200
 
 
 def test_login_error_uses_static_archive_art(

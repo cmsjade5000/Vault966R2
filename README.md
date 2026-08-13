@@ -329,6 +329,17 @@ listener. Docker Compose is intentionally direct-mode only; it does not
 configure a reverse proxy or TLS boundary. This repository does not provide a
 public reverse-proxy or TLS configuration.
 
+The login failed-attempt limiter uses the client address supplied by Uvicorn.
+It is reliable only with this direct-mode socket-peer boundary or the explicit
+trusted-proxy setup above; do not deploy it behind an unconfigured proxy. Its
+state is local to each service process, so a multi-instance deployment also
+needs an authenticated, shared edge rate limiter before relying on it as the
+primary brute-force control. The limiter preserves active client records when
+its bounded local state is full rather than evicting them or blocking every new
+client; at that capacity, new client attempts are not locally tracked. Provide
+an edge limiter before exposing Vault to untrusted networks, particularly when
+that degraded-capacity behavior would be unacceptable.
+
 ## Legacy ETL maintenance
 
 `legacy/etl/` is archived-but-supported maintenance code. It is kept for
