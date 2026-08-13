@@ -129,6 +129,25 @@ The deployed server-rendered app currently exposes:
 
 ## Postgres via Docker Compose
 
+### Trusted forwarding headers
+
+Vault runs in direct mode by default: it explicitly ignores `Forwarded` and
+`X-Forwarded-*` headers. Only enable forwarding when a reverse proxy is on a
+fixed, known IP address. Create this persistent local configuration before an
+`install` or `restart` (it is intentionally outside the deployed app copy):
+
+```bash
+mkdir -p "$HOME/Library/Application Support/Vault966/config"
+printf '%s\n' '127.0.0.1,::1' > "$HOME/Library/Application Support/Vault966/config/trusted_proxy_ips"
+chmod 600 "$HOME/Library/Application Support/Vault966/config/trusted_proxy_ips"
+scripts/vault_service.sh restart
+```
+
+The file must contain only a comma-separated list of exact IP addresses. CIDRs,
+hostnames, whitespace, and `*` are rejected before launchd receives the value;
+the runtime validates it again before enabling proxy headers. Delete the file
+and restart to return to direct mode.
+
 ```bash
 cp .env.example .env  # updates DATABASE_URL to use Postgres
 make db.up            # start pgvector-enabled postgres in docker
@@ -282,6 +301,30 @@ make app.down
 The API container mounts the project directory for live code edits and uses the
 same `.env` values (including `ADMIN_TOKEN`). The database connection is
 configured automatically to talk to the Postgres container.
+
+### Reverse proxies and client addresses
+
+Vault ignores `Forwarded` and `X-Forwarded-*` headers by default, including
+when it listens on `0.0.0.0` for direct LAN/iPad access. In that mode, the
+socket peer is the client address, so a direct client cannot spoof its address
+with an HTTP header.
+
+Only enable forwarded headers when a reverse proxy is the immediate, trusted
+network peer. Use the persistent local configuration described above; do not
+set `VAULT_TRUSTED_PROXY_IPS` directly in the launchd environment. For example,
+a locally bound TLS proxy can use `127.0.0.1,::1` in
+`~/Library/Application Support/Vault966/config/trusted_proxy_ips`. The runtime
+rejects an empty list item, whitespace, CIDR range, hostname, or `*`; it fails
+closed instead of starting with an ambiguous trust boundary.
+
+When a local proxy is used, bind Vault to `HOST=127.0.0.1` (or `::1`) so the
+API port is not independently reachable. Do not expose the API port to
+untrusted networks when forwarding is enabled, and do not configure a
+changing/container-wide network range as trusted. Terminate TLS at the trusted
+proxy and restrict network access so only that proxy can reach Vault's API
+listener. Docker Compose is intentionally direct-mode only; it does not
+configure a reverse proxy or TLS boundary. This repository does not provide a
+public reverse-proxy or TLS configuration.
 
 ## Legacy ETL maintenance
 

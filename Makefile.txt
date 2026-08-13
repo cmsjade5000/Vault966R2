@@ -57,6 +57,7 @@ dev: ## Run Uvicorn dev server (hot reload, focused logs)
 		uvicorn $(UVICORN_APP) \
 		  --host $(HOST) \
 		  --port $(PORT) \
+		  --no-proxy-headers \
 		  --reload \
 		  --reload-dir $(RELOAD_DIR) \
 		  --log-level $(LOG_LEVEL) \
@@ -67,6 +68,7 @@ dev: ## Run Uvicorn dev server (hot reload, focused logs)
 		uvicorn $(UVICORN_APP) \
 		  --host $(HOST) \
 		  --port $(PORT) \
+		  --no-proxy-headers \
 		  --reload \
 		  --reload-dir $(RELOAD_DIR) \
 		  --log-level $(LOG_LEVEL) \

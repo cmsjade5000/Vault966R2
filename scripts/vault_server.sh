@@ -130,7 +130,7 @@ start_server() {
   fi
   ensure_port_free
   local args
-  args=("-m" "uvicorn" "api.main:app" "--host" "$HOST" "--port" "$PORT")
+  args=("-m" "uvicorn" "api.main:app" "--host" "$HOST" "--port" "$PORT" "--no-proxy-headers")
   if [[ $RELOAD -eq 1 ]]; then
     args+=("--reload")
   fi
