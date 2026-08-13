@@ -104,7 +104,7 @@ ps: ## List running containers
 # ---- DATABASE ----
 .PHONY: migrate seed
 migrate: ## Apply latest Alembic migrations
-	docker compose exec $(SERVICE) alembic upgrade head
+	docker compose run --rm --build $(SERVICE) alembic upgrade head
 
 seed: ## Seed initial data (confirm)
 	@read -p "Seeding can overwrite data. Continue? (y/N) " ans; \

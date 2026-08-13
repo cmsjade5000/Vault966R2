@@ -9,7 +9,20 @@ COPY requirements.txt ./
 RUN pip install --no-cache-dir --upgrade pip \
     && pip install --no-cache-dir -r requirements.txt
 
-COPY . /app
+COPY alembic.ini ./
+COPY alembic ./alembic
+COPY api ./api
+COPY core ./core
+COPY static ./static
+COPY templates ./templates
+COPY scripts/backfill_backdrops.py ./scripts/
+COPY scripts/backfill_db_backup.py ./scripts/
+COPY scripts/backfill_moods.py ./scripts/
+COPY scripts/backfill_posters.py ./scripts/
+COPY scripts/normalize_genres.py ./scripts/
+COPY scripts/sqlite_maintenance.py ./scripts/
+
+RUN mkdir -p data reports
 
 EXPOSE 8000
 
