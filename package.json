@@ -7,7 +7,7 @@
     "prettier": "^3.9.5"
   },
   "overrides": {
-    "js-yaml": "^4.2.0"
+    "js-yaml": "^4.3.1"
   },
   "scripts": {
     "fmt": "prettier --write \"static/js/**/*.js\"",
