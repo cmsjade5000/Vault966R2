@@ -15,19 +15,41 @@ const makeClassList = () => {
     add: (value) => values.add(value),
     contains: (value) => values.has(value),
     remove: (value) => values.delete(value),
+    toggle(value, force) {
+      if (force === true) values.add(value);
+      else if (force === false) values.delete(value);
+      else if (values.has(value)) values.delete(value);
+      else values.add(value);
+    },
   };
 };
 
 const makeFocusable = () => ({
+  attributes: {},
+  classList: makeClassList(),
   disabled: false,
   focused: false,
   isConnected: true,
+  closest() {
+    return null;
+  },
   focus() {
     this.focused = true;
   },
+  getAttribute(name) {
+    return this.attributes[name];
+  },
+  setAttribute(name, value) {
+    this.attributes[name] = value;
+  },
 });
 
-const loadDialog = ({ selectors = {}, trigger = makeFocusable() } = {}) => {
+const loadDialog = ({
+  focusable = [],
+  selectors = {},
+  toggles = [],
+  trigger = makeFocusable(),
+} = {}) => {
   const listeners = {};
   const dialog = {
     classList: makeClassList(),
@@ -44,7 +66,18 @@ const loadDialog = ({ selectors = {}, trigger = makeFocusable() } = {}) => {
       return this.attributes[name];
     },
     querySelector(selector) {
+      if (selector.includes("a[href]")) return focusable[0] || null;
       return selectors[selector] || null;
+    },
+    querySelectorAll(selector) {
+      return selector === "[data-dialog-toggle][aria-pressed]"
+        ? toggles
+        : focusable;
+    },
+    removeAttribute(name) {
+      delete this.attributes[name];
+      if (name === "open") this.open = false;
+      else delete this[name];
     },
     setAttribute(name, value) {
       this.attributes[name] = value;
@@ -58,6 +91,12 @@ const loadDialog = ({ selectors = {}, trigger = makeFocusable() } = {}) => {
     activeElement: trigger,
     body: { classList: makeClassList() },
   };
+  [trigger, ...focusable, ...toggles].forEach((element) => {
+    element.focus = function () {
+      this.focused = true;
+      document.activeElement = this;
+    };
+  });
   const window = {};
   vm.runInNewContext(script, { document, window, WeakMap });
   return { dialog, document, listeners, trigger, window };
@@ -127,4 +166,79 @@ test("skips restoring focus when the opener is no longer focusable", () => {
   controller.open(trigger);
   controller.close();
   assert.equal(trigger.focused, false);
+});
+
+test("traps forward and reverse Tab navigation inside the dialog", () => {
+  const first = makeFocusable();
+  const summary = makeFocusable();
+  const last = makeFocusable();
+  const { document, listeners, window, dialog } = loadDialog({
+    focusable: [first, summary, last],
+  });
+  const controller = window.VaultDialog.bind(dialog);
+
+  controller.open();
+  assert.equal(document.activeElement, first);
+
+  document.activeElement = summary;
+  let prevented = false;
+  listeners.keydown({
+    key: "Tab",
+    preventDefault: () => (prevented = true),
+    shiftKey: false,
+  });
+  assert.equal(prevented, false);
+  assert.equal(document.activeElement, summary);
+
+  document.activeElement = last;
+  prevented = false;
+  listeners.keydown({
+    key: "Tab",
+    preventDefault: () => (prevented = true),
+    shiftKey: false,
+  });
+  assert.equal(prevented, true);
+  assert.equal(document.activeElement, first);
+
+  prevented = false;
+  document.activeElement = first;
+  listeners.keydown({
+    key: "Tab",
+    preventDefault: () => (prevented = true),
+    shiftKey: true,
+  });
+  assert.equal(prevented, true);
+  assert.equal(document.activeElement, last);
+});
+
+test("skips hidden initial controls when choosing dialog focus", () => {
+  const hidden = makeFocusable();
+  hidden.matches = (selector) => selector === "input[type='hidden']";
+  const visible = makeFocusable();
+  const { dialog, document, window } = loadDialog({
+    focusable: [hidden, visible],
+    selectors: { "#hidden": hidden },
+  });
+  const controller = window.VaultDialog.bind(dialog, {
+    initialFocus: "#hidden",
+  });
+
+  controller.open();
+  assert.equal(hidden.focused, false);
+  assert.equal(document.activeElement, visible);
+});
+
+test("synchronizes aria-pressed for marked dialog toggles", () => {
+  const toggle = makeFocusable();
+  toggle.setAttribute("aria-pressed", "false");
+  toggle.classList.add("is-active");
+  const { dialog, listeners, window } = loadDialog({ toggles: [toggle] });
+  const controller = window.VaultDialog.bind(dialog);
+
+  controller.open();
+  assert.equal(toggle.getAttribute("aria-pressed"), "true");
+
+  toggle.classList.remove("is-active");
+  listeners.click({ target: toggle });
+  assert.equal(toggle.getAttribute("aria-pressed"), "false");
 });

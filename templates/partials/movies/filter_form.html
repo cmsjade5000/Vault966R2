@@ -4,7 +4,7 @@
     <div class="filter-section__body">
       <div class="chip-scroll" data-filter-group="genres">
         {% for label in genre_options %}
-        <button type="button" class="chip-select" data-filter-value="{{ label }}">{{ label }}</button>
+        <button type="button" class="chip-select" data-filter-value="{{ label }}" data-dialog-toggle aria-pressed="false">{{ label }}</button>
         {% endfor %}
       </div>
     </div>
@@ -15,7 +15,7 @@
     <div class="filter-section__body">
       <div class="chip-scroll" data-filter-group="moods">
         {% for label in mood_options %}
-        <button type="button" class="chip-select" data-filter-value="{{ label }}">{{ label }}</button>
+        <button type="button" class="chip-select" data-filter-value="{{ label }}" data-dialog-toggle aria-pressed="false">{{ label }}</button>
         {% endfor %}
       </div>
     </div>
@@ -25,11 +25,11 @@
     <summary class="filter-section__summary"><h3>Decade</h3></summary>
     <div class="filter-section__body">
       <div class="pills-row" data-year-pills>
-        <button type="button" class="pill-button" data-year-range="">Any year</button>
+        <button type="button" class="pill-button" data-year-range="" data-dialog-toggle aria-pressed="false">Any year</button>
         {% for decade in decade_options %}
-        <button type="button" class="pill-button" data-year-range="{{ decade.start }}-{{ decade.end }}" data-year-label="{{ decade.label }}">{{ decade.label }}</button>
+        <button type="button" class="pill-button" data-year-range="{{ decade.start }}-{{ decade.end }}" data-year-label="{{ decade.label }}" data-dialog-toggle aria-pressed="false">{{ decade.label }}</button>
         {% endfor %}
-        <button type="button" class="pill-button pill-button--ghost" data-year-range="custom">Custom</button>
+        <button type="button" class="pill-button pill-button--ghost" data-year-range="custom" data-dialog-toggle aria-pressed="false">Custom</button>
       </div>
       <div class="custom-range" id="year-custom" hidden>
         <label><span>From</span><input id="year-custom-min" type="number" inputmode="numeric" min="1880" max="2200" /></label>
@@ -43,9 +43,9 @@
     <div class="filter-section__body">
       <div class="pills-row" data-runtime-pills>
         {% for runtime in runtime_presets %}
-        <button type="button" class="pill-button" data-runtime-max="{{ runtime.value if runtime.value is not none else '' }}">{{ runtime.label }}</button>
+        <button type="button" class="pill-button" data-runtime-max="{{ runtime.value if runtime.value is not none else '' }}" data-dialog-toggle aria-pressed="false">{{ runtime.label }}</button>
         {% endfor %}
-        <button type="button" class="pill-button pill-button--ghost" data-runtime-max="custom">Custom</button>
+        <button type="button" class="pill-button pill-button--ghost" data-runtime-max="custom" data-dialog-toggle aria-pressed="false">Custom</button>
       </div>
       <div class="custom-range" id="runtime-custom" hidden>
         <label><span>Max minutes</span><input id="runtime-custom-input" type="number" inputmode="numeric" min="1" max="600" step="5" /></label>

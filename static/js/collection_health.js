@@ -1,4 +1,62 @@
 (() => {
+  const shouldDisableUpdateButton = (button, isBusy) =>
+    isBusy || button.dataset.previewBlocked === "true";
+
+  const shouldDisableCancelButton = (isBusy, canCancel) =>
+    !isBusy || !canCancel;
+
+  const createSingleFlightPoller = ({
+    poll,
+    onFinish,
+    delay = 3000,
+    maxAttempts = 20,
+    schedule = window.setTimeout.bind(window),
+    cancel = window.clearTimeout.bind(window),
+  }) => {
+    let generation = 0;
+    let timer = null;
+
+    const stop = () => {
+      generation += 1;
+      if (timer !== null) cancel(timer);
+      timer = null;
+    };
+
+    const start = () => {
+      stop();
+      const currentGeneration = generation;
+      let attempts = 0;
+
+      const run = async () => {
+        if (generation !== currentGeneration) return;
+        attempts += 1;
+        const isCurrent = () => generation === currentGeneration;
+        const payload = await poll(isCurrent);
+        if (!isCurrent()) return;
+
+        if (
+          (payload && payload.state !== "running") ||
+          attempts >= maxAttempts
+        ) {
+          timer = null;
+          onFinish(payload);
+          return;
+        }
+        timer = schedule(run, delay);
+      };
+
+      timer = schedule(run, delay);
+    };
+
+    return { start, stop };
+  };
+
+  window.VaultCollectionHealthSupport = {
+    createSingleFlightPoller,
+    shouldDisableCancelButton,
+    shouldDisableUpdateButton,
+  };
+
   document.addEventListener("DOMContentLoaded", () => {
     const updateButtons = Array.from(
       document.querySelectorAll("[data-update-trigger]"),
@@ -10,14 +68,17 @@
     const providerSummary = document.querySelector(
       "[data-maintenance-providers]",
     );
+    let maintenanceBusy = false;
+    let maintenanceVersion = 0;
 
-    const setBusy = (isBusy) => {
+    const setBusy = (isBusy, { canCancel = isBusy } = {}) => {
+      maintenanceBusy = isBusy;
       updateButtons.forEach((button) => {
         button.classList.toggle("is-busy", isBusy);
-        button.disabled = isBusy || button.dataset.previewBlocked === "true";
+        button.disabled = shouldDisableUpdateButton(button, isBusy);
       });
       if (cancelButton) {
-        cancelButton.disabled = !isBusy;
+        cancelButton.disabled = shouldDisableCancelButton(isBusy, canCancel);
       }
     };
 
@@ -136,21 +197,19 @@
       const state = status?.state || "idle";
       const lastSuccess = formatTimestamp(status?.last_success_at);
       const lastFinished = formatTimestamp(status?.last_run_finished);
+      setBusy(state === "running", {
+        canCancel: state === "running" && status?.cancel_requested !== true,
+      });
       if (state === "running") {
         updateStatus.textContent = "Update running now…";
-        if (cancelButton) cancelButton.disabled = false;
       } else if (state === "failed") {
         updateStatus.textContent = `Last attempt failed at ${lastFinished}.`;
-        if (cancelButton) cancelButton.disabled = true;
       } else if (state === "cancelled") {
         updateStatus.textContent = `Last attempt cancelled at ${lastFinished}.`;
-        if (cancelButton) cancelButton.disabled = true;
       } else if (state === "success") {
         updateStatus.textContent = `Last success: ${lastSuccess}.`;
-        if (cancelButton) cancelButton.disabled = true;
       } else {
         updateStatus.textContent = `Last update: ${lastFinished}.`;
-        if (cancelButton) cancelButton.disabled = true;
       }
       renderSteps(status?.steps || []);
       renderHistory(status?.runs || []);
@@ -190,18 +249,19 @@
             : `${count} ${unit}. ${task.blocked_reason || "Not ready"}.`;
         }
         if (button) {
-          button.disabled = !task.ready;
           button.dataset.previewBlocked = task.ready ? "false" : "true";
+          button.disabled = shouldDisableUpdateButton(button, maintenanceBusy);
         }
       });
     };
 
-    const fetchStatus = async () => {
+    const fetchStatus = async ({ isCurrent = () => true } = {}) => {
       if (!updateStatus) return;
       try {
         const response = await fetch("/api/collection-health/update/status");
         if (!response.ok) return;
         const payload = await response.json();
+        if (!isCurrent()) return null;
         renderStatus(payload);
         return payload;
       } catch (error) {
@@ -221,23 +281,20 @@
       }
     };
 
-    const pollUntilDone = async () => {
-      let attempts = 0;
-      const interval = setInterval(async () => {
-        attempts += 1;
-        const payload = await fetchStatus();
-        if (!payload) return;
-        if (payload.state !== "running" || attempts > 20) {
-          clearInterval(interval);
-          setBusy(false);
-        }
-      }, 3000);
-    };
+    const statusPoller = createSingleFlightPoller({
+      poll: (isCurrent) => fetchStatus({ isCurrent }),
+      onFinish: (payload) => {
+        if (payload) return;
+        setBusy(true, { canCancel: false });
+      },
+    });
 
     updateButtons.forEach((button) => {
       button.addEventListener("click", async () => {
         const task = button.dataset.maintenanceTask || "all";
-        setBusy(true);
+        const requestVersion = ++maintenanceVersion;
+        statusPoller.stop();
+        setBusy(true, { canCancel: false });
         try {
           const response = await fetch(
             `/api/collection-health/update/run?task=${encodeURIComponent(task)}`,
@@ -252,11 +309,13 @@
             throw new Error("Failed to start vault update");
           }
           const payload = await response.json();
+          if (requestVersion !== maintenanceVersion) return;
           if (payload?.status) {
             renderStatus(payload.status);
           }
-          pollUntilDone();
+          statusPoller.start();
         } catch (error) {
+          if (requestVersion !== maintenanceVersion) return;
           console.warn(error);
           if (typeof window.showToast === "function") {
             window.showToast("Couldn’t start update—try again soon?");
@@ -268,6 +327,8 @@
 
     if (cancelButton) {
       cancelButton.addEventListener("click", async () => {
+        const requestVersion = ++maintenanceVersion;
+        statusPoller.stop();
         cancelButton.disabled = true;
         try {
           const response = await fetch("/api/collection-health/update/cancel", {
@@ -277,20 +338,30 @@
             throw new Error("Failed to request maintenance cancellation");
           }
           const payload = await response.json();
+          if (requestVersion !== maintenanceVersion) return;
           if (payload?.status) {
             renderStatus(payload.status);
           }
+          if (!payload?.status || payload.status.state === "running") {
+            statusPoller.start();
+          }
         } catch (error) {
+          if (requestVersion !== maintenanceVersion) return;
           console.warn(error);
           if (typeof window.showToast === "function") {
             window.showToast("Couldn’t request cancellation—try again soon?");
           }
+          setBusy(true);
+          statusPoller.start();
         }
       });
     }
 
     if (updateStatus) {
-      fetchStatus();
+      const requestVersion = maintenanceVersion;
+      fetchStatus({
+        isCurrent: () => requestVersion === maintenanceVersion,
+      });
     }
     fetchPreview();
   });
