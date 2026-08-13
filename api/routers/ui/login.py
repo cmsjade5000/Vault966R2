@@ -13,6 +13,7 @@ from sqlalchemy.orm import Session
 
 from api.config import settings
 from api.db import get_db
+from api.schemas.common import SEE_OTHER_REDIRECT_RESPONSES
 from api.services.profiles import (
     PROFILE_COOKIE_NAME,
     ensure_profile_cookie,
@@ -422,7 +423,12 @@ def login_submit(
     return response
 
 
-@router.post("/logout")
+@router.post(
+    "/logout",
+    status_code=status.HTTP_303_SEE_OTHER,
+    response_class=RedirectResponse,
+    responses=SEE_OTHER_REDIRECT_RESPONSES,
+)
 def logout(request: Request):
     response = RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
     response.delete_cookie(SESSION_COOKIE_NAME)

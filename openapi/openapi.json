@@ -6032,11 +6032,24 @@
         "responses": {
           "200": {
             "content": {
-              "application/json": {
-                "schema": {}
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
               }
             },
-            "description": "Successful Response"
+            "description": "HTML returned after the client follows the redirect."
+          },
+          "303": {
+            "description": "The browser is redirected after the action completes.",
+            "headers": {
+              "Location": {
+                "description": "URI of the redirect target.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
           },
           "500": {
             "content": {
@@ -10100,11 +10113,24 @@
         "responses": {
           "200": {
             "content": {
-              "application/json": {
-                "schema": {}
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
               }
             },
-            "description": "Successful Response"
+            "description": "HTML returned after the client follows the redirect."
+          },
+          "302": {
+            "description": "The browser is redirected to the current UI location.",
+            "headers": {
+              "Location": {
+                "description": "URI of the redirect target.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
           },
           "500": {
             "content": {
@@ -10665,11 +10691,24 @@
         "responses": {
           "200": {
             "content": {
-              "application/json": {
-                "schema": {}
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
               }
             },
-            "description": "Successful Response"
+            "description": "HTML returned after the client follows the redirect."
+          },
+          "303": {
+            "description": "The browser is redirected after the action completes.",
+            "headers": {
+              "Location": {
+                "description": "URI of the redirect target.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
           },
           "500": {
             "content": {
@@ -11095,11 +11134,24 @@
         "responses": {
           "200": {
             "content": {
-              "application/json": {
-                "schema": {}
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
               }
             },
-            "description": "Successful Response"
+            "description": "HTML returned after the client follows the redirect."
+          },
+          "303": {
+            "description": "The browser is redirected after the action completes.",
+            "headers": {
+              "Location": {
+                "description": "URI of the redirect target.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
           },
           "500": {
             "content": {
@@ -11579,11 +11631,24 @@
         "responses": {
           "200": {
             "content": {
-              "application/json": {
-                "schema": {}
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
               }
             },
-            "description": "Successful Response"
+            "description": "HTML returned after the client follows the redirect."
+          },
+          "302": {
+            "description": "The browser is redirected to the current UI location.",
+            "headers": {
+              "Location": {
+                "description": "URI of the redirect target.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
           },
           "500": {
             "content": {
@@ -12006,11 +12071,24 @@
         "responses": {
           "200": {
             "content": {
-              "application/json": {
-                "schema": {}
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
               }
             },
-            "description": "Successful Response"
+            "description": "HTML returned after the client follows the redirect."
+          },
+          "302": {
+            "description": "The browser is redirected to the current UI location.",
+            "headers": {
+              "Location": {
+                "description": "URI of the redirect target.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
           },
           "500": {
             "content": {

@@ -3812,14 +3812,23 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Successful Response */
+            /** @description HTML returned after the client follows the redirect. */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "text/html": string;
                 };
+            };
+            /** @description The browser is redirected after the action completes. */
+            303: {
+                headers: {
+                    /** @description URI of the redirect target. */
+                    Location?: string;
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description An unexpected server error occurred. */
             500: {
@@ -6841,14 +6850,23 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Successful Response */
+            /** @description HTML returned after the client follows the redirect. */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "text/html": string;
                 };
+            };
+            /** @description The browser is redirected to the current UI location. */
+            302: {
+                headers: {
+                    /** @description URI of the redirect target. */
+                    Location?: string;
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description An unexpected server error occurred. */
             500: {
@@ -7087,14 +7105,23 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Successful Response */
+            /** @description HTML returned after the client follows the redirect. */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "text/html": string;
                 };
+            };
+            /** @description The browser is redirected after the action completes. */
+            303: {
+                headers: {
+                    /** @description URI of the redirect target. */
+                    Location?: string;
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description An unexpected server error occurred. */
             500: {
@@ -7371,14 +7398,23 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Successful Response */
+            /** @description HTML returned after the client follows the redirect. */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "text/html": string;
                 };
+            };
+            /** @description The browser is redirected after the action completes. */
+            303: {
+                headers: {
+                    /** @description URI of the redirect target. */
+                    Location?: string;
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description An unexpected server error occurred. */
             500: {
@@ -7727,14 +7763,23 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Successful Response */
+            /** @description HTML returned after the client follows the redirect. */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "text/html": string;
                 };
+            };
+            /** @description The browser is redirected to the current UI location. */
+            302: {
+                headers: {
+                    /** @description URI of the redirect target. */
+                    Location?: string;
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description An unexpected server error occurred. */
             500: {
@@ -8049,14 +8094,23 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Successful Response */
+            /** @description HTML returned after the client follows the redirect. */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "text/html": string;
                 };
+            };
+            /** @description The browser is redirected to the current UI location. */
+            302: {
+                headers: {
+                    /** @description URI of the redirect target. */
+                    Location?: string;
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description An unexpected server error occurred. */
             500: {

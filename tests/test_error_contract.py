@@ -13,9 +13,15 @@ from client_py.vault966r2_client.api.collection_health import (
 )
 from client_py.vault966r2_client.api.movies import create_movie_movies_post
 from client_py.vault966r2_client.api.ui import (
+    accept_all_source_review_differences_ui_movies_health_review_source_accept_all_post,
     download_new_additions_csv_ui_source_sync_snapshot_id_new_additions_csv_get,
     first_import_sample_csv_ui_first_import_sample_csv_get,
     first_import_sample_csv_ui_onboarding_import_sample_csv_get,
+    list_flags_ui_ui_flags_get,
+    logout_logout_post,
+    mark_all_vault_reviews_needs_fix_ui_movies_health_review_vault_needs_fix_all_post,
+    review_queue_ui_ui_review_get,
+    start_review_ui_movies_review_get,
 )
 from client_py.vault966r2_client.client import Client as GeneratedClient
 from client_py.vault966r2_client.models.error_response import (
@@ -42,6 +48,50 @@ CSV_CLIENT_OPERATIONS = (
     first_import_sample_csv_ui_first_import_sample_csv_get,
     first_import_sample_csv_ui_onboarding_import_sample_csv_get,
     download_new_additions_csv_ui_source_sync_snapshot_id_new_additions_csv_get,
+)
+REDIRECT_OPERATIONS = (
+    (
+        "/ui/flags",
+        "get",
+        302,
+        "list_flags_ui_ui_flags_get",
+        list_flags_ui_ui_flags_get,
+    ),
+    (
+        "/ui/review",
+        "get",
+        302,
+        "review_queue_ui_ui_review_get",
+        review_queue_ui_ui_review_get,
+    ),
+    (
+        "/ui/movies/review",
+        "get",
+        302,
+        "start_review_ui_movies_review_get",
+        start_review_ui_movies_review_get,
+    ),
+    (
+        "/logout",
+        "post",
+        303,
+        "logout_logout_post",
+        logout_logout_post,
+    ),
+    (
+        "/ui/movies/health/review/source-accept-all",
+        "post",
+        303,
+        "accept_all_source_review_differences_ui_movies_health_review_source_accept_all_post",
+        accept_all_source_review_differences_ui_movies_health_review_source_accept_all_post,
+    ),
+    (
+        "/ui/movies/health/review/vault/needs-fix-all",
+        "post",
+        303,
+        "mark_all_vault_reviews_needs_fix_ui_movies_health_review_vault_needs_fix_all_post",
+        mark_all_vault_reviews_needs_fix_ui_movies_health_review_vault_needs_fix_all_post,
+    ),
 )
 
 
@@ -119,6 +169,18 @@ def test_openapi_documents_csv_success_responses(client: TestClient) -> None:
         assert success_response["content"] == {"text/csv": {"schema": {"type": "string"}}}
 
 
+def test_openapi_documents_redirect_and_followed_html_responses(client: TestClient) -> None:
+    schema = client.get("/openapi.json").json()
+
+    for path, method, redirect_status, _, _ in REDIRECT_OPERATIONS:
+        responses = schema["paths"][path][method]["responses"]
+        assert responses[str(redirect_status)]["headers"]["Location"]["schema"] == {
+            "type": "string"
+        }
+        assert "content" not in responses[str(redirect_status)]
+        assert responses["200"]["content"] == {"text/html": {"schema": {"type": "string"}}}
+
+
 def test_python_client_parses_documented_error_responses() -> None:
     generated_client = GeneratedClient(base_url="https://vault.invalid")
     body = {
@@ -161,6 +223,53 @@ def test_python_client_preserves_csv_success_responses() -> None:
         assert generated_response.content == csv_body.encode()
 
 
+def test_python_client_handles_redirects_with_or_without_following() -> None:
+    html_body = "<!doctype html><title>Vault 966</title>"
+
+    for path, _, redirect_status, _, operation in REDIRECT_OPERATIONS:
+        requests: list[httpx.Request] = []
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            requests.append(request)
+            if request.url.path == "/followed":
+                return httpx.Response(
+                    200,
+                    text=html_body,
+                    headers={"content-type": "text/html; charset=utf-8"},
+                )
+            assert request.url.path == path
+            return httpx.Response(
+                redirect_status,
+                headers={"location": "/followed"},
+            )
+
+        transport = httpx.MockTransport(handler)
+        with GeneratedClient(
+            base_url="https://vault.invalid",
+            follow_redirects=False,
+            httpx_args={"transport": transport},
+        ) as client:
+            initial_response = operation.sync_detailed(client=client)
+
+        assert initial_response.status_code == redirect_status
+        assert initial_response.headers["location"] == "/followed"
+        assert initial_response.parsed is None
+        assert len(requests) == 1
+
+        requests.clear()
+        with GeneratedClient(
+            base_url="https://vault.invalid",
+            follow_redirects=True,
+            httpx_args={"transport": transport},
+        ) as client:
+            followed_response = operation.sync_detailed(client=client)
+
+        assert followed_response.status_code == 200
+        assert followed_response.parsed == html_body
+        assert followed_response.content == html_body.encode()
+        assert len(requests) == 2
+
+
 def test_typescript_client_types_documented_error_responses() -> None:
     declarations = (ROOT_DIR / "client_ts" / "index.d.ts").read_text(encoding="utf-8")
     operation = declarations.split("create_movie_movies__post: {", maxsplit=1)[1].split(
@@ -185,6 +294,22 @@ def test_typescript_client_types_csv_success_responses() -> None:
         )
         assert operation is not None, operation_id
         assert '"text/csv": string;' in operation.group("body")
+
+
+def test_typescript_client_types_redirect_and_followed_html_responses() -> None:
+    declarations = (ROOT_DIR / "client_ts" / "index.d.ts").read_text(encoding="utf-8")
+
+    for _, _, redirect_status, operation_id, _ in REDIRECT_OPERATIONS:
+        operation = re.search(
+            rf"^    {re.escape(operation_id)}: \{{(?P<body>.*?)"
+            rf"(?=^    [A-Za-z0-9_]+: \{{|^\}})",
+            declarations,
+            re.MULTILINE | re.DOTALL,
+        )
+        assert operation is not None, operation_id
+        operation_body = operation.group("body")
+        assert '"text/html": string;' in operation_body
+        assert f"            {redirect_status}: {{" in operation_body
 
 
 def test_generated_clients_type_every_documented_json_error() -> None:

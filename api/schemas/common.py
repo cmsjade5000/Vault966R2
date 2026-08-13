@@ -42,6 +42,38 @@ CSV_DOWNLOAD_RESPONSE = {
 }
 
 
+def _redirect_response(description: str) -> dict[str, object]:
+    return {
+        "description": description,
+        "headers": {
+            "Location": {
+                "description": "URI of the redirect target.",
+                "schema": {"type": "string"},
+            }
+        },
+    }
+
+
+_FOLLOWED_REDIRECT_HTML_RESPONSE = {
+    "description": "HTML returned after the client follows the redirect.",
+    "content": {
+        "text/html": {
+            "schema": {"type": "string"},
+        }
+    },
+}
+
+FOUND_REDIRECT_RESPONSES = {
+    200: _FOLLOWED_REDIRECT_HTML_RESPONSE,
+    302: _redirect_response("The browser is redirected to the current UI location."),
+}
+
+SEE_OTHER_REDIRECT_RESPONSES = {
+    200: _FOLLOWED_REDIRECT_HTML_RESPONSE,
+    303: _redirect_response("The browser is redirected after the action completes."),
+}
+
+
 def apply_error_response_openapi_contract(schema: dict[str, Any]) -> dict[str, Any]:
     """Replace FastAPI's default 422 body with the runtime error envelope."""
 

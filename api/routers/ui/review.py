@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from urllib.parse import quote
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from fastapi.responses import RedirectResponse
 from sqlalchemy import desc
 from sqlalchemy.orm import joinedload
@@ -19,6 +19,7 @@ from api.models.movie import Movie, MovieIngestProvenance
 from api.models.movie_flag import MovieFlag
 from api.models.movie_repair import MovieIdentityRepair
 from api.models.source_sync import SourceFieldDecision
+from api.schemas.common import FOUND_REDIRECT_RESPONSES, SEE_OTHER_REDIRECT_RESPONSES
 from api.schemas.movie import (
     MovieLookupResponse,
     MovieMatchApplyResponse,
@@ -250,7 +251,12 @@ def build_review_context(
     }
 
 
-@router.get("/ui/review")
+@router.get(
+    "/ui/review",
+    status_code=status.HTTP_302_FOUND,
+    response_class=RedirectResponse,
+    responses=FOUND_REDIRECT_RESPONSES,
+)
 def review_queue_ui(
     request: Request,
     _: str = Depends(require_profile_role(ROLE_ADMIN)),
@@ -324,7 +330,12 @@ def decide_source_review_field(
     )
 
 
-@router.post("/ui/movies/health/review/source-accept-all")
+@router.post(
+    "/ui/movies/health/review/source-accept-all",
+    status_code=status.HTTP_303_SEE_OTHER,
+    response_class=RedirectResponse,
+    responses=SEE_OTHER_REDIRECT_RESPONSES,
+)
 def accept_all_source_review_differences(
     request: Request,
     db: Session = Depends(get_db),
@@ -862,7 +873,12 @@ def mark_review_needs_fix(
     )
 
 
-@router.post("/ui/movies/health/review/vault/needs-fix-all")
+@router.post(
+    "/ui/movies/health/review/vault/needs-fix-all",
+    status_code=status.HTTP_303_SEE_OTHER,
+    response_class=RedirectResponse,
+    responses=SEE_OTHER_REDIRECT_RESPONSES,
+)
 def mark_all_vault_reviews_needs_fix(
     request: Request,
     db: Session = Depends(get_db),
