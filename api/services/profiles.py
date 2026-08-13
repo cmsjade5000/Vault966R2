@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Dict, Iterable, List
 
 from fastapi import Request, Response
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 
 from api.models.movie import Movie
 from api.models.profile import AppSetup, MoviePreference, Profile, ProfileCredential
@@ -186,6 +186,7 @@ def update_movie_preference(
 def get_watchlist_movies(db: Session, *, profile_id: int) -> List[Movie]:
     return (
         db.query(Movie)
+        .options(selectinload(Movie.genres))
         .join(MoviePreference, MoviePreference.movie_id == Movie.id)
         .filter(MoviePreference.profile_id == profile_id)
         .filter(MoviePreference.watchlist.is_(True))
