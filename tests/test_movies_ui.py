@@ -255,8 +255,14 @@ def test_movies_grid_filters_by_mood(client: TestClient) -> None:
     html = response.text
     assert "<h3>Moods</h3>" in html
     assert 'data-filter-group="moods"' in html
-    assert 'data-filter-value="Atmospheric">Atmospheric</button>' in html
-    assert 'data-filter-value="High-energy">High-energy</button>' in html
+    assert (
+        'data-filter-value="Atmospheric" data-dialog-toggle aria-pressed="false"'
+        ">Atmospheric</button>"
+    ) in html
+    assert (
+        'data-filter-value="High-energy" data-dialog-toggle aria-pressed="false"'
+        ">High-energy</button>"
+    ) in html
     assert 'id="moods-input" value="Atmospheric"' in html
     assert 'data-clear-filter="mood" data-filter-value="Atmospheric"' in html
     assert "Blade Runner" in html
@@ -650,6 +656,9 @@ def test_library_search_is_prominent_and_searches_identity_fields(
     assert 'aria-describedby="edit-dialog-description"' in page.text
     assert '<h2 id="edit-dialog-title">Edit Movie</h2>' in page.text
     assert '<p id="edit-dialog-description">Update this movie\'s metadata.</p>' in page.text
+    assert page.text.count('data-dialog-toggle aria-pressed="false"') >= 4
+    assert 'data-year-range="" data-dialog-toggle aria-pressed="false"' in page.text
+    assert 'data-runtime-max="custom" data-dialog-toggle aria-pressed="false"' in page.text
     assert 'id="year-custom" hidden' in page.text
     assert 'id="runtime-custom" hidden' in page.text
     assert 'id="fliclists"' in page.text
@@ -678,6 +687,16 @@ def test_library_search_is_prominent_and_searches_identity_fields(
     assert "Blade Runner" in by_vault_id.text
     assert "Blade Runner" in by_year.text
     assert "Blade Runner" in by_person.text
+
+
+def test_top_movies_page_has_one_main_landmark(client: TestClient) -> None:
+    page = client.get("/ui/movies/top")
+
+    assert page.status_code == 200
+    assert page.text.count("<main ") == 1
+    assert '<main id="main" class="app-main">' in page.text
+    assert '<div class="top-leaderboard" aria-live="polite">' in page.text
+    assert '<main class="top-leaderboard"' not in page.text
 
 
 def test_health_page_uses_vault_health_title_and_prioritizes_metrics(
