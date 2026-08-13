@@ -61,8 +61,9 @@ case "$MODE" in
   live)
     scripts/vault_service.sh restart
     scripts/vault_service.sh verify /health 200 application/json
+    scripts/vault_service.sh verify /readyz 200 application/json
     scripts/vault_service.sh verify /login 200 text/html
-    echo "Live service verified: /health and /login"
+    echo "Live service verified: /health, /readyz, and /login"
     ;;
   status)
     git status --short

@@ -5,6 +5,8 @@ from sqlalchemy.orm import Session
 
 from api.config import settings
 from api.db import get_db
+from api.schemas.common import ErrorResponse
+from api.schemas.health import LivenessResponse, ReadinessResponse
 
 router = APIRouter(tags=["health"])
 
@@ -17,18 +19,22 @@ def health():
     }
 
 
-@router.get("/livez")
-def liveness():
-    return {"status": "alive"}
+@router.get("/livez", response_model=LivenessResponse)
+def liveness() -> LivenessResponse:
+    return LivenessResponse(status="alive")
 
 
 @router.get(
     "/readyz",
+    response_model=ReadinessResponse,
     responses={
-        status.HTTP_503_SERVICE_UNAVAILABLE: {"description": "Database readiness check failed."}
+        status.HTTP_503_SERVICE_UNAVAILABLE: {
+            "description": "Database readiness check failed.",
+            "model": ErrorResponse,
+        }
     },
 )
-def readiness(db: Session = Depends(get_db)):
+def readiness(db: Session = Depends(get_db)) -> ReadinessResponse:
     try:
         database_ready = db.execute(text("SELECT 1")).scalar_one() == 1
     except SQLAlchemyError:
@@ -40,4 +46,4 @@ def readiness(db: Session = Depends(get_db)):
             detail="Database readiness check failed.",
         )
 
-    return {"status": "ready"}
+    return ReadinessResponse(status="ready")
