@@ -5,7 +5,7 @@ import httpx
 
 from ... import errors
 from ...client import AuthenticatedClient, Client
-from ...models.http_validation_error import HTTPValidationError
+from ...models.error_response import ErrorResponse
 from ...models.person_list_response import PersonListResponse
 from ...types import UNSET, Response, Unset
 
@@ -34,16 +34,26 @@ def _get_kwargs(
 
 def _parse_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> HTTPValidationError | PersonListResponse | None:
+) -> ErrorResponse | PersonListResponse | None:
     if response.status_code == 200:
         response_200 = PersonListResponse.from_dict(response.json())
 
         return response_200
 
+    if response.status_code == 401:
+        response_401 = ErrorResponse.from_dict(response.json())
+
+        return response_401
+
     if response.status_code == 422:
-        response_422 = HTTPValidationError.from_dict(response.json())
+        response_422 = ErrorResponse.from_dict(response.json())
 
         return response_422
+
+    if response.status_code == 500:
+        response_500 = ErrorResponse.from_dict(response.json())
+
+        return response_500
 
     if client.raise_on_unexpected_status:
         raise errors.UnexpectedStatus(response.status_code, response.content)
@@ -53,7 +63,7 @@ def _parse_response(
 
 def _build_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> Response[HTTPValidationError | PersonListResponse]:
+) -> Response[ErrorResponse | PersonListResponse]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -67,7 +77,7 @@ def sync_detailed(
     client: AuthenticatedClient | Client,
     page: int | Unset = 1,
     page_size: int | Unset = 24,
-) -> Response[HTTPValidationError | PersonListResponse]:
+) -> Response[ErrorResponse | PersonListResponse]:
     """List People
 
     Args:
@@ -79,7 +89,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[HTTPValidationError | PersonListResponse]
+        Response[ErrorResponse | PersonListResponse]
     """
 
     kwargs = _get_kwargs(
@@ -99,7 +109,7 @@ def sync(
     client: AuthenticatedClient | Client,
     page: int | Unset = 1,
     page_size: int | Unset = 24,
-) -> HTTPValidationError | PersonListResponse | None:
+) -> ErrorResponse | PersonListResponse | None:
     """List People
 
     Args:
@@ -111,7 +121,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        HTTPValidationError | PersonListResponse
+        ErrorResponse | PersonListResponse
     """
 
     return sync_detailed(
@@ -126,7 +136,7 @@ async def asyncio_detailed(
     client: AuthenticatedClient | Client,
     page: int | Unset = 1,
     page_size: int | Unset = 24,
-) -> Response[HTTPValidationError | PersonListResponse]:
+) -> Response[ErrorResponse | PersonListResponse]:
     """List People
 
     Args:
@@ -138,7 +148,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[HTTPValidationError | PersonListResponse]
+        Response[ErrorResponse | PersonListResponse]
     """
 
     kwargs = _get_kwargs(
@@ -156,7 +166,7 @@ async def asyncio(
     client: AuthenticatedClient | Client,
     page: int | Unset = 1,
     page_size: int | Unset = 24,
-) -> HTTPValidationError | PersonListResponse | None:
+) -> ErrorResponse | PersonListResponse | None:
     """List People
 
     Args:
@@ -168,7 +178,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        HTTPValidationError | PersonListResponse
+        ErrorResponse | PersonListResponse
     """
 
     return (

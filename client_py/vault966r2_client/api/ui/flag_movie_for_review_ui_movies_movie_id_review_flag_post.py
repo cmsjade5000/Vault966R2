@@ -6,10 +6,10 @@ import httpx
 
 from ... import errors
 from ...client import AuthenticatedClient, Client
+from ...models.error_response import ErrorResponse
 from ...models.flag_movie_for_review_ui_movies_movie_id_review_flag_post_response_flag_movie_for_review_ui_movies_movie_id_review_flag_post import (
     FlagMovieForReviewUiMoviesMovieIdReviewFlagPostResponseFlagMovieForReviewUiMoviesMovieIdReviewFlagPost,
 )
-from ...models.http_validation_error import HTTPValidationError
 from ...types import Response
 
 
@@ -29,8 +29,8 @@ def _get_kwargs(
 def _parse_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
 ) -> (
-    FlagMovieForReviewUiMoviesMovieIdReviewFlagPostResponseFlagMovieForReviewUiMoviesMovieIdReviewFlagPost
-    | HTTPValidationError
+    ErrorResponse
+    | FlagMovieForReviewUiMoviesMovieIdReviewFlagPostResponseFlagMovieForReviewUiMoviesMovieIdReviewFlagPost
     | None
 ):
     if response.status_code == 200:
@@ -41,9 +41,14 @@ def _parse_response(
         return response_200
 
     if response.status_code == 422:
-        response_422 = HTTPValidationError.from_dict(response.json())
+        response_422 = ErrorResponse.from_dict(response.json())
 
         return response_422
+
+    if response.status_code == 500:
+        response_500 = ErrorResponse.from_dict(response.json())
+
+        return response_500
 
     if client.raise_on_unexpected_status:
         raise errors.UnexpectedStatus(response.status_code, response.content)
@@ -54,8 +59,8 @@ def _parse_response(
 def _build_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
 ) -> Response[
-    FlagMovieForReviewUiMoviesMovieIdReviewFlagPostResponseFlagMovieForReviewUiMoviesMovieIdReviewFlagPost
-    | HTTPValidationError
+    ErrorResponse
+    | FlagMovieForReviewUiMoviesMovieIdReviewFlagPostResponseFlagMovieForReviewUiMoviesMovieIdReviewFlagPost
 ]:
     return Response(
         status_code=HTTPStatus(response.status_code),
@@ -70,8 +75,8 @@ def sync_detailed(
     *,
     client: AuthenticatedClient | Client,
 ) -> Response[
-    FlagMovieForReviewUiMoviesMovieIdReviewFlagPostResponseFlagMovieForReviewUiMoviesMovieIdReviewFlagPost
-    | HTTPValidationError
+    ErrorResponse
+    | FlagMovieForReviewUiMoviesMovieIdReviewFlagPostResponseFlagMovieForReviewUiMoviesMovieIdReviewFlagPost
 ]:
     """Flag Movie For Review
 
@@ -83,7 +88,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[FlagMovieForReviewUiMoviesMovieIdReviewFlagPostResponseFlagMovieForReviewUiMoviesMovieIdReviewFlagPost | HTTPValidationError]
+        Response[ErrorResponse | FlagMovieForReviewUiMoviesMovieIdReviewFlagPostResponseFlagMovieForReviewUiMoviesMovieIdReviewFlagPost]
     """
 
     kwargs = _get_kwargs(
@@ -102,8 +107,8 @@ def sync(
     *,
     client: AuthenticatedClient | Client,
 ) -> (
-    FlagMovieForReviewUiMoviesMovieIdReviewFlagPostResponseFlagMovieForReviewUiMoviesMovieIdReviewFlagPost
-    | HTTPValidationError
+    ErrorResponse
+    | FlagMovieForReviewUiMoviesMovieIdReviewFlagPostResponseFlagMovieForReviewUiMoviesMovieIdReviewFlagPost
     | None
 ):
     """Flag Movie For Review
@@ -116,7 +121,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        FlagMovieForReviewUiMoviesMovieIdReviewFlagPostResponseFlagMovieForReviewUiMoviesMovieIdReviewFlagPost | HTTPValidationError
+        ErrorResponse | FlagMovieForReviewUiMoviesMovieIdReviewFlagPostResponseFlagMovieForReviewUiMoviesMovieIdReviewFlagPost
     """
 
     return sync_detailed(
@@ -130,8 +135,8 @@ async def asyncio_detailed(
     *,
     client: AuthenticatedClient | Client,
 ) -> Response[
-    FlagMovieForReviewUiMoviesMovieIdReviewFlagPostResponseFlagMovieForReviewUiMoviesMovieIdReviewFlagPost
-    | HTTPValidationError
+    ErrorResponse
+    | FlagMovieForReviewUiMoviesMovieIdReviewFlagPostResponseFlagMovieForReviewUiMoviesMovieIdReviewFlagPost
 ]:
     """Flag Movie For Review
 
@@ -143,7 +148,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[FlagMovieForReviewUiMoviesMovieIdReviewFlagPostResponseFlagMovieForReviewUiMoviesMovieIdReviewFlagPost | HTTPValidationError]
+        Response[ErrorResponse | FlagMovieForReviewUiMoviesMovieIdReviewFlagPostResponseFlagMovieForReviewUiMoviesMovieIdReviewFlagPost]
     """
 
     kwargs = _get_kwargs(
@@ -160,8 +165,8 @@ async def asyncio(
     *,
     client: AuthenticatedClient | Client,
 ) -> (
-    FlagMovieForReviewUiMoviesMovieIdReviewFlagPostResponseFlagMovieForReviewUiMoviesMovieIdReviewFlagPost
-    | HTTPValidationError
+    ErrorResponse
+    | FlagMovieForReviewUiMoviesMovieIdReviewFlagPostResponseFlagMovieForReviewUiMoviesMovieIdReviewFlagPost
     | None
 ):
     """Flag Movie For Review
@@ -174,7 +179,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        FlagMovieForReviewUiMoviesMovieIdReviewFlagPostResponseFlagMovieForReviewUiMoviesMovieIdReviewFlagPost | HTTPValidationError
+        ErrorResponse | FlagMovieForReviewUiMoviesMovieIdReviewFlagPostResponseFlagMovieForReviewUiMoviesMovieIdReviewFlagPost
     """
 
     return (

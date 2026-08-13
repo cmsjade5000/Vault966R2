@@ -5,7 +5,7 @@ import httpx
 
 from ... import errors
 from ...client import AuthenticatedClient, Client
-from ...models.http_validation_error import HTTPValidationError
+from ...models.error_response import ErrorResponse
 from ...models.movie_flag_read import MovieFlagRead
 from ...types import UNSET, Response, Unset
 
@@ -34,7 +34,7 @@ def _get_kwargs(
 
 def _parse_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> HTTPValidationError | list[MovieFlagRead] | None:
+) -> ErrorResponse | list[MovieFlagRead] | None:
     if response.status_code == 200:
         response_200 = []
         _response_200 = response.json()
@@ -45,10 +45,50 @@ def _parse_response(
 
         return response_200
 
+    if response.status_code == 400:
+        response_400 = ErrorResponse.from_dict(response.json())
+
+        return response_400
+
+    if response.status_code == 401:
+        response_401 = ErrorResponse.from_dict(response.json())
+
+        return response_401
+
+    if response.status_code == 403:
+        response_403 = ErrorResponse.from_dict(response.json())
+
+        return response_403
+
+    if response.status_code == 404:
+        response_404 = ErrorResponse.from_dict(response.json())
+
+        return response_404
+
     if response.status_code == 422:
-        response_422 = HTTPValidationError.from_dict(response.json())
+        response_422 = ErrorResponse.from_dict(response.json())
 
         return response_422
+
+    if response.status_code == 429:
+        response_429 = ErrorResponse.from_dict(response.json())
+
+        return response_429
+
+    if response.status_code == 500:
+        response_500 = ErrorResponse.from_dict(response.json())
+
+        return response_500
+
+    if response.status_code == 502:
+        response_502 = ErrorResponse.from_dict(response.json())
+
+        return response_502
+
+    if response.status_code == 503:
+        response_503 = ErrorResponse.from_dict(response.json())
+
+        return response_503
 
     if client.raise_on_unexpected_status:
         raise errors.UnexpectedStatus(response.status_code, response.content)
@@ -58,7 +98,7 @@ def _parse_response(
 
 def _build_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> Response[HTTPValidationError | list[MovieFlagRead]]:
+) -> Response[ErrorResponse | list[MovieFlagRead]]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -72,7 +112,7 @@ def sync_detailed(
     client: AuthenticatedClient,
     page: int | Unset = 1,
     page_size: int | Unset = 100,
-) -> Response[HTTPValidationError | list[MovieFlagRead]]:
+) -> Response[ErrorResponse | list[MovieFlagRead]]:
     """List Flags
 
     Args:
@@ -84,7 +124,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[HTTPValidationError | list[MovieFlagRead]]
+        Response[ErrorResponse | list[MovieFlagRead]]
     """
 
     kwargs = _get_kwargs(
@@ -104,7 +144,7 @@ def sync(
     client: AuthenticatedClient,
     page: int | Unset = 1,
     page_size: int | Unset = 100,
-) -> HTTPValidationError | list[MovieFlagRead] | None:
+) -> ErrorResponse | list[MovieFlagRead] | None:
     """List Flags
 
     Args:
@@ -116,7 +156,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        HTTPValidationError | list[MovieFlagRead]
+        ErrorResponse | list[MovieFlagRead]
     """
 
     return sync_detailed(
@@ -131,7 +171,7 @@ async def asyncio_detailed(
     client: AuthenticatedClient,
     page: int | Unset = 1,
     page_size: int | Unset = 100,
-) -> Response[HTTPValidationError | list[MovieFlagRead]]:
+) -> Response[ErrorResponse | list[MovieFlagRead]]:
     """List Flags
 
     Args:
@@ -143,7 +183,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[HTTPValidationError | list[MovieFlagRead]]
+        Response[ErrorResponse | list[MovieFlagRead]]
     """
 
     kwargs = _get_kwargs(
@@ -161,7 +201,7 @@ async def asyncio(
     client: AuthenticatedClient,
     page: int | Unset = 1,
     page_size: int | Unset = 100,
-) -> HTTPValidationError | list[MovieFlagRead] | None:
+) -> ErrorResponse | list[MovieFlagRead] | None:
     """List Flags
 
     Args:
@@ -173,7 +213,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        HTTPValidationError | list[MovieFlagRead]
+        ErrorResponse | list[MovieFlagRead]
     """
 
     return (

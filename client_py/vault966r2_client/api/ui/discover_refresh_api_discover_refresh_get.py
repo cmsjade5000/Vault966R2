@@ -8,7 +8,7 @@ from ...client import AuthenticatedClient, Client
 from ...models.discover_refresh_api_discover_refresh_get_response_discover_refresh_api_discover_refresh_get import (
     DiscoverRefreshApiDiscoverRefreshGetResponseDiscoverRefreshApiDiscoverRefreshGet,
 )
-from ...models.http_validation_error import HTTPValidationError
+from ...models.error_response import ErrorResponse
 from ...types import UNSET, Response, Unset
 
 
@@ -44,7 +44,7 @@ def _get_kwargs(
 
 def _parse_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> DiscoverRefreshApiDiscoverRefreshGetResponseDiscoverRefreshApiDiscoverRefreshGet | HTTPValidationError | None:
+) -> DiscoverRefreshApiDiscoverRefreshGetResponseDiscoverRefreshApiDiscoverRefreshGet | ErrorResponse | None:
     if response.status_code == 200:
         response_200 = DiscoverRefreshApiDiscoverRefreshGetResponseDiscoverRefreshApiDiscoverRefreshGet.from_dict(
             response.json()
@@ -53,9 +53,14 @@ def _parse_response(
         return response_200
 
     if response.status_code == 422:
-        response_422 = HTTPValidationError.from_dict(response.json())
+        response_422 = ErrorResponse.from_dict(response.json())
 
         return response_422
+
+    if response.status_code == 500:
+        response_500 = ErrorResponse.from_dict(response.json())
+
+        return response_500
 
     if client.raise_on_unexpected_status:
         raise errors.UnexpectedStatus(response.status_code, response.content)
@@ -65,7 +70,7 @@ def _parse_response(
 
 def _build_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> Response[DiscoverRefreshApiDiscoverRefreshGetResponseDiscoverRefreshApiDiscoverRefreshGet | HTTPValidationError]:
+) -> Response[DiscoverRefreshApiDiscoverRefreshGetResponseDiscoverRefreshApiDiscoverRefreshGet | ErrorResponse]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -80,7 +85,7 @@ def sync_detailed(
     seed: int | None | Unset = UNSET,
     pairings_limit: int | Unset = 2,
     genre_limit: int | Unset = 6,
-) -> Response[DiscoverRefreshApiDiscoverRefreshGetResponseDiscoverRefreshApiDiscoverRefreshGet | HTTPValidationError]:
+) -> Response[DiscoverRefreshApiDiscoverRefreshGetResponseDiscoverRefreshApiDiscoverRefreshGet | ErrorResponse]:
     """Discover Refresh
 
     Args:
@@ -93,7 +98,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[DiscoverRefreshApiDiscoverRefreshGetResponseDiscoverRefreshApiDiscoverRefreshGet | HTTPValidationError]
+        Response[DiscoverRefreshApiDiscoverRefreshGetResponseDiscoverRefreshApiDiscoverRefreshGet | ErrorResponse]
     """
 
     kwargs = _get_kwargs(
@@ -115,7 +120,7 @@ def sync(
     seed: int | None | Unset = UNSET,
     pairings_limit: int | Unset = 2,
     genre_limit: int | Unset = 6,
-) -> DiscoverRefreshApiDiscoverRefreshGetResponseDiscoverRefreshApiDiscoverRefreshGet | HTTPValidationError | None:
+) -> DiscoverRefreshApiDiscoverRefreshGetResponseDiscoverRefreshApiDiscoverRefreshGet | ErrorResponse | None:
     """Discover Refresh
 
     Args:
@@ -128,7 +133,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        DiscoverRefreshApiDiscoverRefreshGetResponseDiscoverRefreshApiDiscoverRefreshGet | HTTPValidationError
+        DiscoverRefreshApiDiscoverRefreshGetResponseDiscoverRefreshApiDiscoverRefreshGet | ErrorResponse
     """
 
     return sync_detailed(
@@ -145,7 +150,7 @@ async def asyncio_detailed(
     seed: int | None | Unset = UNSET,
     pairings_limit: int | Unset = 2,
     genre_limit: int | Unset = 6,
-) -> Response[DiscoverRefreshApiDiscoverRefreshGetResponseDiscoverRefreshApiDiscoverRefreshGet | HTTPValidationError]:
+) -> Response[DiscoverRefreshApiDiscoverRefreshGetResponseDiscoverRefreshApiDiscoverRefreshGet | ErrorResponse]:
     """Discover Refresh
 
     Args:
@@ -158,7 +163,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[DiscoverRefreshApiDiscoverRefreshGetResponseDiscoverRefreshApiDiscoverRefreshGet | HTTPValidationError]
+        Response[DiscoverRefreshApiDiscoverRefreshGetResponseDiscoverRefreshApiDiscoverRefreshGet | ErrorResponse]
     """
 
     kwargs = _get_kwargs(
@@ -178,7 +183,7 @@ async def asyncio(
     seed: int | None | Unset = UNSET,
     pairings_limit: int | Unset = 2,
     genre_limit: int | Unset = 6,
-) -> DiscoverRefreshApiDiscoverRefreshGetResponseDiscoverRefreshApiDiscoverRefreshGet | HTTPValidationError | None:
+) -> DiscoverRefreshApiDiscoverRefreshGetResponseDiscoverRefreshApiDiscoverRefreshGet | ErrorResponse | None:
     """Discover Refresh
 
     Args:
@@ -191,7 +196,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        DiscoverRefreshApiDiscoverRefreshGetResponseDiscoverRefreshApiDiscoverRefreshGet | HTTPValidationError
+        DiscoverRefreshApiDiscoverRefreshGetResponseDiscoverRefreshApiDiscoverRefreshGet | ErrorResponse
     """
 
     return (
