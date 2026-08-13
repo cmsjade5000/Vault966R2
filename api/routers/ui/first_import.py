@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 from api.db import get_db
 from api.deps.auth import require_profile_role, require_same_origin
 from api.models.source_sync import SourceSnapshot
+from api.schemas.common import CSV_DOWNLOAD_RESPONSE
 from api.services.profiles import (
     ROLE_ADMIN,
     ensure_profile_cookie,
@@ -112,8 +113,16 @@ def first_import_ui(
     return response
 
 
-@router.get("/ui/first-import/sample.csv")
-@router.get("/ui/onboarding/import/sample.csv")
+@router.get(
+    "/ui/first-import/sample.csv",
+    response_class=Response,
+    responses=CSV_DOWNLOAD_RESPONSE,
+)
+@router.get(
+    "/ui/onboarding/import/sample.csv",
+    response_class=Response,
+    responses=CSV_DOWNLOAD_RESPONSE,
+)
 def first_import_sample_csv(
     _: str = Depends(require_profile_role(ROLE_ADMIN)),
 ) -> Response:

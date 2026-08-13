@@ -30,6 +30,17 @@ GLOBAL_SERVER_ERROR_RESPONSES = {
     500: _error_response("An unexpected server error occurred."),
 }
 
+CSV_DOWNLOAD_RESPONSE = {
+    200: {
+        "description": "CSV download.",
+        "content": {
+            "text/csv": {
+                "schema": {"type": "string"},
+            }
+        },
+    }
+}
+
 
 def apply_error_response_openapi_contract(schema: dict[str, Any]) -> dict[str, Any]:
     """Replace FastAPI's default 422 body with the runtime error envelope."""

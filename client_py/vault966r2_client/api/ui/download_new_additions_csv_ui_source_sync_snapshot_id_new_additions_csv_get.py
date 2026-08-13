@@ -23,9 +23,9 @@ def _get_kwargs(
     return _kwargs
 
 
-def _parse_response(*, client: AuthenticatedClient | Client, response: httpx.Response) -> Any | ErrorResponse | None:
+def _parse_response(*, client: AuthenticatedClient | Client, response: httpx.Response) -> ErrorResponse | str | None:
     if response.status_code == 200:
-        response_200 = response.json()
+        response_200 = response.text
         return response_200
 
     if response.status_code == 422:
@@ -44,7 +44,7 @@ def _parse_response(*, client: AuthenticatedClient | Client, response: httpx.Res
         return None
 
 
-def _build_response(*, client: AuthenticatedClient | Client, response: httpx.Response) -> Response[Any | ErrorResponse]:
+def _build_response(*, client: AuthenticatedClient | Client, response: httpx.Response) -> Response[ErrorResponse | str]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -57,7 +57,7 @@ def sync_detailed(
     snapshot_id: int,
     *,
     client: AuthenticatedClient | Client,
-) -> Response[Any | ErrorResponse]:
+) -> Response[ErrorResponse | str]:
     """Download New Additions Csv
 
     Args:
@@ -68,7 +68,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Any | ErrorResponse]
+        Response[ErrorResponse | str]
     """
 
     kwargs = _get_kwargs(
@@ -86,7 +86,7 @@ def sync(
     snapshot_id: int,
     *,
     client: AuthenticatedClient | Client,
-) -> Any | ErrorResponse | None:
+) -> ErrorResponse | str | None:
     """Download New Additions Csv
 
     Args:
@@ -97,7 +97,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Any | ErrorResponse
+        ErrorResponse | str
     """
 
     return sync_detailed(
@@ -110,7 +110,7 @@ async def asyncio_detailed(
     snapshot_id: int,
     *,
     client: AuthenticatedClient | Client,
-) -> Response[Any | ErrorResponse]:
+) -> Response[ErrorResponse | str]:
     """Download New Additions Csv
 
     Args:
@@ -121,7 +121,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[Any | ErrorResponse]
+        Response[ErrorResponse | str]
     """
 
     kwargs = _get_kwargs(
@@ -137,7 +137,7 @@ async def asyncio(
     snapshot_id: int,
     *,
     client: AuthenticatedClient | Client,
-) -> Any | ErrorResponse | None:
+) -> ErrorResponse | str | None:
     """Download New Additions Csv
 
     Args:
@@ -148,7 +148,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Any | ErrorResponse
+        ErrorResponse | str
     """
 
     return (

@@ -8,7 +8,15 @@ from fastapi.testclient import TestClient
 
 from api.main import ObservabilityMiddleware
 from api.schemas.common import ErrorResponse
+from client_py.vault966r2_client.api.collection_health import (
+    update_report_api_collection_health_update_reports_task_get,
+)
 from client_py.vault966r2_client.api.movies import create_movie_movies_post
+from client_py.vault966r2_client.api.ui import (
+    download_new_additions_csv_ui_source_sync_snapshot_id_new_additions_csv_get,
+    first_import_sample_csv_ui_first_import_sample_csv_get,
+    first_import_sample_csv_ui_onboarding_import_sample_csv_get,
+)
 from client_py.vault966r2_client.client import Client as GeneratedClient
 from client_py.vault966r2_client.models.error_response import (
     ErrorResponse as GeneratedErrorResponse,
@@ -17,6 +25,24 @@ from client_py.vault966r2_client.models.error_response import (
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
 ERROR_KEYS = {"error_code", "message", "request_id"}
+CSV_PATHS = (
+    "/api/collection-health/update/reports/{task}",
+    "/ui/first-import/sample.csv",
+    "/ui/onboarding/import/sample.csv",
+    "/ui/source-sync/{snapshot_id}/new-additions.csv",
+)
+CSV_OPERATION_IDS = (
+    "update_report_api_collection_health_update_reports__task__get",
+    "first_import_sample_csv_ui_first_import_sample_csv_get",
+    "first_import_sample_csv_ui_onboarding_import_sample_csv_get",
+    "download_new_additions_csv_ui_source_sync__snapshot_id__new_additions_csv_get",
+)
+CSV_CLIENT_OPERATIONS = (
+    update_report_api_collection_health_update_reports_task_get,
+    first_import_sample_csv_ui_first_import_sample_csv_get,
+    first_import_sample_csv_ui_onboarding_import_sample_csv_get,
+    download_new_additions_csv_ui_source_sync_snapshot_id_new_additions_csv_get,
+)
 
 
 def _assert_error_response(response, *, status_code: int, error_code: str) -> None:
@@ -85,6 +111,14 @@ def test_openapi_uses_error_response_for_documented_failures(client: TestClient)
     assert "HTTPValidationError" not in schema["components"]["schemas"]
 
 
+def test_openapi_documents_csv_success_responses(client: TestClient) -> None:
+    schema = client.get("/openapi.json").json()
+
+    for path in CSV_PATHS:
+        success_response = schema["paths"][path]["get"]["responses"]["200"]
+        assert success_response["content"] == {"text/csv": {"schema": {"type": "string"}}}
+
+
 def test_python_client_parses_documented_error_responses() -> None:
     generated_client = GeneratedClient(base_url="https://vault.invalid")
     body = {
@@ -107,6 +141,26 @@ def test_python_client_parses_documented_error_responses() -> None:
         assert parsed.to_dict() == body
 
 
+def test_python_client_preserves_csv_success_responses() -> None:
+    generated_client = GeneratedClient(base_url="https://vault.invalid")
+    csv_body = "Title,Year\nAlien,1979\n"
+
+    for operation in CSV_CLIENT_OPERATIONS:
+        response = httpx.Response(
+            200,
+            text=csv_body,
+            headers={"content-type": "text/csv; charset=utf-8"},
+            request=httpx.Request("GET", "https://vault.invalid/example.csv"),
+        )
+        generated_response = operation._build_response(
+            client=generated_client,
+            response=response,
+        )
+
+        assert generated_response.parsed == csv_body
+        assert generated_response.content == csv_body.encode()
+
+
 def test_typescript_client_types_documented_error_responses() -> None:
     declarations = (ROOT_DIR / "client_ts" / "index.d.ts").read_text(encoding="utf-8")
     operation = declarations.split("create_movie_movies__post: {", maxsplit=1)[1].split(
@@ -117,6 +171,20 @@ def test_typescript_client_types_documented_error_responses() -> None:
     for status_code in (400, 401, 403, 404, 422, 429, 500, 502, 503):
         assert f"{status_code}: {{" in operation
     assert operation.count('"application/json": components["schemas"]["ErrorResponse"];') >= 9
+
+
+def test_typescript_client_types_csv_success_responses() -> None:
+    declarations = (ROOT_DIR / "client_ts" / "index.d.ts").read_text(encoding="utf-8")
+
+    for operation_id in CSV_OPERATION_IDS:
+        operation = re.search(
+            rf"^    {re.escape(operation_id)}: \{{(?P<body>.*?)"
+            rf"(?=^    [A-Za-z0-9_]+: \{{|^\}})",
+            declarations,
+            re.MULTILINE | re.DOTALL,
+        )
+        assert operation is not None, operation_id
+        assert '"text/csv": string;' in operation.group("body")
 
 
 def test_generated_clients_type_every_documented_json_error() -> None:

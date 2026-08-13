@@ -68,15 +68,19 @@ def test_onboarding_import_shell_uses_first_movie_copy(client: TestClient) -> No
 
 
 def test_first_import_sample_csv_downloads_for_admin(client: TestClient) -> None:
-    response = client.get("/ui/first-import/sample.csv")
+    for path in (
+        "/ui/first-import/sample.csv",
+        "/ui/onboarding/import/sample.csv",
+    ):
+        response = client.get(path)
 
-    assert response.status_code == 200
-    assert response.headers["content-type"].startswith("text/csv")
-    assert (
-        response.headers["content-disposition"]
-        == 'attachment; filename="vault966-first-import-sample.csv"'
-    )
-    assert "Title,Time,Director,Year" in response.text
+        assert response.status_code == 200
+        assert response.headers["content-type"].startswith("text/csv")
+        assert (
+            response.headers["content-disposition"]
+            == 'attachment; filename="vault966-first-import-sample.csv"'
+        )
+        assert "Title,Time,Director,Year" in response.text
 
 
 def test_first_import_reviewer_cannot_open_wizard(
