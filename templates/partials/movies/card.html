@@ -16,7 +16,8 @@
   show_details=true,
   poster_src="",
   defer_image=false,
-  reason_note=""
+  reason_note="",
+  return_to=""
 ) -%}
 <article
   class="library-card{% if extra_class %} {{ extra_class }}{% endif %}{% if not show_details %} library-card--poster-only{% endif %}{% if show_review and movie.flagged %} library-card--review{% endif %}"
@@ -29,10 +30,10 @@
 >
   <a
     class="library-card__link"
-    href="/ui/movies/{{ movie.id }}"
+    href="/ui/movies/{{ movie.id }}{% if return_to %}?return_to={{ return_to | urlencode }}{% endif %}"
     {% if event_context %}data-movie-detail-link data-event-context="{{ event_context }}"{% endif %}
   >
-    <div class="library-card__media">
+    <div class="library-card__media" data-poster-frame>
       {% if movie.poster_url %}
       {% set resolved_poster_src = poster_src or '/ui/posters/' ~ movie.id ~ '/' ~ poster_size %}
       <img
@@ -41,8 +42,10 @@
         alt="{{ movie.title | display_title }} poster"
         loading="{{ image_loading }}"
         decoding="async"
+        data-poster-image
         {% if fetch_priority != "auto" %}fetchpriority="{{ fetch_priority }}"{% endif %}
       />
+      <div class="poster poster--empty {{ movie.poster_theme or 'poster-theme-default' }}" data-poster-fallback hidden aria-hidden="true">{{ placeholder }}</div>
       {% else %}
       <div class="poster poster--empty {{ movie.poster_theme or 'poster-theme-default' }}" aria-hidden="true">{{ placeholder }}</div>
       {% endif %}

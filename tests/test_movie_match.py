@@ -1,3 +1,7 @@
+import re
+from html import unescape
+from urllib.parse import parse_qs, urlsplit
+
 from fastapi.testclient import TestClient
 
 from api.models.movie import Movie
@@ -134,7 +138,11 @@ def test_match_page_renders_option_counts_and_trail(client: TestClient) -> None:
     assert "left" in html
 
 
-def test_match_page_renders_result_shortlist(client: TestClient) -> None:
+def test_match_page_renders_result_shortlist(client: TestClient, db_session) -> None:
+    for movie in db_session.query(Movie).all():
+        movie.poster_url = f"https://example.test/posters/{movie.id}.jpg"
+    db_session.commit()
+
     response = client.get("/ui/match", params={"answers": MATCH_ANSWERS})
 
     assert response.status_code == 200
@@ -147,3 +155,12 @@ def test_match_page_renders_result_shortlist(client: TestClient) -> None:
     assert "Why it fits:" in html
     assert "Quality:" not in html
     assert "Flic" not in html
+    detail_href = re.search(r'href="(/ui/movies/\d+\?return_to=[^"]+)"', html)
+    assert detail_href is not None
+    return_to = parse_qs(urlsplit(unescape(detail_href.group(1))).query)["return_to"][0]
+    return_url = urlsplit(return_to)
+    assert return_url.path == "/ui/match"
+    assert parse_qs(return_url.query) == {"answers": [MATCH_ANSWERS]}
+    assert "data-poster-frame" in html
+    assert "data-poster-image" in html
+    assert "data-poster-fallback hidden" in html

@@ -1,4 +1,6 @@
 import re
+from html import unescape
+from urllib.parse import parse_qs, urlsplit
 
 from fastapi.testclient import TestClient
 
@@ -169,6 +171,37 @@ def test_movies_list_view_renders_modern_list_rows(client: TestClient) -> None:
     assert 'class="library-list-meta"' in html
     assert "data-preference-button" in html
     assert "data-table-sort" in html
+
+
+def test_library_detail_links_preserve_query_and_poster_fallback(
+    client: TestClient,
+    db_session,
+) -> None:
+    movie = db_session.get(Movie, 1)
+    assert movie is not None
+    movie.poster_url = "https://example.test/poster.jpg"
+    db_session.commit()
+
+    response = client.get(
+        "/ui/movies",
+        params={"q": "Blade Runner", "view": "list", "page": 1},
+    )
+
+    assert response.status_code == 200
+    html = response.text
+    detail_href = re.search(r'href="(/ui/movies/1\?return_to=[^"]+)"', html)
+    assert detail_href is not None
+    return_to = parse_qs(urlsplit(unescape(detail_href.group(1))).query)["return_to"][0]
+    return_url = urlsplit(return_to)
+    assert return_url.path == "/ui/movies"
+    assert parse_qs(return_url.query) == {
+        "page": ["1"],
+        "q": ["Blade Runner"],
+        "view": ["list"],
+    }
+    assert "data-poster-frame" in html
+    assert "data-poster-image" in html
+    assert "data-poster-fallback hidden" in html
 
 
 def test_movies_library_renders_quiet_inline_status_slot(client: TestClient) -> None:

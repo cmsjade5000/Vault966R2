@@ -50,19 +50,21 @@
             <div class="library-list-movie" data-movie-card data-movie-id="{{ movie.id }}" data-liked="{{ 'true' if movie.liked else 'false' }}" data-watchlist="{{ 'true' if movie.watchlist else 'false' }}">
               <a
                 class="library-list-movie__poster"
-                href="/ui/movies/{{ movie.id }}"
+                href="/ui/movies/{{ movie.id }}?return_to={{ library_return_to | urlencode }}"
                 data-movie-detail-link
                 data-event-context="library_list_poster"
                 aria-label="Open {{ movie.title | display_title }}"
+                data-poster-frame
               >
                 {% if movie.poster_url %}
-                <img src="/ui/posters/{{ movie.id }}/w185" alt="{{ movie.title | display_title }} poster" loading="lazy" decoding="async" />
+                <img src="/ui/posters/{{ movie.id }}/w185" alt="{{ movie.title | display_title }} poster" loading="lazy" decoding="async" data-poster-image />
+                <span class="poster poster--empty {{ movie.poster_theme or 'poster-theme-default' }}" data-poster-fallback hidden aria-hidden="true">966</span>
                 {% else %}
                 <span class="poster poster--empty {{ movie.poster_theme or 'poster-theme-default' }}" aria-hidden="true">966</span>
                 {% endif %}
               </a>
               <div class="library-list-movie__copy">
-                <a class="library-list-movie__title" href="/ui/movies/{{ movie.id }}" data-movie-detail-link data-event-context="library_list">{{ movie.title | display_title }}</a>
+                <a class="library-list-movie__title" href="/ui/movies/{{ movie.id }}?return_to={{ library_return_to | urlencode }}" data-movie-detail-link data-event-context="library_list">{{ movie.title | display_title }}</a>
                 <div class="library-list-movie__badges">
                   {% if movie.flagged %}<span class="table-tag table-tag--review">Needs review</span>{% endif %}
                   {% if order_by == 'flic' %}

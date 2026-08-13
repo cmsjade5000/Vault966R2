@@ -156,6 +156,7 @@ def test_discover_page_uses_preference_controls_and_safe_event_contexts(client) 
     assert 'data-preference-type="watchlist"' in html
     assert 'data-event-context="flic_shortlist"' in html
     assert 'data-event-context="double_feature"' in html
+    assert "return_to=/ui/discover" in html
     assert "liked_titles" not in html
     assert "search_text" not in html
 
