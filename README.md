@@ -64,9 +64,11 @@ make dev          # alias: make devserver; uses .env.local (or .env fallback) au
 ```
 
 Visit http://127.0.0.1:8000/health and http://127.0.0.1:8000/docs.
-`/health`, `/docs`, `/redoc`, `/openapi.json`, `/login`, `/logout`, and
-`/static/*` are intentionally public; application data routes require a login
-session or admin bearer token.
+`/health`, `/livez`, `/readyz`, `/docs`, `/redoc`, `/openapi.json`, `/login`,
+`/logout`, and `/static/*` are intentionally public; application data routes
+require a login session or admin bearer token. `/livez` reports process-only
+liveness without accessing the database. `/readyz` performs a bounded database
+readiness check and returns HTTP 503 when the database is unavailable.
 
 ### Always-on Mac Mini service
 
