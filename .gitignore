@@ -1,7 +1,10 @@
 __pycache__/
 *.pyc
 *.bak
+# Local secrets; keep the public template tracked.
 .env
+.env.*
+!.env.example
 .DS_Store
 design-qa.md
 second-user-permissions-plan.md

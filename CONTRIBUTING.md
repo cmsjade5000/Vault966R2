@@ -38,6 +38,7 @@ Before opening a pull request:
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
+npm ci
 cp .env.example .env
 make dev
 ```
