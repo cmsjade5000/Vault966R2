@@ -40,7 +40,12 @@ def _detail_return_context(return_to: str | None) -> dict[str, object]:
         "back_busy_message": "Returning to the Library…",
         "back_context_explicit": False,
     }
-    if not return_to or not return_to.startswith("/") or any(ord(char) < 32 for char in return_to):
+    if (
+        not return_to
+        or len(return_to) > 2048
+        or not return_to.startswith("/")
+        or any(ord(char) < 32 for char in return_to)
+    ):
         return fallback
 
     parsed = urlsplit(return_to)
@@ -138,10 +143,9 @@ def movie_detail(
     request: Request,
     review: bool = Query(default=False),
     spotlight: bool = Query(default=False),
-    return_to: str | None = Query(default=None, max_length=2048),
     db: Session = Depends(get_db),
 ):
-    return_context = _detail_return_context(return_to)
+    return_context = _detail_return_context(request.query_params.get("return_to"))
     detail = get_movie_detail(db, movie_id)
     if detail is None:
         return TEMPLATES.TemplateResponse(

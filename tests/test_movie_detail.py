@@ -292,6 +292,7 @@ def test_movie_detail_preserves_allowed_return_context(
         "//evil.test/ui/movies",
         "/login",
         "/ui/movies/42",
+        "/ui/movies?" + ("q" * 2040),
     ],
 )
 def test_movie_detail_rejects_untrusted_return_context(
