@@ -195,6 +195,7 @@ def test_movie_detail_template(client: TestClient, detail_movie_setup):
     assert "data-copy-vault" in html
     assert 'data-vault-busy-message="Returning to the Library…"' in html
     assert "js/back_link.js?v=" in html
+    assert "js/poster_fallback.js?v=" in html
     assert "css/movies.css?v=" in html
     assert "css/movie_detail.css?v=" in html
     assert "css/movie_components.css?v=" in html
@@ -233,6 +234,102 @@ def test_movie_detail_template(client: TestClient, detail_movie_setup):
     trailer_action = html.split('class="trailer-action"', 1)[1].split(">", 1)[0]
     assert "hidden" in trailer_action
     assert "https://www.youtube-nocookie.com/embed/" not in html
+
+
+@pytest.mark.parametrize(
+    ("return_to", "expected_href", "expected_label", "expected_message"),
+    [
+        (
+            "/ui/discover",
+            "/ui/discover",
+            "← Back to Discover",
+            "Returning to Discover…",
+        ),
+        (
+            "/ui/match?answers=cozy,low&reroll=2",
+            "/ui/match?answers=cozy,low&amp;reroll=2",
+            "← Back to Picker",
+            "Returning to the Picker…",
+        ),
+        (
+            "/ui/movies?q=Blade+Runner&view=list&page=2#results",
+            "/ui/movies?q=Blade+Runner&amp;view=list&amp;page=2#results",
+            "← Back to Library",
+            "Returning to the Library…",
+        ),
+        (
+            "/ui/watchlist",
+            "/ui/watchlist",
+            "← Back to Watchlist",
+            "Returning to the Watchlist…",
+        ),
+    ],
+)
+def test_movie_detail_preserves_allowed_return_context(
+    client: TestClient,
+    detail_movie_setup,
+    return_to: str,
+    expected_href: str,
+    expected_label: str,
+    expected_message: str,
+) -> None:
+    response = client.get(
+        f"/ui/movies/{detail_movie_setup}",
+        params={"return_to": return_to},
+    )
+
+    assert response.status_code == 200
+    assert f'href="{expected_href}"' in response.text
+    assert f'data-vault-busy-message="{expected_message}"' in response.text
+    assert 'data-back-context="explicit"' in response.text
+    assert expected_label in response.text
+
+
+@pytest.mark.parametrize(
+    "return_to",
+    [
+        "https://evil.test/ui/movies",
+        "//evil.test/ui/movies",
+        "/login",
+        "/ui/movies/42",
+    ],
+)
+def test_movie_detail_rejects_untrusted_return_context(
+    client: TestClient,
+    detail_movie_setup,
+    return_to: str,
+) -> None:
+    response = client.get(
+        f"/ui/movies/{detail_movie_setup}",
+        params={"return_to": return_to},
+    )
+
+    assert response.status_code == 200
+    assert 'href="/ui/movies"' in response.text
+    assert 'data-back-context="default"' in response.text
+    assert "← Back to results" in response.text
+
+
+def test_movie_detail_poster_has_a_safe_failure_fallback(
+    client: TestClient,
+    detail_movie_setup,
+) -> None:
+    for db in _db_session(client):
+        movie = db.get(Movie, detail_movie_setup)
+        assert movie is not None
+        movie.poster_url = "https://example.test/poster.jpg"
+        db.commit()
+
+    response = client.get(f"/ui/movies/{detail_movie_setup}")
+
+    assert response.status_code == 200
+    poster_shell = response.text.split('<div class="poster-shell">', 1)[1].split(
+        '<div class="hero-meta">',
+        1,
+    )[0]
+    assert "data-poster-frame" in poster_shell
+    assert "data-poster-image" in poster_shell
+    assert "data-poster-fallback hidden" in poster_shell
 
 
 def test_movie_detail_template_shows_collection_lineup(client: TestClient, detail_movie_setup):

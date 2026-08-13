@@ -6,6 +6,7 @@
 <link rel="stylesheet" href="{{ static_asset('css/discover.css') }}" />
 {% endblock %}
 {% block content %}
+  {% set discover_return_to = request.url.path ~ (('?' ~ request.url.query) if request.url.query else '') %}
   <div class="discover-layout page-shell">
     <header class="discover-heading">
       <p class="discover-kicker">Watch Tonight</p>
@@ -39,7 +40,7 @@
         </header>
         <div class="discover-spotlight__grid">
           <article class="discover-spotlight__lead" data-movie-card data-movie-id="{{ spotlight_lead.id }}">
-            <a class="discover-spotlight__poster" href="/ui/movies/{{ spotlight_lead.id }}?spotlight=1" data-movie-detail-link data-movie-id="{{ spotlight_lead.id }}" data-event-context="daily_spotlight">
+            <a class="discover-spotlight__poster" href="/ui/movies/{{ spotlight_lead.id }}?spotlight=1&amp;return_to={{ discover_return_to | urlencode }}" data-movie-detail-link data-movie-id="{{ spotlight_lead.id }}" data-event-context="daily_spotlight">
               {% if spotlight_lead.poster_url %}
               <img
                 src="/ui/posters/{{ spotlight_lead.id }}/w185"
@@ -103,7 +104,7 @@
           <div class="discover-spotlight__supporting" role="list">
             {% for movie in spotlight_supporting %}
             <article class="discover-spotlight-card" role="listitem">
-              <a href="/ui/movies/{{ movie.id }}?spotlight=1" data-movie-detail-link data-movie-id="{{ movie.id }}" data-event-context="daily_spotlight">
+              <a href="/ui/movies/{{ movie.id }}?spotlight=1&amp;return_to={{ discover_return_to | urlencode }}" data-movie-detail-link data-movie-id="{{ movie.id }}" data-event-context="daily_spotlight">
                 {% if movie.poster_url %}
                 <img
                   src="/ui/posters/{{ movie.id }}/w185"
@@ -149,7 +150,7 @@
           <div class="discover-rail__track" role="list">
             {% for movie in flic_shortlist %}
             {% set genre_labels = movie.genre_display if movie.genre_display is defined else [] %}
-            {{ movie_card(movie, movie.liked, movie.watchlist, genre_labels, extra_class="discover-rail-card discover-rail-card--flic", role="listitem", event_context="flic_shortlist", poster_size="w185", reason_labels=movie.reason_labels if movie.reason_labels is defined else [], poster_src="/ui/posters/" ~ movie.id ~ "/w185", defer_image=true) }}
+            {{ movie_card(movie, movie.liked, movie.watchlist, genre_labels, extra_class="discover-rail-card discover-rail-card--flic", role="listitem", event_context="flic_shortlist", poster_size="w185", reason_labels=movie.reason_labels if movie.reason_labels is defined else [], poster_src="/ui/posters/" ~ movie.id ~ "/w185", defer_image=true, return_to=discover_return_to) }}
             {% endfor %}
           </div>
         </div>
@@ -189,7 +190,7 @@
           <div class="discover-rail__track" role="list">
             {% for movie in selected_for_you %}
             {% set genre_labels = movie.genre_display if movie.genre_display is defined else [] %}
-            {{ movie_card(movie, movie.liked, movie.watchlist, genre_labels, extra_class="discover-rail-card discover-rail-card--personalized", role="listitem", event_context="selected_for_you", poster_size="w185", reason_labels=movie.reason_labels if movie.reason_labels is defined else [], poster_src="/ui/posters/" ~ movie.id ~ "/w185", defer_image=true) }}
+            {{ movie_card(movie, movie.liked, movie.watchlist, genre_labels, extra_class="discover-rail-card discover-rail-card--personalized", role="listitem", event_context="selected_for_you", poster_size="w185", reason_labels=movie.reason_labels if movie.reason_labels is defined else [], poster_src="/ui/posters/" ~ movie.id ~ "/w185", defer_image=true, return_to=discover_return_to) }}
             {% endfor %}
           </div>
         </div>
@@ -223,7 +224,7 @@
             </div>
             <div class="discover-double-card__posters">
               {% for movie in (pairing.primary, pairing.secondary) %}
-              <a href="/ui/movies/{{ movie.id }}" data-movie-detail-link data-movie-id="{{ movie.id }}" data-event-context="double_feature">
+              <a href="/ui/movies/{{ movie.id }}?return_to={{ discover_return_to | urlencode }}" data-movie-detail-link data-movie-id="{{ movie.id }}" data-event-context="double_feature">
                 {% if movie.poster_url %}
                 <img src="/ui/posters/{{ movie.id }}/w185" alt="{{ movie.title | display_title }} poster" loading="lazy" decoding="async" />
                 {% else %}
@@ -270,7 +271,7 @@
             <div class="discover-rail__track" role="list">
               {% for movie in rail.movies %}
               {% set genre_labels = movie.genre_display if movie.genre_display is defined else [] %}
-              {{ movie_card(movie, movie.liked, movie.watchlist, genre_labels, extra_class="discover-rail-card", role="listitem", event_context=rail.key, poster_size="w185", reason_labels=movie.reason_labels if movie.reason_labels is defined else [], poster_src="/ui/posters/" ~ movie.id ~ "/w185", defer_image=true) }}
+              {{ movie_card(movie, movie.liked, movie.watchlist, genre_labels, extra_class="discover-rail-card", role="listitem", event_context=rail.key, poster_size="w185", reason_labels=movie.reason_labels if movie.reason_labels is defined else [], poster_src="/ui/posters/" ~ movie.id ~ "/w185", defer_image=true, return_to=discover_return_to) }}
               {% else %}
               <p class="discover-rail__empty">No trusted titles match this rail yet.</p>
               {% endfor %}

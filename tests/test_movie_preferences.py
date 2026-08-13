@@ -1,3 +1,6 @@
+from api.models.movie import Movie
+
+
 def _first_movie_id(client) -> int:
     response = client.get("/movies")
     assert response.status_code == 200
@@ -84,8 +87,13 @@ def test_profile_switch_requires_same_origin_when_auth_enabled(client, login_pro
     assert response.status_code == 200
 
 
-def test_watchlist_uses_library_movie_cards(client) -> None:
+def test_watchlist_uses_library_movie_cards(client, db_session) -> None:
     movie_id = _first_movie_id(client)
+    movie = db_session.get(Movie, movie_id)
+    assert movie is not None
+    movie.poster_url = "https://example.test/poster.jpg"
+    db_session.commit()
+
     response = client.post(f"/movies/{movie_id}/watchlist")
     assert response.status_code == 200
 
@@ -108,4 +116,9 @@ def test_watchlist_uses_library_movie_cards(client) -> None:
     assert 'class="preference-button' not in page.text
     assert "css/movies.css?v=" in page.text
     assert "js/movie_preferences.js?v=" in page.text
+    assert "js/poster_fallback.js?v=" in page.text
+    assert f'href="/ui/movies/{movie_id}?return_to=/ui/watchlist"' in page.text
+    assert "data-poster-frame" in page.text
+    assert "data-poster-image" in page.text
+    assert "data-poster-fallback hidden" in page.text
     assert "js/movies_page.js" not in page.text

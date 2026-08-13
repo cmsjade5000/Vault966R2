@@ -18,10 +18,11 @@
     <div class="detail-topbar">
       <a
         class="back-link"
-        href="/ui/movies"
+        href="{{ back_url }}"
         data-back-link
-        data-vault-busy-message="Returning to the Library…"
-        >← Back to results</a
+        data-back-context="{{ 'explicit' if back_context_explicit else 'default' }}"
+        data-vault-busy-message="{{ back_busy_message }}"
+        >{{ back_label }}</a
       >
       <button
         type="button"
@@ -39,12 +40,14 @@
           type="button"
           class="poster-frame{% if spotlight_reason %} poster-frame--spotlight{% endif %}"
           data-poster-focus
+          data-poster-frame
           data-movie-title="{{ movie.title | display_title }}"
           aria-label="Enlarge {{ movie.title | display_title }} poster"
           aria-pressed="false"
         >
           {% if movie.poster_url %}
-          <img class="poster" src="/ui/posters/{{ movie.id }}/w342" alt="{{ movie.title | display_title }} poster" />
+          <img class="poster" src="/ui/posters/{{ movie.id }}/w342" alt="{{ movie.title | display_title }} poster" data-poster-image />
+          <div class="poster poster--empty {{ movie.poster_theme or 'poster-theme-default' }}" data-poster-fallback hidden aria-hidden="true">🍿</div>
           {% else %}
           <div class="poster poster--empty {{ movie.poster_theme or 'poster-theme-default' }}" aria-hidden="true">🍿</div>
           {% endif %}

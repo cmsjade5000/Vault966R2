@@ -6,6 +6,7 @@
 {% endblock %}
 {% block body_class %}match-page{% endblock %}
 {% block content %}
+  {% set match_return_to = request.url.path ~ (('?' ~ request.url.query) if request.url.query else '') %}
   <div class="match-shell page-shell" data-match-page>
     <header class="match-heading">
       <div>
@@ -89,9 +90,10 @@
       <div class="match-results" data-match-results>
         {% if result.lead %}
         <article class="match-lead" data-movie-card data-movie-id="{{ result.lead.movie.id }}" data-liked="{{ 'true' if result.lead.movie.liked else 'false' }}" data-watchlist="{{ 'true' if result.lead.movie.watchlist else 'false' }}">
-          <a class="match-lead__poster" href="/ui/movies/{{ result.lead.movie.id }}" data-movie-detail-link data-event-context="match_lead">
+          <a class="match-lead__poster" href="/ui/movies/{{ result.lead.movie.id }}?return_to={{ match_return_to | urlencode }}" data-movie-detail-link data-event-context="match_lead" data-poster-frame>
             {% if result.lead.movie.poster_url %}
-            <img src="/ui/posters/{{ result.lead.movie.id }}/w342" alt="{{ result.lead.movie.title | display_title }} poster" decoding="async" fetchpriority="high" />
+            <img src="/ui/posters/{{ result.lead.movie.id }}/w342" alt="{{ result.lead.movie.title | display_title }} poster" decoding="async" fetchpriority="high" data-poster-image />
+            <div class="poster poster--empty {{ result.lead.movie.poster_theme or 'poster-theme-default' }}" data-poster-fallback hidden aria-hidden="true">966</div>
             {% else %}
             <div class="poster poster--empty {{ result.lead.movie.poster_theme or 'poster-theme-default' }}" aria-hidden="true">966</div>
             {% endif %}
@@ -112,7 +114,7 @@
             </div>
             <p class="match-why"><strong>Why it fits:</strong> {{ result.lead.why_it_fits }}</p>
             <div class="match-lead__actions" aria-label="Actions for {{ result.lead.movie.title | display_title }}">
-              <a class="button-primary" href="/ui/movies/{{ result.lead.movie.id }}" data-movie-detail-link data-event-context="match_open">Open</a>
+              <a class="button-primary" href="/ui/movies/{{ result.lead.movie.id }}?return_to={{ match_return_to | urlencode }}" data-movie-detail-link data-event-context="match_open">Open</a>
               {% if result.library_filter_query %}
               <a class="button-secondary" href="/ui/movies?{{ result.library_filter_query }}">View these filters in Library</a>
               {% endif %}
@@ -161,7 +163,7 @@
           <div class="match-shortlist__grid">
             {% for match in result.supporting %}
             {% set genre_labels = match.movie.genre_display if match.movie.genre_display is defined else [] %}
-            {{ movie_card(match.movie, match.movie.liked, match.movie.watchlist, genre_labels, extra_class="match-card", event_context="match_shortlist", reason_labels=match.reasons, poster_size="w185", show_review=false, reason_note=match.why_it_fits) }}
+            {{ movie_card(match.movie, match.movie.liked, match.movie.watchlist, genre_labels, extra_class="match-card", event_context="match_shortlist", reason_labels=match.reasons, poster_size="w185", show_review=false, reason_note=match.why_it_fits, return_to=match_return_to) }}
             {% endfor %}
           </div>
         </section>

@@ -1,8 +1,23 @@
 (function () {
-  const link = document.querySelector("[data-back-link]");
-  if (!link) return;
-
   const PREF_KEY = "movies:lastFilters";
+  const RETURN_SURFACES = {
+    "/ui/discover": {
+      label: "← Back to Discover",
+      message: "Returning to Discover…",
+    },
+    "/ui/match": {
+      label: "← Back to Picker",
+      message: "Returning to the Picker…",
+    },
+    "/ui/movies": {
+      label: "← Back to Library",
+      message: "Returning to the Library…",
+    },
+    "/ui/watchlist": {
+      label: "← Back to Watchlist",
+      message: "Returning to the Watchlist…",
+    },
+  };
 
   function readPersistedFilters() {
     try {
@@ -37,37 +52,66 @@
     return url.toString();
   }
 
-  const referrer = document.referrer;
-  if (referrer) {
+  function readReturnSurface(rawUrl) {
+    if (!rawUrl) return null;
     try {
-      const url = new URL(referrer);
-      if (url.origin === window.location.origin) {
-        if (url.pathname.startsWith("/ui/discover")) {
-          link.textContent = "← Back to Library";
-          link.setAttribute("href", "/ui/movies");
-          link.dataset.vaultBusyMessage = "Returning to the Library…";
-        } else if (url.pathname.startsWith("/ui/watchlist")) {
-          link.textContent = "← Back to Watchlist";
-          link.setAttribute("href", "/ui/watchlist");
-          link.dataset.vaultBusyMessage = "Returning to the Watchlist…";
-        } else if (url.pathname.startsWith("/ui/movies")) {
-          link.textContent = "← Back to Library";
-          link.setAttribute("href", "/ui/movies");
-          link.dataset.vaultBusyMessage = "Returning to the Library…";
-        }
+      const url = new URL(rawUrl, window.location.origin);
+      const surface = RETURN_SURFACES[url.pathname];
+      if (
+        url.origin !== window.location.origin ||
+        url.username ||
+        url.password ||
+        !surface
+      ) {
+        return null;
       }
+      return { ...surface, url };
     } catch (err) {
-      console.warn("Failed to read referrer", err);
+      console.warn("Failed to read return context", err);
+      return null;
+    }
+  }
+
+  function applyReturnSurface(link, context, source) {
+    link.textContent = context.label;
+    link.setAttribute("href", context.url.toString());
+    link.dataset.vaultBusyMessage = context.message;
+    link.dataset.backContext = source;
+  }
+
+  window.VaultBackLinkSupport = {
+    buildUrl,
+    readReturnSurface,
+  };
+
+  const link = document.querySelector("[data-back-link]");
+  if (!link) return;
+
+  if (link.dataset.backContext === "explicit") {
+    const explicitContext = readReturnSurface(link.getAttribute("href"));
+    if (explicitContext) {
+      applyReturnSurface(link, explicitContext, "explicit");
+    } else {
+      link.dataset.backContext = "default";
+    }
+  } else {
+    const referrerContext = readReturnSurface(document.referrer);
+    if (referrerContext) {
+      applyReturnSurface(link, referrerContext, "referrer");
     }
   }
 
   link.addEventListener("click", (event) => {
-    const baseHref = link.getAttribute("href") || "/ui/movies";
+    const context =
+      readReturnSurface(link.getAttribute("href")) ||
+      readReturnSurface("/ui/movies");
     try {
-      const params = baseHref.startsWith("/ui/movies")
-        ? readPersistedFilters()
-        : null;
-      const url = buildUrl(baseHref, params);
+      const params =
+        link.dataset.backContext === "default" &&
+        context.url.pathname === "/ui/movies"
+          ? readPersistedFilters()
+          : null;
+      const url = buildUrl(context.url, params);
       event.preventDefault();
       if (typeof window.setVaultBusy === "function") {
         window.setVaultBusy(

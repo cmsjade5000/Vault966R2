@@ -6,6 +6,7 @@
 {% endblock %}
 {% block body_class %}watchlist-page{% endblock %}
 {% block content %}
+  {% set watchlist_return_to = request.url.path ~ (('?' ~ request.url.query) if request.url.query else '') %}
   <section class="library-shell page-shell" aria-live="polite">
     <header class="library-heading">
       <div>
@@ -19,7 +20,7 @@
     <div class="library-grid" data-watchlist-grid aria-label="Watchlist movies"{% if not movies %} hidden{% endif %}>
       {% for movie in movies %}
       {% set genre_labels = movie.genre_display if movie.genre_display is defined else [] %}
-      {{ movie_card(movie, movie.liked, movie.watchlist, genre_labels, event_context="watchlist_grid") }}
+      {{ movie_card(movie, movie.liked, movie.watchlist, genre_labels, event_context="watchlist_grid", return_to=watchlist_return_to) }}
       {% endfor %}
     </div>
     <div class="empty" role="status" data-watchlist-empty{% if movies %} hidden{% endif %}>

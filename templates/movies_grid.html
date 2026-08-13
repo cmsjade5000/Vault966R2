@@ -6,6 +6,7 @@
 {% endblock %}
 {% block body_class %}library-page{% endblock %}
 {% block content %}
+  {% set library_return_to = request.url.path ~ (('?' ~ request.url.query) if request.url.query else '') %}
   <div class="library-shell page-shell" id="results" data-results-shell>
     <header class="library-heading">
       <div>
@@ -228,7 +229,7 @@
       <div class="library-grid" data-results-grid aria-label="Movie results">
         {% for movie in movies %}
         {% set genre_labels = movie.genre_display if movie.genre_display is defined else [] %}
-        {{ movie_card(movie, movie.liked, movie.watchlist, genre_labels, event_context="library_grid", show_review=true) }}
+        {{ movie_card(movie, movie.liked, movie.watchlist, genre_labels, event_context="library_grid", show_review=true, return_to=library_return_to) }}
         {% endfor %}
       </div>
       {% else %}

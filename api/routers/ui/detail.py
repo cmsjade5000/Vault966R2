@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from urllib.parse import urlsplit, urlunsplit
+
 from fastapi import APIRouter, Depends, Query, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlalchemy.orm import Session
@@ -21,6 +23,38 @@ from api.services.source_sync import source_provenance_for_movie
 from api.services.trusted_movies import get_untrusted_movie_ids
 
 router = APIRouter()
+
+
+_RETURN_SURFACES = {
+    "/ui/discover": ("← Back to Discover", "Returning to Discover…"),
+    "/ui/match": ("← Back to Picker", "Returning to the Picker…"),
+    "/ui/movies": ("← Back to Library", "Returning to the Library…"),
+    "/ui/watchlist": ("← Back to Watchlist", "Returning to the Watchlist…"),
+}
+
+
+def _detail_return_context(return_to: str | None) -> dict[str, object]:
+    fallback = {
+        "back_url": "/ui/movies",
+        "back_label": "← Back to results",
+        "back_busy_message": "Returning to the Library…",
+        "back_context_explicit": False,
+    }
+    if not return_to or not return_to.startswith("/") or any(ord(char) < 32 for char in return_to):
+        return fallback
+
+    parsed = urlsplit(return_to)
+    surface = _RETURN_SURFACES.get(parsed.path)
+    if parsed.scheme or parsed.netloc or surface is None:
+        return fallback
+
+    label, busy_message = surface
+    return {
+        "back_url": urlunsplit(("", "", parsed.path, parsed.query, parsed.fragment)),
+        "back_label": label,
+        "back_busy_message": busy_message,
+        "back_context_explicit": True,
+    }
 
 
 def _primary_genre(label_list: list[str]) -> str:
@@ -104,8 +138,10 @@ def movie_detail(
     request: Request,
     review: bool = Query(default=False),
     spotlight: bool = Query(default=False),
+    return_to: str | None = Query(default=None, max_length=2048),
     db: Session = Depends(get_db),
 ):
+    return_context = _detail_return_context(return_to)
     detail = get_movie_detail(db, movie_id)
     if detail is None:
         return TEMPLATES.TemplateResponse(
@@ -126,6 +162,7 @@ def movie_detail(
                 "active_profile_id": get_active_profile_id(request, db),
                 "source_provenance": None,
                 "flag_reasons": FLAG_REASONS,
+                **return_context,
             },
             status_code=404,
         )
@@ -195,6 +232,7 @@ def movie_detail(
             "more_like": more_like,
             "source_provenance": source_provenance_for_movie(db, detail.id),
             "flag_reasons": FLAG_REASONS,
+            **return_context,
         },
     )
     ensure_profile_cookie(request, response, db)
