@@ -113,4 +113,7 @@ seed: ## Seed initial data (confirm)
 # ---- HEALTH ----
 .PHONY: health
 health: ## Curl the health endpoint
-	curl -sS http://localhost:$(PORT)/health || echo "API not responding on :$(PORT)"
+	@curl --fail --silent --show-error http://localhost:$(PORT)/health || { \
+		echo "API not responding on :$(PORT)" >&2; \
+		exit 1; \
+	}
