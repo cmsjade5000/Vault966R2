@@ -7,6 +7,7 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session, selectinload
 
 from api.db import get_db
+from api.deps.auth import require_same_origin_provider_work
 from api.models.movie import Genre, Mood, Movie, movie_genres, movie_moods
 from api.schemas.ai_search import AiSearchRequest, AiSearchResponse
 from api.services.ai_search import (
@@ -35,6 +36,7 @@ logger = logging.getLogger("vault966")
 def ai_search(
     payload: AiSearchRequest,
     db: Session = Depends(get_db),
+    _: None = Depends(require_same_origin_provider_work("ai_search")),
 ):
     allowed_genres = [
         row[0] for row in db.query(Genre.name).order_by(Genre.name.asc()).all() if row[0]

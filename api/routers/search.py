@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 
 from api.config import settings
 from api.db import get_db
+from api.deps.auth import require_same_origin_provider_work
 from api.models.movie import Movie
 from api.schemas.movie import MovieFacets
 from api.schemas.semantic_search import (
@@ -86,6 +87,7 @@ def _keyword_fallback(
 def semantic_search(
     payload: SemanticSearchRequest,
     db: Session = Depends(get_db),
+    _: None = Depends(require_same_origin_provider_work("semantic_search")),
 ):
     query = payload.query.strip()
     if not query:

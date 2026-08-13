@@ -9,7 +9,12 @@ from sqlalchemy.orm import joinedload
 from sqlalchemy.orm import Session
 
 from api.db import get_db
-from api.deps.auth import require_profile_role, require_same_origin
+from api.deps.auth import (
+    require_profile_role,
+    require_provider_work_budget,
+    require_same_origin,
+    require_same_origin_provider_work,
+)
 from api.models.movie import Movie, MovieIngestProvenance
 from api.models.movie_flag import MovieFlag
 from api.models.movie_repair import MovieIdentityRepair
@@ -666,6 +671,10 @@ def _record_manual_match_provenance(
         record.notes = "Manually selected from the Flags review workbench."
 
 
+def _require_flag_match_lookup_budget(request: Request) -> None:
+    require_provider_work_budget(request, scope="flag_match_lookup")
+
+
 @router.get(
     "/ui/movies/health/review/{movie_id}/matches",
     response_model=MovieLookupResponse,
@@ -676,6 +685,7 @@ def search_flagged_movie_matches(
     year: int | None = Query(default=None, ge=1870, le=2100),
     db: Session = Depends(get_db),
     _: str = Depends(require_profile_role(ROLE_ADMIN)),
+    __: None = Depends(_require_flag_match_lookup_budget),
 ) -> MovieLookupResponse:
     movie = _load_movie(db, movie_id)
     if movie.flag is None:
@@ -712,7 +722,7 @@ def apply_flagged_movie_match(
     request: Request,
     db: Session = Depends(get_db),
     _: str = Depends(require_profile_role(ROLE_ADMIN)),
-    __: None = Depends(require_same_origin),
+    __: None = Depends(require_same_origin_provider_work("flag_match_lookup")),
 ) -> MovieMatchApplyResponse:
     movie = _load_movie(db, movie_id)
     if movie.flag is None:
