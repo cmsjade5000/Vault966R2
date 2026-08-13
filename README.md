@@ -137,7 +137,7 @@ cp .env.example .env
 make db.up            # start pgvector-enabled postgres in docker
 
 # once the container reports healthy, run migrations
-make db.migrate
+make db.migrate       # builds/runs a disposable API container; API need not be running
 
 # optional: seed a few movies through the archived-but-supported ETL importer
 python legacy/etl/etl_seed.py --path legacy/etl/samples/sample_movies.json --format json
