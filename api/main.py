@@ -20,6 +20,18 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from api.config import settings
 from api.db import SessionLocal, bootstrap_sqlite_schema, engine, get_db
 from api.models.profile import Profile
+from api.schemas.common import (
+    AI_API_ERROR_RESPONSES,
+    ASSISTANT_API_ERROR_RESPONSES,
+    COLLECTION_HEALTH_API_ERROR_RESPONSES,
+    FLICLIST_API_ERROR_RESPONSES,
+    GLOBAL_SERVER_ERROR_RESPONSES,
+    MOVIE_API_ERROR_RESPONSES,
+    PEOPLE_API_ERROR_RESPONSES,
+    PROFILE_API_ERROR_RESPONSES,
+    SEARCH_API_ERROR_RESPONSES,
+    apply_error_response_openapi_contract,
+)
 from api.routers import (
     ai,
     assistant,
@@ -445,7 +457,19 @@ async def lifespan(app: FastAPI):
     yield
 
 
-app = FastAPI(title=settings.app_name, lifespan=lifespan)
+app = FastAPI(
+    title=settings.app_name,
+    lifespan=lifespan,
+    responses=GLOBAL_SERVER_ERROR_RESPONSES,
+)
+_fastapi_openapi = app.openapi
+
+
+def openapi_with_runtime_error_contract() -> dict[str, Any]:
+    return apply_error_response_openapi_contract(_fastapi_openapi())
+
+
+app.openapi = openapi_with_runtime_error_contract
 app.add_middleware(GZipMiddleware, minimum_size=1024)
 app.add_middleware(AuthRequiredMiddleware)
 app.add_middleware(SecurityHeadersMiddleware)
@@ -512,15 +536,18 @@ if settings.cors_origins:
     )
 
 app.include_router(health.router)
-app.include_router(movies.router)
-app.include_router(people.router)
-app.include_router(assistant.router)
+app.include_router(movies.router, responses=MOVIE_API_ERROR_RESPONSES)
+app.include_router(people.router, responses=PEOPLE_API_ERROR_RESPONSES)
+app.include_router(assistant.router, responses=ASSISTANT_API_ERROR_RESPONSES)
 app.include_router(ui.router)
-app.include_router(fliclists.router)
-app.include_router(ai.router)
-app.include_router(search.router)
-app.include_router(collection_health.router)
-app.include_router(profiles.router)
+app.include_router(fliclists.router, responses=FLICLIST_API_ERROR_RESPONSES)
+app.include_router(ai.router, responses=AI_API_ERROR_RESPONSES)
+app.include_router(search.router, responses=SEARCH_API_ERROR_RESPONSES)
+app.include_router(
+    collection_health.router,
+    responses=COLLECTION_HEALTH_API_ERROR_RESPONSES,
+)
+app.include_router(profiles.router, responses=PROFILE_API_ERROR_RESPONSES)
 
 
 @app.get("/", include_in_schema=False)

@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 
 from api.db import get_db
 from api.deps.auth import require_admin_or_profile_admin, require_same_origin_provider_work
+from api.schemas.common import CSV_DOWNLOAD_RESPONSE
 from api.services.movies_curated import get_collection_recommendation
 from api.services.vault_update import (
     build_update_preview,
@@ -47,7 +48,11 @@ def update_preview(
     return build_update_preview(db)
 
 
-@router.get("/update/reports/{task}")
+@router.get(
+    "/update/reports/{task}",
+    response_class=FileResponse,
+    responses=CSV_DOWNLOAD_RESPONSE,
+)
 def update_report(
     task: str,
     _: None = Depends(require_admin_or_profile_admin),

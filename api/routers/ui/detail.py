@@ -2,11 +2,12 @@ from __future__ import annotations
 
 from urllib.parse import urlsplit, urlunsplit
 
-from fastapi import APIRouter, Depends, Query, Request
+from fastapi import APIRouter, Depends, Query, Request, status
 from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlalchemy.orm import Session
 
 from api.db import get_db
+from api.schemas.common import FOUND_REDIRECT_RESPONSES
 from api.schemas.movie import FLAG_REASONS
 from api.services.movies_detail import get_movie_detail, get_review_neighbors
 from api.services.profiles import (
@@ -127,7 +128,12 @@ def _build_reason_tags(base_genres: list[str], base_year: int | None, item) -> l
     return tags[:2]
 
 
-@router.get("/ui/movies/review")
+@router.get(
+    "/ui/movies/review",
+    status_code=status.HTTP_302_FOUND,
+    response_class=RedirectResponse,
+    responses=FOUND_REDIRECT_RESPONSES,
+)
 def start_review(request: Request, db: Session = Depends(get_db)) -> RedirectResponse:
     # Compatibility alias for the retired standalone review mode. Vault checks
     # now live inside the Health workbench.

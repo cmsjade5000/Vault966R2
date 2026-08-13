@@ -6,7 +6,7 @@ import httpx
 
 from ... import errors
 from ...client import AuthenticatedClient, Client
-from ...models.http_validation_error import HTTPValidationError
+from ...models.error_response import ErrorResponse
 from ...types import Response
 
 
@@ -23,17 +23,20 @@ def _get_kwargs(
     return _kwargs
 
 
-def _parse_response(
-    *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> HTTPValidationError | str | None:
+def _parse_response(*, client: AuthenticatedClient | Client, response: httpx.Response) -> ErrorResponse | str | None:
     if response.status_code == 200:
         response_200 = response.text
         return response_200
 
     if response.status_code == 422:
-        response_422 = HTTPValidationError.from_dict(response.json())
+        response_422 = ErrorResponse.from_dict(response.json())
 
         return response_422
+
+    if response.status_code == 500:
+        response_500 = ErrorResponse.from_dict(response.json())
+
+        return response_500
 
     if client.raise_on_unexpected_status:
         raise errors.UnexpectedStatus(response.status_code, response.content)
@@ -41,9 +44,7 @@ def _parse_response(
         return None
 
 
-def _build_response(
-    *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> Response[HTTPValidationError | str]:
+def _build_response(*, client: AuthenticatedClient | Client, response: httpx.Response) -> Response[ErrorResponse | str]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -56,7 +57,7 @@ def sync_detailed(
     snapshot_id: int,
     *,
     client: AuthenticatedClient | Client,
-) -> Response[HTTPValidationError | str]:
+) -> Response[ErrorResponse | str]:
     """First Import Report Ui
 
     Args:
@@ -67,7 +68,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[HTTPValidationError | str]
+        Response[ErrorResponse | str]
     """
 
     kwargs = _get_kwargs(
@@ -85,7 +86,7 @@ def sync(
     snapshot_id: int,
     *,
     client: AuthenticatedClient | Client,
-) -> HTTPValidationError | str | None:
+) -> ErrorResponse | str | None:
     """First Import Report Ui
 
     Args:
@@ -96,7 +97,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        HTTPValidationError | str
+        ErrorResponse | str
     """
 
     return sync_detailed(
@@ -109,7 +110,7 @@ async def asyncio_detailed(
     snapshot_id: int,
     *,
     client: AuthenticatedClient | Client,
-) -> Response[HTTPValidationError | str]:
+) -> Response[ErrorResponse | str]:
     """First Import Report Ui
 
     Args:
@@ -120,7 +121,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[HTTPValidationError | str]
+        Response[ErrorResponse | str]
     """
 
     kwargs = _get_kwargs(
@@ -136,7 +137,7 @@ async def asyncio(
     snapshot_id: int,
     *,
     client: AuthenticatedClient | Client,
-) -> HTTPValidationError | str | None:
+) -> ErrorResponse | str | None:
     """First Import Report Ui
 
     Args:
@@ -147,7 +148,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        HTTPValidationError | str
+        ErrorResponse | str
     """
 
     return (

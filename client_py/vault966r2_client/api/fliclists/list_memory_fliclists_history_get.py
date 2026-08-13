@@ -5,6 +5,7 @@ import httpx
 
 from ... import errors
 from ...client import AuthenticatedClient, Client
+from ...models.error_response import ErrorResponse
 from ...models.flic_memory_read import FlicMemoryRead
 from ...types import Response
 
@@ -18,7 +19,9 @@ def _get_kwargs() -> dict[str, Any]:
     return _kwargs
 
 
-def _parse_response(*, client: AuthenticatedClient | Client, response: httpx.Response) -> list[FlicMemoryRead] | None:
+def _parse_response(
+    *, client: AuthenticatedClient | Client, response: httpx.Response
+) -> ErrorResponse | list[FlicMemoryRead] | None:
     if response.status_code == 200:
         response_200 = []
         _response_200 = response.json()
@@ -29,6 +32,26 @@ def _parse_response(*, client: AuthenticatedClient | Client, response: httpx.Res
 
         return response_200
 
+    if response.status_code == 400:
+        response_400 = ErrorResponse.from_dict(response.json())
+
+        return response_400
+
+    if response.status_code == 401:
+        response_401 = ErrorResponse.from_dict(response.json())
+
+        return response_401
+
+    if response.status_code == 404:
+        response_404 = ErrorResponse.from_dict(response.json())
+
+        return response_404
+
+    if response.status_code == 500:
+        response_500 = ErrorResponse.from_dict(response.json())
+
+        return response_500
+
     if client.raise_on_unexpected_status:
         raise errors.UnexpectedStatus(response.status_code, response.content)
     else:
@@ -37,7 +60,7 @@ def _parse_response(*, client: AuthenticatedClient | Client, response: httpx.Res
 
 def _build_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> Response[list[FlicMemoryRead]]:
+) -> Response[ErrorResponse | list[FlicMemoryRead]]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -49,7 +72,7 @@ def _build_response(
 def sync_detailed(
     *,
     client: AuthenticatedClient | Client,
-) -> Response[list[FlicMemoryRead]]:
+) -> Response[ErrorResponse | list[FlicMemoryRead]]:
     """List Memory
 
     Raises:
@@ -57,7 +80,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[list[FlicMemoryRead]]
+        Response[ErrorResponse | list[FlicMemoryRead]]
     """
 
     kwargs = _get_kwargs()
@@ -72,7 +95,7 @@ def sync_detailed(
 def sync(
     *,
     client: AuthenticatedClient | Client,
-) -> list[FlicMemoryRead] | None:
+) -> ErrorResponse | list[FlicMemoryRead] | None:
     """List Memory
 
     Raises:
@@ -80,7 +103,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        list[FlicMemoryRead]
+        ErrorResponse | list[FlicMemoryRead]
     """
 
     return sync_detailed(
@@ -91,7 +114,7 @@ def sync(
 async def asyncio_detailed(
     *,
     client: AuthenticatedClient | Client,
-) -> Response[list[FlicMemoryRead]]:
+) -> Response[ErrorResponse | list[FlicMemoryRead]]:
     """List Memory
 
     Raises:
@@ -99,7 +122,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[list[FlicMemoryRead]]
+        Response[ErrorResponse | list[FlicMemoryRead]]
     """
 
     kwargs = _get_kwargs()
@@ -112,7 +135,7 @@ async def asyncio_detailed(
 async def asyncio(
     *,
     client: AuthenticatedClient | Client,
-) -> list[FlicMemoryRead] | None:
+) -> ErrorResponse | list[FlicMemoryRead] | None:
     """List Memory
 
     Raises:
@@ -120,7 +143,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        list[FlicMemoryRead]
+        ErrorResponse | list[FlicMemoryRead]
     """
 
     return (

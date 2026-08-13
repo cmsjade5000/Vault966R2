@@ -24,7 +24,6 @@ from .flic_memory_read import FlicMemoryRead
 from .flic_preset_create import FlicPresetCreate
 from .flic_preset_read import FlicPresetRead
 from .genre_read import GenreRead
-from .http_validation_error import HTTPValidationError
 from .like_movie_movies_movie_id_like_post_response_like_movie_movies_movie_id_like_post import (
     LikeMovieMoviesMovieIdLikePostResponseLikeMovieMoviesMovieIdLikePost,
 )
@@ -99,8 +98,6 @@ from .update_status_api_collection_health_update_status_get_response_update_stat
 from .usage_event_create import UsageEventCreate
 from .usage_event_create_event_name import UsageEventCreateEventName
 from .usage_event_create_page import UsageEventCreatePage
-from .validation_error import ValidationError
-from .validation_error_context import ValidationErrorContext
 from .watchlist_movie_movies_movie_id_watchlist_post_response_watchlist_movie_movies_movie_id_watchlist_post import (
     WatchlistMovieMoviesMovieIdWatchlistPostResponseWatchlistMovieMoviesMovieIdWatchlistPost,
 )
@@ -124,7 +121,6 @@ __all__ = (
     "FlicPresetCreate",
     "FlicPresetRead",
     "GenreRead",
-    "HTTPValidationError",
     "LikeMovieMoviesMovieIdLikePostResponseLikeMovieMoviesMovieIdLikePost",
     "ListProfilesApiProfilesGetResponseListProfilesApiProfilesGet",
     "LivenessResponse",
@@ -179,7 +175,5 @@ __all__ = (
     "UsageEventCreate",
     "UsageEventCreateEventName",
     "UsageEventCreatePage",
-    "ValidationError",
-    "ValidationErrorContext",
     "WatchlistMovieMoviesMovieIdWatchlistPostResponseWatchlistMovieMoviesMovieIdWatchlistPost",
 )

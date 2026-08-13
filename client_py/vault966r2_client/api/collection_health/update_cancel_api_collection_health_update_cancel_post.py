@@ -5,6 +5,7 @@ import httpx
 
 from ... import errors
 from ...client import AuthenticatedClient, Client
+from ...models.error_response import ErrorResponse
 from ...models.update_cancel_api_collection_health_update_cancel_post_response_update_cancel_api_collection_health_update_cancel_post import (
     UpdateCancelApiCollectionHealthUpdateCancelPostResponseUpdateCancelApiCollectionHealthUpdateCancelPost,
 )
@@ -22,13 +23,47 @@ def _get_kwargs() -> dict[str, Any]:
 
 def _parse_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> UpdateCancelApiCollectionHealthUpdateCancelPostResponseUpdateCancelApiCollectionHealthUpdateCancelPost | None:
+) -> (
+    ErrorResponse
+    | UpdateCancelApiCollectionHealthUpdateCancelPostResponseUpdateCancelApiCollectionHealthUpdateCancelPost
+    | None
+):
     if response.status_code == 200:
         response_200 = UpdateCancelApiCollectionHealthUpdateCancelPostResponseUpdateCancelApiCollectionHealthUpdateCancelPost.from_dict(
             response.json()
         )
 
         return response_200
+
+    if response.status_code == 400:
+        response_400 = ErrorResponse.from_dict(response.json())
+
+        return response_400
+
+    if response.status_code == 401:
+        response_401 = ErrorResponse.from_dict(response.json())
+
+        return response_401
+
+    if response.status_code == 403:
+        response_403 = ErrorResponse.from_dict(response.json())
+
+        return response_403
+
+    if response.status_code == 404:
+        response_404 = ErrorResponse.from_dict(response.json())
+
+        return response_404
+
+    if response.status_code == 429:
+        response_429 = ErrorResponse.from_dict(response.json())
+
+        return response_429
+
+    if response.status_code == 500:
+        response_500 = ErrorResponse.from_dict(response.json())
+
+        return response_500
 
     if client.raise_on_unexpected_status:
         raise errors.UnexpectedStatus(response.status_code, response.content)
@@ -38,7 +73,10 @@ def _parse_response(
 
 def _build_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> Response[UpdateCancelApiCollectionHealthUpdateCancelPostResponseUpdateCancelApiCollectionHealthUpdateCancelPost]:
+) -> Response[
+    ErrorResponse
+    | UpdateCancelApiCollectionHealthUpdateCancelPostResponseUpdateCancelApiCollectionHealthUpdateCancelPost
+]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -50,7 +88,10 @@ def _build_response(
 def sync_detailed(
     *,
     client: AuthenticatedClient,
-) -> Response[UpdateCancelApiCollectionHealthUpdateCancelPostResponseUpdateCancelApiCollectionHealthUpdateCancelPost]:
+) -> Response[
+    ErrorResponse
+    | UpdateCancelApiCollectionHealthUpdateCancelPostResponseUpdateCancelApiCollectionHealthUpdateCancelPost
+]:
     """Update Cancel
 
     Raises:
@@ -58,7 +99,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[UpdateCancelApiCollectionHealthUpdateCancelPostResponseUpdateCancelApiCollectionHealthUpdateCancelPost]
+        Response[ErrorResponse | UpdateCancelApiCollectionHealthUpdateCancelPostResponseUpdateCancelApiCollectionHealthUpdateCancelPost]
     """
 
     kwargs = _get_kwargs()
@@ -73,7 +114,11 @@ def sync_detailed(
 def sync(
     *,
     client: AuthenticatedClient,
-) -> UpdateCancelApiCollectionHealthUpdateCancelPostResponseUpdateCancelApiCollectionHealthUpdateCancelPost | None:
+) -> (
+    ErrorResponse
+    | UpdateCancelApiCollectionHealthUpdateCancelPostResponseUpdateCancelApiCollectionHealthUpdateCancelPost
+    | None
+):
     """Update Cancel
 
     Raises:
@@ -81,7 +126,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        UpdateCancelApiCollectionHealthUpdateCancelPostResponseUpdateCancelApiCollectionHealthUpdateCancelPost
+        ErrorResponse | UpdateCancelApiCollectionHealthUpdateCancelPostResponseUpdateCancelApiCollectionHealthUpdateCancelPost
     """
 
     return sync_detailed(
@@ -92,7 +137,10 @@ def sync(
 async def asyncio_detailed(
     *,
     client: AuthenticatedClient,
-) -> Response[UpdateCancelApiCollectionHealthUpdateCancelPostResponseUpdateCancelApiCollectionHealthUpdateCancelPost]:
+) -> Response[
+    ErrorResponse
+    | UpdateCancelApiCollectionHealthUpdateCancelPostResponseUpdateCancelApiCollectionHealthUpdateCancelPost
+]:
     """Update Cancel
 
     Raises:
@@ -100,7 +148,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[UpdateCancelApiCollectionHealthUpdateCancelPostResponseUpdateCancelApiCollectionHealthUpdateCancelPost]
+        Response[ErrorResponse | UpdateCancelApiCollectionHealthUpdateCancelPostResponseUpdateCancelApiCollectionHealthUpdateCancelPost]
     """
 
     kwargs = _get_kwargs()
@@ -113,7 +161,11 @@ async def asyncio_detailed(
 async def asyncio(
     *,
     client: AuthenticatedClient,
-) -> UpdateCancelApiCollectionHealthUpdateCancelPostResponseUpdateCancelApiCollectionHealthUpdateCancelPost | None:
+) -> (
+    ErrorResponse
+    | UpdateCancelApiCollectionHealthUpdateCancelPostResponseUpdateCancelApiCollectionHealthUpdateCancelPost
+    | None
+):
     """Update Cancel
 
     Raises:
@@ -121,7 +173,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        UpdateCancelApiCollectionHealthUpdateCancelPostResponseUpdateCancelApiCollectionHealthUpdateCancelPost
+        ErrorResponse | UpdateCancelApiCollectionHealthUpdateCancelPostResponseUpdateCancelApiCollectionHealthUpdateCancelPost
     """
 
     return (

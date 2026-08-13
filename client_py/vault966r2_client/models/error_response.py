@@ -10,7 +10,8 @@ T = TypeVar("T", bound="ErrorResponse")
 
 @_attrs_define
 class ErrorResponse:
-    """
+    """Stable JSON error envelope returned by the application middleware.
+
     Attributes:
         error_code (str):
         message (str):

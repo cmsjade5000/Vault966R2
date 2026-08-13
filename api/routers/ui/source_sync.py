@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session
 from api.db import get_db
 from api.deps.auth import require_profile_role, require_same_origin
 from api.models.source_sync import SourceSnapshot
+from api.schemas.common import CSV_DOWNLOAD_RESPONSE
 from api.services.profiles import (
     ROLE_ADMIN,
     ensure_profile_cookie,
@@ -164,7 +165,11 @@ def _new_addition_export_records(snapshot: SourceSnapshot, rows) -> list[dict[st
     return records
 
 
-@router.get("/ui/source-sync/{snapshot_id}/new-additions.csv")
+@router.get(
+    "/ui/source-sync/{snapshot_id}/new-additions.csv",
+    response_class=Response,
+    responses=CSV_DOWNLOAD_RESPONSE,
+)
 def download_new_additions_csv(
     snapshot_id: int,
     db: Session = Depends(get_db),
