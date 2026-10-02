@@ -26,10 +26,8 @@ def admin_bearer_token_valid(request: Request) -> bool:
     return scheme.lower() == "bearer" and candidate.strip() == token
 
 
-def require_same_origin(request: Request) -> None:
-    """Reject cross-origin browser mutations while preserving local/test workflows."""
-    if settings.disable_auth:
-        return
+def _validate_same_origin(request: Request) -> None:
+    """Require the browser-provided origin to match the request URL."""
     origin = request.headers.get("origin")
     if not origin:
         raise HTTPException(
@@ -44,6 +42,18 @@ def require_same_origin(request: Request) -> None:
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Cross-origin request rejected",
         )
+
+
+def require_same_origin(request: Request) -> None:
+    """Reject cross-origin browser mutations while preserving local/test workflows."""
+    if settings.disable_auth:
+        return
+    _validate_same_origin(request)
+
+
+def require_strict_same_origin(request: Request) -> None:
+    """Reject cross-origin mutations even when normal authentication is disabled."""
+    _validate_same_origin(request)
 
 
 def require_provider_work_budget(

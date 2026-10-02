@@ -50,4 +50,10 @@ reports/**/*.md
 legacy/data/
 legacy/reports/
 llm-council/
+# Local sanitized catalog snapshots contain the owner's movie collection.
+/board-companion/public/catalog.snapshot.json
+/board-companion/public/catalog.board.json
+/board-companion/public/board-art/
+/board-companion/public/model.tflite
+/board-companion/*.webapp.zip
 .codex-log/

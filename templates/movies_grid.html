@@ -28,7 +28,8 @@
             autocomplete="off"
             maxlength="120"
             value="{{ q or '' }}"
-            placeholder="Try “Ben Stiller” “2010” “Titanic” or a Vault ID"
+            placeholder="Title, actor, year, plot phrase, or Vault ID"
+            aria-label="Search by title, actor, year, plot phrase, or Vault ID"
           />
           <button type="submit" class="library-search__submit" id="search-button">
             <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -271,6 +272,7 @@
           {% endif %}
         {% else %}
           <p>Nothing matched these filters.</p>
+          <p>Try fewer words, a title, an actor, or a phrase from the plot. Active filters may also be narrowing your search.</p>
           <a class="button-primary" href="/ui/movies">Clear all</a>
         {% endif %}
       </div>

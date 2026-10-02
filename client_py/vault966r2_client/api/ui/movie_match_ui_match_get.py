@@ -13,6 +13,8 @@ def _get_kwargs(
     *,
     answers: None | str | Unset = UNSET,
     reroll: int | Unset = 0,
+    show: int | Unset = 0,
+    edit: int | None | Unset = UNSET,
 ) -> dict[str, Any]:
     params: dict[str, Any] = {}
 
@@ -24,6 +26,15 @@ def _get_kwargs(
     params["answers"] = json_answers
 
     params["reroll"] = reroll
+
+    params["show"] = show
+
+    json_edit: int | None | Unset
+    if isinstance(edit, Unset):
+        json_edit = UNSET
+    else:
+        json_edit = edit
+    params["edit"] = json_edit
 
     params = {k: v for k, v in params.items() if v is not UNSET and v is not None}
 
@@ -71,12 +82,16 @@ def sync_detailed(
     client: AuthenticatedClient | Client,
     answers: None | str | Unset = UNSET,
     reroll: int | Unset = 0,
+    show: int | Unset = 0,
+    edit: int | None | Unset = UNSET,
 ) -> Response[ErrorResponse | str]:
     """Movie Match
 
     Args:
         answers (None | str | Unset):
         reroll (int | Unset):  Default: 0.
+        show (int | Unset):  Default: 0.
+        edit (int | None | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -89,6 +104,8 @@ def sync_detailed(
     kwargs = _get_kwargs(
         answers=answers,
         reroll=reroll,
+        show=show,
+        edit=edit,
     )
 
     response = client.get_httpx_client().request(
@@ -103,12 +120,16 @@ def sync(
     client: AuthenticatedClient | Client,
     answers: None | str | Unset = UNSET,
     reroll: int | Unset = 0,
+    show: int | Unset = 0,
+    edit: int | None | Unset = UNSET,
 ) -> ErrorResponse | str | None:
     """Movie Match
 
     Args:
         answers (None | str | Unset):
         reroll (int | Unset):  Default: 0.
+        show (int | Unset):  Default: 0.
+        edit (int | None | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -122,6 +143,8 @@ def sync(
         client=client,
         answers=answers,
         reroll=reroll,
+        show=show,
+        edit=edit,
     ).parsed
 
 
@@ -130,12 +153,16 @@ async def asyncio_detailed(
     client: AuthenticatedClient | Client,
     answers: None | str | Unset = UNSET,
     reroll: int | Unset = 0,
+    show: int | Unset = 0,
+    edit: int | None | Unset = UNSET,
 ) -> Response[ErrorResponse | str]:
     """Movie Match
 
     Args:
         answers (None | str | Unset):
         reroll (int | Unset):  Default: 0.
+        show (int | Unset):  Default: 0.
+        edit (int | None | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -148,6 +175,8 @@ async def asyncio_detailed(
     kwargs = _get_kwargs(
         answers=answers,
         reroll=reroll,
+        show=show,
+        edit=edit,
     )
 
     response = await client.get_async_httpx_client().request(**kwargs)
@@ -160,12 +189,16 @@ async def asyncio(
     client: AuthenticatedClient | Client,
     answers: None | str | Unset = UNSET,
     reroll: int | Unset = 0,
+    show: int | Unset = 0,
+    edit: int | None | Unset = UNSET,
 ) -> ErrorResponse | str | None:
     """Movie Match
 
     Args:
         answers (None | str | Unset):
         reroll (int | Unset):  Default: 0.
+        show (int | Unset):  Default: 0.
+        edit (int | None | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -180,5 +213,7 @@ async def asyncio(
             client=client,
             answers=answers,
             reroll=reroll,
+            show=show,
+            edit=edit,
         )
     ).parsed

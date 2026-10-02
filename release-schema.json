@@ -1,0 +1,290 @@
+{
+  "format": 1,
+  "movie_unique_indexes": {
+    "ix_movies_imdb_id": [
+      "imdb_id"
+    ],
+    "ix_movies_tmdb_id": [
+      "tmdb_id"
+    ],
+    "ix_movies_vault_id": [
+      "vault_id"
+    ]
+  },
+  "tables": {
+    "ai_cache": [
+      "cache_key",
+      "created_at",
+      "expires_at",
+      "value"
+    ],
+    "app_setup": [
+      "completed",
+      "completed_at",
+      "created_at",
+      "id",
+      "owner_profile_id",
+      "updated_at"
+    ],
+    "flic_memory": [
+      "created_at",
+      "id",
+      "movie_id"
+    ],
+    "flic_presets": [
+      "created_at",
+      "filters",
+      "id",
+      "name"
+    ],
+    "genres": [
+      "id",
+      "name"
+    ],
+    "maintenance_jobs": [
+      "created_at",
+      "finished_at",
+      "id",
+      "last_error",
+      "reports",
+      "run_id",
+      "started_at",
+      "started_by_profile_id",
+      "state",
+      "steps",
+      "task_id",
+      "updated_at"
+    ],
+    "moods": [
+      "description",
+      "emoji",
+      "id",
+      "name"
+    ],
+    "movie_cast": [
+      "character",
+      "movie_id",
+      "order_index",
+      "person_id"
+    ],
+    "movie_crew": [
+      "department",
+      "job",
+      "movie_id",
+      "person_id"
+    ],
+    "movie_documents": [
+      "content",
+      "doc_version",
+      "embedding",
+      "movie_id",
+      "updated_at"
+    ],
+    "movie_flags": [
+      "created_at",
+      "movie_id",
+      "notes",
+      "reason",
+      "reported_by_profile_id",
+      "updated_at"
+    ],
+    "movie_genres": [
+      "genre_id",
+      "movie_id"
+    ],
+    "movie_identity_repairs": [
+      "after_values",
+      "applied_at",
+      "applied_by_profile_id",
+      "before_values",
+      "id",
+      "movie_id",
+      "search_title",
+      "selected_imdb_id",
+      "selected_title",
+      "selected_tmdb_id",
+      "selected_year",
+      "source",
+      "standardized_title"
+    ],
+    "movie_ingest_provenance": [
+      "etag",
+      "id",
+      "ingested_at",
+      "movie_id",
+      "notes",
+      "payload_sha",
+      "provider",
+      "provider_id",
+      "source_url"
+    ],
+    "movie_moods": [
+      "mood_id",
+      "movie_id"
+    ],
+    "movie_preferences": [
+      "created_at",
+      "id",
+      "liked",
+      "movie_id",
+      "profile_id",
+      "updated_at",
+      "watchlist"
+    ],
+    "movie_review_checks": [
+      "checked_at",
+      "checked_by_profile_id",
+      "decision",
+      "id",
+      "issue_fingerprint",
+      "issue_type",
+      "movie_id"
+    ],
+    "movies": [
+      "awards",
+      "backdrop_url",
+      "certificate",
+      "collection",
+      "countries",
+      "id",
+      "imdb_id",
+      "imdb_rating",
+      "imdb_votes",
+      "keywords",
+      "languages",
+      "last_omdb_fetch_at",
+      "last_tmdb_fetch_at",
+      "metascore",
+      "omdb_payload_sha",
+      "plot",
+      "poster_url",
+      "rt_score",
+      "runtime",
+      "title",
+      "tmdb_etag",
+      "tmdb_id",
+      "tmdb_payload_sha",
+      "tomato_audience",
+      "tomato_meter",
+      "trailer_checked_at",
+      "trailer_key",
+      "trailer_name",
+      "trailer_site",
+      "trailer_url",
+      "vault_id",
+      "where_to_watch",
+      "year"
+    ],
+    "owned_movie_copies": [
+      "confirmed_at",
+      "hd",
+      "id",
+      "movie_id",
+      "snapshot_id",
+      "source_row_id",
+      "source_title",
+      "source_year"
+    ],
+    "people": [
+      "id",
+      "imdb_id",
+      "name",
+      "tmdb_id"
+    ],
+    "profile_credentials": [
+      "access_key_hash",
+      "access_key_salt",
+      "created_at",
+      "id",
+      "kdf_iterations",
+      "kdf_name",
+      "passcode_hash",
+      "passcode_salt",
+      "profile_id",
+      "updated_at"
+    ],
+    "profiles": [
+      "created_at",
+      "id",
+      "name",
+      "role"
+    ],
+    "retired_vault_ids": [
+      "deleted_movie_id",
+      "deleted_movie_title",
+      "reason",
+      "retired_at",
+      "source",
+      "vault_id"
+    ],
+    "roles": [
+      "billing_order",
+      "character_name",
+      "id",
+      "movie_id",
+      "person_id",
+      "role_type"
+    ],
+    "source_field_decisions": [
+      "decided_at",
+      "decided_by_profile_id",
+      "decision",
+      "field_name",
+      "id",
+      "movie_id",
+      "previous_value",
+      "resolved_at",
+      "selected_value",
+      "source_row_id",
+      "source_value",
+      "undone_at",
+      "undone_by_profile_id"
+    ],
+    "source_movie_rows": [
+      "content_rating",
+      "director",
+      "duplicate_group",
+      "genre",
+      "hd",
+      "id",
+      "normalized_directors",
+      "normalized_title",
+      "raw_data",
+      "release_date",
+      "row_number",
+      "runtime",
+      "snapshot_id",
+      "title",
+      "year"
+    ],
+    "source_reconciliation_matches": [
+      "candidate_movie_ids",
+      "confidence",
+      "id",
+      "match_type",
+      "movie_id",
+      "resolved_at",
+      "source_row_id"
+    ],
+    "source_snapshots": [
+      "confirmed_at",
+      "file_sha256",
+      "filename",
+      "id",
+      "raw_csv",
+      "row_count",
+      "status",
+      "uploaded_at",
+      "uploaded_by_profile_id"
+    ],
+    "usage_events": [
+      "context",
+      "created_at",
+      "event_name",
+      "id",
+      "movie_id",
+      "page",
+      "profile_id"
+    ]
+  }
+}

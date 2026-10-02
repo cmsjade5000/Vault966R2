@@ -68,3 +68,33 @@ jobs:
         if: hashFiles('Dockerfile') != ''
         run: |
           docker build -t vault966-ci .
+
+  macos-release:
+    runs-on: macos-15
+    timeout-minutes: 20
+    env:
+      DATABASE_URL: sqlite://
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+          cache: "pip"
+          cache-dependency-path: requirements-dev.lock
+      - name: Install exact tested Python dependencies
+        run: python -m pip install --require-hashes -r requirements-dev.lock
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: package-lock.json
+      - name: Install locked JavaScript dependencies
+        run: npm ci --ignore-scripts
+      - name: Check reconciled app and release safeguards
+        run: |
+          scripts/codex_check.sh full -q --tb=short -m 'not integration'
+          make openapi.check
+      - name: Build and verify the main app artifact
+        run: |
+          python scripts/vault_release.py build --output "$RUNNER_TEMP/vault966.tar.gz"
+          python scripts/vault_release.py verify --artifact "$RUNNER_TEMP/vault966.tar.gz"

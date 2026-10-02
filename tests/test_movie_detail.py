@@ -91,6 +91,7 @@ def test_movie_detail_api(client: TestClient, detail_movie_setup):
     assert payload["roles"][0]["person"]["name"] == "Case Worker"
     assert payload["where_to_watch"] == ["Netflix", "Prime Video"]
     assert payload["similar"]
+    assert payload["similar"][0]["runtime"] == 110
     assert payload["flagged"] is False
     assert payload["flag_reason"] is None
     assert payload["flag_notes"] is None
@@ -215,6 +216,15 @@ def test_movie_detail_template(client: TestClient, detail_movie_setup):
     html = resp.text
     assert "Case Worker" in html
     assert "Top billed" in html
+    assert "1 hour, 58 minutes" in html
+    assert 'data-runtime="118"' in html
+    assert "2 hours" not in html
+    assert "Dream Runner" in html
+    assert "110 min" in html
+    assert "hero-decision" in html
+    assert "IMDb 8.7" in html
+    assert "RT 91%" in html
+    assert ".poster--empty[hidden]" in open("static/css/movie_detail.css", encoding="utf-8").read()
     assert "data-copy-vault" in html
     assert 'data-vault-busy-message="Returning to the Library…"' in html
     assert "js/back_link.js?v=" in html

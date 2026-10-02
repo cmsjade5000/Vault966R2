@@ -1,4 +1,71 @@
 (function () {
+  const RETURN_STATE_KEY = "movies:returnState";
+
+  const normaliseResultUrl = (href) => {
+    const url = new URL(href, window.location.href);
+    url.hash = "";
+    return url.toString();
+  };
+
+  const readReturnState = () => {
+    try {
+      const raw = window.sessionStorage?.getItem(RETURN_STATE_KEY);
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
+    }
+  };
+
+  const saveReturnState = (movieId = "") => {
+    try {
+      window.sessionStorage?.setItem(
+        RETURN_STATE_KEY,
+        JSON.stringify({
+          url: normaliseResultUrl(window.location.href),
+          scrollY: Math.max(0, Number(window.scrollY) || 0),
+          movieId: movieId ? String(movieId) : "",
+        }),
+      );
+    } catch {
+      // Storage can be unavailable in private or restricted browsing modes.
+    }
+  };
+
+  const shouldCaptureReturnState = (event, link) =>
+    !event.defaultPrevented &&
+    event.button === 0 &&
+    !event.metaKey &&
+    !event.ctrlKey &&
+    !event.shiftKey &&
+    !event.altKey &&
+    link?.target !== "_blank" &&
+    !link?.hasAttribute?.("download");
+
+  const restoreReturnState = (root = document) => {
+    const state = readReturnState();
+    if (!state || state.url !== normaliseResultUrl(window.location.href))
+      return;
+    try {
+      window.sessionStorage?.removeItem(RETURN_STATE_KEY);
+    } catch {
+      // Continue with the in-memory snapshot when storage cleanup is blocked.
+    }
+    const restore = () => {
+      window.scrollTo?.(0, Math.max(0, Number(state.scrollY) || 0));
+      if (!state.movieId) return;
+      const card = Array.from(
+        root.querySelectorAll?.("[data-movie-id]") || [],
+      ).find((item) => item.dataset.movieId === String(state.movieId));
+      const target = card?.querySelector?.("[data-movie-detail-link]") || card;
+      target?.focus?.({ preventScroll: true });
+    };
+    if (typeof window.requestAnimationFrame === "function") {
+      window.requestAnimationFrame(() => window.requestAnimationFrame(restore));
+    } else {
+      restore();
+    }
+  };
+
   const buildClearFilterUrl = (href, key) => {
     const url = new URL(href);
     if (key === "q") {
@@ -184,6 +251,10 @@
     formatPresetName,
     parseCsv,
     shouldShowCustomControl,
+    normaliseResultUrl,
+    restoreReturnState,
+    saveReturnState,
+    shouldCaptureReturnState,
   };
 
   const initLibraryPage = (root = document) => {
@@ -567,6 +638,9 @@
           pendingPresetName =
             button.dataset.presetName || formatPresetName(presetKey);
           syncFilterUi();
+          loadLibraryUrl(buildFormSubmitUrl(form, window.location.href), {
+            message: `Loading ${pendingPresetName}…`,
+          });
           return;
         }
         let filters = {};
@@ -600,6 +674,9 @@
         if (orderSelect && filters.order_by)
           orderSelect.value = filters.order_by;
         syncFilterUi();
+        loadLibraryUrl(buildFormSubmitUrl(form, window.location.href), {
+          message: `Loading ${pendingPresetName || "preset"}…`,
+        });
       });
     });
 
@@ -701,6 +778,12 @@
         loadLibraryUrl(link.href, { message: "Changing view…" });
       });
     });
+    document.getElementById("order-by")?.addEventListener("change", (event) => {
+      recordEvent("sort_changed", { context: event.currentTarget.value });
+      loadLibraryUrl(buildFormSubmitUrl(form, window.location.href), {
+        message: "Sorting results…",
+      });
+    });
     document.querySelectorAll("[data-table-sort]").forEach((button) => {
       button.addEventListener("click", () => {
         const values = {};
@@ -731,8 +814,10 @@
       });
     });
     document.querySelectorAll("[data-movie-detail-link]").forEach((link) => {
-      link.addEventListener("click", () => {
+      link.addEventListener("click", (event) => {
+        if (!shouldCaptureReturnState(event, link)) return;
         const card = link.closest("[data-movie-id]");
+        saveReturnState(card?.dataset.movieId || "");
         recordEvent("movie_details_opened", {
           movie_id: Number(card?.dataset.movieId),
           context: link.dataset.eventContext,
@@ -810,5 +895,6 @@
 
   document.addEventListener("DOMContentLoaded", () => {
     initLibraryPage(document);
+    restoreReturnState(document);
   });
 })();
