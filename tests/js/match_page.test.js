@@ -38,6 +38,16 @@ test("builds the next answer sequence", () => {
   assert.equal(nextAnswers([], "scary"), "scary");
 });
 
+test("builds a show-picks query for partial preferences", () => {
+  const { showPicksQuery } = loadSupport();
+
+  assert.equal(
+    showPicksQuery(["funny", "any_energy"]),
+    "answers=funny%2Cany_energy&show=1",
+  );
+  assert.equal(showPicksQuery([]), "show=1");
+});
+
 test("formats remaining count labels", () => {
   const { countLabel } = loadSupport();
 

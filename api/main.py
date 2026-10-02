@@ -1,6 +1,7 @@
 import json
 import logging
 import logging.config
+import os
 import pathlib
 import re
 import time
@@ -20,7 +21,13 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.routing import Match
 
 from api.config import settings
-from api.db import SessionLocal, bootstrap_sqlite_schema, engine, get_db
+from api.db import (
+    SessionLocal,
+    bootstrap_sqlite_schema,
+    engine,
+    get_db,
+    verify_release_sqlite_schema,
+)
 from api.deps.auth import (
     admin_bearer_token_valid,
     require_admin,
@@ -476,9 +483,12 @@ class AuthRequiredMiddleware(BaseHTTPMiddleware):
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Ensure SQLite dev databases have required tables before handling requests.
-    if engine.url.get_backend_name() == "sqlite":
+    # Staged releases verify their existing database; local development retains bootstrap.
+    if os.getenv("VAULT_SQLITE_SCHEMA_MODE") == "verify":
+        verify_release_sqlite_schema()
+    elif engine.url.get_backend_name() == "sqlite":
         bootstrap_sqlite_schema()
+    if engine.url.get_backend_name() == "sqlite":
         if not settings.disable_auth:
             db = SessionLocal()
             try:

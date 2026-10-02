@@ -2,10 +2,14 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-PYTHON="${PYTHON:-$ROOT_DIR/.venv/bin/python}"
+if [[ -f "$ROOT_DIR/../release-manifest.json" ]]; then
+  PYTHON="${PYTHON:-$ROOT_DIR/../.venv/bin/python}"
+else
+  PYTHON="${PYTHON:-$ROOT_DIR/.venv/bin/python}"
+fi
 HOST="${HOST:-0.0.0.0}"
 PORT="${PORT:-8000}"
-HEALTH_URL="${HEALTH_URL:-http://127.0.0.1:${PORT}/health}"
+HEALTH_URL="${HEALTH_URL:-http://127.0.0.1:${PORT}/readyz}"
 HEALTH_INTERVAL="${HEALTH_INTERVAL:-30}"
 HEALTH_FAILURE_LIMIT="${HEALTH_FAILURE_LIMIT:-3}"
 STARTUP_GRACE="${STARTUP_GRACE:-20}"
@@ -19,6 +23,10 @@ if [[ ! -x "$PYTHON" ]]; then
 fi
 
 cd "$ROOT_DIR"
+
+if [[ -f "$ROOT_DIR/../release-manifest.json" ]]; then
+  export VAULT_SQLITE_SCHEMA_MODE=verify
+fi
 
 uvicorn_args=(-m uvicorn api.main:app --host "$HOST" --port "$PORT")
 if [[ -n "$VAULT_TRUSTED_PROXY_IPS" ]]; then

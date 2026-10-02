@@ -21,79 +21,69 @@ const loadSupport = () => {
   return window.VaultDiscoverSupport;
 };
 
-test("carousel state exposes start, progress, and end positions", () => {
-  const { calculateRailState } = loadSupport();
-
-  assert.deepEqual(
-    JSON.parse(
-      JSON.stringify(
-        calculateRailState({
-          clientWidth: 400,
-          scrollLeft: 0,
-          scrollWidth: 800,
-        }),
-      ),
-    ),
-    { atEnd: false, atStart: true, progressScale: 0.32 },
-  );
-
-  const end = calculateRailState({
-    clientWidth: 400,
-    scrollLeft: 400,
-    scrollWidth: 800,
-  });
-  assert.equal(end.atEnd, true);
-  assert.equal(end.atStart, false);
-  assert.equal(end.progressScale, 1);
-});
-
-test("carousel controls advance most of a viewport with a touch-safe minimum", () => {
-  const { getScrollDistance } = loadSupport();
-
-  assert.equal(getScrollDistance(200), 240);
-  assert.equal(getScrollDistance(1000), 780);
-});
-
-test("carousel progress updates through classes without inline style mutation", () => {
-  const { applyRailProgress } = loadSupport();
-  const classes = new Set(["is-progress-32"]);
-  const progress = {
-    classList: {
-      add(...names) {
-        names.forEach((name) => classes.add(name));
-      },
-      remove(...names) {
-        names.forEach((name) => classes.delete(name));
-      },
+const createPoster = () => {
+  const fallback = { hidden: true };
+  const frame = {
+    dataset: {},
+    querySelector(selector) {
+      return selector === "[data-discover-poster-fallback]" ? fallback : null;
     },
-    style: new Proxy(
-      {},
-      {
-        set() {
-          throw new Error("inline style mutation is blocked by CSP");
-        },
-      },
-    ),
   };
-
-  applyRailProgress(progress, 0.8);
-
-  assert.equal(classes.has("is-progress-32"), false);
-  assert.equal(classes.has("is-progress-80"), true);
-});
-
-test("deferred poster hydration promotes data source once", () => {
-  const { hydrateDeferredPoster } = loadSupport();
+  const listeners = {};
   const image = {
-    dataset: { posterSrc: "/ui/posters/42/w185" },
-    removeAttribute(name) {
-      if (name === "data-poster-src") delete this.dataset.posterSrc;
+    complete: false,
+    hidden: false,
+    naturalWidth: 0,
+    addEventListener(name, callback) {
+      listeners[name] = callback;
+    },
+    closest(selector) {
+      return selector === "[data-discover-poster-frame]" ? frame : null;
+    },
+  };
+  return { fallback, frame, image, listeners };
+};
+
+test("marks a successfully loaded poster without changing its source", () => {
+  const { markPosterLoaded } = loadSupport();
+  const { frame, image } = createPoster();
+  image.src = "/ui/posters/42/w185";
+
+  assert.equal(markPosterLoaded(image), true);
+  assert.equal(frame.dataset.posterState, "loaded");
+  assert.equal(image.src, "/ui/posters/42/w185");
+});
+
+test("reveals the themed fallback after a poster error", () => {
+  const { revealPosterFallback } = loadSupport();
+  const { fallback, frame, image } = createPoster();
+
+  assert.equal(revealPosterFallback(image), true);
+  assert.equal(image.hidden, true);
+  assert.equal(fallback.hidden, false);
+  assert.equal(frame.dataset.posterState, "fallback");
+});
+
+test("poster fallback setup handles already failed images", () => {
+  const { setupPosterFallbacks } = loadSupport();
+  const { fallback, image, listeners } = createPoster();
+  image.complete = true;
+  const root = {
+    querySelectorAll(selector) {
+      return selector === "[data-discover-poster]" ? [image] : [];
     },
   };
 
-  assert.equal(hydrateDeferredPoster(image), true);
-  assert.equal(image.src, "/ui/posters/42/w185");
-  assert.equal(image.dataset.posterHydrated, "true");
-  assert.equal(image.dataset.posterSrc, undefined);
-  assert.equal(hydrateDeferredPoster(image), false);
+  assert.equal(setupPosterFallbacks(root), 1);
+  assert.equal(typeof listeners.load, "function");
+  assert.equal(typeof listeners.error, "function");
+  assert.equal(image.hidden, true);
+  assert.equal(fallback.hidden, false);
+});
+
+test("poster fallback setup accepts an empty page", () => {
+  const { setupPosterFallbacks } = loadSupport();
+  const root = { querySelectorAll: () => [] };
+
+  assert.equal(setupPosterFallbacks(root), 0);
 });

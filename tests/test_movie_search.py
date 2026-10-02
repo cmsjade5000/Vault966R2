@@ -58,6 +58,30 @@ def test_search_query_with_literal_underscore(client: TestClient, db_session: Se
     assert payload["items"][0]["title"] == "Mission_Control"
 
 
+def test_search_by_plot_keyword(client: TestClient, db_session: Session) -> None:
+    library_genre = db_session.query(Genre).filter_by(name="Library").one()
+    general_mood = db_session.query(Mood).filter_by(name="General").one()
+    movie = Movie(
+        title="Remembered Scene",
+        year=2024,
+        runtime=96,
+        plot="A birthday wish sends a family into an unexpected adventure.",
+        imdb_id="ttplotkeyword",
+        tmdb_id=99996,
+        genres=[library_genre],
+        moods=[general_mood],
+    )
+    db_session.add(movie)
+    db_session.commit()
+
+    response = client.get("/movies/search", params={"q": "birthday wish"})
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["total"] == 1
+    assert payload["items"][0]["title"] == "Remembered Scene"
+
+
 def test_search_by_filters(client: TestClient) -> None:
     params = {
         "year_min": 1980,

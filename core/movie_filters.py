@@ -179,6 +179,7 @@ def apply_filters(query: Query, params: MovieFilterParams) -> Query:
                 Movie.vault_id.ilike(pattern, escape="\\"),
                 Movie.imdb_id.ilike(pattern, escape="\\"),
                 cast(Movie.year, String).ilike(pattern, escape="\\"),
+                Movie.plot.ilike(pattern, escape="\\"),
                 Movie.genres.any(Genre.name.ilike(pattern, escape="\\")),
                 Movie.roles.any(Role.person.has(Person.name.ilike(pattern, escape="\\"))),
             )

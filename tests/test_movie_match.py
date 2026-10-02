@@ -6,10 +6,12 @@ from fastapi.testclient import TestClient
 
 from api.models.movie import Movie
 from api.models.movie_flag import MovieFlag
+from api.services import movie_match as movie_match_service
 from api.services.movie_match import (
     QUESTIONS,
     build_match_result,
     build_preferences,
+    complete_answer_ids,
     normalize_answer_ids,
 )
 
@@ -31,6 +33,29 @@ def test_match_preferences_compile_answers_to_constraints() -> None:
     assert preferences.genre_label == "Animation & family"
 
 
+def test_match_infers_moods_lazily_and_at_most_once_per_movie(db_session, monkeypatch) -> None:
+    calls = 0
+    original_score_moods = movie_match_service.score_moods
+
+    def counted_score_moods(*args, **kwargs):
+        nonlocal calls
+        calls += 1
+        return original_score_moods(*args, **kwargs)
+
+    monkeypatch.setattr(movie_match_service, "score_moods", counted_score_moods)
+    trusted_count = db_session.query(Movie).count()
+
+    build_match_result(db_session, answer_ids="cozy")
+    assert calls == 0
+
+    build_match_result(db_session, answer_ids="any_mood")
+    assert calls == 0
+
+    build_match_result(db_session, answer_ids=MATCH_ANSWERS)
+
+    assert calls <= trusted_count
+
+
 def test_match_questions_cover_each_requested_dimension_once() -> None:
     assert [question.id for question in QUESTIONS] == [
         "mood",
@@ -47,6 +72,16 @@ def test_match_normalizes_only_valid_question_sequence() -> None:
     assert normalize_answer_ids("funny,high,standard") == ("funny", "high", "standard")
     assert normalize_answer_ids("short,funny") == ()
     assert normalize_answer_ids("funny,sideways,retro") == ("funny",)
+
+
+def test_match_can_complete_with_explicit_skips() -> None:
+    assert complete_answer_ids(("funny", "any_energy")) == (
+        "funny",
+        "any_energy",
+        "any_runtime",
+        "any_genre",
+        "any_era",
+    )
 
 
 def test_match_result_returns_lead_and_shortlist(db_session) -> None:
@@ -99,7 +134,12 @@ def test_match_state_counts_options_and_answer_trail(db_session) -> None:
     assert result.candidate_count <= result.trusted_pool_count
     assert [step.label for step in result.step_states] == ["Funny", "High-energy"]
     assert all(step.after_count <= step.before_count for step in result.step_states)
-    assert {state.option.id for state in result.option_states} == {"short", "standard", "long"}
+    assert {state.option.id for state in result.option_states} == {
+        "short",
+        "standard",
+        "long",
+        "any_runtime",
+    }
     assert all(state.after_count <= state.before_count for state in result.option_states)
 
 
@@ -122,6 +162,8 @@ def test_match_page_renders_first_question_and_active_nav(client: TestClient) ->
     assert "Movie Night Picker" in html
     assert "Cozy" in html
     assert "Funny" in html
+    assert "Any mood" in html
+    assert "Show picks now" in html
     assert "Flic" not in html
 
 
@@ -164,3 +206,114 @@ def test_match_page_renders_result_shortlist(client: TestClient, db_session) -> 
     assert "data-poster-frame" in html
     assert "data-poster-image" in html
     assert "data-poster-fallback hidden" in html
+
+
+def test_match_page_show_picks_now_keeps_selected_constraints(client: TestClient) -> None:
+    response = client.get("/ui/match", params={"answers": "funny,any_energy", "show": 1})
+
+    assert response.status_code == 200
+    assert 'class="match-results"' in response.text
+    assert "Funny" in response.text
+    assert "Any energy" in response.text
+    assert "Question 3" not in response.text
+
+
+def test_partial_runtime_and_genre_answers_keep_hard_constraints(db_session) -> None:
+    result = build_match_result(
+        db_session,
+        answer_ids="any_mood,any_energy,short,family",
+    )
+
+    assert result.complete is False
+    assert result.current_question is not None
+    assert result.current_question.id == "era"
+    # The fixture has one title satisfying both explicit hard constraints.
+    assert result.candidate_count == 1
+
+
+def test_show_picks_now_with_no_preferences_renders_a_lead(client: TestClient) -> None:
+    response = client.get("/ui/match", params={"show": 1})
+
+    assert response.status_code == 200
+    assert 'class="match-results"' in response.text
+    assert "Top Pick" in response.text
+    assert "No trusted match yet" not in response.text
+
+
+def test_edit_links_preserve_answers_before_the_edited_step(client: TestClient) -> None:
+    response = client.get(
+        "/ui/match",
+        params={"answers": "funny,high,short,family,retro"},
+    )
+
+    assert response.status_code == 200
+    assert (
+        'href="/ui/match?answers=funny%2Chigh%2Cshort%2Cfamily%2Cretro&amp;edit=2"' in response.text
+    )
+
+
+def test_editing_runtime_preserves_genre_and_era_in_results(client: TestClient) -> None:
+    edit_response = client.get(
+        "/ui/match",
+        params={"answers": "funny,high,short,family,retro", "edit": 2},
+    )
+
+    assert edit_response.status_code == 200
+    assert "Question 3" in edit_response.text
+    assert "100–130 minutes" in edit_response.text
+    assert 'href="/ui/match?answers=funny%2Chigh%2Cstandard%2Cfamily%2Cretro"' in edit_response.text
+
+    result_response = client.get(
+        "/ui/match",
+        params={"answers": "funny,high,standard,family,retro"},
+    )
+
+    assert result_response.status_code == 200
+    assert "Top Pick" in result_response.text
+    assert "100–130 minutes" in result_response.text
+    assert "Animation &amp; family" in result_response.text
+    assert "1980s &amp; 1990s" in result_response.text
+
+
+def test_skipped_dimensions_have_distinct_labels_and_no_spurious_fit_reason(
+    client: TestClient, db_session
+) -> None:
+    result = build_match_result(
+        db_session,
+        answer_ids="any_mood,any_energy,any_runtime,any_genre,any_era",
+    )
+
+    assert result.lead is not None
+    assert all("Any" not in reason for reason in result.lead.reasons)
+
+    response = client.get("/ui/match", params={"show": 1})
+    assert response.status_code == 200
+    for label in ("Any mood", "Any energy", "Any runtime", "Any genre", "Any era"):
+        assert label in response.text
+    assert "Any / skip" not in response.text
+
+
+def test_reason_does_not_claim_curated_mood_for_inferred_only_candidate(db_session) -> None:
+    inferred_only = Movie(
+        title="Synthetic Holiday Thriller",
+        year=2001,
+        runtime=95,
+        imdb_id="ttsyntheticmood01",
+        tmdb_id=9001,
+        plot="A holiday gathering turns into an uneasy night.",
+    )
+    db_session.add(inferred_only)
+    db_session.commit()
+
+    result = build_match_result(
+        db_session,
+        answer_ids="cozy,low,short,any_genre,any_era",
+    )
+    match = next(
+        match
+        for match in ((result.lead,) if result.lead else ()) + result.supporting
+        if match.movie.title == inferred_only.title
+    )
+
+    assert "Cozy mood" not in match.reasons
+    assert any(reason.endswith("-minute runtime") for reason in match.reasons)

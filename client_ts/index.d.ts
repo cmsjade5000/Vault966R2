@@ -2478,6 +2478,8 @@ export interface components {
             poster_url?: string | null;
             /** Rt Score */
             rt_score?: number | null;
+            /** Runtime */
+            runtime?: number | null;
             /** Title */
             title: string;
             /** Year */
@@ -6884,6 +6886,8 @@ export interface operations {
             query?: {
                 answers?: string | null;
                 reroll?: number;
+                show?: number;
+                edit?: number | null;
             };
             header?: never;
             path?: never;

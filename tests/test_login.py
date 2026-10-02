@@ -3,7 +3,7 @@ from starlette.requests import Request
 
 from api.config import settings
 from api.models.movie import Movie
-from api.models.profile import Profile
+from api.models.profile import AppSetup, Profile
 from api.routers.ui import login as login_router
 from api.services.login_throttle import LoginAttemptLimiter
 from api.services.profiles import get_profiles
@@ -292,6 +292,8 @@ def test_login_error_uses_static_archive_art(
 
     assert response.status_code == 401
     assert "Invalid login credentials." in response.text
+    assert "Maintainer action required" not in response.text
+    assert 'class="login-form"' in response.text
     assert private_poster_url not in response.text
     assert 'src="http://testserver/static/img/app-icon.png"' in response.text
     assert "collection.example" not in response.text
@@ -316,6 +318,35 @@ def test_login_fails_closed_when_credentials_missing(client: TestClient, monkeyp
     assert response.status_code == 503
     assert response.json() == {"error": "Login credentials are not configured."}
     assert response.cookies.get(SESSION_COOKIE_NAME) is None
+
+
+def test_login_missing_credentials_shows_safe_recovery_without_actions(
+    client: TestClient,
+    db_session,
+    monkeypatch,
+) -> None:
+    monkeypatch.setattr(settings, "disable_auth", False)
+    monkeypatch.setattr(settings, "login_session_secret", None)
+    monkeypatch.setattr(settings, "login_access_key", None)
+    monkeypatch.setattr(settings, "login_passcode", None)
+    monkeypatch.setattr(settings, "login_access_key_user_a", None)
+    monkeypatch.setattr(settings, "login_passcode_user_a", None)
+    monkeypatch.setattr(settings, "login_access_key_user_b", None)
+    monkeypatch.setattr(settings, "login_passcode_user_b", None)
+    db_session.add(AppSetup(id=1, completed=True))
+    db_session.commit()
+
+    response = client.get("/login")
+
+    assert response.status_code == 503
+    assert "Login credentials are not configured." in response.text
+    assert "Maintainer action required" in response.text
+    assert "documented setup or recovery procedure" in response.text
+    assert "Never send access keys or passcodes through support messages." in response.text
+    assert 'class="login-form"' not in response.text
+    assert 'class="login-profile-form"' not in response.text
+    assert 'name="access_key"' not in response.text
+    assert 'name="passcode"' not in response.text
 
 
 def test_logout_clears_saved_library_search(client: TestClient) -> None:
