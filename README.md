@@ -123,7 +123,10 @@ The deployed server-rendered app currently exposes:
   random picks, likes, watchlist actions, and review flags.
 - `/ui/movies/{id}`: movie detail pages with poster/backdrop artwork, metadata,
   trailer links when available, preferences, and admin edit/flag controls.
-- `/ui/watchlist`: saved watchlist view.
+- `/ui/match`: Movie Night Picker with a stable first recommendation and
+  "Try another" cycling through up to five strong eligible choices.
+- `/ui/watchlist`: saved movies with title search, strict under-100/under-120-minute
+  filters, and Undo for the latest removal. Unknown runtimes appear with Any runtime.
 - `/ui/movies/health`: admin Vault Health dashboard with metadata maintenance,
   review workbench, source synchronization, manual add, and snapshot history.
 - `/ui/first-import`: first-import staging flow for an empty library.

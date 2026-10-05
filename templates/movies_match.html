@@ -104,7 +104,7 @@
             {% endif %}
           </a>
           <div class="match-lead__copy">
-            <p class="match-kicker">Top Pick</p>
+            <p class="match-kicker">{{ "Top Pick" if is_first_pick else "Another strong pick" }}</p>
             <h2>{{ result.lead.movie.title | display_title }}</h2>
             <p class="match-lead__meta">
               <span>{{ result.lead.movie.year or "—" }}</span>
@@ -153,6 +153,14 @@
                 <span>Like</span>
               </button>
             </div>
+            <div class="match-result-actions">
+              {% if result.reroll_pool_size > 1 %}
+              <a class="button-secondary" href="/ui/match?answers={{ answers_query | urlencode }}&amp;reroll={{ next_reroll }}" data-match-reroll>Try another</a>
+              {% else %}
+              <p class="match-notice" role="status">There isn't another eligible pick in this pool. Edit a preference to find more options.</p>
+              {% endif %}
+              <a class="button-ghost" href="/ui/match">Start over</a>
+            </div>
           </div>
         </article>
 
@@ -161,11 +169,7 @@
           <header class="discover-section-header">
             <div>
               <h2 id="match-shortlist-title">More picks for this night</h2>
-              <p>Four alternatives ranked from the preferences you selected.</p>
-            </div>
-            <div class="match-result-actions">
-              <a class="button-secondary" href="/ui/match?answers={{ answers_query | urlencode }}&reroll={{ reroll + 1 }}" data-match-reroll>Try another</a>
-              <a class="button-ghost" href="/ui/match">Start over</a>
+              <p>{{ result.supporting|length }} more {{ "option" if result.supporting|length == 1 else "options" }} from the preferences you selected.</p>
             </div>
           </header>
           <div class="match-shortlist__grid">

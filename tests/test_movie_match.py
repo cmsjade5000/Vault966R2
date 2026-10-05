@@ -4,7 +4,7 @@ from urllib.parse import parse_qs, urlsplit
 
 from fastapi.testclient import TestClient
 
-from api.models.movie import Movie
+from api.models.movie import Genre, Mood, Movie
 from api.models.movie_flag import MovieFlag
 from api.services import movie_match as movie_match_service
 from api.services.movie_match import (
@@ -192,7 +192,8 @@ def test_match_page_renders_result_shortlist(client: TestClient, db_session) -> 
     assert "Top Pick" in html
     assert "Toy Story" in html
     assert "More picks for this night" in html
-    assert "Try another" in html
+    assert "Try another" not in html
+    assert "There isn't another eligible pick in this pool." in html
     assert "View these filters in Library" in html
     assert "Why it fits:" in html
     assert "Quality:" not in html
@@ -317,3 +318,162 @@ def test_reason_does_not_claim_curated_mood_for_inferred_only_candidate(db_sessi
 
     assert "Cozy mood" not in match.reasons
     assert any(reason.endswith("-minute runtime") for reason in match.reasons)
+
+
+def _seed_reroll_movies(db_session) -> list[Movie]:
+    """Replace the synthetic fixture with distinct fit and quality scores."""
+
+    for movie in db_session.query(Movie).all():
+        db_session.delete(movie)
+    db_session.flush()
+    animation = db_session.query(Genre).filter(Genre.name == "Animation").one()
+    cozy = Mood(name="Cozy")
+    intense = Mood(name="Intense")
+    movies = [
+        Movie(
+            title=f"Synthetic Pick {index}",
+            vault_id=f"synthetic-{index}",
+            year=1990 + index,
+            runtime=80 + index,
+            imdb_id=f"ttsyntheticpick{index}",
+            tmdb_id=9200 + index,
+            imdb_rating=9.0 - index,
+            genres=[animation],
+            moods=[cozy if index == 0 else intense],
+        )
+        for index in range(6)
+    ]
+    db_session.add_all(movies)
+    db_session.commit()
+    return movies
+
+
+def _reroll_href(html: str) -> str:
+    href = re.search(r'href="([^"]+)" data-match-reroll', html)
+    assert href is not None
+    return unescape(href.group(1))
+
+
+def test_reroll_cycles_strong_candidates_with_unequal_fit_and_quality(db_session) -> None:
+    movies = _seed_reroll_movies(db_session)
+    preferences = build_preferences(normalize_answer_ids(MATCH_ANSWERS))
+    original_ranking = movie_match_service._rank_movies(movies, preferences, reroll=0)
+    expected_ids = [match.movie.id for match in original_ranking[:5]]
+    assert len({movie_match_service._score_movie(movie, preferences) for movie in movies}) > 1
+    assert len({movie_match_service._quality_score(movie) for movie in movies}) > 1
+
+    for reroll in range(12):
+        result = build_match_result(db_session, answer_ids=MATCH_ANSWERS, reroll=reroll)
+        assert result.lead is not None
+        assert result.lead.movie.id == expected_ids[reroll % len(expected_ids)]
+        assert result.reroll_pool_size == 5
+        assert result.fallback_tier == "exact"
+        assert result.widened is False
+        assert {match.movie.id for match in (result.lead, *result.supporting)} == set(expected_ids)
+
+
+def test_reroll_never_promotes_widened_extras_over_single_exact_match(db_session) -> None:
+    for reroll in (0, 1, 2, 49, 50, 101):
+        result = build_match_result(db_session, answer_ids=MATCH_ANSWERS, reroll=reroll)
+        assert result.lead is not None
+        assert result.lead.movie.title == "Toy Story"
+        assert result.reroll_pool_size == 1
+        assert result.fallback_tier == "exact"
+        assert result.widened is True
+        assert len(result.supporting) == 4
+
+
+def test_reroll_keeps_trust_and_hard_constraints(db_session) -> None:
+    movies = _seed_reroll_movies(db_session)
+    db_session.add(MovieFlag(movie_id=movies[0].id, reason="Synthetic review"))
+    movies[1].runtime = 150
+    movies[2].year = 2020
+    movies[3].genres = [db_session.query(Genre).filter(Genre.name == "Action").one()]
+    db_session.commit()
+    expected_ids = {movies[4].id, movies[5].id}
+    for reroll in range(5):
+        result = build_match_result(db_session, answer_ids=MATCH_ANSWERS, reroll=reroll)
+        assert result.lead is not None
+        assert result.lead.movie.id in expected_ids
+        assert result.reroll_pool_size == 2
+        assert result.fallback_tier == "exact"
+        assert movies[0].id not in {match.movie.id for match in (result.lead, *result.supporting)}
+
+
+def test_reroll_preserves_existing_fallback_pool(db_session) -> None:
+    results = [
+        build_match_result(db_session, answer_ids="intense,high,long,family,recent", reroll=index)
+        for index in range(6)
+    ]
+    first = results[0]
+    assert first.lead is not None
+    expected_ids = [match.movie.id for match in (first.lead, *first.supporting)]
+    for index, result in enumerate(results):
+        assert result.lead is not None
+        assert result.lead.movie.id == expected_ids[index % len(expected_ids)]
+        assert result.fallback_tier == first.fallback_tier
+        assert result.fallback_notice == first.fallback_notice
+        assert result.widened is True
+
+
+def test_reroll_empty_pool_is_safe_and_renders_empty_state(client, db_session) -> None:
+    for movie in db_session.query(Movie).all():
+        db_session.add(MovieFlag(movie_id=movie.id, reason="Synthetic review"))
+    db_session.commit()
+    result = build_match_result(db_session, answer_ids=MATCH_ANSWERS, reroll=50)
+    assert result.lead is None
+    assert result.supporting == ()
+    assert result.reroll_pool_size == 0
+
+    response = client.get("/ui/match", params={"answers": MATCH_ANSWERS, "reroll": 50})
+    assert response.status_code == 200
+    assert "No trusted match yet" in response.text
+    assert "data-match-reroll" not in response.text
+
+
+def test_reroll_link_wraps_at_route_boundary_and_on_repeated_clicks(client, db_session) -> None:
+    _seed_reroll_movies(db_session)
+    response = client.get("/ui/match", params={"answers": MATCH_ANSWERS, "reroll": 50})
+    assert response.status_code == 200
+    assert parse_qs(urlsplit(_reroll_href(response.text)).query) == {
+        "answers": [MATCH_ANSWERS],
+        "reroll": ["1"],
+    }
+    leading_titles = []
+    for _ in range(12):
+        response = client.get(_reroll_href(response.text))
+        assert response.status_code == 200
+        lead = re.search(r"<h2>(Synthetic Pick \d+)</h2>", response.text)
+        assert lead is not None
+        leading_titles.append(lead.group(1))
+        assert int(parse_qs(urlsplit(_reroll_href(response.text)).query)["reroll"][0]) < 5
+    assert len(set(leading_titles[:5])) == 5
+    assert leading_titles[:5] == leading_titles[5:10]
+
+
+def test_show_now_reroll_keeps_completed_answers_and_editing_resets_cycle(client, db_session):
+    _seed_reroll_movies(db_session)
+    response = client.get(
+        "/ui/match", params={"answers": "cozy,low,short,family", "show": 1, "reroll": 50}
+    )
+    assert response.status_code == 200
+    query = parse_qs(urlsplit(_reroll_href(response.text)).query)
+    assert query["answers"] == ["cozy,low,short,family,any_era"]
+    rerolled = client.get(_reroll_href(response.text))
+    assert rerolled.status_code == 200
+    assert "Another strong pick" in rerolled.text
+
+    edited = client.get(
+        "/ui/match",
+        params={"answers": query["answers"][0], "reroll": 50, "edit": 2},
+    )
+    assert edited.status_code == 200
+    assert "Question 3" in edited.text
+    assert "data-match-reroll" not in edited.text
+    answer_href = re.search(r'href="([^"]+)"\s+data-match-answer', edited.text)
+    assert answer_href is not None
+    answer_query = parse_qs(urlsplit(unescape(answer_href.group(1))).query)
+    assert answer_query == {"answers": [query["answers"][0]]}
+    updated = client.get(unescape(answer_href.group(1)))
+    assert updated.status_code == 200
+    assert "Top Pick" in updated.text

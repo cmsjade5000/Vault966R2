@@ -62,6 +62,8 @@ def movie_match(
         "back_answers_query": ",".join(back_answers),
         "next_answer_query": next_answer_query,
         "reroll": reroll,
+        "next_reroll": (reroll + 1) % result.reroll_pool_size if result.reroll_pool_size else 0,
+        "is_first_pick": not result.reroll_pool_size or reroll % result.reroll_pool_size == 0,
         "show_picks_now": bool(show),
         "edit_index": result.edit_index,
     }

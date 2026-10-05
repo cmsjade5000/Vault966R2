@@ -485,17 +485,19 @@ def build_match_result(
             "The Vault used mood and energy to rank the strongest matches while keeping "
             "your genre, runtime, and era."
         )
-    ranked = _rank_movies(candidates, preferences, reroll=reroll, feature_cache=feature_cache)
+    # Keep the first recommendation stable, then cycle only the strongest eligible
+    # picks. Broader choices used to fill the shortlist must not become the lead.
+    ranked = _rank_movies(candidates, preferences, reroll=0, feature_cache=feature_cache)
     pick_count = min(max(shortlist_size + 1, 3), PICK_COUNT)
-    selected = ranked[:pick_count]
+    eligible = ranked[:pick_count]
+    offset = reroll % len(eligible) if eligible else 0
+    selected = eligible[offset:] + eligible[:offset]
     if fallback_tier != "catalog" and len(selected) < pick_count:
         exact_count = len(selected)
         selected_ids = {match.movie.id for match in selected}
         extras = [
             match
-            for match in _rank_movies(
-                movies, preferences, reroll=reroll, feature_cache=feature_cache
-            )
+            for match in _rank_movies(movies, preferences, reroll=0, feature_cache=feature_cache)
             if match.movie.id not in selected_ids
         ]
         selected.extend(extras[: pick_count - len(selected)])
@@ -519,7 +521,7 @@ def build_match_result(
         option_states=(),
         step_states=step_states,
         result_quality=result_quality,
-        reroll_pool_size=len(candidates),
+        reroll_pool_size=len(eligible),
         library_filter_query=_library_filter_query(preferences),
         lead=lead,
         supporting=supporting,
