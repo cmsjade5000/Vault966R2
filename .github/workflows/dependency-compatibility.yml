@@ -38,7 +38,7 @@ jobs:
         env:
           STACK: ${{ matrix.stack }}
         run: |
-          python -m pip install -r requirements.txt pytest openapi-python-client==0.29.0
+          python -m pip install -r requirements.txt pytest openapi-python-client==0.29.1
           case "$STACK" in
             baseline) ;;
             uvicorn) python -m pip install 'uvicorn[standard]==0.54.0' ;;

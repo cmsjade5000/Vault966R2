@@ -53,7 +53,7 @@ class MovieDoubleFeature:
 
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
-        from ..models.movie_read import MovieRead
+        from ..models.movie_read import MovieRead  # noqa: PLC0415
 
         d = dict(src_dict)
         primary = MovieRead.from_dict(d.pop("primary"))

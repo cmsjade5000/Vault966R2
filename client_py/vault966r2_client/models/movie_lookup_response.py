@@ -53,7 +53,7 @@ class MovieLookupResponse:
 
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
-        from ..models.movie_lookup_candidate import MovieLookupCandidate
+        from ..models.movie_lookup_candidate import MovieLookupCandidate  # noqa: PLC0415
 
         d = dict(src_dict)
         _items = d.pop("items", UNSET)

@@ -56,7 +56,7 @@ class PersonListResponse:
 
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
-        from ..models.person_read import PersonRead
+        from ..models.person_read import PersonRead  # noqa: PLC0415
 
         d = dict(src_dict)
         items = []

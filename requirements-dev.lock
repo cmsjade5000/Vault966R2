@@ -279,9 +279,9 @@ mypy-extensions==1.1.0 \
     --hash=sha256:1be4cccdb0f2482337c4743e60421de3a356cd97508abadd57d47403e94f5505 \
     --hash=sha256:52e68efc3284861e772bbcd66823fde5ae21fd2fdb51c62a211403730b916558
     # via black
-openapi-python-client==0.29.0 \
-    --hash=sha256:1085864c1e0a42fb50e1f5eb84363b19de07ebfb8a3f82a146c8529b948b8f12 \
-    --hash=sha256:4ff439a63765aaef548e69c4eedd86dfad57891dc322709450af0c2c9a72a23e
+openapi-python-client==0.29.1 \
+    --hash=sha256:7e05c904fb4840c17b4a9fff05cc53dfd97d45b486d9462ffb7ecf9c98e67e25 \
+    --hash=sha256:9820490a2872dc56ce77ffbdea87f4562dae530a70a7207c66e39315ad20a89e
     # via -r requirements-dev.txt
 packaging==26.3 \
     --hash=sha256:94edc256424af38762eb31306eed28beb9f0efc50a8837492c9d6fd6004aed79 \

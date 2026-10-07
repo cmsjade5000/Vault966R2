@@ -1,7 +1,7 @@
-from enum import Enum
+from enum import StrEnum
 
 
-class MovieMatchSelectionSource(str, Enum):
+class MovieMatchSelectionSource(StrEnum):
     OMDB = "omdb"
     TMDB = "tmdb"
 

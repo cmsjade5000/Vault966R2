@@ -1,7 +1,7 @@
-from enum import Enum
+from enum import StrEnum
 
 
-class RoleType(str, Enum):
+class RoleType(StrEnum):
     ACTOR = "ACTOR"
     DIRECTOR = "DIRECTOR"
     WRITER = "WRITER"

@@ -71,9 +71,9 @@ class AiSearchResponse:
 
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
-        from ..models.movie_facets import MovieFacets
-        from ..models.movie_read import MovieRead
-        from ..models.search_plan import SearchPlan
+        from ..models.movie_facets import MovieFacets  # noqa: PLC0415
+        from ..models.movie_read import MovieRead  # noqa: PLC0415
+        from ..models.search_plan import SearchPlan  # noqa: PLC0415
 
         d = dict(src_dict)
         explanation = d.pop("explanation")

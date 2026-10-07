@@ -54,7 +54,7 @@ class FlicPresetRead:
 
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
-        from ..models.flic_filters import FlicFilters
+        from ..models.flic_filters import FlicFilters  # noqa: PLC0415
 
         d = dict(src_dict)
         created_at = datetime.datetime.fromisoformat(d.pop("created_at"))
