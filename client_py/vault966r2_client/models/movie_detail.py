@@ -510,9 +510,9 @@ class MovieDetail:
 
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
-        from ..models.role_with_person_read import RoleWithPersonRead
-        from ..models.similar_movie import SimilarMovie
-        from ..models.top_billed_entry import TopBilledEntry
+        from ..models.role_with_person_read import RoleWithPersonRead  # noqa: PLC0415
+        from ..models.similar_movie import SimilarMovie  # noqa: PLC0415
+        from ..models.top_billed_entry import TopBilledEntry  # noqa: PLC0415
 
         d = dict(src_dict)
         id = d.pop("id")

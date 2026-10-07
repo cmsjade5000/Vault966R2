@@ -80,7 +80,7 @@ class RoleWithPersonRead:
 
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
-        from ..models.person_nested import PersonNested
+        from ..models.person_nested import PersonNested  # noqa: PLC0415
 
         d = dict(src_dict)
         id = d.pop("id")

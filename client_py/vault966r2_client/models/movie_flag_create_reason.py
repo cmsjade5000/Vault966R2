@@ -1,7 +1,7 @@
-from enum import Enum
+from enum import StrEnum
 
 
-class MovieFlagCreateReason(str, Enum):
+class MovieFlagCreateReason(StrEnum):
     BROKEN_LINK = "Broken link"
     HUMAN_REVIEW = "Human review"
     METADATA_CLEANUP = "Metadata cleanup"

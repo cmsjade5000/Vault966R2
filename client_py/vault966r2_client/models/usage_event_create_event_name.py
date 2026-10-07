@@ -1,7 +1,7 @@
-from enum import Enum
+from enum import StrEnum
 
 
-class UsageEventCreateEventName(str, Enum):
+class UsageEventCreateEventName(StrEnum):
     DISCOVER_RAIL_OPENED = "discover_rail_opened"
     FILTERS_APPLIED = "filters_applied"
     LIBRARY_SEARCH_SUBMITTED = "library_search_submitted"

@@ -79,8 +79,8 @@ class SemanticSearchResponse:
 
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
-        from ..models.movie_facets import MovieFacets
-        from ..models.semantic_search_item import SemanticSearchItem
+        from ..models.movie_facets import MovieFacets  # noqa: PLC0415
+        from ..models.semantic_search_item import SemanticSearchItem  # noqa: PLC0415
 
         d = dict(src_dict)
         facets = MovieFacets.from_dict(d.pop("facets"))

@@ -62,8 +62,8 @@ class MovieSearchResponse:
 
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
-        from ..models.movie_facets import MovieFacets
-        from ..models.movie_read import MovieRead
+        from ..models.movie_facets import MovieFacets  # noqa: PLC0415
+        from ..models.movie_read import MovieRead  # noqa: PLC0415
 
         d = dict(src_dict)
         facets = MovieFacets.from_dict(d.pop("facets"))

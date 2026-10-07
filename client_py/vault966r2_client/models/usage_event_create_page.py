@@ -1,7 +1,7 @@
-from enum import Enum
+from enum import StrEnum
 
 
-class UsageEventCreatePage(str, Enum):
+class UsageEventCreatePage(StrEnum):
     DETAIL = "detail"
     DISCOVER = "discover"
     LIBRARY = "library"
