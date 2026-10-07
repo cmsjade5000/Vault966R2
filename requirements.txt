@@ -2,7 +2,7 @@ fastapi==0.141.1
 uvicorn[standard]==0.54.0
 pydantic==2.13.5
 pydantic-settings==2.15.0
-SQLAlchemy==2.0.54
+SQLAlchemy==2.1.3
 alembic==1.18.5
 python-dotenv==1.2.3
 httpx==0.28.1  # nice to have for future tests
