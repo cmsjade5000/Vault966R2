@@ -18,18 +18,14 @@ def test_duplicate_movie_ids_surface_in_error_message(monkeypatch):
     monkeypatch.setattr(db, "DB_URL", "sqlite://")
 
     with engine.begin() as connection:
-        connection.execute(
-            text(
-                """
+        connection.execute(text("""
                 CREATE TABLE movies (
                     id INTEGER PRIMARY KEY,
                     vault_id TEXT,
                     imdb_id TEXT,
                     tmdb_id INTEGER
                 )
-                """
-            )
-        )
+                """))
         connection.execute(
             text(
                 "INSERT INTO movies (id, vault_id, imdb_id, tmdb_id) "
@@ -70,9 +66,7 @@ def test_sqlite_schema_invariant_check_reports_missing_identity_index(monkeypatc
     monkeypatch.setattr(db, "DB_URL", "sqlite://")
 
     with engine.begin() as connection:
-        connection.execute(
-            text(
-                """
+        connection.execute(text("""
                 CREATE TABLE movies (
                     id INTEGER PRIMARY KEY,
                     title TEXT,
@@ -80,9 +74,7 @@ def test_sqlite_schema_invariant_check_reports_missing_identity_index(monkeypatc
                     imdb_id TEXT,
                     tmdb_id INTEGER
                 )
-                """
-            )
-        )
+                """))
         connection.execute(text("CREATE UNIQUE INDEX ix_movies_imdb_id ON movies (imdb_id)"))
         connection.execute(text("CREATE UNIQUE INDEX ix_movies_tmdb_id ON movies (tmdb_id)"))
 
@@ -105,18 +97,14 @@ def test_sqlite_bootstrap_creates_vault_id_unique_index_and_retired_registry(mon
     monkeypatch.setattr(db, "DB_URL", "sqlite://")
 
     with engine.begin() as connection:
-        connection.execute(
-            text(
-                """
+        connection.execute(text("""
                 CREATE TABLE movies (
                     id INTEGER PRIMARY KEY,
                     title TEXT,
                     imdb_id TEXT,
                     tmdb_id INTEGER
                 )
-                """
-            )
-        )
+                """))
 
     db._ensure_sqlite_movie_columns()
     db._verify_sqlite_schema_invariants()

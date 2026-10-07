@@ -22,7 +22,6 @@ from pathlib import Path
 from typing import Any, Iterable, Mapping
 from urllib.parse import quote, urlsplit, urlunsplit
 
-
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_DATABASE = (
     Path.home() / "Library" / "Application Support" / "Vault966" / "data" / "vault.db"
@@ -225,15 +224,13 @@ def _load_taxonomy(
     required_tables = {association, taxonomy}
     if not required_tables.issubset(_table_names(connection)):
         return {}
-    rows = connection.execute(
-        f"""
+    rows = connection.execute(f"""
         SELECT association.movie_id, taxonomy.name
         FROM "{association}" AS association
         JOIN "{taxonomy}" AS taxonomy ON taxonomy.id = association.{taxonomy[:-1]}_id
         WHERE taxonomy.name IS NOT NULL AND trim(taxonomy.name) <> ''
         ORDER BY association.movie_id, lower(taxonomy.name), taxonomy.name
-        """
-    ).fetchall()
+        """).fetchall()
     result: dict[int, list[str]] = defaultdict(list)
     for row in rows:
         movie_id = int(row[0])
@@ -252,16 +249,14 @@ def _load_roles(connection: sqlite3.Connection) -> dict[int, list[dict[str, Any]
     if not required_columns.issubset(role_columns):
         return {}
     billing = 'roles."billing_order"' if "billing_order" in role_columns else "NULL"
-    rows = connection.execute(
-        f"""
+    rows = connection.execute(f"""
         SELECT roles.movie_id, roles.role_type, people.name, {billing} AS billing_order, roles.id
         FROM "roles" AS roles
         JOIN "people" AS people ON people.id = roles.person_id
         WHERE upper(roles.role_type) IN ('ACTOR', 'DIRECTOR', 'WRITER')
           AND people.name IS NOT NULL AND trim(people.name) <> ''
         ORDER BY roles.movie_id, billing_order IS NULL, billing_order, roles.id
-        """
-    ).fetchall()
+        """).fetchall()
     result: dict[int, list[dict[str, Any]]] = defaultdict(list)
     for row in rows:
         result[int(row[0])].append(

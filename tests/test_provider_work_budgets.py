@@ -16,7 +16,6 @@ from api.schemas.ai_search import SearchPlan
 from api.schemas.llm_filters import LlmMovieFilters
 from api.services.assistant import AssistantTemplate
 
-
 PROVIDER_ENDPOINTS = ("ai", "llm", "semantic", "assistant")
 
 

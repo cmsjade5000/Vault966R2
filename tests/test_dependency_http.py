@@ -12,8 +12,7 @@ import pytest
 
 @pytest.fixture(params=[False, True], ids=["direct", "trusted-loopback"])
 def uvicorn_probe(tmp_path, request):
-    (tmp_path / "probe.py").write_text(
-        """async def app(scope, receive, send):
+    (tmp_path / "probe.py").write_text("""async def app(scope, receive, send):
     if scope["type"] == "websocket":
         await receive()
         await send({"type": "websocket.accept"})
@@ -26,8 +25,7 @@ def uvicorn_probe(tmp_path, request):
     else:
         await send({"type": "http.response.start", "status": 200, "headers": []})
         await send({"type": "http.response.body", "body": scope["client"][0].encode()})
-"""
-    )
+""")
     with socket.socket() as listener:
         listener.bind(("127.0.0.1", 0))
         port = listener.getsockname()[1]

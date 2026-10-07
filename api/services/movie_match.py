@@ -12,7 +12,6 @@ from api.models.movie import Movie
 from api.services.trusted_movies import trusted_movie_query
 from core.moods import score_moods
 
-
 PICK_COUNT = 5
 
 _HIGH_ENERGY_MOODS = frozenset({"High-energy", "Intense", "Scary", "Gritty", "Epic", "Bleak"})

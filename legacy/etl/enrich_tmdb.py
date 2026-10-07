@@ -40,7 +40,6 @@ from api.models.person import Role  # noqa: E402,F401  # ensure mapper registrat
 from api.utils.provider_errors import format_provider_error  # noqa: E402
 from api.utils.providers import split_providers  # noqa: E402
 
-
 TMDB_API_BASE = "https://api.themoviedb.org/3"
 TMDB_IMAGE_BASE = "https://image.tmdb.org/t/p"
 IMDB_ID_RE = re.compile(r"^tt\d{7,9}$", re.IGNORECASE)

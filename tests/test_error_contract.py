@@ -28,7 +28,6 @@ from client_py.vault966r2_client.models.error_response import (
     ErrorResponse as GeneratedErrorResponse,
 )
 
-
 ROOT_DIR = Path(__file__).resolve().parents[1]
 ERROR_KEYS = {"error_code", "message", "request_id"}
 CSV_PATHS = (

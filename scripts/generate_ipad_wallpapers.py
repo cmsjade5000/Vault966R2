@@ -12,7 +12,6 @@ from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFilter
 
-
 WIDTH = 2048
 HEIGHT = 1536
 SLOTS = [
@@ -33,14 +32,12 @@ SLOTS = [
 
 def poster_urls(db_path: Path) -> list[str]:
     with sqlite3.connect(db_path) as conn:
-        rows = conn.execute(
-            """
+        rows = conn.execute("""
             SELECT poster_url
             FROM movies
             WHERE poster_url IS NOT NULL
               AND TRIM(poster_url) != ''
-            """
-        ).fetchall()
+            """).fetchall()
     return [row[0] for row in rows]
 
 

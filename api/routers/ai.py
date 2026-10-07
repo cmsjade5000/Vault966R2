@@ -27,7 +27,6 @@ from core.movie_filters import (
 from core.picker import PickerFilters
 from api.routers.movies import _attach_flag_status
 
-
 router = APIRouter(prefix="/api/ai", tags=["ai"])
 logger = logging.getLogger("vault966")
 

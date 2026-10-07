@@ -5,7 +5,6 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Any, Iterable
 
-
 URL_RE = re.compile(r"https?://", re.IGNORECASE)
 TMDB_WATCH_RE = re.compile(r"https?://(?:www\.)?themoviedb\.org/movie/\d+[^\\s]*", re.IGNORECASE)
 

@@ -10,7 +10,6 @@ from api.models.movie import Movie
 from api.routers.ui.manual_add import ManualMovieCreate, ManualMovieMetadata
 from api.services import manual_add, movie_lookup
 
-
 EXPECTED_ENRICHED_FIELDNAMES = [
     "title",
     "year",

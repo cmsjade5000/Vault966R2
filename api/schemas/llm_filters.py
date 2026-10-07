@@ -6,7 +6,6 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 
 from api.schemas.movie import MovieFacets, MovieRead
 
-
 ALLOWED_ORDER_BY = (
     "title_asc",
     "title_desc",
