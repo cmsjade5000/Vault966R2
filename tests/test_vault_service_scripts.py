@@ -362,7 +362,7 @@ def test_runtime_trusts_only_explicitly_configured_proxy_ips(tmp_path: Path) -> 
         f"""\
         #!/usr/bin/env bash
         if [[ "$1" == *"validate_trusted_proxy_ips.py" ]]; then
-          exec {sys.executable!s} "$@"
+          exec {shlex.quote(sys.executable)} "$@"
         fi
         printf '%s\\n' "$*" > {calls!s}
         exit 0
@@ -391,7 +391,7 @@ def test_runtime_rejects_ambiguous_trusted_proxy_config(tmp_path: Path) -> None:
         f"""\
         #!/usr/bin/env bash
         if [[ "$1" == *"validate_trusted_proxy_ips.py" ]]; then
-          exec {sys.executable!s} "$@"
+          exec {shlex.quote(sys.executable)} "$@"
         fi
         exit 99
         """,

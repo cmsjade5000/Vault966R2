@@ -28,7 +28,7 @@ WATCHDOG_STDOUT_LOG="$LOG_DIR/vault_watchdog.log"
 WATCHDOG_STDERR_LOG="$LOG_DIR/vault_watchdog.error.log"
 MAINTENANCE_STDOUT_LOG="$LOG_DIR/vault_maintenance.log"
 MAINTENANCE_STDERR_LOG="$LOG_DIR/vault_maintenance.error.log"
-HEALTH_URL="http://127.0.0.1:8000/health"
+HEALTH_URL="http://127.0.0.1:8000/readyz"
 TRUSTED_PROXY_CONFIG="$SUPPORT_DIR/config/trusted_proxy_ips"
 
 usage() {
@@ -480,6 +480,13 @@ verify_path() {
     echo "Location: $location"
   fi
 }
+
+if [[ "${1:-}" == install || "${1:-}" == restart ]]; then
+  if [[ -f "$APP_DIR/../release-manifest.json" || -L "$APP_DIR" ]]; then
+    echo "Use the reviewed release stage/activate workflow; legacy redeploy would overwrite a release." >&2
+    exit 1
+  fi
+fi
 
 case "${1:-}" in
   install)

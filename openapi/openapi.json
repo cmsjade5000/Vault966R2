@@ -4305,6 +4305,17 @@
             ],
             "title": "Rt Score"
           },
+          "runtime": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Runtime"
+          },
           "title": {
             "title": "Title",
             "type": "string"
@@ -10183,6 +10194,36 @@
               "title": "Reroll",
               "type": "integer"
             }
+          },
+          {
+            "in": "query",
+            "name": "show",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "maximum": 1,
+              "minimum": 0,
+              "title": "Show",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "edit",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maximum": 4,
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Edit"
+            }
           }
         ],
         "responses": {
@@ -12356,6 +12397,30 @@
     "/ui/watchlist": {
       "get": {
         "operationId": "watchlist_ui_watchlist_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "default": "",
+              "maxLength": 120,
+              "title": "Q",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "runtime",
+            "required": false,
+            "schema": {
+              "default": "any",
+              "pattern": "^(any|under100|under120)$",
+              "title": "Runtime",
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "content": {
@@ -12366,6 +12431,16 @@
               }
             },
             "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Request validation failed."
           },
           "500": {
             "content": {

@@ -298,6 +298,7 @@ def _build_flic_shortlist(
     *,
     used_ids: set[int],
     limit: int = 6,
+    rotation_seed: Optional[int] = None,
 ) -> list[Movie]:
     filters = PickerFilters.from_values(runtime_max=125, year_min=1990).to_payload()
     base_query = trusted_movie_query(db).filter(
@@ -308,7 +309,25 @@ def _build_flic_shortlist(
         base_query = base_query.filter(~Movie.id.in_(used_ids))
 
     ranked = rank_movie_ids_by_flic(db, base_query=base_query, filters=filters)
-    ranked_ids = [movie_id for _score, movie_id in ranked[: limit * 3]]
+    window_size = max(limit * 12, limit)
+    ranked_window = ranked[:window_size]
+    if rotation_seed is not None:
+        cutoff_score = ranked[min(window_size, len(ranked)) - 1][0] if ranked else None
+        eligible_band = [
+            item for item in ranked if cutoff_score is not None and item[0] >= cutoff_score
+        ]
+        ordered_band = sorted(
+            eligible_band,
+            key=lambda item: _stable_daily_rank(
+                _discover_day(),
+                "weeknight-shortlist",
+                str(item[1]),
+            ),
+        )
+        offset = rotation_seed % len(ordered_band) if ordered_band else 0
+        ordered_band = ordered_band[offset:] + ordered_band[:offset]
+        ranked_window = ordered_band[:window_size]
+    ranked_ids = [movie_id for _score, movie_id in ranked_window]
     score_by_id = {movie_id: score for score, movie_id in ranked}
     candidates = fetch_movies_in_rank_order(
         db,
@@ -321,7 +340,7 @@ def _build_flic_shortlist(
         if movie.id is None or movie.id in used_ids:
             continue
         setattr(movie, "flic_score", score_by_id.get(movie.id, float("-inf")))
-        setattr(movie, "reason_labels", _watch_tonight_reason(movie, prefix="Flic"))
+        setattr(movie, "reason_labels", _watch_tonight_reason(movie))
         selected.append(movie)
         if len(selected) >= limit:
             break
@@ -335,19 +354,77 @@ def _build_flic_shortlist(
         excluded = set(used_ids) | selected_ids
         if excluded:
             fallback_query = fallback_query.filter(~Movie.id.in_(excluded))
+        fallback_limit = max((limit - len(selected)) * 6, limit - len(selected))
         fallback_movies = (
             fallback_query.order_by(
                 Movie.imdb_rating.desc().nullslast(),
                 Movie.rt_score.desc().nullslast(),
                 Movie.title.asc(),
             )
-            .limit(limit - len(selected))
+            .limit(fallback_limit)
             .all()
         )
+        if rotation_seed is not None and fallback_movies:
+            fallback_movies = sorted(
+                fallback_movies,
+                key=lambda movie: _stable_daily_rank(
+                    _discover_day(),
+                    "weeknight-fallback",
+                    _stable_movie_id(movie),
+                ),
+            )
+            offset = rotation_seed % len(fallback_movies)
+            fallback_movies = fallback_movies[offset:] + fallback_movies[:offset]
+        fallback_movies = fallback_movies[: limit - len(selected)]
         for movie in fallback_movies:
-            setattr(movie, "reason_labels", _watch_tonight_reason(movie, prefix="Flic"))
+            setattr(movie, "reason_labels", _watch_tonight_reason(movie))
         selected.extend(fallback_movies)
 
+    used_ids.update(movie.id for movie in selected if movie.id is not None)
+    return selected
+
+
+def _build_tonight_shortlist(
+    db: Session,
+    *,
+    used_ids: set[int],
+    limit: int = 7,
+    day: Optional[date] = None,
+    rotation: int = 0,
+) -> list[Movie]:
+    """Build a small daily shortlist without ranking the full collection.
+
+    Discover is an entry surface, so its first response should not pay the cost
+    of the full Picker or double-feature pipelines. Start with a bounded pool of
+    strong, poster-backed candidates and rotate that pool deterministically.
+    """
+
+    day = day or _discover_day()
+    candidates = (
+        _with_poster(trusted_movie_query(db))
+        .options(selectinload(Movie.genres), selectinload(Movie.moods))
+        .filter(or_(Movie.runtime.is_(None), Movie.runtime <= 150))
+        .filter(or_(Movie.imdb_rating.isnot(None), Movie.rt_score.isnot(None)))
+        .order_by(
+            Movie.imdb_rating.desc().nullslast(),
+            Movie.rt_score.desc().nullslast(),
+            Movie.imdb_votes.desc().nullslast(),
+            Movie.title.asc(),
+        )
+        .limit(64)
+        .all()
+    )
+    candidates.sort(
+        key=lambda movie: _stable_daily_rank(day, "tonight-shortlist", _stable_movie_id(movie))
+    )
+
+    eligible = [movie for movie in candidates if movie.id is not None and movie.id not in used_ids]
+    if eligible:
+        offset = rotation % len(eligible)
+        eligible = eligible[offset:] + eligible[:offset]
+    selected = eligible[:limit]
+    for movie in selected:
+        setattr(movie, "reason_labels", _watch_tonight_reason(movie))
     used_ids.update(movie.id for movie in selected if movie.id is not None)
     return selected
 
@@ -722,15 +799,19 @@ def discover_refresh(
 
 
 @router.get("/ui/discover", response_class=HTMLResponse, include_in_schema=False)
-def discover(request: Request, db: Session = Depends(get_db)):
+def discover(
+    request: Request,
+    db: Session = Depends(get_db),
+    rotation: int = Query(default=0, ge=0, le=2_000_000_000),
+):
     day = _discover_day()
     active_profile_id = get_active_profile_id(request, db)
     profiles = get_profiles(db)
     used_ids: set[int] = set()
 
-    flic_shortlist = _build_flic_shortlist(db, used_ids=used_ids, limit=7)
-    spotlight_lead = flic_shortlist[0] if flic_shortlist else None
-    spotlight_supporting = flic_shortlist[1:4]
+    shortlist = _build_tonight_shortlist(db, used_ids=used_ids, limit=7, day=day, rotation=rotation)
+    spotlight_lead = shortlist[0] if shortlist else None
+    tonight_shortlist = shortlist[1:]
 
     selected_for_you, selected_for_you_genres = _pick_selected_for_you(
         db,
@@ -742,20 +823,7 @@ def discover(request: Request, db: Session = Depends(get_db)):
     for movie in selected_for_you:
         setattr(movie, "reason_labels", [_personalized_reason(movie, selected_for_you_genres)])
 
-    top_genres = _top_genre_names(db, limit=8)
-    double_features = _pick_pairings(db, top_genres, used_ids, limit=2, seed=day.toordinal())
-    rails = _build_discover_rails(db, used_ids=used_ids, limit=5, day=day)
-    for rail in rails:
-        for movie in rail["movies"]:
-            if isinstance(movie, Movie):
-                setattr(movie, "reason_labels", _watch_tonight_reason(movie))
-
-    all_movies = _collect_movies(
-        flic_shortlist,
-        selected_for_you,
-        double_features,
-        *(rail["movies"] for rail in rails),
-    )
+    all_movies = _collect_movies(shortlist, selected_for_you)
     attach_poster_themes(all_movies)
     attach_genre_display(all_movies)
     preferences = get_preferences_for_movies(
@@ -770,17 +838,8 @@ def discover(request: Request, db: Session = Depends(get_db)):
 
     spotlight_reasons = {
         movie.id: " · ".join(_watch_tonight_reason(movie, prefix="Spotlight"))
-        for movie in flic_shortlist
+        for movie in shortlist
         if movie.id is not None
-    }
-    double_feature_reasons = {
-        f"{selection.primary.id}-{selection.secondary.id}": _pairing_reason_tags(
-            selection.primary,
-            selection.secondary,
-            selection.theme_label,
-        )
-        for selection in double_features
-        if selection.primary.id is not None and selection.secondary.id is not None
     }
     decision_links = [
         {
@@ -799,10 +858,18 @@ def discover(request: Request, db: Session = Depends(get_db)):
             "href": "/ui/watchlist",
         },
         {
-            "label": "Flic ranked",
-            "description": "Runtime-friendly scoring",
+            "label": "Scored shortlist",
+            "description": "Runtime-friendly picks with strong signals",
             "href": "/ui/movies?order_by=flic&runtime_max=125&year_min=1990&view=grid&page=1",
         },
+    ]
+    explore_links = [
+        {
+            "label": definition.title,
+            "description": definition.description,
+            "href": f"/ui/movies?preset={definition.key}&view=grid&page=1",
+        }
+        for definition in _ordered_rail_definitions(day)
     ]
 
     context = {
@@ -810,15 +877,13 @@ def discover(request: Request, db: Session = Depends(get_db)):
         "profiles": profiles,
         "active_profile_id": active_profile_id,
         "spotlight_lead": spotlight_lead,
-        "spotlight_supporting": spotlight_supporting,
         "spotlight_reasons": spotlight_reasons,
-        "flic_shortlist": flic_shortlist,
+        "tonight_shortlist": tonight_shortlist,
+        "discover_next_rotation": (rotation + 1) % 2_000_000_001,
         "selected_for_you": selected_for_you,
         "selected_for_you_genres": selected_for_you_genres,
-        "double_features": double_features,
-        "double_feature_reasons": double_feature_reasons,
-        "rails": rails,
         "decision_links": decision_links,
+        "explore_links": explore_links,
     }
     response = TEMPLATES.TemplateResponse(request, "movies_discover.html", context)
     ensure_profile_cookie(request, response, db)

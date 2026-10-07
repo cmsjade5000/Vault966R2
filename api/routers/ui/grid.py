@@ -38,6 +38,7 @@ from api.services.flic_ordering import fetch_movies_in_rank_order, rank_movie_id
 from api.services.profiles import (
     ROLE_ADMIN,
     ROLE_REVIEWER,
+    count_watchlist_movies,
     ensure_profile_cookie,
     get_active_profile_role,
     get_active_profile_id,
@@ -646,10 +647,20 @@ def movies_health_missing(
 
 
 @router.get("/ui/watchlist", response_class=HTMLResponse)
-def watchlist(request: Request, db: Session = Depends(get_db)):
+def watchlist(
+    request: Request,
+    q: str = Query(default="", max_length=120),
+    runtime: str = Query(default="any", pattern="^(any|under100|under120)$"),
+    db: Session = Depends(get_db),
+):
     profiles = get_profiles(db)
     active_profile_id = get_active_profile_id(request, db)
-    movies = get_watchlist_movies(db, profile_id=active_profile_id)
+    q = q.strip()
+    runtime_under = {"under100": 100, "under120": 120}.get(runtime)
+    total = count_watchlist_movies(db, profile_id=active_profile_id)
+    movies = get_watchlist_movies(
+        db, profile_id=active_profile_id, q=q, runtime_under=runtime_under
+    )
     if movies:
         attach_poster_themes(movies)
         attach_genre_display(movies)
@@ -665,7 +676,11 @@ def watchlist(request: Request, db: Session = Depends(get_db)):
         "movies": movies,
         "profiles": profiles,
         "active_profile_id": active_profile_id,
-        "total": len(movies),
+        "total": total,
+        "visible_total": len(movies),
+        "q": q,
+        "runtime": runtime,
+        "has_filters": bool(q or runtime_under is not None),
     }
     response = TEMPLATES.TemplateResponse(request, "movies_watchlist.html", context)
     ensure_profile_cookie(request, response, db)

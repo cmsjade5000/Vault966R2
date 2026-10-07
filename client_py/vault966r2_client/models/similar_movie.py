@@ -23,6 +23,7 @@ class SimilarMovie:
         poster_theme (None | str | Unset):
         poster_url (None | str | Unset):
         rt_score (int | None | Unset):
+        runtime (int | None | Unset):
         year (int | None | Unset):
     """
 
@@ -34,6 +35,7 @@ class SimilarMovie:
     poster_theme: None | str | Unset = UNSET
     poster_url: None | str | Unset = UNSET
     rt_score: int | None | Unset = UNSET
+    runtime: int | None | Unset = UNSET
     year: int | None | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
@@ -76,6 +78,12 @@ class SimilarMovie:
         else:
             rt_score = self.rt_score
 
+        runtime: int | None | Unset
+        if isinstance(self.runtime, Unset):
+            runtime = UNSET
+        else:
+            runtime = self.runtime
+
         year: int | None | Unset
         if isinstance(self.year, Unset):
             year = UNSET
@@ -102,6 +110,8 @@ class SimilarMovie:
             field_dict["poster_url"] = poster_url
         if rt_score is not UNSET:
             field_dict["rt_score"] = rt_score
+        if runtime is not UNSET:
+            field_dict["runtime"] = runtime
         if year is not UNSET:
             field_dict["year"] = year
 
@@ -161,6 +171,15 @@ class SimilarMovie:
 
         rt_score = _parse_rt_score(d.pop("rt_score", UNSET))
 
+        def _parse_runtime(data: object) -> int | None | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(int | None | Unset, data)
+
+        runtime = _parse_runtime(d.pop("runtime", UNSET))
+
         def _parse_year(data: object) -> int | None | Unset:
             if data is None:
                 return data
@@ -179,6 +198,7 @@ class SimilarMovie:
             poster_theme=poster_theme,
             poster_url=poster_url,
             rt_score=rt_score,
+            runtime=runtime,
             year=year,
         )
 

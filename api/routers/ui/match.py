@@ -28,9 +28,17 @@ def movie_match(
     request: Request,
     answers: Optional[str] = Query(default=None, max_length=120),
     reroll: int = Query(default=0, ge=0, le=50),
+    show: int = Query(default=0, ge=0, le=1),
+    edit: Optional[int] = Query(default=None, ge=0, le=4),
     db: Session = Depends(get_db),
 ):
-    result = build_match_result(db, answer_ids=answers, reroll=reroll)
+    result = build_match_result(
+        db,
+        answer_ids=answers,
+        reroll=reroll,
+        show_picks_now=bool(show),
+        edit_index=edit,
+    )
     matched_movies = []
     if result.lead is not None:
         matched_movies.append(result.lead.movie)
@@ -54,5 +62,9 @@ def movie_match(
         "back_answers_query": ",".join(back_answers),
         "next_answer_query": next_answer_query,
         "reroll": reroll,
+        "next_reroll": (reroll + 1) % result.reroll_pool_size if result.reroll_pool_size else 0,
+        "is_first_pick": not result.reroll_pool_size or reroll % result.reroll_pool_size == 0,
+        "show_picks_now": bool(show),
+        "edit_index": result.edit_index,
     }
     return TEMPLATES.TemplateResponse(request, "movies_match.html", context)

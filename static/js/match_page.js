@@ -28,16 +28,23 @@
   const nextAnswers = (currentAnswers, answerId) =>
     [...currentAnswers.filter(Boolean), answerId].join(",");
 
+  const showPicksQuery = (currentAnswers) => {
+    const answers = currentAnswers.filter(Boolean).join(",");
+    return answers ? `answers=${encodeURIComponent(answers)}&show=1` : "show=1";
+  };
+
   window.VaultMatchSupport = {
     answerCount,
     countLabel,
     nextAnswers,
+    showPicksQuery,
     prefersReducedMotion,
   };
 
   document.addEventListener("click", (event) => {
     const link = event.target.closest(
-      "[data-match-answer], [data-match-back], [data-match-reset], [data-match-reroll]",
+      "[data-match-answer], [data-match-back], [data-match-reset], [data-match-reroll], " +
+        "[data-match-show], [data-match-edit]",
     );
     if (!link) return;
     setPending(link);

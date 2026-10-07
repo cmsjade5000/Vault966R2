@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Dict, Iterable, List
 
 from fastapi import Request, Response
+from sqlalchemy import func
 from sqlalchemy.orm import Session, selectinload
 
 from api.models.movie import Movie
@@ -183,13 +184,34 @@ def update_movie_preference(
     return pref
 
 
-def get_watchlist_movies(db: Session, *, profile_id: int) -> List[Movie]:
+def _watchlist_query(db: Session, *, profile_id: int):
     return (
         db.query(Movie)
-        .options(selectinload(Movie.genres))
         .join(MoviePreference, MoviePreference.movie_id == Movie.id)
         .filter(MoviePreference.profile_id == profile_id)
         .filter(MoviePreference.watchlist.is_(True))
+    )
+
+
+def count_watchlist_movies(db: Session, *, profile_id: int) -> int:
+    return _watchlist_query(db, profile_id=profile_id).count()
+
+
+def get_watchlist_movies(
+    db: Session,
+    *,
+    profile_id: int,
+    q: str = "",
+    runtime_under: int | None = None,
+) -> List[Movie]:
+    query = _watchlist_query(db, profile_id=profile_id)
+    if q:
+        query = query.filter(Movie.title.icontains(q, autoescape=True))
+    if runtime_under is not None:
+        query = query.filter(Movie.runtime > 0, Movie.runtime < runtime_under)
+    return (
+        query.options(selectinload(Movie.genres))
+        .order_by(func.lower(Movie.title).asc(), Movie.title.asc(), Movie.id.asc())
         .all()
     )
 
@@ -206,5 +228,6 @@ __all__ = [
     "set_active_profile_cookie",
     "get_preferences_for_movies",
     "update_movie_preference",
+    "count_watchlist_movies",
     "get_watchlist_movies",
 ]

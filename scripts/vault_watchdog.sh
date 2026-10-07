@@ -4,7 +4,7 @@ set -euo pipefail
 LABEL="${LABEL:-com.vault966.server}"
 DOMAIN="${DOMAIN:-gui/$(id -u)}"
 SERVICE_TARGET="$DOMAIN/$LABEL"
-HEALTH_URL="${HEALTH_URL:-http://127.0.0.1:8000/health}"
+HEALTH_URL="${HEALTH_URL:-http://127.0.0.1:8000/readyz}"
 HEALTH_ATTEMPTS="${HEALTH_ATTEMPTS:-3}"
 HEALTH_RETRY_DELAY="${HEALTH_RETRY_DELAY:-5}"
 

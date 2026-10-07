@@ -7,7 +7,7 @@
 {% block body_class %}watchlist-page{% endblock %}
 {% block content %}
   {% set watchlist_return_to = request.url.path ~ (('?' ~ request.url.query) if request.url.query else '') %}
-  <section class="library-shell page-shell" aria-live="polite">
+  <section class="library-shell page-shell" data-watchlist-view data-watchlist-saved-total="{{ total }}" data-watchlist-filtered="{{ 'true' if has_filters else 'false' }}">
     <header class="library-heading">
       <div>
         <h1>Watchlist</h1>
@@ -17,16 +17,46 @@
         </p>
       </div>
     </header>
+    <form class="watchlist-filters" method="get" action="/ui/watchlist" aria-label="Filter your watchlist">
+      <label class="watchlist-filters__search" for="watchlist-search">
+        Search titles
+        <input id="watchlist-search" type="search" name="q" value="{{ q }}" maxlength="120" placeholder="Movie title" />
+      </label>
+      <label for="watchlist-runtime">
+        Runtime
+        <select id="watchlist-runtime" name="runtime" aria-describedby="watchlist-runtime-hint">
+          <option value="any"{% if runtime == 'any' %} selected{% endif %}>Any runtime</option>
+          <option value="under100"{% if runtime == 'under100' %} selected{% endif %}>Under 100 min</option>
+          <option value="under120"{% if runtime == 'under120' %} selected{% endif %}>Under 120 min</option>
+        </select>
+      </label>
+      <div class="watchlist-filters__actions">
+        <button class="button-primary" type="submit">Show movies</button>
+        {% if has_filters %}<a class="button-secondary" href="/ui/watchlist">Clear filters</a>{% endif %}
+      </div>
+      <p id="watchlist-runtime-hint" class="watchlist-filters__hint">Under 100 means less than 100 minutes; under 120 means less than 120. Movies without a runtime appear only with Any runtime.</p>
+    </form>
+    <p class="watchlist-results" role="status" aria-live="polite">
+      Showing <strong data-watchlist-results>{{ visible_total }}</strong>
+      <span data-watchlist-result-label>{{ "movie" if visible_total == 1 else "movies" }}</span>
+      {% if has_filters %}matching your filters{% else %}in title order{% endif %}.
+    </p>
     <div class="library-grid" data-watchlist-grid aria-label="Watchlist movies"{% if not movies %} hidden{% endif %}>
       {% for movie in movies %}
       {% set genre_labels = movie.genre_display if movie.genre_display is defined else [] %}
       {{ movie_card(movie, movie.liked, movie.watchlist, genre_labels, event_context="watchlist_grid", return_to=watchlist_return_to) }}
       {% endfor %}
     </div>
-    <div class="empty" role="status" data-watchlist-empty{% if movies %} hidden{% endif %}>
+    <div class="empty" role="status" data-watchlist-empty{% if total %} hidden{% endif %}>
       <p>No movies in your watchlist yet.</p>
       <div class="empty-actions">
         <a class="button-primary" href="/ui/movies">Browse the vault</a>
+      </div>
+    </div>
+    <div class="empty" role="status" data-watchlist-no-results{% if not total or movies %} hidden{% endif %}>
+      <p>No saved movies match these filters.</p>
+      <div class="empty-actions">
+        <a class="button-primary" href="/ui/watchlist">Show all saved movies</a>
       </div>
     </div>
   </section>

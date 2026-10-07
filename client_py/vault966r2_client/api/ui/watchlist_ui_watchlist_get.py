@@ -6,13 +6,26 @@ import httpx
 from ... import errors
 from ...client import AuthenticatedClient, Client
 from ...models.error_response import ErrorResponse
-from ...types import Response
+from ...types import UNSET, Response, Unset
 
 
-def _get_kwargs() -> dict[str, Any]:
+def _get_kwargs(
+    *,
+    q: str | Unset = "",
+    runtime: str | Unset = "any",
+) -> dict[str, Any]:
+    params: dict[str, Any] = {}
+
+    params["q"] = q
+
+    params["runtime"] = runtime
+
+    params = {k: v for k, v in params.items() if v is not UNSET and v is not None}
+
     _kwargs: dict[str, Any] = {
         "method": "get",
         "url": "/ui/watchlist",
+        "params": params,
     }
 
     return _kwargs
@@ -22,6 +35,11 @@ def _parse_response(*, client: AuthenticatedClient | Client, response: httpx.Res
     if response.status_code == 200:
         response_200 = response.text
         return response_200
+
+    if response.status_code == 422:
+        response_422 = ErrorResponse.from_dict(response.json())
+
+        return response_422
 
     if response.status_code == 500:
         response_500 = ErrorResponse.from_dict(response.json())
@@ -46,8 +64,14 @@ def _build_response(*, client: AuthenticatedClient | Client, response: httpx.Res
 def sync_detailed(
     *,
     client: AuthenticatedClient | Client,
+    q: str | Unset = "",
+    runtime: str | Unset = "any",
 ) -> Response[ErrorResponse | str]:
     """Watchlist
+
+    Args:
+        q (str | Unset):  Default: ''.
+        runtime (str | Unset):  Default: 'any'.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -57,7 +81,10 @@ def sync_detailed(
         Response[ErrorResponse | str]
     """
 
-    kwargs = _get_kwargs()
+    kwargs = _get_kwargs(
+        q=q,
+        runtime=runtime,
+    )
 
     response = client.get_httpx_client().request(
         **kwargs,
@@ -69,8 +96,14 @@ def sync_detailed(
 def sync(
     *,
     client: AuthenticatedClient | Client,
+    q: str | Unset = "",
+    runtime: str | Unset = "any",
 ) -> ErrorResponse | str | None:
     """Watchlist
+
+    Args:
+        q (str | Unset):  Default: ''.
+        runtime (str | Unset):  Default: 'any'.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -82,14 +115,22 @@ def sync(
 
     return sync_detailed(
         client=client,
+        q=q,
+        runtime=runtime,
     ).parsed
 
 
 async def asyncio_detailed(
     *,
     client: AuthenticatedClient | Client,
+    q: str | Unset = "",
+    runtime: str | Unset = "any",
 ) -> Response[ErrorResponse | str]:
     """Watchlist
+
+    Args:
+        q (str | Unset):  Default: ''.
+        runtime (str | Unset):  Default: 'any'.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -99,7 +140,10 @@ async def asyncio_detailed(
         Response[ErrorResponse | str]
     """
 
-    kwargs = _get_kwargs()
+    kwargs = _get_kwargs(
+        q=q,
+        runtime=runtime,
+    )
 
     response = await client.get_async_httpx_client().request(**kwargs)
 
@@ -109,8 +153,14 @@ async def asyncio_detailed(
 async def asyncio(
     *,
     client: AuthenticatedClient | Client,
+    q: str | Unset = "",
+    runtime: str | Unset = "any",
 ) -> ErrorResponse | str | None:
     """Watchlist
+
+    Args:
+        q (str | Unset):  Default: ''.
+        runtime (str | Unset):  Default: 'any'.
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -123,5 +173,7 @@ async def asyncio(
     return (
         await asyncio_detailed(
             client=client,
+            q=q,
+            runtime=runtime,
         )
     ).parsed

@@ -632,7 +632,7 @@ def test_library_search_is_prominent_and_searches_identity_fields(
     assert '<section class="library-search-panel" aria-label="Search your Vault">' in page.text
     assert 'id="library-search-title"' not in page.text
     assert "Find a movie by title" not in page.text
-    assert 'placeholder="Try “Ben Stiller” “2010” “Titanic” or a Vault ID"' in page.text
+    assert 'placeholder="Title, actor, year, plot phrase, or Vault ID"' in page.text
     search_label = page.text.index('<label class="sr-only" for="search-q">')
     search_label_end = page.text.index("</label>", search_label)
     search_input = page.text.index('id="search-q"')

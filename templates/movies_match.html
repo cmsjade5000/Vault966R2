@@ -12,7 +12,7 @@
       <div>
         <p class="match-kicker">Movie Night Picker</p>
         <h1>Set the tone. Skip the scroll.</h1>
-        <p class="match-heading__intro">Choose a mood, energy, runtime, genre, and era. The Vault will return three to five strong options with a reason for each.</p>
+        <p class="match-heading__intro">Choose the preferences that matter tonight and skip the rest. The Vault will return three to five strong options with a reason for each.</p>
         <p class="match-pool-readout" aria-live="polite" data-match-count>
           {{ result.trusted_pool_count }} trusted titles
           {% if result.answers %}&rarr; {{ result.candidate_count }} left{% endif %}
@@ -40,7 +40,9 @@
           <ol>
             {% for step in result.step_states %}
             <li>
-              <strong>{{ step.label }}</strong>
+              <a href="/ui/match?answers={{ answers_query | urlencode }}&amp;edit={{ loop.index0 }}" data-match-edit aria-label="Edit {{ step.label }}">
+                <strong>{{ step.label }}</strong>
+              </a>
               {% if step.before_count == step.after_count %}
               <span>Shapes ranking</span>
               {% else %}
@@ -56,7 +58,7 @@
 
       {% if result.current_question %}
       <div class="match-question" data-match-question>
-        <p class="match-question__count">Question {{ result.answers|length + 1 }} of {{ questions|length }}</p>
+        <p class="match-question__count">Question {{ (result.edit_index + 1) if result.edit_index is not none else result.answers|length + 1 }} of {{ questions|length }}</p>
         <h2>{{ result.current_question.prompt }}</h2>
         {% if result.answered_labels %}
         <p class="match-question__summary">So far: {{ result.answered_labels | join(" · ") }}</p>
@@ -66,7 +68,7 @@
         <div class="match-option-grid">
           {% for option_state in result.option_states %}
           {% set option = option_state.option %}
-          {% set next_query = next_answer_query(result.answers, option.id) %}
+          {% set next_query = next_answer_query(result.answers, option.id, edit_index) %}
           <a
             class="match-option"
             href="/ui/match?answers={{ next_query | urlencode }}"
@@ -79,6 +81,9 @@
           {% endfor %}
         </div>
         <div class="match-nav-actions">
+          <a class="button-primary" href="/ui/match{% if result.answers %}?answers={{ answers_query | urlencode }}&amp;show=1{% else %}?show=1{% endif %}" data-match-show>
+            Show picks now
+          </a>
           {% if result.answers %}
           <a class="button-secondary" href="/ui/match{% if back_answers_query %}?answers={{ back_answers_query | urlencode }}{% endif %}" data-match-back>Back</a>
           {% endif %}
@@ -99,13 +104,16 @@
             {% endif %}
           </a>
           <div class="match-lead__copy">
-            <p class="match-kicker">Top Pick</p>
+            <p class="match-kicker">{{ "Top Pick" if is_first_pick else "Another strong pick" }}</p>
             <h2>{{ result.lead.movie.title | display_title }}</h2>
             <p class="match-lead__meta">
               <span>{{ result.lead.movie.year or "—" }}</span>
               {% if result.lead.movie.runtime %}<span>{{ result.lead.movie.runtime }} min</span>{% endif %}
               {% if result.lead.movie.genre_display %}<span>{{ result.lead.movie.genre_display[:2] | join(", ") }}</span>{% endif %}
             </p>
+            {% if result.lead.synopsis %}
+            <p class="match-why match-lead__synopsis">{{ result.lead.synopsis }}</p>
+            {% endif %}
             {% if result.fallback_notice %}
             <p class="match-notice">{{ result.fallback_notice }}</p>
             {% endif %}
@@ -145,6 +153,14 @@
                 <span>Like</span>
               </button>
             </div>
+            <div class="match-result-actions">
+              {% if result.reroll_pool_size > 1 %}
+              <a class="button-secondary" href="/ui/match?answers={{ answers_query | urlencode }}&amp;reroll={{ next_reroll }}" data-match-reroll>Try another</a>
+              {% else %}
+              <p class="match-notice" role="status">There isn't another eligible pick in this pool. Edit a preference to find more options.</p>
+              {% endif %}
+              <a class="button-ghost" href="/ui/match">Start over</a>
+            </div>
           </div>
         </article>
 
@@ -153,11 +169,7 @@
           <header class="discover-section-header">
             <div>
               <h2 id="match-shortlist-title">More picks for this night</h2>
-              <p>Four alternatives ranked from the same five preferences.</p>
-            </div>
-            <div class="match-result-actions">
-              <a class="button-secondary" href="/ui/match?answers={{ answers_query | urlencode }}&reroll={{ reroll + 1 }}" data-match-reroll>Try another</a>
-              <a class="button-ghost" href="/ui/match">Start over</a>
+              <p>{{ result.supporting|length }} more {{ "option" if result.supporting|length == 1 else "options" }} from the preferences you selected.</p>
             </div>
           </header>
           <div class="match-shortlist__grid">

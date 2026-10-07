@@ -1,63 +1,52 @@
 (function () {
-  const RAIL_PROGRESS_CLASSES = [
-    "is-progress-32",
-    "is-progress-40",
-    "is-progress-50",
-    "is-progress-60",
-    "is-progress-70",
-    "is-progress-80",
-    "is-progress-90",
-    "is-progress-100",
-  ];
+  const revealPosterFallback = (image) => {
+    const frame = image?.closest?.("[data-discover-poster-frame]");
+    const fallback = frame?.querySelector?.("[data-discover-poster-fallback]");
+    if (!frame || !fallback) return false;
 
-  const calculateRailState = ({ clientWidth, scrollLeft, scrollWidth }) => {
-    const maxScroll = Math.max(0, scrollWidth - clientWidth);
-    const ratio = maxScroll > 0 ? scrollLeft / maxScroll : 0;
-    return {
-      atEnd: scrollLeft >= maxScroll - 2,
-      atStart: scrollLeft <= 2,
-      progressScale: Math.max(0.32, 0.32 + ratio * 0.68),
-    };
-  };
-
-  const getScrollDistance = (clientWidth) => Math.max(clientWidth * 0.78, 240);
-
-  const getProgressClass = (progressScale) => {
-    const progressPercent = Math.round(progressScale * 100);
-    if (progressPercent >= 95) return "is-progress-100";
-    if (progressPercent >= 85) return "is-progress-90";
-    if (progressPercent >= 75) return "is-progress-80";
-    if (progressPercent >= 65) return "is-progress-70";
-    if (progressPercent >= 55) return "is-progress-60";
-    if (progressPercent >= 45) return "is-progress-50";
-    if (progressPercent >= 36) return "is-progress-40";
-    return "is-progress-32";
-  };
-
-  const applyRailProgress = (progress, progressScale) => {
-    if (!progress) return;
-    progress.classList.remove(...RAIL_PROGRESS_CLASSES);
-    progress.classList.add(getProgressClass(progressScale));
-  };
-
-  const hydrateDeferredPoster = (image) => {
-    const source = image?.dataset?.posterSrc;
-    if (!source || image.dataset.posterHydrated === "true") return false;
-    image.src = source;
-    image.dataset.posterHydrated = "true";
-    image.removeAttribute("data-poster-src");
+    image.hidden = true;
+    fallback.hidden = false;
+    frame.dataset.posterState = "fallback";
     return true;
   };
 
+  const markPosterLoaded = (image) => {
+    const frame = image?.closest?.("[data-discover-poster-frame]");
+    if (!frame) return false;
+    frame.dataset.posterState = "loaded";
+    return true;
+  };
+
+  const setupPosterFallbacks = (root) => {
+    const images = Array.from(root.querySelectorAll("[data-discover-poster]"));
+    images.forEach((image) => {
+      image.addEventListener("load", () => markPosterLoaded(image), {
+        once: true,
+      });
+      image.addEventListener("error", () => revealPosterFallback(image), {
+        once: true,
+      });
+
+      if (image.complete) {
+        if (image.naturalWidth > 0) {
+          markPosterLoaded(image);
+        } else {
+          revealPosterFallback(image);
+        }
+      }
+    });
+    return images.length;
+  };
+
   window.VaultDiscoverSupport = {
-    applyRailProgress,
-    calculateRailState,
-    getProgressClass,
-    getScrollDistance,
-    hydrateDeferredPoster,
+    markPosterLoaded,
+    revealPosterFallback,
+    setupPosterFallbacks,
   };
 
   document.addEventListener("DOMContentLoaded", () => {
+    setupPosterFallbacks(document);
+
     const recordEvent = (eventName, options = {}) => {
       fetch("/ui/events", {
         method: "POST",
@@ -76,101 +65,7 @@
 
     const onIdle =
       window.requestIdleCallback ||
-      ((callback) => window.setTimeout(callback, 1));
-
-    const schedule = (callback) => {
-      if (window.requestAnimationFrame) {
-        window.requestAnimationFrame(callback);
-      } else {
-        window.setTimeout(callback, 16);
-      }
-    };
-
-    const updateRailState = (railState) => {
-      const state = calculateRailState(railState.track);
-
-      if (railState.previous) railState.previous.disabled = state.atStart;
-      if (railState.next) railState.next.disabled = state.atEnd;
-      applyRailProgress(railState.progress, state.progressScale);
-    };
-
-    const scheduleRailStateUpdate = (railState) => {
-      if (railState.pending) return;
-      railState.pending = true;
-      schedule(() => {
-        railState.pending = false;
-        updateRailState(railState);
-      });
-    };
-
-    const setupDeferredPosters = () => {
-      const images = Array.from(
-        document.querySelectorAll("[data-deferred-poster]"),
-      );
-      if (!images.length) return;
-
-      if (!("IntersectionObserver" in window)) {
-        images.forEach(hydrateDeferredPoster);
-        return;
-      }
-
-      const observer = new IntersectionObserver(
-        (entries) => {
-          entries.forEach((entry) => {
-            if (!entry.isIntersecting) return;
-            hydrateDeferredPoster(entry.target);
-            observer.unobserve(entry.target);
-          });
-        },
-        { rootMargin: "480px 0px" },
-      );
-      images.forEach((image) => observer.observe(image));
-    };
-
-    const railStates = [];
-
-    document.querySelectorAll("[data-discover-rail]").forEach((rail) => {
-      const track = rail.querySelector(
-        "[data-rail-viewport] .discover-rail__track",
-      );
-      if (!track) return;
-
-      const railState = {
-        track,
-        previous: rail.querySelector("[data-rail-previous]"),
-        next: rail.querySelector("[data-rail-next]"),
-        progress: rail.querySelector("[data-rail-progress]"),
-        pending: false,
-      };
-      railStates.push(railState);
-
-      const scrollRail = (direction) => {
-        track.scrollBy({
-          left: direction * getScrollDistance(track.clientWidth),
-          behavior: window.matchMedia("(prefers-reduced-motion: reduce)")
-            .matches
-            ? "auto"
-            : "smooth",
-        });
-      };
-
-      rail
-        .querySelector("[data-rail-previous]")
-        ?.addEventListener("click", () => scrollRail(-1));
-      rail
-        .querySelector("[data-rail-next]")
-        ?.addEventListener("click", () => scrollRail(1));
-      track.addEventListener(
-        "scroll",
-        () => scheduleRailStateUpdate(railState),
-        {
-          passive: true,
-        },
-      );
-      updateRailState(railState);
-    });
-
-    setupDeferredPosters();
+      ((callback) => window.setTimeout(callback, 32));
 
     if (document.querySelector("[data-selected-for-you]")) {
       onIdle(() => {
@@ -184,10 +79,10 @@
       const target = event.target?.closest ? event.target : null;
       if (!target) return;
 
-      const railLink = target.closest("[data-discover-rail-link]");
-      if (railLink) {
+      const exploreLink = target.closest("[data-discover-rail-link]");
+      if (exploreLink) {
         recordEvent("discover_rail_opened", {
-          context: railLink.dataset.railKey,
+          context: exploreLink.dataset.railKey,
         });
       }
 
@@ -207,16 +102,6 @@
       recordEvent("preference_toggled", {
         movie_id: event.detail.movieId,
         context: event.detail.type,
-      });
-    });
-
-    let resizePending = false;
-    window.addEventListener("resize", () => {
-      if (resizePending) return;
-      resizePending = true;
-      schedule(() => {
-        resizePending = false;
-        railStates.forEach(updateRailState);
       });
     });
   });
