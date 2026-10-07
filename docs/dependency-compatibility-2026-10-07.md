@@ -52,3 +52,13 @@ Known warnings concern Starlette's httpx TestClient deprecation and the older HT
 Recommended merge order remains Uvicorn, psycopg, Alembic, SQLAlchemy, with fresh
 checks on the updated base after each merge. Keep SQLAlchemy separate and review the
 2.1.3 refresh before changing #273. This report grants no merge or deployment approval.
+
+## Remote validation and integration update
+
+The initial matrix passed all five upgraded configurations, including PostgreSQL
+driver contracts and migration upgrade/downgrade/upgrade. The historical baseline
+failed only the new HTTP connection-close header assertions on Uvicorn 0.52.4;
+its PostgreSQL steps were consequently skipped. Standard CI had the same failure.
+PR #274 is now merged, so this branch includes Uvicorn 0.54.0 from public-main.
+The matrix baseline now represents updated main. The assertions remain intact.
+Fresh CI on this updated head is required before merging #276.
