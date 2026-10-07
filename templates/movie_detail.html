@@ -89,10 +89,9 @@
         </div>
         <div class="hero-tags">
           {% if movie.runtime %}
-          {% set rounded_runtime = ((movie.runtime + 4) // 5) * 5 %}
-          {% set runtime_hours = rounded_runtime // 60 %}
-          {% set runtime_minutes = rounded_runtime % 60 %}
-          <span class="chip chip-runtime detail-pill detail-pill--runtime" data-runtime="{{ rounded_runtime }}">
+          {% set runtime_hours = movie.runtime // 60 %}
+          {% set runtime_minutes = movie.runtime % 60 %}
+          <span class="chip chip-runtime detail-pill detail-pill--runtime" data-runtime="{{ movie.runtime }}">
             {% if runtime_hours > 0 %}
             {{ runtime_hours }} hour{% if runtime_hours != 1 %}s{% endif %}{% if runtime_minutes %}, {{ runtime_minutes }} minute{% if runtime_minutes != 1 %}s{% endif %}{% endif %}
             {% else %}
@@ -107,7 +106,24 @@
           {% for mood in movie.moods %}
           <span class="chip chip-mood detail-pill detail-pill--mood" data-mood="{{ mood }}">{{ mood }}</span>
           {% endfor %}
+          {% if movie.imdb_rating %}<span class="chip detail-pill detail-pill--rating">IMDb {{ '%.1f'|format(movie.imdb_rating) }}</span>{% endif %}
+          {% if movie.rt_score %}<span class="chip detail-pill detail-pill--rating">RT {{ movie.rt_score }}%</span>{% endif %}
         </div>
+        {% if movie.plot or movie.top_billed %}
+        <div class="hero-decision" aria-label="Decision information">
+          {% if movie.plot %}
+          <p class="hero-synopsis">{{ movie.plot }}</p>
+          {% endif %}
+          {% if movie.top_billed %}
+          <p class="hero-cast">
+            <span class="hero-cast__label">Top billed</span>
+            {% for person in movie.top_billed[:3] %}
+              {% if person.name %}{{ person.name }}{% if not loop.last %}, {% endif %}{% endif %}
+            {% endfor %}
+          </p>
+          {% endif %}
+        </div>
+        {% endif %}
         <div class="badge-links">
           {% if movie.imdb_id %}
           <a
@@ -184,13 +200,6 @@
     </div>
 
     <div class="sections">
-      {% if movie.plot %}
-      <section class="section-card">
-        <h2>Synopsis</h2>
-        <p>{{ movie.plot }}</p>
-      </section>
-      {% endif %}
-
       {% if movie.imdb_rating or movie.rt_score or movie.languages_display or movie.countries_display or movie.collection or movie.top_billed %}
       <section class="section-card">
         <h2>At a glance</h2>

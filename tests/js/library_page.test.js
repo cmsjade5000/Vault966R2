@@ -9,9 +9,25 @@ const script = fs.readFileSync(
   "utf8",
 );
 
-const loadSupport = () => {
+const loadSupport = ({
+  href = "http://127.0.0.1:8000/ui/movies",
+  stored,
+} = {}) => {
   const window = {};
+  const storage = new Map();
+  if (stored) {
+    Object.entries(stored).forEach(([key, value]) => storage.set(key, value));
+  }
   const context = {
+    FormData: class {
+      constructor(form) {
+        this.entries = form.entries || [];
+      }
+
+      forEach(callback) {
+        this.entries.forEach(([key, value]) => callback(value, key));
+      }
+    },
     URL,
     URLSearchParams,
     document: {
@@ -19,10 +35,171 @@ const loadSupport = () => {
     },
     window,
   };
-  window.location = { href: "http://127.0.0.1:8000/ui/movies" };
+  window.location = { href };
+  window.scrollY = 1180;
+  window.requestAnimationFrame = (callback) => callback();
+  window.scrollTo = (_x, y) => {
+    window.restoredScrollY = y;
+  };
+  window.sessionStorage = {
+    getItem(key) {
+      return storage.get(key) || null;
+    },
+    setItem(key, value) {
+      storage.set(key, value);
+    },
+    removeItem(key) {
+      storage.delete(key);
+    },
+  };
   vm.runInNewContext(script, context);
-  return window.VaultLibrarySupport;
+  return { support: window.VaultLibrarySupport, storage };
 };
+
+test("normalizes return snapshots to the exact result URL without a hash", () => {
+  const { support } = loadSupport();
+
+  assert.equal(
+    support.normaliseResultUrl(
+      "http://127.0.0.1:8000/ui/movies?genres=Comedy&page=2#results",
+    ),
+    "http://127.0.0.1:8000/ui/movies?genres=Comedy&page=2",
+  );
+});
+
+test("saves the result URL, scroll offset, and focused movie for app Back", () => {
+  const { support, storage } = loadSupport();
+
+  support.saveReturnState(394);
+
+  assert.deepEqual(JSON.parse(storage.get("movies:returnState")), {
+    url: "http://127.0.0.1:8000/ui/movies",
+    scrollY: 1180,
+    movieId: "394",
+  });
+});
+
+test("restores scroll and focus only for the saved result URL", () => {
+  const stored = JSON.stringify({
+    url: "http://127.0.0.1:8000/ui/movies?genres=Comedy",
+    scrollY: 1180,
+    movieId: "394",
+  });
+  let focused = false;
+  const root = {
+    querySelectorAll() {
+      return [
+        {
+          dataset: { movieId: "394" },
+          querySelector() {
+            return {
+              focus() {
+                focused = true;
+              },
+            };
+          },
+        },
+      ];
+    },
+  };
+  const { support, storage } = loadSupport({
+    href: "http://127.0.0.1:8000/ui/movies?genres=Comedy#results",
+    stored: { "movies:returnState": stored },
+  });
+
+  support.restoreReturnState(root);
+
+  assert.equal(storage.has("movies:returnState"), false);
+  assert.equal(focused, true);
+});
+
+test("does not restore or consume a snapshot for a different result URL", () => {
+  const stored = JSON.stringify({
+    url: "http://127.0.0.1:8000/ui/movies?genres=Comedy",
+    scrollY: 1180,
+    movieId: "394",
+  });
+  const { support, storage } = loadSupport({
+    href: "http://127.0.0.1:8000/ui/movies?genres=Drama",
+    stored: { "movies:returnState": stored },
+  });
+
+  support.restoreReturnState({
+    querySelectorAll() {
+      return [];
+    },
+  });
+
+  assert.equal(storage.get("movies:returnState"), stored);
+});
+
+test("ignores malformed return-state storage", () => {
+  const { support, storage } = loadSupport({
+    stored: { "movies:returnState": "{" },
+  });
+
+  assert.doesNotThrow(() =>
+    support.restoreReturnState({
+      querySelectorAll() {
+        return [];
+      },
+    }),
+  );
+  assert.equal(storage.get("movies:returnState"), "{");
+});
+
+test("does not capture modified or new-tab detail clicks", () => {
+  const { support } = loadSupport();
+  const link = {
+    target: "",
+    hasAttribute() {
+      return false;
+    },
+  };
+  const baseEvent = {
+    altKey: false,
+    button: 0,
+    ctrlKey: false,
+    defaultPrevented: false,
+    metaKey: false,
+    shiftKey: false,
+  };
+
+  assert.equal(support.shouldCaptureReturnState(baseEvent, link), true);
+  assert.equal(
+    support.shouldCaptureReturnState({ ...baseEvent, metaKey: true }, link),
+    false,
+  );
+  assert.equal(
+    support.shouldCaptureReturnState(baseEvent, { ...link, target: "_blank" }),
+    false,
+  );
+});
+
+test("form URL builder carries the changed sort and resets pagination", () => {
+  const { support } = loadSupport();
+  const url = new URL(
+    support.buildFormSubmitUrl(
+      {
+        getAttribute() {
+          return "/ui/movies";
+        },
+        entries: [
+          ["q", "Liar Liar"],
+          ["order_by", "runtime_asc"],
+          ["page", "1"],
+          ["_filters", "1"],
+        ],
+      },
+      "http://127.0.0.1:8000/ui/movies?view=grid",
+    ),
+  );
+
+  assert.equal(url.searchParams.get("q"), "Liar Liar");
+  assert.equal(url.searchParams.get("order_by"), "runtime_asc");
+  assert.equal(url.searchParams.get("page"), "1");
+  assert.equal(url.hash, "#results");
+});
 
 const loadDisabledPager = (pagerHref) => {
   let clickListener = null;
@@ -89,7 +266,8 @@ const loadDisabledPager = (pagerHref) => {
 };
 
 test("clearing a preset removes Hidden Gems and preserves other filters", () => {
-  const { buildClearFilterUrl } = loadSupport();
+  const { support } = loadSupport();
+  const { buildClearFilterUrl } = support;
   const result = new URL(
     buildClearFilterUrl(
       "http://127.0.0.1:8000/ui/movies?preset=hidden-gems&view=list&genres=Drama&page=3",
@@ -105,7 +283,8 @@ test("clearing a preset removes Hidden Gems and preserves other filters", () => 
 });
 
 test("clearing a search chip removes q and preserves filters", () => {
-  const { buildClearFilterUrl } = loadSupport();
+  const { support } = loadSupport();
+  const { buildClearFilterUrl } = support;
   const result = new URL(
     buildClearFilterUrl(
       "http://127.0.0.1:8000/ui/movies?q=Titanic&genres=Drama&view=grid&order_by=title_asc&page=3",
@@ -122,7 +301,8 @@ test("clearing a search chip removes q and preserves filters", () => {
 });
 
 test("clearing a cookie-backed preset marks the URL as authoritative", () => {
-  const { buildClearFilterUrl } = loadSupport();
+  const { support } = loadSupport();
+  const { buildClearFilterUrl } = support;
   const result = new URL(
     buildClearFilterUrl("http://127.0.0.1:8000/ui/movies", "preset"),
   );
@@ -133,7 +313,8 @@ test("clearing a cookie-backed preset marks the URL as authoritative", () => {
 });
 
 test("clear all removes filters while preserving view and sort", () => {
-  const { buildClearAllFiltersUrl } = loadSupport();
+  const { support } = loadSupport();
+  const { buildClearAllFiltersUrl } = support;
   const result = new URL(
     buildClearAllFiltersUrl(
       "http://127.0.0.1:8000/ui/movies?q=alien&preset=hidden-gems&genres=Drama&year_min=1990&runtime_max=120&view=list&order_by=title&page=4",
@@ -152,7 +333,8 @@ test("clear all removes filters while preserving view and sort", () => {
 });
 
 test("table sort toggles active ascending column to descending", () => {
-  const { buildTableSortUrl } = loadSupport();
+  const { support } = loadSupport();
+  const { buildTableSortUrl } = support;
   const result = new URL(
     buildTableSortUrl(
       "http://127.0.0.1:8000/ui/movies?view=list&order_by=title_asc&page=4&genres=Drama",
@@ -172,7 +354,8 @@ test("table sort toggles active ascending column to descending", () => {
 });
 
 test("table sort preserves form-backed filters and switches inactive column to ascending", () => {
-  const { buildTableSortUrl } = loadSupport();
+  const { support } = loadSupport();
+  const { buildTableSortUrl } = support;
   const result = new URL(
     buildTableSortUrl("http://127.0.0.1:8000/ui/movies?view=list&page=3", {
       asc: "id_asc",
@@ -200,7 +383,8 @@ test("table sort preserves form-backed filters and switches inactive column to a
 });
 
 test("library request URLs mark filter state and default to the first page", () => {
-  const { buildLibraryRequestUrl } = loadSupport();
+  const { support } = loadSupport();
+  const { buildLibraryRequestUrl } = support;
   const result = new URL(
     buildLibraryRequestUrl("http://127.0.0.1:8000/ui/movies?view=list"),
   );
@@ -211,7 +395,8 @@ test("library request URLs mark filter state and default to the first page", () 
 });
 
 test("library request URLs preserve explicit pagination", () => {
-  const { buildLibraryRequestUrl } = loadSupport();
+  const { support } = loadSupport();
+  const { buildLibraryRequestUrl } = support;
   const result = new URL(
     buildLibraryRequestUrl(
       "http://127.0.0.1:8000/ui/movies?view=grid&page=3&_filters=1",
@@ -248,7 +433,8 @@ test("disabled Library page boundaries cancel DOM navigation", () => {
 });
 
 test("random pick params include the full selected filter set", () => {
-  const { buildPickParams } = loadSupport();
+  const { support } = loadSupport();
+  const { buildPickParams } = support;
   const params = buildPickParams({
     genres: "Sci-Fi, Action",
     moods: "High-energy, Mind-bending",
@@ -271,7 +457,8 @@ test("random pick params include the full selected filter set", () => {
 });
 
 test("random pick params omit blank filters", () => {
-  const { buildPickParams } = loadSupport();
+  const { support } = loadSupport();
+  const { buildPickParams } = support;
   const params = buildPickParams({
     genres: "  ",
     moods: "",
@@ -282,7 +469,8 @@ test("random pick params omit blank filters", () => {
 });
 
 test("builds pending filter summary and counts each visible chip", () => {
-  const { buildPendingSummary, formatApplyLabel } = loadSupport();
+  const { support } = loadSupport();
+  const { buildPendingSummary, formatApplyLabel } = support;
   const summary = buildPendingSummary({
     genres: ["Drama", "Science Fiction"],
     moods: ["Atmospheric", "Thoughtful"],
@@ -306,7 +494,8 @@ test("builds pending filter summary and counts each visible chip", () => {
 });
 
 test("reset state clears only filter values", () => {
-  const { emptyFilterState } = loadSupport();
+  const { support } = loadSupport();
+  const { emptyFilterState } = support;
 
   assert.deepEqual(JSON.parse(JSON.stringify(emptyFilterState())), {
     genres: [],
@@ -319,7 +508,8 @@ test("reset state clears only filter values", () => {
 });
 
 test("formats URL preset names for the pending summary", () => {
-  const { formatPresetName, parseCsv } = loadSupport();
+  const { support } = loadSupport();
+  const { formatPresetName, parseCsv } = support;
 
   assert.equal(formatPresetName("hidden-gems"), "Hidden Gems");
   assert.deepEqual(Array.from(parseCsv("Drama, Science Fiction, ")), [
@@ -329,7 +519,8 @@ test("formats URL preset names for the pending summary", () => {
 });
 
 test("shows custom controls only when selected or holding a non-preset value", () => {
-  const { shouldShowCustomControl } = loadSupport();
+  const { support } = loadSupport();
+  const { shouldShowCustomControl } = support;
 
   assert.equal(shouldShowCustomControl(), false);
   assert.equal(shouldShowCustomControl({ selected: true }), true);

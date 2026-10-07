@@ -30,6 +30,7 @@ class SimilarMovie(BaseModel):
     title: str
     poster_url: Optional[str] = None
     year: Optional[int] = None
+    runtime: Optional[int] = None
     flic_score: Optional[float] = None
     poster_theme: Optional[str] = None
     genres: List[str] = Field(default_factory=list)

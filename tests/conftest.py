@@ -16,6 +16,7 @@ if str(ROOT_DIR) not in sys.path:
 
 os.environ.setdefault("ADMIN_TOKEN", "testtoken")
 os.environ.setdefault("DISABLE_AUTH", "true")
+os.environ.setdefault("DATABASE_URL", "sqlite://")
 
 from api.config import settings
 from api.db import Base, get_db

@@ -2478,6 +2478,8 @@ export interface components {
             poster_url?: string | null;
             /** Rt Score */
             rt_score?: number | null;
+            /** Runtime */
+            runtime?: number | null;
             /** Title */
             title: string;
             /** Year */
@@ -6884,6 +6886,8 @@ export interface operations {
             query?: {
                 answers?: string | null;
                 reroll?: number;
+                show?: number;
+                edit?: number | null;
             };
             header?: never;
             path?: never;
@@ -8316,7 +8320,10 @@ export interface operations {
     };
     watchlist_ui_watchlist_get: {
         parameters: {
-            query?: never;
+            query?: {
+                q?: string;
+                runtime?: string;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -8330,6 +8337,15 @@ export interface operations {
                 };
                 content: {
                     "text/html": string;
+                };
+            };
+            /** @description Request validation failed. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
             /** @description An unexpected server error occurred. */

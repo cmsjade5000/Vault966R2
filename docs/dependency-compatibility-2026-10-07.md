@@ -62,3 +62,26 @@ its PostgreSQL steps were consequently skipped. Standard CI had the same failure
 PR #274 is now merged, so this branch includes Uvicorn 0.54.0 from public-main.
 The matrix baseline now represents updated main. The assertions remain intact.
 Fresh CI on this updated head is required before merging #276.
+
+## Final-stack integration validation (October 7)
+
+The historical gates above describe the initial review. PRs #274, #276, #272,
+and #268 subsequently passed fresh CI, Security, and all six compatibility
+configurations and were merged in that order. SQLAlchemy was refreshed to 2.1.3;
+its expanded PostgreSQL matrix passed, including actual Vault Movie/Genre/Mood/
+Person/Role CRUD, relationship loading, native enum reflection, and Alembic
+metadata comparison inside a disposable schema. Formatting was corrected after
+standard CI identified a repository-configuration mismatch; the final head must
+pass every workflow before merge.
+
+The macOS release integration uses Uvicorn 0.54.0, psycopg >=3.3.6 (locked at
+3.3.6), Alembic 1.20.0, and SQLAlchemy 2.1.3. Runtime and development hash locks
+were regenerated for Python 3.12/macOS arm64 and successfully installed and
+checked on Linux. Native macOS CI remains the authority for platform validation.
+Local integrated Python tests passed: 700 passed, one expected failure, three
+visible deprecation warnings. All 97 JavaScript tests passed. The OpenAPI drift
+check, Python/JavaScript formatting, dependency consistency, artifact build and
+artifact verification passed. No production database or deployed application was
+changed. Real device accessibility/touch checks, live database backup/replay,
+and deployment approval remain separate release gates. pgvector query behavior
+is not established by the added ORM test.

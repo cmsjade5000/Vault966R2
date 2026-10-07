@@ -2,9 +2,10 @@ from collections.abc import Generator
 
 import logging
 import os
+from pathlib import Path
 import sqlite3
 
-from sqlalchemy import create_engine, event, text
+from sqlalchemy import create_engine, event, inspect, text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
 
@@ -83,7 +84,40 @@ def should_bootstrap_sqlite_schema() -> bool:
         return False
     if os.getenv("PYTEST_CURRENT_TEST"):
         return False
+    if os.getenv("VAULT_SQLITE_SCHEMA_MODE") == "verify":
+        return False
     return True
+
+
+def verify_release_sqlite_schema() -> None:
+    """Fail before serving an incompatible release; never create or alter tables."""
+    if not DB_URL.startswith("sqlite"):
+        raise RuntimeError("The macOS release schema contract requires SQLite.")
+    app_root = Path(__file__).resolve().parents[1]
+    if (app_root.parent / "release-manifest.json").is_file():
+        bound_database = app_root / "vault.db"
+        configured_database = Path(engine.url.database or "")
+        if (
+            not bound_database.is_symlink()
+            or not configured_database.is_file()
+            or configured_database.resolve() != bound_database.resolve()
+        ):
+            raise RuntimeError(
+                "Release database binding differs from DATABASE_URL; no migration applied."
+            )
+    inspector = inspect(engine)
+    existing_tables = set(inspector.get_table_names())
+    for table in Base.metadata.sorted_tables:
+        if table.name not in existing_tables:
+            raise RuntimeError(
+                f"SQLite release schema lacks table {table.name}; no migration applied."
+            )
+        existing_columns = {column["name"] for column in inspector.get_columns(table.name)}
+        if not {column.name for column in table.columns}.issubset(existing_columns):
+            raise RuntimeError(
+                f"SQLite release schema lacks columns for {table.name}; no migration applied."
+            )
+    _verify_sqlite_schema_invariants()
 
 
 def _duplicate_values(connection, column_name: str) -> list[str]:

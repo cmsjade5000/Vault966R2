@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 
 from api.config import settings
 from api.db import get_db
+from api.deps.auth import require_strict_same_origin
 from api.services.profiles import set_active_profile_cookie
 from api.services.session import SESSION_COOKIE_NAME, create_session_token, get_session_secret
 from api.services.setup import SetupError, create_first_profile_setup, is_setup_complete
@@ -47,6 +48,7 @@ def setup_submit(
     passcode: str = Form(default="", max_length=128),
     passcode_confirm: str = Form(default="", max_length=128),
     db: Session = Depends(get_db),
+    _: None = Depends(require_strict_same_origin),
 ):
     try:
         result = create_first_profile_setup(
