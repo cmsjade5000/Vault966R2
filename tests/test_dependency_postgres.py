@@ -28,36 +28,24 @@ def test_psycopg_roundtrip_rollback_and_prepared_statement_reset():
             )
             stamp = datetime(2026, 1, 1, tzinfo=timezone.utc)
             conn.execute(
-                text(
-                    "INSERT INTO dependency_probe VALUES "
-                    "(1, CAST(:payload AS jsonb), :stamp)"
-                ),
+                text("INSERT INTO dependency_probe VALUES " "(1, CAST(:payload AS jsonb), :stamp)"),
                 {"payload": '{"items": [1, null, "test"]}', "stamp": stamp},
             )
             conn.commit()
-            row = conn.execute(
-                text("SELECT payload, stamp FROM dependency_probe")
-            ).one()
+            row = conn.execute(text("SELECT payload, stamp FROM dependency_probe")).one()
             assert row.payload == {"items": [1, None, "test"]}
             assert row.stamp == stamp
             conn.commit()
             with pytest.raises(IntegrityError):
                 conn.execute(text("INSERT INTO dependency_probe (id) VALUES (1)"))
             conn.rollback()
-            assert (
-                conn.execute(text("SELECT count(*) FROM dependency_probe")).scalar_one()
-                == 1
-            )
+            assert conn.execute(text("SELECT count(*) FROM dependency_probe")).scalar_one() == 1
             conn.commit()
             raw = conn.connection.driver_connection
             for _ in range(7):
-                assert raw.execute(
-                    "SELECT %s::integer", (42,), prepare=True
-                ).fetchone() == (42,)
+                assert raw.execute("SELECT %s::integer", (42,), prepare=True).fetchone() == (42,)
             raw.execute("DEALLOCATE ALL")
-            assert raw.execute(
-                "SELECT %s::integer", (42,), prepare=True
-            ).fetchone() == (42,)
+            assert raw.execute("SELECT %s::integer", (42,), prepare=True).fetchone() == (42,)
             raw.rollback()
     finally:
         engine.dispose()
@@ -139,14 +127,8 @@ def test_postgres_vault_relationships_enum_and_schema_roundtrip():
                     assert session.get(Movie, movie_id).title == "Updated fixture"
                     session.execute(delete(Movie).where(Movie.id == movie_id))
                     session.commit()
-                    assert (
-                        session.scalar(select(Movie.id).where(Movie.id == movie_id))
-                        is None
-                    )
-                enums = {
-                    e["name"]: e["labels"]
-                    for e in inspect(conn).get_enums(schema=schema)
-                }
+                    assert session.scalar(select(Movie.id).where(Movie.id == movie_id)) is None
+                enums = {e["name"]: e["labels"] for e in inspect(conn).get_enums(schema=schema)}
                 assert enums["roletype"] == ["ACTOR", "DIRECTOR", "WRITER"]
                 context = MigrationContext.configure(conn)
                 assert compare_metadata(context, metadata) == []
