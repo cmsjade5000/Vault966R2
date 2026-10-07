@@ -121,19 +121,12 @@ def verify_release_sqlite_schema() -> None:
 
 
 def _duplicate_values(connection, column_name: str) -> list[str]:
-    return [
-        str(row[0])
-        for row in connection.execute(
-            text(
-                f"""
+    return [str(row[0]) for row in connection.execute(text(f"""
                 SELECT {column_name} FROM movies
                 WHERE {column_name} IS NOT NULL
                 GROUP BY {column_name}
                 HAVING COUNT(*) > 1
-                """
-            )
-        )
-    ]
+                """))]
 
 
 def _create_movie_identity_indexes(connection) -> None:
@@ -143,14 +136,10 @@ def _create_movie_identity_indexes(connection) -> None:
             ("ix_movies_tmdb_id", "tmdb_id"),
             ("ix_movies_vault_id", "vault_id"),
         ):
-            connection.execute(
-                text(
-                    f"""
+            connection.execute(text(f"""
                     CREATE UNIQUE INDEX IF NOT EXISTS {index_name}
                     ON movies ({column_name})
-                    """
-                )
-            )
+                    """))
     except IntegrityError as exc:
         if connection.in_transaction():
             connection.rollback()
@@ -248,9 +237,7 @@ def _ensure_sqlite_movie_columns() -> None:
             text("SELECT name FROM sqlite_master WHERE type='table' AND name='app_setup'")
         ).first()
         if not app_setup_exists:
-            connection.execute(
-                text(
-                    """
+            connection.execute(text("""
                     CREATE TABLE app_setup (
                         id INTEGER PRIMARY KEY,
                         completed BOOLEAN NOT NULL DEFAULT false,
@@ -259,9 +246,7 @@ def _ensure_sqlite_movie_columns() -> None:
                         created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
                         updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
                     )
-                    """
-                )
-            )
+                    """))
 
         profile_credentials_exists = connection.execute(
             text(
@@ -270,9 +255,7 @@ def _ensure_sqlite_movie_columns() -> None:
             )
         ).first()
         if not profile_credentials_exists:
-            connection.execute(
-                text(
-                    """
+            connection.execute(text("""
                     CREATE TABLE profile_credentials (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
                         profile_id INTEGER NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
@@ -286,18 +269,14 @@ def _ensure_sqlite_movie_columns() -> None:
                         updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
                         UNIQUE(profile_id)
                     )
-                    """
-                )
-            )
+                    """))
 
         # Minimal boot-strap for legacy SQLite dumps; keep in sync with models.
         flags_exists = connection.execute(
             text("SELECT name FROM sqlite_master WHERE type='table' AND name='movie_flags'")
         ).first()
         if not flags_exists:
-            connection.execute(
-                text(
-                    """
+            connection.execute(text("""
                     CREATE TABLE movie_flags (
                         movie_id INTEGER PRIMARY KEY REFERENCES movies(id) ON DELETE CASCADE,
                         reason TEXT,
@@ -306,23 +285,17 @@ def _ensure_sqlite_movie_columns() -> None:
                         created_at TIMESTAMP NOT NULL,
                         updated_at TIMESTAMP NOT NULL
                     )
-                    """
-                )
-            )
+                    """))
         else:
             flag_columns = {
                 row[1] for row in connection.execute(text("PRAGMA table_info(movie_flags)"))
             }
             if "reported_by_profile_id" not in flag_columns:
-                connection.execute(
-                    text(
-                        """
+                connection.execute(text("""
                         ALTER TABLE movie_flags
                         ADD COLUMN reported_by_profile_id INTEGER
                         REFERENCES profiles(id) ON DELETE SET NULL
-                        """
-                    )
-                )
+                        """))
 
         review_checks_exists = connection.execute(
             text(
@@ -331,9 +304,7 @@ def _ensure_sqlite_movie_columns() -> None:
             )
         ).first()
         if not review_checks_exists:
-            connection.execute(
-                text(
-                    """
+            connection.execute(text("""
                     CREATE TABLE movie_review_checks (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
                         movie_id INTEGER NOT NULL REFERENCES movies(id) ON DELETE CASCADE,
@@ -345,17 +316,11 @@ def _ensure_sqlite_movie_columns() -> None:
                         checked_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
                         UNIQUE(movie_id, issue_type, issue_fingerprint)
                     )
-                    """
-                )
-            )
-            connection.execute(
-                text(
-                    """
+                    """))
+            connection.execute(text("""
                     CREATE INDEX IF NOT EXISTS ix_movie_review_checks_movie_id
                     ON movie_review_checks (movie_id)
-                    """
-                )
-            )
+                    """))
 
         identity_repairs_exists = connection.execute(
             text(
@@ -364,9 +329,7 @@ def _ensure_sqlite_movie_columns() -> None:
             )
         ).first()
         if not identity_repairs_exists:
-            connection.execute(
-                text(
-                    """
+            connection.execute(text("""
                     CREATE TABLE movie_identity_repairs (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
                         movie_id INTEGER NOT NULL REFERENCES movies(id) ON DELETE CASCADE,
@@ -383,33 +346,21 @@ def _ensure_sqlite_movie_columns() -> None:
                         after_values JSON,
                         applied_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
                     )
-                    """
-                )
-            )
-            connection.execute(
-                text(
-                    """
+                    """))
+            connection.execute(text("""
                     CREATE INDEX IF NOT EXISTS ix_movie_identity_repairs_movie_id
                     ON movie_identity_repairs (movie_id)
-                    """
-                )
-            )
-            connection.execute(
-                text(
-                    """
+                    """))
+            connection.execute(text("""
                     CREATE INDEX IF NOT EXISTS ix_movie_identity_repairs_applied_at
                     ON movie_identity_repairs (applied_at)
-                    """
-                )
-            )
+                    """))
 
         movie_cast_exists = connection.execute(
             text("SELECT name FROM sqlite_master WHERE type='table' AND name='movie_cast'")
         ).first()
         if not movie_cast_exists:
-            connection.execute(
-                text(
-                    """
+            connection.execute(text("""
                     CREATE TABLE movie_cast (
                         movie_id INTEGER NOT NULL REFERENCES movies(id) ON DELETE CASCADE,
                         person_id INTEGER NOT NULL REFERENCES people(id) ON DELETE CASCADE,
@@ -417,25 +368,17 @@ def _ensure_sqlite_movie_columns() -> None:
                         order_index INTEGER,
                         PRIMARY KEY (movie_id, person_id)
                     )
-                    """
-                )
-            )
-            connection.execute(
-                text(
-                    """
+                    """))
+            connection.execute(text("""
                     CREATE INDEX IF NOT EXISTS ix_movie_cast_movie_id
                     ON movie_cast (movie_id)
-                    """
-                )
-            )
+                    """))
 
         movie_crew_exists = connection.execute(
             text("SELECT name FROM sqlite_master WHERE type='table' AND name='movie_crew'")
         ).first()
         if not movie_crew_exists:
-            connection.execute(
-                text(
-                    """
+            connection.execute(text("""
                     CREATE TABLE movie_crew (
                         movie_id INTEGER NOT NULL REFERENCES movies(id) ON DELETE CASCADE,
                         person_id INTEGER NOT NULL REFERENCES people(id) ON DELETE CASCADE,
@@ -443,50 +386,34 @@ def _ensure_sqlite_movie_columns() -> None:
                         job TEXT,
                         PRIMARY KEY (movie_id, person_id)
                     )
-                    """
-                )
-            )
-            connection.execute(
-                text(
-                    """
+                    """))
+            connection.execute(text("""
                     CREATE INDEX IF NOT EXISTS ix_movie_crew_movie_id
                     ON movie_crew (movie_id)
-                    """
-                )
-            )
+                    """))
 
         ai_cache_exists = connection.execute(
             text("SELECT name FROM sqlite_master WHERE type='table' AND name='ai_cache'")
         ).first()
         if not ai_cache_exists:
-            connection.execute(
-                text(
-                    """
+            connection.execute(text("""
                     CREATE TABLE ai_cache (
                         cache_key TEXT PRIMARY KEY,
                         value JSON NOT NULL,
                         expires_at TIMESTAMP NULL,
                         created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
                     )
-                    """
-                )
-            )
-            connection.execute(
-                text(
-                    """
+                    """))
+            connection.execute(text("""
                     CREATE INDEX IF NOT EXISTS ix_ai_cache_expires_at
                     ON ai_cache (expires_at)
-                    """
-                )
-            )
+                    """))
 
         movie_documents_exists = connection.execute(
             text("SELECT name FROM sqlite_master WHERE type='table' AND name='movie_documents'")
         ).first()
         if not movie_documents_exists:
-            connection.execute(
-                text(
-                    """
+            connection.execute(text("""
                     CREATE TABLE movie_documents (
                         movie_id INTEGER PRIMARY KEY REFERENCES movies(id) ON DELETE CASCADE,
                         doc_version INTEGER NOT NULL,
@@ -494,26 +421,18 @@ def _ensure_sqlite_movie_columns() -> None:
                         embedding JSON NOT NULL,
                         updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
                     )
-                    """
-                )
-            )
-            connection.execute(
-                text(
-                    """
+                    """))
+            connection.execute(text("""
                     CREATE INDEX IF NOT EXISTS ix_movie_documents_movie_id
                     ON movie_documents (movie_id)
-                    """
-                )
-            )
+                    """))
         provenance_exists = connection.execute(
             text(
                 "SELECT name FROM sqlite_master WHERE type='table' AND name='movie_ingest_provenance'"
             )
         ).first()
         if not provenance_exists:
-            connection.execute(
-                text(
-                    """
+            connection.execute(text("""
                     CREATE TABLE movie_ingest_provenance (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
                         movie_id INTEGER NOT NULL REFERENCES movies(id) ON DELETE CASCADE,
@@ -526,25 +445,17 @@ def _ensure_sqlite_movie_columns() -> None:
                         notes TEXT,
                         UNIQUE(movie_id, provider)
                     )
-                    """
-                )
-            )
-            connection.execute(
-                text(
-                    """
+                    """))
+            connection.execute(text("""
                     CREATE INDEX IF NOT EXISTS ix_movie_ingest_provenance_movie_id
                     ON movie_ingest_provenance (movie_id)
-                    """
-                )
-            )
+                    """))
 
         maintenance_jobs_exists = connection.execute(
             text("SELECT name FROM sqlite_master " "WHERE type='table' AND name='maintenance_jobs'")
         ).first()
         if not maintenance_jobs_exists:
-            connection.execute(
-                text(
-                    """
+            connection.execute(text("""
                     CREATE TABLE maintenance_jobs (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
                         run_id TEXT NOT NULL,
@@ -560,41 +471,25 @@ def _ensure_sqlite_movie_columns() -> None:
                         created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
                         updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
                     )
-                    """
-                )
-            )
-            connection.execute(
-                text(
-                    """
+                    """))
+            connection.execute(text("""
                     CREATE UNIQUE INDEX IF NOT EXISTS ix_maintenance_jobs_run_id
                     ON maintenance_jobs (run_id)
-                    """
-                )
-            )
-            connection.execute(
-                text(
-                    """
+                    """))
+            connection.execute(text("""
                     CREATE INDEX IF NOT EXISTS ix_maintenance_jobs_task_started
                     ON maintenance_jobs (task_id, started_at)
-                    """
-                )
-            )
-            connection.execute(
-                text(
-                    """
+                    """))
+            connection.execute(text("""
                     CREATE INDEX IF NOT EXISTS ix_maintenance_jobs_state
                     ON maintenance_jobs (state)
-                    """
-                )
-            )
+                    """))
 
         retired_vault_ids_exists = connection.execute(
             text("SELECT name FROM sqlite_master WHERE type='table' AND name='retired_vault_ids'")
         ).first()
         if not retired_vault_ids_exists:
-            connection.execute(
-                text(
-                    """
+            connection.execute(text("""
                     CREATE TABLE retired_vault_ids (
                         vault_id TEXT PRIMARY KEY,
                         retired_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -603,36 +498,24 @@ def _ensure_sqlite_movie_columns() -> None:
                         deleted_movie_id INTEGER,
                         deleted_movie_title TEXT
                     )
-                    """
-                )
-            )
-            connection.execute(
-                text(
-                    """
+                    """))
+            connection.execute(text("""
                     CREATE INDEX IF NOT EXISTS ix_retired_vault_ids_retired_at
                     ON retired_vault_ids (retired_at)
-                    """
-                )
-            )
-            connection.execute(
-                text(
-                    """
+                    """))
+            connection.execute(text("""
                     CREATE INDEX IF NOT EXISTS ix_retired_vault_ids_source
                     ON retired_vault_ids (source)
-                    """
-                )
-            )
+                    """))
 
         for vault_id in LEGACY_RETIRED_VAULT_IDS:
             connection.execute(
-                text(
-                    """
+                text("""
                     INSERT OR IGNORE INTO retired_vault_ids
                         (vault_id, source, reason)
                     VALUES
                         (:vault_id, 'legacy_gap', 'Known legacy Vault ID gap reserved to prevent reuse.')
-                    """
-                ),
+                    """),
                 {"vault_id": vault_id},
             )
 

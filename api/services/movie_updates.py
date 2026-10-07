@@ -15,7 +15,6 @@ from api.utils.providers import merge_providers
 from core.enriched_csv import NormalizedCodes, normalize_countries, normalize_languages
 from core.genres import split_and_normalize
 
-
 _OPTIONAL_TEXT_FIELDS = (
     "plot",
     "awards",

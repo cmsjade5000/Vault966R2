@@ -49,8 +49,8 @@ class MovieFacets:
 
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
-        from ..models.movie_facets_genres import MovieFacetsGenres
-        from ..models.movie_facets_moods import MovieFacetsMoods
+        from ..models.movie_facets_genres import MovieFacetsGenres  # noqa: PLC0415
+        from ..models.movie_facets_moods import MovieFacetsMoods  # noqa: PLC0415
 
         d = dict(src_dict)
         _genres = d.pop("genres", UNSET)

@@ -85,8 +85,7 @@ def test_missing_vault_id_fails_closed_without_deriving_internal_key():
 
 def _create_source_database(path: Path) -> None:
     with sqlite3.connect(path) as connection:
-        connection.executescript(
-            """
+        connection.executescript("""
             CREATE TABLE movies (
                 id INTEGER PRIMARY KEY,
                 vault_id TEXT,
@@ -122,8 +121,7 @@ def _create_source_database(path: Path) -> None:
                 liked INTEGER,
                 watchlist INTEGER
             );
-            """
-        )
+            """)
         row = _movie_row()
         connection.execute(
             "INSERT INTO movies VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",

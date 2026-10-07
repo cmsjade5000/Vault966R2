@@ -13,8 +13,6 @@ T = TypeVar(
 
 @_attrs_define
 class FlagMovieForReviewUiMoviesMovieIdReviewFlagPostResponseFlagMovieForReviewUiMoviesMovieIdReviewFlagPost:
-    """ """
-
     additional_properties: dict[str, bool | int] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:

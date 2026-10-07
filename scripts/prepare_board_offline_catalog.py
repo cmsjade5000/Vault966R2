@@ -10,7 +10,6 @@ import sqlite3
 from pathlib import Path
 from urllib.parse import urlsplit, urlunsplit
 
-
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "board-companion" / "public" / "catalog.snapshot.json"
 OUTPUT = ROOT / "board-companion" / "public" / "catalog.board.json"

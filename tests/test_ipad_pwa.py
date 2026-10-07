@@ -3,7 +3,6 @@ from pathlib import Path
 
 from scripts.generate_brand_assets import ICON_TARGETS, SPLASH_TARGETS
 
-
 ROOT = Path(__file__).resolve().parents[1]
 GENERATED_ICON_FILES = {filename for filename, _ in ICON_TARGETS}
 GENERATED_SPLASH_FILES = {filename for filename, _ in SPLASH_TARGETS}

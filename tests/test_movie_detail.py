@@ -537,12 +537,10 @@ def test_movie_detail_handles_invalid_role_type(client: TestClient, detail_movie
         db.add(person)
         db.flush()
         db.execute(
-            text(
-                """
+            text("""
                 INSERT INTO roles (movie_id, person_id, role_type, character_name, billing_order)
                 VALUES (:movie_id, :person_id, :role_type, :character_name, :billing_order)
-                """
-            ),
+                """),
             {
                 "movie_id": movie_id,
                 "person_id": person.id,

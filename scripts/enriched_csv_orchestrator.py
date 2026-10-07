@@ -19,7 +19,6 @@ import subprocess
 import sys
 from datetime import datetime, timezone
 
-
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 DATA_DIR = ROOT / "data"
 

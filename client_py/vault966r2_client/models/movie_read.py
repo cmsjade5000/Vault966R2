@@ -366,8 +366,8 @@ class MovieRead:
 
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
-        from ..models.genre_read import GenreRead
-        from ..models.mood_read import MoodRead
+        from ..models.genre_read import GenreRead  # noqa: PLC0415
+        from ..models.mood_read import MoodRead  # noqa: PLC0415
 
         d = dict(src_dict)
         countries_iso = cast(list[str], d.pop("countries_iso"))

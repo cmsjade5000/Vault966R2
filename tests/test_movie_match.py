@@ -15,7 +15,6 @@ from api.services.movie_match import (
     normalize_answer_ids,
 )
 
-
 MATCH_ANSWERS = "cozy,low,short,family,retro"
 
 

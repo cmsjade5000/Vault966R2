@@ -7,7 +7,6 @@ from sqlalchemy.orm import Session
 
 from api.models.movie import Movie
 
-
 T = TypeVar("T")
 
 

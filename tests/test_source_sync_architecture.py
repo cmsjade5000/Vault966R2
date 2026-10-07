@@ -6,7 +6,6 @@ from pathlib import Path
 
 from api.services import source_sync, source_sync_contracts, source_sync_identity
 
-
 ROOT = Path(__file__).resolve().parents[1]
 PUBLIC_FACADE_SYMBOLS = {
     "SourceSyncError",

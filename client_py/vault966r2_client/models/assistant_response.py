@@ -51,7 +51,7 @@ class AssistantResponse:
 
     @classmethod
     def from_dict(cls: type[T], src_dict: Mapping[str, Any]) -> T:
-        from ..models.assistant_movie import AssistantMovie
+        from ..models.assistant_movie import AssistantMovie  # noqa: PLC0415
 
         d = dict(src_dict)
         reply = d.pop("reply")

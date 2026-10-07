@@ -12,7 +12,6 @@ from threading import Lock
 from time import monotonic
 from typing import Callable
 
-
 MAX_FAILED_ATTEMPTS = 5
 FAILURE_WINDOW_SECONDS = 15 * 60
 BLOCK_SECONDS = 15 * 60

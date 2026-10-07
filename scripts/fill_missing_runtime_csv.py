@@ -32,7 +32,6 @@ if str(ROOT) not in sys.path:
 from api.utils.provider_errors import run_provider_cli  # noqa: E402
 from core.enriched_csv import parse_int  # noqa: E402
 
-
 TMDB_API_BASE = "https://api.themoviedb.org/3"
 OMDB_API_BASE = "https://www.omdbapi.com/"
 

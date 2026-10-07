@@ -10,7 +10,6 @@ from typing import Sequence, Union
 from alembic import op
 import sqlalchemy as sa
 
-
 revision: str = "202606100002"
 down_revision: Union[str, None] = "202606100001"
 branch_labels: Union[str, Sequence[str], None] = None
@@ -19,8 +18,7 @@ depends_on: Union[str, Sequence[str], None] = None
 
 def upgrade() -> None:
     op.add_column("movies", sa.Column("vault_id", sa.String(length=20), nullable=True))
-    op.execute(
-        """
+    op.execute("""
         UPDATE movies
         SET vault_id = (
             SELECT provider_id
@@ -29,8 +27,7 @@ def upgrade() -> None:
               AND movie_ingest_provenance.provider = 'legacy_vault_csv'
         )
         WHERE vault_id IS NULL
-        """
-    )
+        """)
     op.create_index("ix_movies_vault_id", "movies", ["vault_id"], unique=True)
 
 

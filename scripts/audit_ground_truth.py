@@ -16,7 +16,6 @@ from typing import Any, Iterable, Optional
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
-
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))

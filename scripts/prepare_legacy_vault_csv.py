@@ -23,7 +23,6 @@ if str(ROOT_DIR) not in sys.path:
 
 from core.movie_metadata import MovieMetadata
 
-
 LEGACY_COLUMNS = [
     "title",
     "vault_id",

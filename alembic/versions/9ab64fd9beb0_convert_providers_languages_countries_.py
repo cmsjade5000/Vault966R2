@@ -21,27 +21,21 @@ def upgrade() -> None:
     if bind.dialect.name != "postgresql":
         return
     # Convert TEXT -> JSONB (idempotent casts; NULL stays NULL)
-    op.execute(
-        """
+    op.execute("""
         ALTER TABLE movies
         ALTER COLUMN where_to_watch TYPE jsonb
         USING CASE WHEN where_to_watch IS NULL THEN NULL ELSE where_to_watch::jsonb END;
-        """
-    )
-    op.execute(
-        """
+        """)
+    op.execute("""
         ALTER TABLE movies
         ALTER COLUMN languages TYPE jsonb
         USING CASE WHEN languages IS NULL THEN NULL ELSE languages::jsonb END;
-        """
-    )
-    op.execute(
-        """
+        """)
+    op.execute("""
         ALTER TABLE movies
         ALTER COLUMN countries TYPE jsonb
         USING CASE WHEN countries IS NULL THEN NULL ELSE countries::jsonb END;
-        """
-    )
+        """)
 
 
 def downgrade() -> None:
@@ -49,24 +43,18 @@ def downgrade() -> None:
     if bind.dialect.name != "postgresql":
         return
     # Convert JSONB -> TEXT (stringify)
-    op.execute(
-        """
+    op.execute("""
         ALTER TABLE movies
         ALTER COLUMN where_to_watch TYPE text
         USING CASE WHEN where_to_watch IS NULL THEN NULL ELSE where_to_watch::text END;
-        """
-    )
-    op.execute(
-        """
+        """)
+    op.execute("""
         ALTER TABLE movies
         ALTER COLUMN languages TYPE text
         USING CASE WHEN languages IS NULL THEN NULL ELSE languages::text END;
-        """
-    )
-    op.execute(
-        """
+        """)
+    op.execute("""
         ALTER TABLE movies
         ALTER COLUMN countries TYPE text
         USING CASE WHEN countries IS NULL THEN NULL ELSE countries::text END;
-        """
-    )
+        """)

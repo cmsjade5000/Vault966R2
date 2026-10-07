@@ -11,7 +11,6 @@ import sys
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 
-
 DEFAULT_DATABASE = (
     pathlib.Path.home() / "Library" / "Application Support" / "Vault966" / "data" / "vault.db"
 )

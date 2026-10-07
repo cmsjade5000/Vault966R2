@@ -42,7 +42,6 @@ from core.enriched_csv import (  # noqa: E402
     split_csv_tokens,
 )
 
-
 DEFAULT_COLUMNS = [
     "title",
     "year",
