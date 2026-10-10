@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}Vault 966 · Private setup{% endblock %}
+{% block head %}
+<link rel="stylesheet" href="{{ static_asset('css/login.css') }}" />
+<script src="{{ static_asset('js/login_archive.js') }}" defer></script>
+{% endblock %}
+{% block body_class %}auth-page setup-page{% endblock %}
+{% block content %}
+  <div class="login-archive" aria-hidden="true">
+    {% for poster in archive_tiles %}
+    <span class="login-archive__poster">
+      {% if poster %}
+      <img src="{{ poster.url }}" width="{{ poster.width }}" height="{{ poster.height }}"
+        alt="" loading="lazy" decoding="async" fetchpriority="low" draggable="false" data-archive-img />
+      {% endif %}
+    </span>
+    {% endfor %}
+  </div>
+  <section class="setup-shell" aria-label="Vault 966 private setup">
+    <div class="login-card setup-card">
+      <header class="login-card__header">
+        <span class="login-card__label">Private setup</span>
+        <h1>Start Vault 966</h1>
+      </header>
+      <p class="setup-card__intro" id="setup-claim-instructions">
+        Get a one-time setup code from the local setup command on your Mac, then enter it here.
+        After the code is accepted, you can create your owner account.
+      </p>
+      <p class="login-card__error" role="alert" tabindex="-1" {% if not error %}hidden{% endif %}>{% if error %}Unable to continue setup. Get a new setup code from your Mac and try again.{% endif %}</p>
+      <form class="login-form setup-form" method="post" action="/setup/claim"
+        aria-label="Continue private setup" data-vault-busy-message="Opening owner setup…">
+        <div class="login-fields">
+          <label class="login-field">
+            <span>One-time setup code</span>
+            <input type="password" name="setup_code" autocomplete="one-time-code"
+              autocapitalize="none" spellcheck="false" enterkeyhint="go"
+              minlength="20" maxlength="128" aria-describedby="setup-claim-instructions" required />
+          </label>
+        </div>
+        <div class="login-card__actions">
+          <button class="login-button" type="submit">
+            <span class="login-button__value">Continue to owner setup</span>
+            <span class="login-button__arrow" aria-hidden="true">→</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </section>
+{% endblock %}
+{% block scripts %}
+  {{ super() }}
+  <script type="application/json" id="login-archive-data">{{ {'posters': archive_poster_urls} | tojson }}</script>
+{% endblock %}

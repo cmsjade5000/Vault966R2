@@ -86,19 +86,6 @@
             <div class="discover-spotlight__actions" aria-label="Preferences for {{ spotlight_lead.title | display_title }}">
               <button
                 type="button"
-                class="discover-action{% if spotlight_lead.watchlist %} is-active{% endif %}"
-                data-preference-button
-                data-preference-type="watchlist"
-                data-movie-id="{{ spotlight_lead.id }}"
-                data-movie-title="{{ spotlight_lead.title | display_title }}"
-                aria-label="{{ 'Remove' if spotlight_lead.watchlist else 'Add' }} {{ spotlight_lead.title | display_title }} {{ 'from' if spotlight_lead.watchlist else 'to' }} watchlist"
-                aria-pressed="{{ 'true' if spotlight_lead.watchlist else 'false' }}"
-              >
-                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1z"></path></svg>
-                <span>Watchlist</span>
-              </button>
-              <button
-                type="button"
                 class="discover-action{% if spotlight_lead.liked %} is-active{% endif %}"
                 data-preference-button
                 data-preference-type="like"
@@ -109,6 +96,19 @@
               >
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8l1.1 1.1L12 21.2l7.8-7.7 1.1-1.1a5.5 5.5 0 0 0-.1-7.8z"></path></svg>
                 <span>Like</span>
+              </button>
+              <button
+                type="button"
+                class="discover-action{% if spotlight_lead.watchlist %} is-active{% endif %}"
+                data-preference-button
+                data-preference-type="watchlist"
+                data-movie-id="{{ spotlight_lead.id }}"
+                data-movie-title="{{ spotlight_lead.title | display_title }}"
+                aria-label="{{ 'Remove' if spotlight_lead.watchlist else 'Add' }} {{ spotlight_lead.title | display_title }} {{ 'from' if spotlight_lead.watchlist else 'to' }} watchlist"
+                aria-pressed="{{ 'true' if spotlight_lead.watchlist else 'false' }}"
+              >
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1z"></path></svg>
+                <span>Watchlist</span>
               </button>
             </div>
             <a class="button-secondary discover-spotlight__another" href="/ui/discover?rotation={{ discover_next_rotation }}">Something else</a>

@@ -206,6 +206,30 @@
         "title": "AssistantResponse",
         "type": "object"
       },
+      "Body_enroll_person_submit_ui_profiles_new_post": {
+        "properties": {
+          "passcode": {
+            "default": "",
+            "maxLength": 128,
+            "title": "Passcode",
+            "type": "string"
+          },
+          "passcode_confirm": {
+            "default": "",
+            "maxLength": 128,
+            "title": "Passcode Confirm",
+            "type": "string"
+          },
+          "profile_name": {
+            "default": "",
+            "maxLength": 80,
+            "title": "Profile Name",
+            "type": "string"
+          }
+        },
+        "title": "Body_enroll_person_submit_ui_profiles_new_post",
+        "type": "object"
+      },
       "Body_login_submit_login_post": {
         "properties": {
           "access_key": {
@@ -248,6 +272,18 @@
         "title": "Body_login_submit_login_post",
         "type": "object"
       },
+      "Body_setup_claim_submit_setup_claim_post": {
+        "properties": {
+          "setup_code": {
+            "default": "",
+            "maxLength": 128,
+            "title": "Setup Code",
+            "type": "string"
+          }
+        },
+        "title": "Body_setup_claim_submit_setup_claim_post",
+        "type": "object"
+      },
       "Body_setup_submit_setup_post": {
         "properties": {
           "access_key": {
@@ -276,6 +312,36 @@
           }
         },
         "title": "Body_setup_submit_setup_post",
+        "type": "object"
+      },
+      "Body_switch_person_submit_ui_switch_person_post": {
+        "properties": {
+          "access_key": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Access Key"
+          },
+          "passcode": {
+            "anyOf": [
+              {
+                "maxLength": 128,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Passcode"
+          }
+        },
+        "title": "Body_switch_person_submit_ui_switch_person_post",
         "type": "object"
       },
       "Body_upload_first_import_snapshot_ui_first_import_upload_post": {
@@ -9796,6 +9862,87 @@
         ]
       }
     },
+    "/setup/claim": {
+      "get": {
+        "operationId": "setup_claim_ui_setup_claim_get",
+        "responses": {
+          "200": {
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "An unexpected server error occurred."
+          }
+        },
+        "summary": "Setup Claim Ui",
+        "tags": [
+          "ui",
+          "ui"
+        ]
+      },
+      "post": {
+        "operationId": "setup_claim_submit_setup_claim_post",
+        "requestBody": {
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_setup_claim_submit_setup_claim_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Request validation failed."
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "An unexpected server error occurred."
+          }
+        },
+        "summary": "Setup Claim Submit",
+        "tags": [
+          "ui",
+          "ui"
+        ]
+      }
+    },
     "/ui/events": {
       "post": {
         "operationId": "record_usage_event_ui_events_post",
@@ -12106,6 +12253,87 @@
         ]
       }
     },
+    "/ui/profiles/new": {
+      "get": {
+        "operationId": "enroll_person_ui_ui_profiles_new_get",
+        "responses": {
+          "200": {
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "An unexpected server error occurred."
+          }
+        },
+        "summary": "Enroll Person Ui",
+        "tags": [
+          "ui",
+          "ui"
+        ]
+      },
+      "post": {
+        "operationId": "enroll_person_submit_ui_profiles_new_post",
+        "requestBody": {
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_enroll_person_submit_ui_profiles_new_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Request validation failed."
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "An unexpected server error occurred."
+          }
+        },
+        "summary": "Enroll Person Submit",
+        "tags": [
+          "ui",
+          "ui"
+        ]
+      }
+    },
     "/ui/review": {
       "get": {
         "operationId": "review_queue_ui_ui_review_get",
@@ -12389,6 +12617,87 @@
         "summary": "Preview Source Snapshot",
         "tags": [
           "ui",
+          "ui",
+          "ui"
+        ]
+      }
+    },
+    "/ui/switch-person": {
+      "get": {
+        "operationId": "switch_person_ui_ui_switch_person_get",
+        "responses": {
+          "200": {
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "An unexpected server error occurred."
+          }
+        },
+        "summary": "Switch Person Ui",
+        "tags": [
+          "ui",
+          "ui"
+        ]
+      },
+      "post": {
+        "operationId": "switch_person_submit_ui_switch_person_post",
+        "requestBody": {
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_switch_person_submit_ui_switch_person_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Request validation failed."
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "An unexpected server error occurred."
+          }
+        },
+        "summary": "Switch Person Submit",
+        "tags": [
           "ui",
           "ui"
         ]

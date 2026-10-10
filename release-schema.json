@@ -23,7 +23,10 @@
       "completed_at",
       "created_at",
       "id",
+      "local_setup_only",
       "owner_profile_id",
+      "personal_sign_in_only",
+      "unlock_revision",
       "updated_at"
     ],
     "flic_memory": [
@@ -191,6 +194,16 @@
       "name",
       "tmdb_id"
     ],
+    "profile_archive_batches": [
+      "created_at",
+      "id",
+      "previous_completed_at",
+      "previous_local_setup_only",
+      "previous_owner_profile_id",
+      "previous_personal_sign_in_only",
+      "previous_setup_completed",
+      "restored_at"
+    ],
     "profile_credentials": [
       "access_key_hash",
       "access_key_salt",
@@ -204,10 +217,14 @@
       "updated_at"
     ],
     "profiles": [
+      "archived_at",
+      "archived_batch_id",
+      "archived_name",
       "created_at",
       "id",
       "name",
-      "role"
+      "role",
+      "session_revision"
     ],
     "retired_vault_ids": [
       "deleted_movie_id",
@@ -224,6 +241,18 @@
       "movie_id",
       "person_id",
       "role_type"
+    ],
+    "setup_grants": [
+      "bound_at",
+      "browser_hash",
+      "code_hash",
+      "code_salt",
+      "consumed_at",
+      "expires_at",
+      "generation",
+      "id",
+      "issued_at",
+      "owner_name"
     ],
     "source_field_decisions": [
       "decided_at",

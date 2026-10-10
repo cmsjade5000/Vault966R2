@@ -5,6 +5,7 @@ import hashlib
 import hmac
 import json
 import time
+import random
 from typing import Optional
 
 from fastapi import APIRouter, Depends, Form, Query, Request, status
@@ -13,6 +14,8 @@ from sqlalchemy.orm import Session
 
 from api.config import settings
 from api.db import get_db
+from api.deps.auth import require_strict_same_origin
+from api.models.profile import Profile
 from api.schemas.common import SEE_OTHER_REDIRECT_RESPONSES
 from api.services.profiles import (
     PROFILE_COOKIE_NAME,
@@ -30,8 +33,11 @@ from api.services.setup import (
     db_credentials_configured,
     is_setup_complete,
     matching_db_credential_profile_id,
+    personal_sign_in_only,
+    setup_record,
 )
 from api.services.login_throttle import LoginAttemptLimiter
+from api.services.login_posters import login_posters
 from api.services.ui.grid import FILTER_COOKIE_NAME, FILTER_COOKIE_PATH
 from api.services.ui.templates import TEMPLATES
 
@@ -42,20 +48,6 @@ PROFILE_PICKER_LABELS = ("User A", "User B")
 UNLOCK_COOKIE_NAME = "vault_unlock"
 UNLOCK_TOKEN_VERSION = 1
 UNLOCK_TTL_SECONDS = 5 * 60
-PUBLIC_ARCHIVE_IMAGE_PATHS = (
-    "img/app-icon.png",
-    "img/apple-touch-icon.png",
-    "img/android-chrome-512x512.png",
-    "img/splash-1024.png",
-    "img/splash-1536x2048.png",
-    "img/splash-1668x2224.png",
-    "img/splash-1668x2388.png",
-    "img/splash-2048x1536.png",
-    "img/splash-2048x2732.png",
-    "img/splash-2224x1668.png",
-    "img/splash-2388x1668.png",
-    "img/splash-2732x2048.png",
-)
 
 
 def _b64encode(raw: bytes) -> str:
@@ -72,11 +64,12 @@ def _sign(payload: str) -> str:
     return hmac.new(secret.encode("utf-8"), payload.encode("utf-8"), hashlib.sha256).hexdigest()
 
 
-def _create_unlock_token(profile_id: int | None) -> str:
+def _create_unlock_token(profile_id: int | None, revision: int = 0) -> str:
     now = int(time.time())
     payload = {
         "v": UNLOCK_TOKEN_VERSION,
         "profile_id": profile_id,
+        "revision": revision,
         "iat": now,
         "exp": now + UNLOCK_TTL_SECONDS,
     }
@@ -85,7 +78,7 @@ def _create_unlock_token(profile_id: int | None) -> str:
     return f"{payload_b64}.{_sign(payload_b64)}"
 
 
-def _parse_unlock_token(token: str) -> int | None:
+def _parse_unlock_token(token: str, expected_revision: int = 0) -> int | None:
     if not token or "." not in token:
         return None
     payload_b64, signature = token.split(".", 1)
@@ -99,9 +92,10 @@ def _parse_unlock_token(token: str) -> int | None:
         return None
     try:
         expires_at = int(payload.get("exp", 0))
+        revision = int(payload.get("revision", 0))
     except (TypeError, ValueError):
         return None
-    if expires_at <= int(time.time()):
+    if revision != expected_revision or expires_at <= int(time.time()):
         return None
     raw_profile_id = payload.get("profile_id")
     if raw_profile_id is None:
@@ -113,23 +107,39 @@ def _parse_unlock_token(token: str) -> int | None:
     return profile_id if profile_id > 0 else None
 
 
-def _session_profile_id(request: Request) -> Optional[int]:
+def _unlock_revision(db: Session) -> int:
+    record = setup_record(db)
+    return record.unlock_revision if record else 0
+
+
+def _session_profile_id(request: Request, db: Session) -> Optional[int]:
     secret = get_session_secret(settings.login_session_secret)
     token = request.cookies.get(SESSION_COOKIE_NAME, "")
     session = parse_session_token(token, secret=secret)
     if session:
-        return session.profile_id
+        profile = db.get(Profile, session.profile_id)
+        if profile and profile.archived_at is None and profile.session_revision == session.revision:
+            return session.profile_id
     return None
 
 
-def _public_archive_image_urls(request: Request) -> list[str]:
+def _public_archive_posters(request: Request) -> list[dict]:
+    try:
+        posters = login_posters()
+    except (OSError, ValueError, KeyError, TypeError):
+        # Decorative artwork must never prevent signing in.
+        return []
     return [
-        str(request.url_for("static", path=image_path)) for image_path in PUBLIC_ARCHIVE_IMAGE_PATHS
+        {
+            **poster,
+            "url": f"{request.url_for('static', path=poster['path'])}?v={poster['sha256'][:12]}",
+        }
+        for poster in posters
     ]
 
 
-def _archive_tiles(urls: list[str], *, limit: int = 12) -> list[Optional[str]]:
-    tiles: list[Optional[str]] = list(urls[:limit])
+def _archive_tiles(posters: list[dict], *, limit: int = 12) -> list[Optional[dict]]:
+    tiles: list[Optional[dict]] = list(posters[:limit])
     if len(tiles) < limit:
         tiles.extend([None] * (limit - len(tiles)))
     return tiles
@@ -198,7 +208,9 @@ def _login_credentials_configured(profiles) -> bool:
 
 
 def _credentials_available(db: Session, profiles) -> bool:
-    return _login_credentials_configured(profiles) or db_credentials_configured(db)
+    return db_credentials_configured(db) or (
+        not personal_sign_in_only(db) and _login_credentials_configured(profiles)
+    )
 
 
 def _credentials_match(
@@ -219,6 +231,8 @@ def _credentials_match(
     )
     if db_profile_id is not None:
         return db_profile_id
+    if personal_sign_in_only(db):
+        return None
     for profile_id, expected_key, expected_passcode in _credential_pairs(profiles):
         if hmac.compare_digest(candidate_key, expected_key) and hmac.compare_digest(
             candidate_passcode, expected_passcode
@@ -236,9 +250,13 @@ def _login_template_context(
     error: str | None = None,
     unlocked: bool = False,
     credentials_unavailable: bool = False,
+    switching: bool = False,
 ) -> dict:
-    archive_poster_urls = _public_archive_image_urls(request)
+    archive_posters = _public_archive_posters(request)
+    random.SystemRandom().shuffle(archive_posters)
     return {
+        "switching": switching,
+        "form_action": "/ui/switch-person" if switching else "/login",
         "profiles": profiles,
         "active_profile_id": active_profile_id,
         "error": error,
@@ -246,8 +264,8 @@ def _login_template_context(
         "credentials_unavailable": credentials_unavailable,
         "default_profile_id": default_profile_id,
         "profile_options": _profile_picker_options(profiles),
-        "archive_tiles": _archive_tiles(archive_poster_urls),
-        "archive_poster_urls": archive_poster_urls,
+        "archive_tiles": _archive_tiles(archive_posters),
+        "archive_poster_urls": [poster["url"] for poster in archive_posters],
     }
 
 
@@ -267,6 +285,7 @@ def _render_login_error(
             profiles,
             error=message,
             credentials_unavailable=credentials_unavailable,
+            switching=request.url.path == "/ui/switch-person",
         ),
         status_code=status_code,
     )
@@ -284,8 +303,13 @@ def login(
     profiles = get_profiles(db)
     default_profile_id = profiles[0].id if profiles else None
 
-    unlocked_state = bool(unlocked)
-    if _session_profile_id(request) and not unlocked_state:
+    unlocked_state = (
+        bool(unlocked)
+        and not personal_sign_in_only(db)
+        and _parse_unlock_token(request.cookies.get(UNLOCK_COOKIE_NAME, ""), _unlock_revision(db))
+        == 0
+    )
+    if _session_profile_id(request, db) and not unlocked_state:
         return RedirectResponse(url="/ui/movies", status_code=status.HTTP_302_FOUND)
 
     if not settings.disable_auth and not _credentials_available(db, profiles):
@@ -309,7 +333,7 @@ def login(
         "login.html",
         _login_template_context(
             request,
-            profiles,
+            [] if personal_sign_in_only(db) else profiles,
             active_profile_id=active_profile_id,
             default_profile_id=default_profile_id,
             unlocked=unlocked_state,
@@ -327,8 +351,10 @@ def login_submit(
     access_key: Optional[str] = Form(default=None, max_length=128),
     passcode: Optional[str] = Form(default=None, max_length=128),
     db: Session = Depends(get_db),
+    _: None = Depends(require_strict_same_origin),
 ):
     wants_json = _wants_json(request)
+    switching = request.url.path == "/ui/switch-person"
     profiles = get_profiles(db)
     profile_by_id = {profile.id: profile for profile in profiles if profile.id is not None}
     profile = profile_by_id.get(profile_id) if profile_id is not None else None
@@ -355,7 +381,13 @@ def login_submit(
         # A signed unlock token is already a valid credential.  Preserve the
         # profile-selection step without routing it through failed-attempt
         # throttling.
-        unlock_profile_id = _parse_unlock_token(request.cookies.get(UNLOCK_COOKIE_NAME, ""))
+        unlock_profile_id = (
+            None
+            if switching or personal_sign_in_only(db)
+            else _parse_unlock_token(
+                request.cookies.get(UNLOCK_COOKIE_NAME, ""), _unlock_revision(db)
+            )
+        )
         if unlock_profile_id is None:
             if client_key is None or not login_attempt_limiter.begin_attempt(client_key):
                 message = "Too many login attempts. Please try again later."
@@ -400,6 +432,22 @@ def login_submit(
     if credentials_required and client_key is not None:
         login_attempt_limiter.clear(client_key)
 
+    if profile_id is None and unlock_profile_id and unlock_profile_id > 0:
+        profile = profile_by_id.get(unlock_profile_id)
+    if switching and unlock_profile_id == 0:
+        return (
+            JSONResponse(
+                status_code=403, content={"error": "Use personal credentials to switch person."}
+            )
+            if wants_json
+            else _render_login_error(
+                request,
+                profiles,
+                message="Use personal credentials to switch person.",
+                status_code=403,
+            )
+        )
+
     if not profile:
         if profile_id is None:
             if wants_json:
@@ -412,7 +460,9 @@ def login_submit(
             if credentials_required:
                 response.set_cookie(
                     UNLOCK_COOKIE_NAME,
-                    _create_unlock_token(unlock_profile_id if unlock_profile_id else None),
+                    _create_unlock_token(
+                        unlock_profile_id if unlock_profile_id else None, _unlock_revision(db)
+                    ),
                     max_age=UNLOCK_TTL_SECONDS,
                     httponly=True,
                     samesite="lax",
@@ -455,6 +505,7 @@ def login_submit(
         profile.id,
         secret=get_session_secret(settings.login_session_secret),
         ttl_seconds=ttl_seconds,
+        revision=profile.session_revision,
     )
     if wants_json:
         response = JSONResponse(
@@ -473,6 +524,8 @@ def login_submit(
     )
     set_active_profile_cookie(response, profile.id)
     response.delete_cookie(UNLOCK_COOKIE_NAME)
+    if switching:
+        response.delete_cookie(FILTER_COOKIE_NAME, path=FILTER_COOKIE_PATH)
     return response
 
 
@@ -489,3 +542,21 @@ def logout(request: Request):
     response.delete_cookie(PROFILE_COOKIE_NAME)
     response.delete_cookie(FILTER_COOKIE_NAME, path=FILTER_COOKIE_PATH)
     return response
+
+
+@router.get("/ui/switch-person", response_class=HTMLResponse)
+def switch_person_ui(request: Request, db: Session = Depends(get_db)):
+    return TEMPLATES.TemplateResponse(
+        request, "login.html", _login_template_context(request, [], switching=True)
+    )
+
+
+@router.post("/ui/switch-person", response_class=HTMLResponse)
+def switch_person_submit(
+    request: Request,
+    access_key: Optional[str] = Form(default=None, max_length=128),
+    passcode: Optional[str] = Form(default=None, max_length=128),
+    db: Session = Depends(get_db),
+    _: None = Depends(require_strict_same_origin),
+):
+    return login_submit(request, profile_id=None, access_key=access_key, passcode=passcode, db=db)

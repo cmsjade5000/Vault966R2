@@ -248,6 +248,52 @@ def _ensure_sqlite_movie_columns() -> None:
                     )
                     """))
 
+        # Development bootstrap only. Staged releases require explicit migrations.
+        for table, additions in {
+            "app_setup": {
+                "personal_sign_in_only": "BOOLEAN NOT NULL DEFAULT false",
+                "local_setup_only": "BOOLEAN NOT NULL DEFAULT false",
+                "unlock_revision": "INTEGER NOT NULL DEFAULT 0",
+            },
+            "profiles": {
+                "archived_at": "TIMESTAMP",
+                "archived_name": "TEXT",
+                "archived_batch_id": "TEXT",
+                "session_revision": "INTEGER NOT NULL DEFAULT 0",
+            },
+        }.items():
+            existing_columns = {
+                row[1] for row in connection.execute(text(f"PRAGMA table_info({table})"))
+            }
+            if not existing_columns:
+                continue
+            for name, ddl in additions.items():
+                if name not in existing_columns:
+                    connection.execute(text(f"ALTER TABLE {table} ADD COLUMN {name} {ddl}"))
+        connection.execute(text("""CREATE TABLE IF NOT EXISTS profile_archive_batches (
+            id TEXT PRIMARY KEY,
+            previous_setup_completed BOOLEAN NOT NULL,
+            previous_completed_at TIMESTAMP,
+            previous_owner_profile_id INTEGER,
+            previous_personal_sign_in_only BOOLEAN NOT NULL,
+            previous_local_setup_only BOOLEAN NOT NULL,
+            created_at TIMESTAMP NOT NULL,
+            restored_at TIMESTAMP
+        )"""))
+
+        connection.execute(text("""CREATE TABLE IF NOT EXISTS setup_grants (
+            id INTEGER PRIMARY KEY,
+            generation TEXT NOT NULL,
+            owner_name TEXT NOT NULL,
+            code_salt TEXT NOT NULL,
+            code_hash TEXT NOT NULL,
+            issued_at INTEGER NOT NULL,
+            expires_at INTEGER NOT NULL,
+            browser_hash TEXT,
+            bound_at INTEGER,
+            consumed_at INTEGER
+        )"""))
+
         profile_credentials_exists = connection.execute(
             text(
                 "SELECT name FROM sqlite_master "

@@ -6,8 +6,11 @@ from .ai_search_response import AiSearchResponse
 from .assistant_movie import AssistantMovie
 from .assistant_request import AssistantRequest
 from .assistant_response import AssistantResponse
+from .body_enroll_person_submit_ui_profiles_new_post import BodyEnrollPersonSubmitUiProfilesNewPost
 from .body_login_submit_login_post import BodyLoginSubmitLoginPost
+from .body_setup_claim_submit_setup_claim_post import BodySetupClaimSubmitSetupClaimPost
 from .body_setup_submit_setup_post import BodySetupSubmitSetupPost
+from .body_switch_person_submit_ui_switch_person_post import BodySwitchPersonSubmitUiSwitchPersonPost
 from .body_upload_first_import_snapshot_ui_first_import_upload_post import (
     BodyUploadFirstImportSnapshotUiFirstImportUploadPost,
 )
@@ -109,8 +112,11 @@ __all__ = (
     "AssistantMovie",
     "AssistantRequest",
     "AssistantResponse",
+    "BodyEnrollPersonSubmitUiProfilesNewPost",
     "BodyLoginSubmitLoginPost",
+    "BodySetupClaimSubmitSetupClaimPost",
     "BodySetupSubmitSetupPost",
+    "BodySwitchPersonSubmitUiSwitchPersonPost",
     "BodyUploadFirstImportSnapshotUiFirstImportUploadPost",
     "BodyUploadSourceSnapshotUiSourceSyncUploadPost",
     "DiscoverRefreshApiDiscoverRefreshGetResponseDiscoverRefreshApiDiscoverRefreshGet",

@@ -1,37 +1,89 @@
 (() => {
   const IMAGE_FADE_MS = 1300;
 
-  const markImageReady = async (img) => {
+  const IMAGE_LOAD_TIMEOUT_MS = 8000;
+
+  const markImageReady = async (img, signal) => {
     if (!img) return false;
+    img.classList.add("is-pending");
     try {
-      if (!img.complete) {
-        await new Promise((resolve, reject) => {
-          img.addEventListener("load", resolve, { once: true });
-          img.addEventListener("error", reject, { once: true });
-        });
-      }
-      if (!img.naturalWidth) return false;
-      if (typeof img.decode === "function") {
-        await img.decode().catch(() => {});
-      }
-      window.requestAnimationFrame(() => {
-        img.classList.add("is-loaded");
+      await new Promise((resolve, reject) => {
+        let finished = false;
+        const cleanup = () => {
+          window.clearTimeout(timeout);
+          img.removeEventListener?.("load", loaded);
+          img.removeEventListener?.("error", failed);
+          signal?.removeEventListener("abort", failed);
+        };
+        const finish = (error) => {
+          if (finished) return;
+          finished = true;
+          cleanup();
+          if (error) reject(error);
+          else resolve();
+        };
+        const failed = () => finish(new Error("Poster unavailable"));
+        const loaded = async () => {
+          if (!img.naturalWidth) return failed();
+          if (typeof img.decode === "function") {
+            await img.decode().catch(() => {});
+          }
+          finish();
+        };
+        const timeout = window.setTimeout(failed, IMAGE_LOAD_TIMEOUT_MS);
+        signal?.addEventListener("abort", failed, { once: true });
+        if (signal?.aborted) failed();
+        else if (img.complete) loaded();
+        else {
+          img.addEventListener("load", loaded, { once: true });
+          img.addEventListener("error", failed, { once: true });
+        }
       });
+      if (signal?.aborted) throw new Error("Poster unavailable");
+      img.classList.remove("is-pending", "is-unavailable");
+      img.classList.add("is-loaded");
       return true;
     } catch (error) {
+      img.classList.remove("is-pending");
       img.classList.add("is-unavailable");
       return false;
     }
   };
 
-  const preloadImage = async (url) => {
+  const preloadImage = async (url, signal) => {
     const img = new Image();
     img.alt = "";
     img.decoding = "async";
     img.draggable = false;
     img.src = url;
-    const ready = await markImageReady(img);
+    const ready = await markImageReady(img, signal);
     return ready ? img : null;
+  };
+
+  const VISIT_STORAGE_KEY = "vault-login-archive-lineup";
+
+  const shuffle = (arr) => {
+    const copy = [...arr];
+    for (let i = copy.length - 1; i > 0; i -= 1) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [copy[i], copy[j]] = [copy[j], copy[i]];
+    }
+    return copy;
+  };
+
+  const selectLineup = (urls, count, previous = []) => {
+    const prior = new Set(previous);
+    const lineup = [
+      ...shuffle(urls.filter((url) => !prior.has(url))),
+      ...shuffle(urls.filter((url) => prior.has(url))),
+    ].slice(0, count);
+    if (
+      lineup.length > 1 &&
+      lineup.every((url, index) => url === previous[index])
+    ) {
+      lineup.push(lineup.shift());
+    }
+    return lineup;
   };
 
   const initArchive = () => {
@@ -40,7 +92,20 @@
     let posterUrls = [];
     try {
       const data = JSON.parse(dataEl.textContent || "{}");
-      posterUrls = Array.isArray(data.posters) ? data.posters : [];
+      posterUrls = Array.isArray(data.posters)
+        ? [
+            ...new Set(
+              data.posters.filter(
+                (url) =>
+                  typeof url === "string" &&
+                  url.startsWith(
+                    window.location.origin +
+                      "/static/img/login-posters/poster-",
+                  ),
+              ),
+            ),
+          ]
+        : [];
     } catch (error) {
       console.warn("Failed to parse login archive data", error);
       return;
@@ -52,29 +117,33 @@
     if (!slots.length) return;
 
     slots.forEach((slot) => {
-      markImageReady(slot.querySelector("img"));
+      if (window.getComputedStyle(slot).display !== "none") {
+        markImageReady(slot.querySelector("img"));
+      }
     });
     if (posterUrls.length < 2) return;
 
-    const prefersReduced = window.matchMedia(
+    const motionPreference = window.matchMedia(
       "(prefers-reduced-motion: reduce)",
-    ).matches;
-    if (prefersReduced) return;
-
-    const shuffle = (arr) => {
-      const copy = [...arr];
-      for (let i = copy.length - 1; i > 0; i -= 1) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [copy[i], copy[j]] = [copy[j], copy[i]];
-      }
-      return copy;
-    };
+    );
 
     let pool = shuffle(posterUrls);
-    let pointer = slots.length;
+    let pointer = 0;
+    let visitGeneration = 0;
+    let visitController;
+    let visitPending = false;
+    let previousLineup = slots.map((slot) => slot.querySelector("img")?.src);
+    try {
+      const stored = JSON.parse(
+        window.sessionStorage.getItem(VISIT_STORAGE_KEY),
+      );
+      if (Array.isArray(stored)) previousLineup = stored;
+    } catch (error) {
+      // Storage may be disabled; the current markup still supplies a fallback.
+    }
 
     const nextUrl = () => {
-      if (pool.length === 0) return "";
+      if (pool.length === 0) pool = shuffle(posterUrls);
       if (pointer >= pool.length) {
         pool = shuffle(posterUrls);
         pointer = 0;
@@ -103,25 +172,54 @@
       timers.forEach((id) => window.clearTimeout(id));
       timers.clear();
       slots.forEach((slot) => {
-        slot.querySelectorAll(".is-leaving").forEach((img) => img.remove());
+        slot
+          .querySelectorAll(".is-leaving, .login-archive__poster-next")
+          .forEach((img) => img.remove());
         slot.classList.remove("is-swapping");
       });
     };
 
-    document.addEventListener("vault:unlocked", stopRotation);
+    const suspendVisit = () => {
+      visitGeneration += 1;
+      visitController?.abort();
+      stopRotation();
+    };
+    document.addEventListener("vault:unlocked", suspendVisit);
+    window.addEventListener("pagehide", () => {
+      suspendVisit();
+    });
+    motionPreference.addEventListener?.("change", (event) => {
+      if (event.matches) stopRotation();
+    });
     if (isUnlocked()) {
       stopRotation();
       return;
     }
 
     const cycleSlot = async (slot) => {
-      if (isUnlocked() || stopped) return;
+      if (
+        isUnlocked() ||
+        stopped ||
+        motionPreference.matches ||
+        document.hidden
+      )
+        return;
       const url = nextUrl();
       if (!url) return;
-      const nextImage = await preloadImage(url);
-      if (!nextImage || isUnlocked() || stopped) return;
-
       const currentImage = slot.querySelector("img:not(.is-leaving)");
+      if (currentImage?.src === url) return;
+      const generation = visitGeneration;
+      const nextImage = await preloadImage(url, visitController?.signal);
+      if (
+        !nextImage ||
+        generation !== visitGeneration ||
+        isUnlocked() ||
+        stopped ||
+        motionPreference.matches ||
+        document.hidden
+      )
+        return;
+
       nextImage.loading = "eager";
       nextImage.setAttribute("data-archive-img", "");
       nextImage.classList.add("login-archive__poster-next");
@@ -129,6 +227,7 @@
       slot.appendChild(nextImage);
 
       window.requestAnimationFrame(() => {
+        if (generation !== visitGeneration || stopped) return;
         nextImage.classList.remove("login-archive__poster-next");
         nextImage.classList.add("is-loaded");
         currentImage?.classList.add("is-leaving");
@@ -142,20 +241,85 @@
 
     let lastSlot = null;
     const scheduleNext = () => {
-      if (isUnlocked() || stopped) return;
+      if (isUnlocked() || stopped || motionPreference.matches) return;
       const delay = 12000 + Math.floor(Math.random() * 8000);
       trackTimeout(() => {
-        if (isUnlocked() || stopped) return;
-        let slot = slots[Math.floor(Math.random() * slots.length)];
-        if (slot === lastSlot && slots.length > 1) {
-          slot = slots[(slots.indexOf(slot) + 1) % slots.length];
+        if (isUnlocked() || stopped || motionPreference.matches) return;
+        const visibleSlots = slots.filter(
+          (slot) => window.getComputedStyle(slot).display !== "none",
+        );
+        if (!document.hidden && visibleSlots.length) {
+          let slot =
+            visibleSlots[Math.floor(Math.random() * visibleSlots.length)];
+          if (slot === lastSlot && visibleSlots.length > 1) {
+            slot =
+              visibleSlots[
+                (visibleSlots.indexOf(slot) + 1) % visibleSlots.length
+              ];
+          }
+          lastSlot = slot;
+          cycleSlot(slot);
         }
-        lastSlot = slot;
-        cycleSlot(slot);
         scheduleNext();
       }, delay);
     };
-    scheduleNext();
+    const replaceVisitLineup = async () => {
+      visitPending = false;
+      const generation = ++visitGeneration;
+      visitController?.abort();
+      visitController = new AbortController();
+      const visibleSlots = slots.filter(
+        (slot) => window.getComputedStyle(slot).display !== "none",
+      );
+      const lineup = selectLineup(
+        posterUrls,
+        visibleSlots.length,
+        previousLineup,
+      );
+      const images = await Promise.all(
+        lineup.map((url) => preloadImage(url, visitController.signal)),
+      );
+      if (
+        generation !== visitGeneration ||
+        stopped ||
+        isUnlocked() ||
+        images.some((img) => !img)
+      )
+        return;
+      images.forEach((img, index) => {
+        img.loading = "eager";
+        img.setAttribute("data-archive-img", "");
+        const current = visibleSlots[index].querySelector("img");
+        if (current) visibleSlots[index].replaceChild(img, current);
+      });
+      previousLineup = lineup;
+      try {
+        window.sessionStorage.setItem(
+          VISIT_STORAGE_KEY,
+          JSON.stringify(lineup),
+        );
+      } catch (error) {
+        // Visit variety remains available when storage is disabled.
+      }
+      pool = shuffle(posterUrls.filter((url) => !lineup.includes(url)));
+      pointer = 0;
+    };
+
+    const startVisit = () => {
+      if (isUnlocked()) return;
+      stopRotation();
+      stopped = false;
+      visitPending = true;
+      if (!document.hidden) replaceVisitLineup();
+      scheduleNext();
+    };
+    window.addEventListener("pageshow", (event) => {
+      if (event.persisted) startVisit();
+    });
+    document.addEventListener("visibilitychange", () => {
+      if (!document.hidden && visitPending && !stopped) replaceVisitLineup();
+    });
+    startVisit();
   };
 
   if (document.readyState === "loading") {
@@ -166,7 +330,9 @@
 
   window.VaultLoginArchiveSupport = {
     IMAGE_FADE_MS,
+    IMAGE_LOAD_TIMEOUT_MS,
     markImageReady,
     preloadImage,
+    selectLineup,
   };
 })();

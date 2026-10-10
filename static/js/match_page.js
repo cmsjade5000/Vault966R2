@@ -1,4 +1,5 @@
 (function () {
+  let pending = false;
   const prefersReducedMotion = () =>
     Boolean(window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches);
 
@@ -9,6 +10,7 @@
   };
 
   const setPending = (link) => {
+    pending = true;
     const page = document.querySelector("[data-match-page]");
     page?.classList.add("is-loading");
     if (!prefersReducedMotion()) {
@@ -19,6 +21,18 @@
       window.setVaultBusy("Narrowing the Vault…", { delay: 0 });
     }
   };
+
+  const clearPending = () => {
+    pending = false;
+    const page = document.querySelector("[data-match-page]");
+    page?.classList.remove("is-loading");
+    page?.querySelectorAll("[aria-busy], .is-pressed").forEach((link) => {
+      link.removeAttribute("aria-busy");
+      link.classList.remove("is-pressed");
+    });
+  };
+
+  window.addEventListener?.("pageshow", clearPending);
 
   const answerCount = (query) => {
     if (!query) return 0;
@@ -42,11 +56,24 @@
   };
 
   document.addEventListener("click", (event) => {
+    if (
+      event.defaultPrevented ||
+      (event.button != null && event.button !== 0) ||
+      event.metaKey ||
+      event.ctrlKey ||
+      event.shiftKey ||
+      event.altKey
+    )
+      return;
     const link = event.target.closest(
       "[data-match-answer], [data-match-back], [data-match-reset], [data-match-reroll], " +
         "[data-match-show], [data-match-edit]",
     );
     if (!link) return;
+    if (pending) {
+      event.preventDefault();
+      return;
+    }
     setPending(link);
   });
 })();

@@ -669,6 +669,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/setup/claim": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Setup Claim Ui */
+        get: operations["setup_claim_ui_setup_claim_get"];
+        put?: never;
+        /** Setup Claim Submit */
+        post: operations["setup_claim_submit_setup_claim_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/ui/events": {
         parameters: {
             query?: never;
@@ -1265,6 +1283,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/ui/profiles/new": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Enroll Person Ui */
+        get: operations["enroll_person_ui_ui_profiles_new_get"];
+        put?: never;
+        /** Enroll Person Submit */
+        post: operations["enroll_person_submit_ui_profiles_new_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/ui/review": {
         parameters: {
             query?: never;
@@ -1367,6 +1403,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/ui/switch-person": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Switch Person Ui */
+        get: operations["switch_person_ui_ui_switch_person_get"];
+        put?: never;
+        /** Switch Person Submit */
+        post: operations["switch_person_submit_ui_switch_person_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/ui/watchlist": {
         parameters: {
             query?: never;
@@ -1459,6 +1513,24 @@ export interface components {
             /** Reply */
             reply: string;
         };
+        /** Body_enroll_person_submit_ui_profiles_new_post */
+        Body_enroll_person_submit_ui_profiles_new_post: {
+            /**
+             * Passcode
+             * @default
+             */
+            passcode: string;
+            /**
+             * Passcode Confirm
+             * @default
+             */
+            passcode_confirm: string;
+            /**
+             * Profile Name
+             * @default
+             */
+            profile_name: string;
+        };
         /** Body_login_submit_login_post */
         Body_login_submit_login_post: {
             /** Access Key */
@@ -1467,6 +1539,14 @@ export interface components {
             passcode?: string | null;
             /** Profile Id */
             profile_id?: number | null;
+        };
+        /** Body_setup_claim_submit_setup_claim_post */
+        Body_setup_claim_submit_setup_claim_post: {
+            /**
+             * Setup Code
+             * @default
+             */
+            setup_code: string;
         };
         /** Body_setup_submit_setup_post */
         Body_setup_submit_setup_post: {
@@ -1490,6 +1570,13 @@ export interface components {
              * @default
              */
             profile_name: string;
+        };
+        /** Body_switch_person_submit_ui_switch_person_post */
+        Body_switch_person_submit_ui_switch_person_post: {
+            /** Access Key */
+            access_key?: string | null;
+            /** Passcode */
+            passcode?: string | null;
         };
         /** Body_upload_first_import_snapshot_ui_first_import_upload_post */
         Body_upload_first_import_snapshot_ui_first_import_upload_post: {
@@ -6583,6 +6670,77 @@ export interface operations {
             };
         };
     };
+    setup_claim_ui_setup_claim_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/html": string;
+                };
+            };
+            /** @description An unexpected server error occurred. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    setup_claim_submit_setup_claim_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/x-www-form-urlencoded": components["schemas"]["Body_setup_claim_submit_setup_claim_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/html": string;
+                };
+            };
+            /** @description Request validation failed. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description An unexpected server error occurred. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
     record_usage_event_ui_events_post: {
         parameters: {
             query?: never;
@@ -8089,6 +8247,77 @@ export interface operations {
             };
         };
     };
+    enroll_person_ui_ui_profiles_new_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/html": string;
+                };
+            };
+            /** @description An unexpected server error occurred. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    enroll_person_submit_ui_profiles_new_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/x-www-form-urlencoded": components["schemas"]["Body_enroll_person_submit_ui_profiles_new_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/html": string;
+                };
+            };
+            /** @description Request validation failed. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description An unexpected server error occurred. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
     review_queue_ui_ui_review_get: {
         parameters: {
             query?: never;
@@ -8288,6 +8517,77 @@ export interface operations {
             cookie?: never;
         };
         requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/html": string;
+                };
+            };
+            /** @description Request validation failed. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description An unexpected server error occurred. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    switch_person_ui_ui_switch_person_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/html": string;
+                };
+            };
+            /** @description An unexpected server error occurred. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    switch_person_submit_ui_switch_person_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/x-www-form-urlencoded": components["schemas"]["Body_switch_person_submit_ui_switch_person_post"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
