@@ -1,11 +1,11 @@
 repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.7.1
+    rev: v0.16.10
     hooks:
-      - id: ruff
+      - id: ruff-check
         args: ["--fix"]
   - repo: https://github.com/psf/black
-    rev: 24.10.0
+    rev: 26.3.1
     hooks:
       - id: black
   - repo: https://github.com/pre-commit/pre-commit-hooks

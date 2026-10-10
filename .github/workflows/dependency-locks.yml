@@ -1,0 +1,46 @@
+name: Generate macOS dependency locks
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "requirements.txt"
+      - "requirements-dev.txt"
+      - ".github/workflows/dependency-locks.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  generate:
+    runs-on: macos-15
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - name: Verify target and install compiler
+        run: |
+          test "$(uname -m)" = arm64
+          python -m pip install uv==0.12.23
+      - name: Regenerate runtime and constrained development locks
+        run: |
+          uv pip compile requirements.txt --python-version 3.12 --python-platform aarch64-apple-darwin --generate-hashes -o requirements.lock
+          uv pip compile requirements-dev.txt --python-version 3.12 --python-platform aarch64-apple-darwin --constraint requirements.lock --generate-hashes -o requirements-dev.lock
+          git rev-parse HEAD > lock-provenance.txt
+          uname -m >> lock-provenance.txt
+          python --version >> lock-provenance.txt
+          uv --version >> lock-provenance.txt
+          shasum -a 256 requirements.lock requirements-dev.lock >> lock-provenance.txt
+      - name: Upload generated locks for review
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-dependency-locks
+          path: |
+            requirements.lock
+            requirements-dev.lock
+            lock-provenance.txt
+          retention-days: 7
