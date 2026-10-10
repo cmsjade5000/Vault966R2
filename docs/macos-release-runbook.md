@@ -116,3 +116,17 @@ Regenerate the contract with `DATABASE_URL=sqlite:// .venv/bin/python
 scripts/generate_release_schema.py` after an intentional model change. A changed
 schema contract requires a compatibility/migration review before live activation;
 a newer Alembic source head alone does not establish the state of an old SQLite DB.
+
+
+The `Generate macOS dependency locks` workflow produces reviewable locks on the
+release target without committing or activating anything. Download its
+`macos-dependency-locks` artifact, verify `lock-provenance.txt` identifies the PR
+head being reviewed, inspect both lock diffs, and commit the intended changes.
+The generator succeeding is not a compatibility verdict: the regular CI job must
+then pass with those committed locks. Development-only updates normally leave the
+runtime lock unchanged. The development lock is compiled against the runtime lock
+so release tests exercise the same runtime versions.
+
+Keep formatter/linter pre-commit revisions aligned with `requirements-dev.txt`.
+CI checks both direct requirements files against their locks; do not bypass that
+guard when a dependency update changes an intended version.
