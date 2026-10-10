@@ -49,13 +49,9 @@ def test_actual_app_lifespan_auth_and_telemetry(tmp_path, invalid_telemetry):
             stderr=log,
         )
         try:
-            with httpx.Client(
-                base_url=f"http://127.0.0.1:{port}", trust_env=False
-            ) as client:
+            with httpx.Client(base_url=f"http://127.0.0.1:{port}", trust_env=False) as client:
                 for _ in range(200):
-                    assert (
-                        process.poll() is None
-                    ), "Synthetic Vault process exited during startup"
+                    assert process.poll() is None, "Synthetic Vault process exited during startup"
                     try:
                         if client.get("/readyz").status_code == 200:
                             break
