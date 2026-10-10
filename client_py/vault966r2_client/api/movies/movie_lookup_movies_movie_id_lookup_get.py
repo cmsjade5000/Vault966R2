@@ -18,6 +18,7 @@ def _get_kwargs(
     year: int | None | Unset = UNSET,
     limit: int | Unset = 5,
 ) -> dict[str, Any]:
+
     params: dict[str, Any] = {}
 
     json_title: None | str | Unset

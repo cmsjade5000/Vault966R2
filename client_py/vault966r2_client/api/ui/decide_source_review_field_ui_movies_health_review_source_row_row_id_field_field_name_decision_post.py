@@ -17,6 +17,7 @@ def _get_kwargs(
     *,
     view: str | Unset = "differences",
 ) -> dict[str, Any]:
+
     params: dict[str, Any] = {}
 
     params["view"] = view

@@ -23,6 +23,8 @@ extend-exclude = [
 ]
 
 [tool.ruff.lint]
+# Preserve the previous lint policy while upgrading Ruff.
+select = ["E4", "E7", "E9", "F"]
 # Keep the established Optional[...] style and allow our FastAPI patterns.
 ignore = [
   "UP006",  # prefer builtins list/dict/tuple

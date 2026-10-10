@@ -17,6 +17,7 @@ def _get_kwargs(
     title: str,
     year: int | None | Unset = UNSET,
 ) -> dict[str, Any]:
+
     params: dict[str, Any] = {}
 
     params["title"] = title

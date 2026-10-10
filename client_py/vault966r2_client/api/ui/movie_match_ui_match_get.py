@@ -16,6 +16,7 @@ def _get_kwargs(
     show: int | Unset = 0,
     edit: int | None | Unset = UNSET,
 ) -> dict[str, Any]:
+
     params: dict[str, Any] = {}
 
     json_answers: None | str | Unset

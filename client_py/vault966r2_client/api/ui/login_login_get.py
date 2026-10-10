@@ -13,6 +13,7 @@ def _get_kwargs(
     *,
     unlocked: int | None | Unset = UNSET,
 ) -> dict[str, Any]:
+
     params: dict[str, Any] = {}
 
     json_unlocked: int | None | Unset

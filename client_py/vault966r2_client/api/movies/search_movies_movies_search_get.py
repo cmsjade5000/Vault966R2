@@ -23,6 +23,7 @@ def _get_kwargs(
     page: int | Unset = 1,
     page_size: int | Unset = 24,
 ) -> dict[str, Any]:
+
     params: dict[str, Any] = {}
 
     json_q: None | str | Unset

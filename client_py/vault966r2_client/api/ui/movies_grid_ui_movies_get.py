@@ -23,6 +23,7 @@ def _get_kwargs(
     preset: None | str | Unset = UNSET,
     semantic: None | str | Unset = UNSET,
 ) -> dict[str, Any]:
+
     params: dict[str, Any] = {}
 
     json_q: None | str | Unset

@@ -16,6 +16,7 @@ def _get_kwargs(
     *,
     view: str | Unset = "ambiguous",
 ) -> dict[str, Any]:
+
     params: dict[str, Any] = {}
 
     params["view"] = view
