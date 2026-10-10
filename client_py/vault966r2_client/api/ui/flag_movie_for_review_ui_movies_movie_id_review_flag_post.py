@@ -16,6 +16,7 @@ from ...types import Response
 def _get_kwargs(
     movie_id: int,
 ) -> dict[str, Any]:
+
     _kwargs: dict[str, Any] = {
         "method": "post",
         "url": "/ui/movies/{movie_id}/review-flag".format(

@@ -13,6 +13,7 @@ from ...types import Response
 def _get_kwargs(
     snapshot_id: int,
 ) -> dict[str, Any]:
+
     _kwargs: dict[str, Any] = {
         "method": "post",
         "url": "/ui/first-import/{snapshot_id}/auto-create".format(

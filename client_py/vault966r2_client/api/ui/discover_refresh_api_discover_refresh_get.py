@@ -18,6 +18,7 @@ def _get_kwargs(
     pairings_limit: int | Unset = 2,
     genre_limit: int | Unset = 6,
 ) -> dict[str, Any]:
+
     params: dict[str, Any] = {}
 
     json_seed: int | None | Unset

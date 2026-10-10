@@ -16,6 +16,7 @@ def _get_kwargs(
     *,
     task: str | Unset = "all",
 ) -> dict[str, Any]:
+
     params: dict[str, Any] = {}
 
     params["task"] = task

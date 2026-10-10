@@ -14,6 +14,7 @@ def _get_kwargs(
     movie_id: int,
     size: str,
 ) -> dict[str, Any]:
+
     _kwargs: dict[str, Any] = {
         "method": "get",
         "url": "/ui/posters/{movie_id}/{size}".format(

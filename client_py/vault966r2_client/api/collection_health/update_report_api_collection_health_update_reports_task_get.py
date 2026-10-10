@@ -13,6 +13,7 @@ from ...types import Response
 def _get_kwargs(
     task: str,
 ) -> dict[str, Any]:
+
     _kwargs: dict[str, Any] = {
         "method": "get",
         "url": "/api/collection-health/update/reports/{task}".format(

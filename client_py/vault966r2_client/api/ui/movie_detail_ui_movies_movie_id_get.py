@@ -16,6 +16,7 @@ def _get_kwargs(
     review: bool | Unset = False,
     spotlight: bool | Unset = False,
 ) -> dict[str, Any]:
+
     params: dict[str, Any] = {}
 
     params["review"] = review
