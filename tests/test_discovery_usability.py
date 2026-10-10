@@ -175,6 +175,39 @@ def test_discover_page_uses_preference_controls_and_safe_event_contexts(client, 
     assert "search_text" not in html
 
 
+def test_spotlight_preference_order_matches_library_and_discover_cards(client, db_session) -> None:
+    from html.parser import HTMLParser
+
+    class PreferenceOrder(HTMLParser):
+        def __init__(self, html):
+            super().__init__()
+            self.orders = []
+            self.current = None
+            self.feed(html)
+
+        def handle_starttag(self, tag, attrs):
+            attrs = dict(attrs)
+            if tag == "div" and attrs.get("class") in {
+                "discover-spotlight__actions",
+                "discover-card__actions",
+                "library-card__actions",
+            }:
+                self.current = []
+                self.orders.append(self.current)
+            if tag == "button" and self.current is not None and "data-preference-type" in attrs:
+                self.current.append(attrs["data-preference-type"])
+
+        def handle_endtag(self, tag):
+            if tag == "div":
+                self.current = None
+
+    _make_discover_candidates(db_session)
+    discover = PreferenceOrder(client.get("/ui/discover").text)
+    library = PreferenceOrder(client.get("/ui/movies").text)
+    assert discover.orders and library.orders
+    assert all(order == ["like", "watchlist"] for order in discover.orders + library.orders)
+
+
 def test_discover_page_keeps_the_initial_render_bounded(client, db_session) -> None:
     _make_discover_candidates(db_session)
     query_count = 0

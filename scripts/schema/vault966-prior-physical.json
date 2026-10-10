@@ -1,0 +1,2610 @@
+{
+  "ai_cache": {
+    "columns": [
+      [
+        "cache_key",
+        "VARCHAR(120)",
+        1,
+        null,
+        1
+      ],
+      [
+        "value",
+        "JSON",
+        1,
+        null,
+        0
+      ],
+      [
+        "expires_at",
+        "DATETIME",
+        0,
+        null,
+        0
+      ],
+      [
+        "created_at",
+        "DATETIME",
+        1,
+        "CURRENT_TIMESTAMP",
+        0
+      ]
+    ],
+    "indexes": [
+      {
+        "name": "ix_ai_cache_expires_at",
+        "unique": 0,
+        "origin": "c",
+        "partial": 0,
+        "columns": [
+          "expires_at"
+        ]
+      },
+      {
+        "name": "sqlite_autoindex_ai_cache_1",
+        "unique": 1,
+        "origin": "pk",
+        "partial": 0,
+        "columns": [
+          "cache_key"
+        ]
+      }
+    ],
+    "foreign_keys": []
+  },
+  "alembic_version": {
+    "columns": [
+      [
+        "version_num",
+        "VARCHAR(32)",
+        1,
+        null,
+        1
+      ]
+    ],
+    "indexes": [
+      {
+        "name": "sqlite_autoindex_alembic_version_1",
+        "unique": 1,
+        "origin": "pk",
+        "partial": 0,
+        "columns": [
+          "version_num"
+        ]
+      }
+    ],
+    "foreign_keys": []
+  },
+  "app_setup": {
+    "columns": [
+      [
+        "id",
+        "INTEGER",
+        1,
+        null,
+        1
+      ],
+      [
+        "completed",
+        "BOOLEAN",
+        1,
+        "false",
+        0
+      ],
+      [
+        "completed_at",
+        "DATETIME",
+        0,
+        null,
+        0
+      ],
+      [
+        "owner_profile_id",
+        "INTEGER",
+        0,
+        null,
+        0
+      ],
+      [
+        "created_at",
+        "DATETIME",
+        1,
+        "CURRENT_TIMESTAMP",
+        0
+      ],
+      [
+        "updated_at",
+        "DATETIME",
+        1,
+        "CURRENT_TIMESTAMP",
+        0
+      ]
+    ],
+    "indexes": [],
+    "foreign_keys": [
+      [
+        "profiles",
+        "owner_profile_id",
+        "id",
+        "NO ACTION",
+        "SET NULL",
+        "NONE"
+      ]
+    ]
+  },
+  "flic_memory": {
+    "columns": [
+      [
+        "id",
+        "INTEGER",
+        1,
+        null,
+        1
+      ],
+      [
+        "movie_id",
+        "INTEGER",
+        1,
+        null,
+        0
+      ],
+      [
+        "created_at",
+        "DATETIME",
+        1,
+        "CURRENT_TIMESTAMP",
+        0
+      ]
+    ],
+    "indexes": [],
+    "foreign_keys": [
+      [
+        "movies",
+        "movie_id",
+        "id",
+        "NO ACTION",
+        "CASCADE",
+        "NONE"
+      ]
+    ]
+  },
+  "flic_presets": {
+    "columns": [
+      [
+        "id",
+        "INTEGER",
+        1,
+        null,
+        1
+      ],
+      [
+        "name",
+        "VARCHAR(100)",
+        1,
+        null,
+        0
+      ],
+      [
+        "filters",
+        "JSON",
+        1,
+        null,
+        0
+      ],
+      [
+        "created_at",
+        "DATETIME",
+        1,
+        "CURRENT_TIMESTAMP",
+        0
+      ]
+    ],
+    "indexes": [
+      {
+        "name": "sqlite_autoindex_flic_presets_1",
+        "unique": 1,
+        "origin": "u",
+        "partial": 0,
+        "columns": [
+          "name"
+        ]
+      }
+    ],
+    "foreign_keys": []
+  },
+  "genres": {
+    "columns": [
+      [
+        "id",
+        "INTEGER",
+        1,
+        null,
+        1
+      ],
+      [
+        "name",
+        "VARCHAR(100)",
+        1,
+        null,
+        0
+      ]
+    ],
+    "indexes": [
+      {
+        "name": "ix_genres_name",
+        "unique": 1,
+        "origin": "c",
+        "partial": 0,
+        "columns": [
+          "name"
+        ]
+      }
+    ],
+    "foreign_keys": []
+  },
+  "maintenance_jobs": {
+    "columns": [
+      [
+        "id",
+        "INTEGER",
+        1,
+        null,
+        1
+      ],
+      [
+        "run_id",
+        "VARCHAR(80)",
+        1,
+        null,
+        0
+      ],
+      [
+        "task_id",
+        "VARCHAR(40)",
+        1,
+        null,
+        0
+      ],
+      [
+        "state",
+        "VARCHAR(20)",
+        1,
+        null,
+        0
+      ],
+      [
+        "started_by_profile_id",
+        "INTEGER",
+        0,
+        null,
+        0
+      ],
+      [
+        "started_at",
+        "DATETIME",
+        1,
+        null,
+        0
+      ],
+      [
+        "finished_at",
+        "DATETIME",
+        0,
+        null,
+        0
+      ],
+      [
+        "last_error",
+        "TEXT",
+        0,
+        null,
+        0
+      ],
+      [
+        "steps",
+        "JSON",
+        0,
+        null,
+        0
+      ],
+      [
+        "reports",
+        "JSON",
+        0,
+        null,
+        0
+      ],
+      [
+        "created_at",
+        "DATETIME",
+        1,
+        "CURRENT_TIMESTAMP",
+        0
+      ],
+      [
+        "updated_at",
+        "DATETIME",
+        1,
+        "CURRENT_TIMESTAMP",
+        0
+      ]
+    ],
+    "indexes": [
+      {
+        "name": "ix_maintenance_jobs_run_id",
+        "unique": 1,
+        "origin": "c",
+        "partial": 0,
+        "columns": [
+          "run_id"
+        ]
+      },
+      {
+        "name": "ix_maintenance_jobs_state",
+        "unique": 0,
+        "origin": "c",
+        "partial": 0,
+        "columns": [
+          "state"
+        ]
+      },
+      {
+        "name": "ix_maintenance_jobs_task_started",
+        "unique": 0,
+        "origin": "c",
+        "partial": 0,
+        "columns": [
+          "task_id",
+          "started_at"
+        ]
+      }
+    ],
+    "foreign_keys": [
+      [
+        "profiles",
+        "started_by_profile_id",
+        "id",
+        "NO ACTION",
+        "SET NULL",
+        "NONE"
+      ]
+    ]
+  },
+  "moods": {
+    "columns": [
+      [
+        "id",
+        "INTEGER",
+        1,
+        null,
+        1
+      ],
+      [
+        "name",
+        "VARCHAR(100)",
+        1,
+        null,
+        0
+      ],
+      [
+        "description",
+        "VARCHAR(300)",
+        0,
+        null,
+        0
+      ],
+      [
+        "emoji",
+        "VARCHAR(10)",
+        0,
+        null,
+        0
+      ]
+    ],
+    "indexes": [
+      {
+        "name": "ix_moods_name",
+        "unique": 1,
+        "origin": "c",
+        "partial": 0,
+        "columns": [
+          "name"
+        ]
+      }
+    ],
+    "foreign_keys": []
+  },
+  "movie_cast": {
+    "columns": [
+      [
+        "movie_id",
+        "INTEGER",
+        1,
+        null,
+        1
+      ],
+      [
+        "person_id",
+        "INTEGER",
+        1,
+        null,
+        2
+      ],
+      [
+        "character",
+        "VARCHAR(300)",
+        0,
+        null,
+        0
+      ],
+      [
+        "order_index",
+        "INTEGER",
+        0,
+        null,
+        0
+      ]
+    ],
+    "indexes": [
+      {
+        "name": "ix_movie_cast_movie_id",
+        "unique": 0,
+        "origin": "c",
+        "partial": 0,
+        "columns": [
+          "movie_id"
+        ]
+      },
+      {
+        "name": "sqlite_autoindex_movie_cast_1",
+        "unique": 1,
+        "origin": "pk",
+        "partial": 0,
+        "columns": [
+          "movie_id",
+          "person_id"
+        ]
+      }
+    ],
+    "foreign_keys": [
+      [
+        "movies",
+        "movie_id",
+        "id",
+        "NO ACTION",
+        "CASCADE",
+        "NONE"
+      ],
+      [
+        "people",
+        "person_id",
+        "id",
+        "NO ACTION",
+        "CASCADE",
+        "NONE"
+      ]
+    ]
+  },
+  "movie_crew": {
+    "columns": [
+      [
+        "movie_id",
+        "INTEGER",
+        1,
+        null,
+        1
+      ],
+      [
+        "person_id",
+        "INTEGER",
+        1,
+        null,
+        2
+      ],
+      [
+        "department",
+        "VARCHAR(200)",
+        0,
+        null,
+        0
+      ],
+      [
+        "job",
+        "VARCHAR(200)",
+        0,
+        null,
+        0
+      ]
+    ],
+    "indexes": [
+      {
+        "name": "ix_movie_crew_movie_id",
+        "unique": 0,
+        "origin": "c",
+        "partial": 0,
+        "columns": [
+          "movie_id"
+        ]
+      },
+      {
+        "name": "sqlite_autoindex_movie_crew_1",
+        "unique": 1,
+        "origin": "pk",
+        "partial": 0,
+        "columns": [
+          "movie_id",
+          "person_id"
+        ]
+      }
+    ],
+    "foreign_keys": [
+      [
+        "movies",
+        "movie_id",
+        "id",
+        "NO ACTION",
+        "CASCADE",
+        "NONE"
+      ],
+      [
+        "people",
+        "person_id",
+        "id",
+        "NO ACTION",
+        "CASCADE",
+        "NONE"
+      ]
+    ]
+  },
+  "movie_documents": {
+    "columns": [
+      [
+        "movie_id",
+        "INTEGER",
+        1,
+        null,
+        1
+      ],
+      [
+        "doc_version",
+        "INTEGER",
+        1,
+        null,
+        0
+      ],
+      [
+        "content",
+        "TEXT",
+        1,
+        null,
+        0
+      ],
+      [
+        "embedding",
+        "JSON",
+        1,
+        null,
+        0
+      ],
+      [
+        "updated_at",
+        "DATETIME",
+        1,
+        "CURRENT_TIMESTAMP",
+        0
+      ]
+    ],
+    "indexes": [
+      {
+        "name": "ix_movie_documents_embedding",
+        "unique": 0,
+        "origin": "c",
+        "partial": 0,
+        "columns": [
+          "embedding"
+        ]
+      },
+      {
+        "name": "ix_movie_documents_movie_id",
+        "unique": 0,
+        "origin": "c",
+        "partial": 0,
+        "columns": [
+          "movie_id"
+        ]
+      }
+    ],
+    "foreign_keys": [
+      [
+        "movies",
+        "movie_id",
+        "id",
+        "NO ACTION",
+        "CASCADE",
+        "NONE"
+      ]
+    ]
+  },
+  "movie_flags": {
+    "columns": [
+      [
+        "movie_id",
+        "INTEGER",
+        1,
+        null,
+        1
+      ],
+      [
+        "reason",
+        "TEXT",
+        0,
+        null,
+        0
+      ],
+      [
+        "notes",
+        "TEXT",
+        0,
+        null,
+        0
+      ],
+      [
+        "created_at",
+        "DATETIME",
+        1,
+        null,
+        0
+      ],
+      [
+        "updated_at",
+        "DATETIME",
+        1,
+        null,
+        0
+      ],
+      [
+        "reported_by_profile_id",
+        "INTEGER",
+        0,
+        null,
+        0
+      ]
+    ],
+    "indexes": [],
+    "foreign_keys": [
+      [
+        "movies",
+        "movie_id",
+        "id",
+        "NO ACTION",
+        "CASCADE",
+        "NONE"
+      ],
+      [
+        "profiles",
+        "reported_by_profile_id",
+        "id",
+        "NO ACTION",
+        "SET NULL",
+        "NONE"
+      ]
+    ]
+  },
+  "movie_genres": {
+    "columns": [
+      [
+        "movie_id",
+        "INTEGER",
+        1,
+        null,
+        1
+      ],
+      [
+        "genre_id",
+        "INTEGER",
+        1,
+        null,
+        2
+      ]
+    ],
+    "indexes": [
+      {
+        "name": "sqlite_autoindex_movie_genres_1",
+        "unique": 1,
+        "origin": "pk",
+        "partial": 0,
+        "columns": [
+          "movie_id",
+          "genre_id"
+        ]
+      }
+    ],
+    "foreign_keys": [
+      [
+        "genres",
+        "genre_id",
+        "id",
+        "NO ACTION",
+        "CASCADE",
+        "NONE"
+      ],
+      [
+        "movies",
+        "movie_id",
+        "id",
+        "NO ACTION",
+        "CASCADE",
+        "NONE"
+      ]
+    ]
+  },
+  "movie_identity_repairs": {
+    "columns": [
+      [
+        "id",
+        "INTEGER",
+        1,
+        null,
+        1
+      ],
+      [
+        "movie_id",
+        "INTEGER",
+        1,
+        null,
+        0
+      ],
+      [
+        "applied_by_profile_id",
+        "INTEGER",
+        0,
+        null,
+        0
+      ],
+      [
+        "source",
+        "VARCHAR(20)",
+        1,
+        null,
+        0
+      ],
+      [
+        "search_title",
+        "VARCHAR(300)",
+        1,
+        null,
+        0
+      ],
+      [
+        "standardized_title",
+        "VARCHAR(300)",
+        1,
+        null,
+        0
+      ],
+      [
+        "selected_title",
+        "VARCHAR(300)",
+        1,
+        null,
+        0
+      ],
+      [
+        "selected_year",
+        "INTEGER",
+        0,
+        null,
+        0
+      ],
+      [
+        "selected_imdb_id",
+        "VARCHAR(20)",
+        0,
+        null,
+        0
+      ],
+      [
+        "selected_tmdb_id",
+        "INTEGER",
+        0,
+        null,
+        0
+      ],
+      [
+        "before_values",
+        "JSON",
+        0,
+        null,
+        0
+      ],
+      [
+        "after_values",
+        "JSON",
+        0,
+        null,
+        0
+      ],
+      [
+        "applied_at",
+        "DATETIME",
+        1,
+        "CURRENT_TIMESTAMP",
+        0
+      ]
+    ],
+    "indexes": [
+      {
+        "name": "ix_movie_identity_repairs_applied_at",
+        "unique": 0,
+        "origin": "c",
+        "partial": 0,
+        "columns": [
+          "applied_at"
+        ]
+      },
+      {
+        "name": "ix_movie_identity_repairs_movie_id",
+        "unique": 0,
+        "origin": "c",
+        "partial": 0,
+        "columns": [
+          "movie_id"
+        ]
+      }
+    ],
+    "foreign_keys": [
+      [
+        "movies",
+        "movie_id",
+        "id",
+        "NO ACTION",
+        "CASCADE",
+        "NONE"
+      ],
+      [
+        "profiles",
+        "applied_by_profile_id",
+        "id",
+        "NO ACTION",
+        "SET NULL",
+        "NONE"
+      ]
+    ]
+  },
+  "movie_ingest_provenance": {
+    "columns": [
+      [
+        "id",
+        "INTEGER",
+        1,
+        null,
+        1
+      ],
+      [
+        "movie_id",
+        "INTEGER",
+        1,
+        null,
+        0
+      ],
+      [
+        "provider",
+        "VARCHAR(50)",
+        1,
+        null,
+        0
+      ],
+      [
+        "provider_id",
+        "VARCHAR(100)",
+        0,
+        null,
+        0
+      ],
+      [
+        "ingested_at",
+        "DATETIME",
+        1,
+        "CURRENT_TIMESTAMP",
+        0
+      ],
+      [
+        "payload_sha",
+        "VARCHAR(128)",
+        0,
+        null,
+        0
+      ],
+      [
+        "etag",
+        "VARCHAR(128)",
+        0,
+        null,
+        0
+      ],
+      [
+        "source_url",
+        "VARCHAR(500)",
+        0,
+        null,
+        0
+      ],
+      [
+        "notes",
+        "TEXT",
+        0,
+        null,
+        0
+      ]
+    ],
+    "indexes": [
+      {
+        "name": "ix_movie_ingest_provenance_movie_id",
+        "unique": 0,
+        "origin": "c",
+        "partial": 0,
+        "columns": [
+          "movie_id"
+        ]
+      },
+      {
+        "name": "uq_movie_ingest_provenance_movie_provider",
+        "unique": 1,
+        "origin": "c",
+        "partial": 0,
+        "columns": [
+          "movie_id",
+          "provider"
+        ]
+      }
+    ],
+    "foreign_keys": [
+      [
+        "movies",
+        "movie_id",
+        "id",
+        "NO ACTION",
+        "CASCADE",
+        "NONE"
+      ]
+    ]
+  },
+  "movie_moods": {
+    "columns": [
+      [
+        "movie_id",
+        "INTEGER",
+        1,
+        null,
+        1
+      ],
+      [
+        "mood_id",
+        "INTEGER",
+        1,
+        null,
+        2
+      ]
+    ],
+    "indexes": [
+      {
+        "name": "sqlite_autoindex_movie_moods_1",
+        "unique": 1,
+        "origin": "pk",
+        "partial": 0,
+        "columns": [
+          "movie_id",
+          "mood_id"
+        ]
+      }
+    ],
+    "foreign_keys": [
+      [
+        "moods",
+        "mood_id",
+        "id",
+        "NO ACTION",
+        "CASCADE",
+        "NONE"
+      ],
+      [
+        "movies",
+        "movie_id",
+        "id",
+        "NO ACTION",
+        "CASCADE",
+        "NONE"
+      ]
+    ]
+  },
+  "movie_preferences": {
+    "columns": [
+      [
+        "id",
+        "INTEGER",
+        1,
+        null,
+        1
+      ],
+      [
+        "profile_id",
+        "INTEGER",
+        1,
+        null,
+        0
+      ],
+      [
+        "movie_id",
+        "INTEGER",
+        1,
+        null,
+        0
+      ],
+      [
+        "liked",
+        "BOOLEAN",
+        1,
+        "false",
+        0
+      ],
+      [
+        "watchlist",
+        "BOOLEAN",
+        1,
+        "false",
+        0
+      ],
+      [
+        "created_at",
+        "DATETIME",
+        1,
+        "CURRENT_TIMESTAMP",
+        0
+      ],
+      [
+        "updated_at",
+        "DATETIME",
+        1,
+        "CURRENT_TIMESTAMP",
+        0
+      ]
+    ],
+    "indexes": [
+      {
+        "name": "ix_movie_preferences_movie_id",
+        "unique": 0,
+        "origin": "c",
+        "partial": 0,
+        "columns": [
+          "movie_id"
+        ]
+      },
+      {
+        "name": "ix_movie_preferences_profile_id",
+        "unique": 0,
+        "origin": "c",
+        "partial": 0,
+        "columns": [
+          "profile_id"
+        ]
+      },
+      {
+        "name": "sqlite_autoindex_movie_preferences_1",
+        "unique": 1,
+        "origin": "u",
+        "partial": 0,
+        "columns": [
+          "profile_id",
+          "movie_id"
+        ]
+      }
+    ],
+    "foreign_keys": [
+      [
+        "movies",
+        "movie_id",
+        "id",
+        "NO ACTION",
+        "CASCADE",
+        "NONE"
+      ],
+      [
+        "profiles",
+        "profile_id",
+        "id",
+        "NO ACTION",
+        "CASCADE",
+        "NONE"
+      ]
+    ]
+  },
+  "movie_review_checks": {
+    "columns": [
+      [
+        "id",
+        "INTEGER",
+        1,
+        null,
+        1
+      ],
+      [
+        "movie_id",
+        "INTEGER",
+        1,
+        null,
+        0
+      ],
+      [
+        "issue_type",
+        "VARCHAR(50)",
+        1,
+        null,
+        0
+      ],
+      [
+        "issue_fingerprint",
+        "VARCHAR(64)",
+        1,
+        null,
+        0
+      ],
+      [
+        "decision",
+        "VARCHAR(20)",
+        1,
+        null,
+        0
+      ],
+      [
+        "checked_by_profile_id",
+        "INTEGER",
+        0,
+        null,
+        0
+      ],
+      [
+        "checked_at",
+        "DATETIME",
+        1,
+        "CURRENT_TIMESTAMP",
+        0
+      ]
+    ],
+    "indexes": [
+      {
+        "name": "ix_movie_review_checks_movie_id",
+        "unique": 0,
+        "origin": "c",
+        "partial": 0,
+        "columns": [
+          "movie_id"
+        ]
+      },
+      {
+        "name": "sqlite_autoindex_movie_review_checks_1",
+        "unique": 1,
+        "origin": "u",
+        "partial": 0,
+        "columns": [
+          "movie_id",
+          "issue_type",
+          "issue_fingerprint"
+        ]
+      }
+    ],
+    "foreign_keys": [
+      [
+        "movies",
+        "movie_id",
+        "id",
+        "NO ACTION",
+        "CASCADE",
+        "NONE"
+      ],
+      [
+        "profiles",
+        "checked_by_profile_id",
+        "id",
+        "NO ACTION",
+        "SET NULL",
+        "NONE"
+      ]
+    ]
+  },
+  "movies": {
+    "columns": [
+      [
+        "id",
+        "INTEGER",
+        1,
+        null,
+        1
+      ],
+      [
+        "title",
+        "VARCHAR(300)",
+        1,
+        null,
+        0
+      ],
+      [
+        "year",
+        "INTEGER",
+        0,
+        null,
+        0
+      ],
+      [
+        "runtime",
+        "INTEGER",
+        0,
+        null,
+        0
+      ],
+      [
+        "plot",
+        "TEXT",
+        0,
+        null,
+        0
+      ],
+      [
+        "imdb_id",
+        "VARCHAR(20)",
+        0,
+        null,
+        0
+      ],
+      [
+        "tmdb_id",
+        "INTEGER",
+        0,
+        null,
+        0
+      ],
+      [
+        "imdb_rating",
+        "FLOAT",
+        0,
+        null,
+        0
+      ],
+      [
+        "imdb_votes",
+        "INTEGER",
+        0,
+        null,
+        0
+      ],
+      [
+        "rt_score",
+        "INTEGER",
+        0,
+        null,
+        0
+      ],
+      [
+        "where_to_watch",
+        "TEXT",
+        0,
+        null,
+        0
+      ],
+      [
+        "languages",
+        "TEXT",
+        0,
+        null,
+        0
+      ],
+      [
+        "countries",
+        "TEXT",
+        0,
+        null,
+        0
+      ],
+      [
+        "collection",
+        "TEXT",
+        0,
+        null,
+        0
+      ],
+      [
+        "poster_url",
+        "VARCHAR(500)",
+        0,
+        null,
+        0
+      ],
+      [
+        "backdrop_url",
+        "VARCHAR(500)",
+        0,
+        null,
+        0
+      ],
+      [
+        "metascore",
+        "INTEGER",
+        0,
+        null,
+        0
+      ],
+      [
+        "tomato_meter",
+        "INTEGER",
+        0,
+        null,
+        0
+      ],
+      [
+        "tomato_audience",
+        "INTEGER",
+        0,
+        null,
+        0
+      ],
+      [
+        "awards",
+        "TEXT",
+        0,
+        null,
+        0
+      ],
+      [
+        "last_tmdb_fetch_at",
+        "DATETIME",
+        0,
+        null,
+        0
+      ],
+      [
+        "last_omdb_fetch_at",
+        "DATETIME",
+        0,
+        null,
+        0
+      ],
+      [
+        "tmdb_etag",
+        "VARCHAR(128)",
+        0,
+        null,
+        0
+      ],
+      [
+        "tmdb_payload_sha",
+        "VARCHAR(128)",
+        0,
+        null,
+        0
+      ],
+      [
+        "omdb_payload_sha",
+        "VARCHAR(128)",
+        0,
+        null,
+        0
+      ],
+      [
+        "certificate",
+        "VARCHAR(30)",
+        0,
+        null,
+        0
+      ],
+      [
+        "keywords",
+        "JSON",
+        0,
+        null,
+        0
+      ],
+      [
+        "vault_id",
+        "VARCHAR(20)",
+        0,
+        null,
+        0
+      ],
+      [
+        "trailer_site",
+        "TEXT",
+        0,
+        null,
+        0
+      ],
+      [
+        "trailer_key",
+        "TEXT",
+        0,
+        null,
+        0
+      ],
+      [
+        "trailer_name",
+        "TEXT",
+        0,
+        null,
+        0
+      ],
+      [
+        "trailer_url",
+        "TEXT",
+        0,
+        null,
+        0
+      ],
+      [
+        "trailer_checked_at",
+        "TIMESTAMP",
+        0,
+        null,
+        0
+      ]
+    ],
+    "indexes": [
+      {
+        "name": "ix_movies_id",
+        "unique": 0,
+        "origin": "c",
+        "partial": 0,
+        "columns": [
+          "id"
+        ]
+      },
+      {
+        "name": "ix_movies_imdb_id",
+        "unique": 1,
+        "origin": "c",
+        "partial": 0,
+        "columns": [
+          "imdb_id"
+        ]
+      },
+      {
+        "name": "ix_movies_title",
+        "unique": 0,
+        "origin": "c",
+        "partial": 0,
+        "columns": [
+          "title"
+        ]
+      },
+      {
+        "name": "ix_movies_tmdb_id",
+        "unique": 1,
+        "origin": "c",
+        "partial": 0,
+        "columns": [
+          "tmdb_id"
+        ]
+      },
+      {
+        "name": "ix_movies_vault_id",
+        "unique": 1,
+        "origin": "c",
+        "partial": 0,
+        "columns": [
+          "vault_id"
+        ]
+      },
+      {
+        "name": "ix_movies_year",
+        "unique": 0,
+        "origin": "c",
+        "partial": 0,
+        "columns": [
+          "year"
+        ]
+      },
+      {
+        "name": "sqlite_autoindex_movies_1",
+        "unique": 1,
+        "origin": "u",
+        "partial": 0,
+        "columns": [
+          "imdb_id"
+        ]
+      }
+    ],
+    "foreign_keys": []
+  },
+  "owned_movie_copies": {
+    "columns": [
+      [
+        "id",
+        "INTEGER",
+        1,
+        null,
+        1
+      ],
+      [
+        "movie_id",
+        "INTEGER",
+        1,
+        null,
+        0
+      ],
+      [
+        "snapshot_id",
+        "INTEGER",
+        1,
+        null,
+        0
+      ],
+      [
+        "source_row_id",
+        "INTEGER",
+        1,
+        null,
+        0
+      ],
+      [
+        "hd",
+        "BOOLEAN",
+        0,
+        null,
+        0
+      ],
+      [
+        "source_title",
+        "VARCHAR(300)",
+        1,
+        null,
+        0
+      ],
+      [
+        "source_year",
+        "INTEGER",
+        0,
+        null,
+        0
+      ],
+      [
+        "confirmed_at",
+        "DATETIME",
+        1,
+        "CURRENT_TIMESTAMP",
+        0
+      ]
+    ],
+    "indexes": [
+      {
+        "name": "ix_owned_movie_copies_movie_id",
+        "unique": 0,
+        "origin": "c",
+        "partial": 0,
+        "columns": [
+          "movie_id"
+        ]
+      },
+      {
+        "name": "sqlite_autoindex_owned_movie_copies_1",
+        "unique": 1,
+        "origin": "u",
+        "partial": 0,
+        "columns": [
+          "source_row_id"
+        ]
+      }
+    ],
+    "foreign_keys": [
+      [
+        "movies",
+        "movie_id",
+        "id",
+        "NO ACTION",
+        "CASCADE",
+        "NONE"
+      ],
+      [
+        "source_movie_rows",
+        "source_row_id",
+        "id",
+        "NO ACTION",
+        "CASCADE",
+        "NONE"
+      ],
+      [
+        "source_snapshots",
+        "snapshot_id",
+        "id",
+        "NO ACTION",
+        "CASCADE",
+        "NONE"
+      ]
+    ]
+  },
+  "people": {
+    "columns": [
+      [
+        "id",
+        "INTEGER",
+        1,
+        null,
+        1
+      ],
+      [
+        "name",
+        "VARCHAR(200)",
+        1,
+        null,
+        0
+      ],
+      [
+        "tmdb_id",
+        "INTEGER",
+        0,
+        null,
+        0
+      ],
+      [
+        "imdb_id",
+        "VARCHAR(20)",
+        0,
+        null,
+        0
+      ]
+    ],
+    "indexes": [
+      {
+        "name": "ix_people_name",
+        "unique": 0,
+        "origin": "c",
+        "partial": 0,
+        "columns": [
+          "name"
+        ]
+      },
+      {
+        "name": "sqlite_autoindex_people_1",
+        "unique": 1,
+        "origin": "u",
+        "partial": 0,
+        "columns": [
+          "name",
+          "tmdb_id"
+        ]
+      },
+      {
+        "name": "uq_people_name_tmdb_id",
+        "unique": 1,
+        "origin": "c",
+        "partial": 0,
+        "columns": [
+          "name",
+          "tmdb_id"
+        ]
+      }
+    ],
+    "foreign_keys": []
+  },
+  "profile_credentials": {
+    "columns": [
+      [
+        "id",
+        "INTEGER",
+        1,
+        null,
+        1
+      ],
+      [
+        "profile_id",
+        "INTEGER",
+        1,
+        null,
+        0
+      ],
+      [
+        "access_key_salt",
+        "VARCHAR(64)",
+        1,
+        null,
+        0
+      ],
+      [
+        "access_key_hash",
+        "VARCHAR(128)",
+        1,
+        null,
+        0
+      ],
+      [
+        "passcode_salt",
+        "VARCHAR(64)",
+        1,
+        null,
+        0
+      ],
+      [
+        "passcode_hash",
+        "VARCHAR(128)",
+        1,
+        null,
+        0
+      ],
+      [
+        "kdf_name",
+        "VARCHAR(40)",
+        1,
+        "'pbkdf2_sha256'",
+        0
+      ],
+      [
+        "kdf_iterations",
+        "INTEGER",
+        1,
+        "200000",
+        0
+      ],
+      [
+        "created_at",
+        "DATETIME",
+        1,
+        "CURRENT_TIMESTAMP",
+        0
+      ],
+      [
+        "updated_at",
+        "DATETIME",
+        1,
+        "CURRENT_TIMESTAMP",
+        0
+      ]
+    ],
+    "indexes": [
+      {
+        "name": "sqlite_autoindex_profile_credentials_1",
+        "unique": 1,
+        "origin": "u",
+        "partial": 0,
+        "columns": [
+          "profile_id"
+        ]
+      }
+    ],
+    "foreign_keys": [
+      [
+        "profiles",
+        "profile_id",
+        "id",
+        "NO ACTION",
+        "CASCADE",
+        "NONE"
+      ]
+    ]
+  },
+  "profiles": {
+    "columns": [
+      [
+        "id",
+        "INTEGER",
+        1,
+        null,
+        1
+      ],
+      [
+        "name",
+        "VARCHAR(80)",
+        1,
+        null,
+        0
+      ],
+      [
+        "created_at",
+        "DATETIME",
+        1,
+        "CURRENT_TIMESTAMP",
+        0
+      ],
+      [
+        "role",
+        "VARCHAR(20)",
+        1,
+        "'reviewer'",
+        0
+      ]
+    ],
+    "indexes": [
+      {
+        "name": "sqlite_autoindex_profiles_1",
+        "unique": 1,
+        "origin": "u",
+        "partial": 0,
+        "columns": [
+          "name"
+        ]
+      }
+    ],
+    "foreign_keys": []
+  },
+  "retired_vault_ids": {
+    "columns": [
+      [
+        "vault_id",
+        "VARCHAR(20)",
+        1,
+        null,
+        1
+      ],
+      [
+        "retired_at",
+        "DATETIME",
+        1,
+        "CURRENT_TIMESTAMP",
+        0
+      ],
+      [
+        "source",
+        "VARCHAR(40)",
+        1,
+        null,
+        0
+      ],
+      [
+        "reason",
+        "TEXT",
+        0,
+        null,
+        0
+      ],
+      [
+        "deleted_movie_id",
+        "INTEGER",
+        0,
+        null,
+        0
+      ],
+      [
+        "deleted_movie_title",
+        "VARCHAR(300)",
+        0,
+        null,
+        0
+      ]
+    ],
+    "indexes": [
+      {
+        "name": "ix_retired_vault_ids_retired_at",
+        "unique": 0,
+        "origin": "c",
+        "partial": 0,
+        "columns": [
+          "retired_at"
+        ]
+      },
+      {
+        "name": "ix_retired_vault_ids_source",
+        "unique": 0,
+        "origin": "c",
+        "partial": 0,
+        "columns": [
+          "source"
+        ]
+      },
+      {
+        "name": "sqlite_autoindex_retired_vault_ids_1",
+        "unique": 1,
+        "origin": "pk",
+        "partial": 0,
+        "columns": [
+          "vault_id"
+        ]
+      }
+    ],
+    "foreign_keys": []
+  },
+  "roles": {
+    "columns": [
+      [
+        "id",
+        "INTEGER",
+        1,
+        null,
+        1
+      ],
+      [
+        "movie_id",
+        "INTEGER",
+        1,
+        null,
+        0
+      ],
+      [
+        "person_id",
+        "INTEGER",
+        1,
+        null,
+        0
+      ],
+      [
+        "role_type",
+        "VARCHAR(8)",
+        1,
+        null,
+        0
+      ],
+      [
+        "character_name",
+        "VARCHAR(200)",
+        0,
+        null,
+        0
+      ],
+      [
+        "billing_order",
+        "INTEGER",
+        0,
+        null,
+        0
+      ]
+    ],
+    "indexes": [
+      {
+        "name": "ix_roles_movie_id",
+        "unique": 0,
+        "origin": "c",
+        "partial": 0,
+        "columns": [
+          "movie_id"
+        ]
+      },
+      {
+        "name": "ix_roles_person_id",
+        "unique": 0,
+        "origin": "c",
+        "partial": 0,
+        "columns": [
+          "person_id"
+        ]
+      },
+      {
+        "name": "ix_roles_role_type",
+        "unique": 0,
+        "origin": "c",
+        "partial": 0,
+        "columns": [
+          "role_type"
+        ]
+      },
+      {
+        "name": "ix_roles_role_type_movie_id",
+        "unique": 0,
+        "origin": "c",
+        "partial": 0,
+        "columns": [
+          "role_type",
+          "movie_id"
+        ]
+      }
+    ],
+    "foreign_keys": [
+      [
+        "movies",
+        "movie_id",
+        "id",
+        "NO ACTION",
+        "CASCADE",
+        "NONE"
+      ],
+      [
+        "people",
+        "person_id",
+        "id",
+        "NO ACTION",
+        "CASCADE",
+        "NONE"
+      ]
+    ]
+  },
+  "source_field_decisions": {
+    "columns": [
+      [
+        "id",
+        "INTEGER",
+        1,
+        null,
+        1
+      ],
+      [
+        "source_row_id",
+        "INTEGER",
+        1,
+        null,
+        0
+      ],
+      [
+        "movie_id",
+        "INTEGER",
+        1,
+        null,
+        0
+      ],
+      [
+        "field_name",
+        "VARCHAR(30)",
+        1,
+        null,
+        0
+      ],
+      [
+        "previous_value",
+        "TEXT",
+        0,
+        null,
+        0
+      ],
+      [
+        "source_value",
+        "TEXT",
+        0,
+        null,
+        0
+      ],
+      [
+        "selected_value",
+        "TEXT",
+        0,
+        null,
+        0
+      ],
+      [
+        "decision",
+        "VARCHAR(30)",
+        1,
+        null,
+        0
+      ],
+      [
+        "decided_by_profile_id",
+        "INTEGER",
+        0,
+        null,
+        0
+      ],
+      [
+        "decided_at",
+        "DATETIME",
+        1,
+        "CURRENT_TIMESTAMP",
+        0
+      ],
+      [
+        "resolved_at",
+        "DATETIME",
+        0,
+        null,
+        0
+      ],
+      [
+        "undone_by_profile_id",
+        "INTEGER",
+        0,
+        null,
+        0
+      ],
+      [
+        "undone_at",
+        "DATETIME",
+        0,
+        null,
+        0
+      ]
+    ],
+    "indexes": [
+      {
+        "name": "ix_source_field_decisions_decision",
+        "unique": 0,
+        "origin": "c",
+        "partial": 0,
+        "columns": [
+          "decision"
+        ]
+      },
+      {
+        "name": "ix_source_field_decisions_movie_id",
+        "unique": 0,
+        "origin": "c",
+        "partial": 0,
+        "columns": [
+          "movie_id"
+        ]
+      },
+      {
+        "name": "ix_source_field_decisions_row_field",
+        "unique": 0,
+        "origin": "c",
+        "partial": 0,
+        "columns": [
+          "source_row_id",
+          "field_name"
+        ]
+      }
+    ],
+    "foreign_keys": [
+      [
+        "movies",
+        "movie_id",
+        "id",
+        "NO ACTION",
+        "CASCADE",
+        "NONE"
+      ],
+      [
+        "profiles",
+        "decided_by_profile_id",
+        "id",
+        "NO ACTION",
+        "SET NULL",
+        "NONE"
+      ],
+      [
+        "profiles",
+        "undone_by_profile_id",
+        "id",
+        "NO ACTION",
+        "SET NULL",
+        "NONE"
+      ],
+      [
+        "source_movie_rows",
+        "source_row_id",
+        "id",
+        "NO ACTION",
+        "CASCADE",
+        "NONE"
+      ]
+    ]
+  },
+  "source_movie_rows": {
+    "columns": [
+      [
+        "id",
+        "INTEGER",
+        1,
+        null,
+        1
+      ],
+      [
+        "snapshot_id",
+        "INTEGER",
+        1,
+        null,
+        0
+      ],
+      [
+        "row_number",
+        "INTEGER",
+        1,
+        null,
+        0
+      ],
+      [
+        "title",
+        "VARCHAR(300)",
+        1,
+        null,
+        0
+      ],
+      [
+        "normalized_title",
+        "VARCHAR(300)",
+        1,
+        null,
+        0
+      ],
+      [
+        "runtime",
+        "INTEGER",
+        0,
+        null,
+        0
+      ],
+      [
+        "director",
+        "VARCHAR(500)",
+        0,
+        null,
+        0
+      ],
+      [
+        "normalized_directors",
+        "JSON",
+        0,
+        null,
+        0
+      ],
+      [
+        "year",
+        "INTEGER",
+        0,
+        null,
+        0
+      ],
+      [
+        "genre",
+        "VARCHAR(200)",
+        0,
+        null,
+        0
+      ],
+      [
+        "content_rating",
+        "TEXT",
+        0,
+        null,
+        0
+      ],
+      [
+        "release_date",
+        "VARCHAR(80)",
+        0,
+        null,
+        0
+      ],
+      [
+        "hd",
+        "BOOLEAN",
+        0,
+        null,
+        0
+      ],
+      [
+        "duplicate_group",
+        "VARCHAR(64)",
+        0,
+        null,
+        0
+      ],
+      [
+        "raw_data",
+        "JSON",
+        0,
+        null,
+        0
+      ]
+    ],
+    "indexes": [
+      {
+        "name": "ix_source_movie_rows_normalized_title",
+        "unique": 0,
+        "origin": "c",
+        "partial": 0,
+        "columns": [
+          "normalized_title"
+        ]
+      },
+      {
+        "name": "ix_source_movie_rows_snapshot_id",
+        "unique": 0,
+        "origin": "c",
+        "partial": 0,
+        "columns": [
+          "snapshot_id"
+        ]
+      },
+      {
+        "name": "sqlite_autoindex_source_movie_rows_1",
+        "unique": 1,
+        "origin": "u",
+        "partial": 0,
+        "columns": [
+          "snapshot_id",
+          "row_number"
+        ]
+      }
+    ],
+    "foreign_keys": [
+      [
+        "source_snapshots",
+        "snapshot_id",
+        "id",
+        "NO ACTION",
+        "CASCADE",
+        "NONE"
+      ]
+    ]
+  },
+  "source_reconciliation_matches": {
+    "columns": [
+      [
+        "id",
+        "INTEGER",
+        1,
+        null,
+        1
+      ],
+      [
+        "source_row_id",
+        "INTEGER",
+        1,
+        null,
+        0
+      ],
+      [
+        "movie_id",
+        "INTEGER",
+        0,
+        null,
+        0
+      ],
+      [
+        "match_type",
+        "VARCHAR(30)",
+        1,
+        null,
+        0
+      ],
+      [
+        "confidence",
+        "FLOAT",
+        0,
+        null,
+        0
+      ],
+      [
+        "candidate_movie_ids",
+        "JSON",
+        0,
+        null,
+        0
+      ],
+      [
+        "resolved_at",
+        "DATETIME",
+        0,
+        null,
+        0
+      ]
+    ],
+    "indexes": [
+      {
+        "name": "ix_source_reconciliation_matches_movie_id",
+        "unique": 0,
+        "origin": "c",
+        "partial": 0,
+        "columns": [
+          "movie_id"
+        ]
+      },
+      {
+        "name": "ix_source_reconciliation_matches_type",
+        "unique": 0,
+        "origin": "c",
+        "partial": 0,
+        "columns": [
+          "match_type"
+        ]
+      },
+      {
+        "name": "sqlite_autoindex_source_reconciliation_matches_1",
+        "unique": 1,
+        "origin": "u",
+        "partial": 0,
+        "columns": [
+          "source_row_id"
+        ]
+      }
+    ],
+    "foreign_keys": [
+      [
+        "movies",
+        "movie_id",
+        "id",
+        "NO ACTION",
+        "SET NULL",
+        "NONE"
+      ],
+      [
+        "source_movie_rows",
+        "source_row_id",
+        "id",
+        "NO ACTION",
+        "CASCADE",
+        "NONE"
+      ]
+    ]
+  },
+  "source_snapshots": {
+    "columns": [
+      [
+        "id",
+        "INTEGER",
+        1,
+        null,
+        1
+      ],
+      [
+        "filename",
+        "VARCHAR(255)",
+        1,
+        null,
+        0
+      ],
+      [
+        "file_sha256",
+        "VARCHAR(64)",
+        1,
+        null,
+        0
+      ],
+      [
+        "raw_csv",
+        "TEXT",
+        1,
+        null,
+        0
+      ],
+      [
+        "row_count",
+        "INTEGER",
+        1,
+        null,
+        0
+      ],
+      [
+        "status",
+        "VARCHAR(20)",
+        1,
+        null,
+        0
+      ],
+      [
+        "uploaded_by_profile_id",
+        "INTEGER",
+        0,
+        null,
+        0
+      ],
+      [
+        "uploaded_at",
+        "DATETIME",
+        1,
+        "CURRENT_TIMESTAMP",
+        0
+      ],
+      [
+        "confirmed_at",
+        "DATETIME",
+        0,
+        null,
+        0
+      ]
+    ],
+    "indexes": [
+      {
+        "name": "ix_source_snapshots_status_uploaded",
+        "unique": 0,
+        "origin": "c",
+        "partial": 0,
+        "columns": [
+          "status",
+          "uploaded_at"
+        ]
+      },
+      {
+        "name": "sqlite_autoindex_source_snapshots_1",
+        "unique": 1,
+        "origin": "u",
+        "partial": 0,
+        "columns": [
+          "file_sha256"
+        ]
+      }
+    ],
+    "foreign_keys": [
+      [
+        "profiles",
+        "uploaded_by_profile_id",
+        "id",
+        "NO ACTION",
+        "SET NULL",
+        "NONE"
+      ]
+    ]
+  },
+  "usage_events": {
+    "columns": [
+      [
+        "id",
+        "INTEGER",
+        1,
+        null,
+        1
+      ],
+      [
+        "event_name",
+        "VARCHAR(40)",
+        1,
+        null,
+        0
+      ],
+      [
+        "profile_id",
+        "INTEGER",
+        0,
+        null,
+        0
+      ],
+      [
+        "movie_id",
+        "INTEGER",
+        0,
+        null,
+        0
+      ],
+      [
+        "page",
+        "VARCHAR(20)",
+        1,
+        null,
+        0
+      ],
+      [
+        "context",
+        "VARCHAR(40)",
+        0,
+        null,
+        0
+      ],
+      [
+        "created_at",
+        "DATETIME",
+        1,
+        "CURRENT_TIMESTAMP",
+        0
+      ]
+    ],
+    "indexes": [
+      {
+        "name": "ix_usage_events_movie_id",
+        "unique": 0,
+        "origin": "c",
+        "partial": 0,
+        "columns": [
+          "movie_id"
+        ]
+      },
+      {
+        "name": "ix_usage_events_name_created",
+        "unique": 0,
+        "origin": "c",
+        "partial": 0,
+        "columns": [
+          "event_name",
+          "created_at"
+        ]
+      },
+      {
+        "name": "ix_usage_events_profile_id",
+        "unique": 0,
+        "origin": "c",
+        "partial": 0,
+        "columns": [
+          "profile_id"
+        ]
+      }
+    ],
+    "foreign_keys": [
+      [
+        "movies",
+        "movie_id",
+        "id",
+        "NO ACTION",
+        "SET NULL",
+        "NONE"
+      ],
+      [
+        "profiles",
+        "profile_id",
+        "id",
+        "NO ACTION",
+        "SET NULL",
+        "NONE"
+      ]
+    ]
+  }
+}

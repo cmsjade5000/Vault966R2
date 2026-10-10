@@ -8,11 +8,14 @@
 {% block body_class %}auth-page{% if unlocked %} auth-page--unlocked{% endif %}{% endblock %}
 {% block content %}
   <div class="login-archive{% if unlocked %} is-unlocked{% endif %}" aria-hidden="true">
-    {% for poster_url in archive_tiles %}
+    {% for poster in archive_tiles %}
     <span class="login-archive__poster">
-      {% if poster_url %}
+      {% if poster %}
       <img
-        src="{{ poster_url }}"
+        src="{{ poster.url }}"
+        width="{{ poster.width }}"
+        height="{{ poster.height }}"
+        fetchpriority="low"
         alt=""
         loading="lazy"
         decoding="async"
@@ -35,7 +38,7 @@
     <div class="login-card">
       <header class="login-card__header">
         <span class="login-card__label">Archive Terminal</span>
-        <h1>Vault 966</h1>
+        <h1>{{ "Switch person" if switching else "Vault 966" }}</h1>
       </header>
       <div class="login-ticker" aria-hidden="true">
         <div class="login-ticker__belt">
@@ -64,25 +67,34 @@
       <form
         class="login-form"
         method="post"
-        aria-label="Unlock Vault 966"
+        action="{{ form_action }}"
+        aria-label="{{ 'Switch person' if switching else 'Sign in to Vault 966' }}"
       >
         <div class="login-fields">
-          <label class="login-field">
-            <span>Access key</span>
+          <label class="login-field" for="login-username">
+            <span>Username</span>
             <input
+              id="login-username"
               type="text"
               name="access_key"
+              inputmode="text"
               autocomplete="username"
+              autocapitalize="none"
+              spellcheck="false"
+              enterkeyhint="next"
               maxlength="128"
               required
             />
           </label>
-          <label class="login-field">
-            <span>Passcode</span>
+          <label class="login-field" for="login-password">
+            <span>Password</span>
             <input
+              id="login-password"
               type="password"
               name="passcode"
+              inputmode="text"
               autocomplete="current-password"
+              enterkeyhint="go"
               maxlength="128"
               required
             />
@@ -97,12 +109,18 @@
                 <path d="M12 14v2" />
               </svg>
             </span>
-            <span class="login-button__value">Unlock the vault</span>
+            <span class="login-button__value">{{ "Switch person" if switching else "Sign in" }}</span>
             <span class="login-button__arrow" aria-hidden="true">→</span>
           </button>
         </div>
       </form>
+      {% if switching %}
+      <p class="setup-card__note">Your current session stays open until the other person signs in successfully.</p>
+      <a class="nav-link" href="/ui/movies">Cancel and go back</a>
+      {% endif %}
+      {% if profile_options %}
       <div class="login-profiles" aria-label="Choose profile">
+        <p class="setup-card__note">Shared access is verified. Choose the person using this device.</p>
         {% for profile in profile_options %}
         <form
           class="login-profile-form"
@@ -124,6 +142,7 @@
         </form>
         {% endfor %}
       </div>
+      {% endif %}
       {% endif %}
     </div>
   </section>
