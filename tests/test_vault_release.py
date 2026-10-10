@@ -166,11 +166,20 @@ def test_runtime_and_test_locks_agree_with_direct_requirements():
     runtime = release.locked_packages(root / "requirements.lock")
     development = release.locked_packages(root / "requirements-dev.lock")
     assert all(development.get(name) == version for name, version in runtime.items())
-    for line in (root / "requirements.txt").read_text().splitlines():
-        if not line.strip() or line.lstrip().startswith("#"):
-            continue
-        required = Requirement(line.split("#", 1)[0].strip())
-        assert runtime[canonicalize_name(required.name)] in required.specifier
+    for filename, packages in (
+        ("requirements.txt", runtime),
+        ("requirements-dev.txt", development),
+    ):
+        for line in (root / filename).read_text().splitlines():
+            value = line.split("#", 1)[0].strip()
+            if not value or value.startswith("-r "):
+                continue
+            required = Requirement(value)
+            name = canonicalize_name(required.name)
+            assert name in packages, f"{filename}: {name} is missing from its lock"
+            assert (
+                packages[name] in required.specifier
+            ), f"{filename}: locked {name}=={packages[name]} does not satisfy {value}"
 
 
 def test_stage_rejects_extra_or_symlinked_payload(staged):
