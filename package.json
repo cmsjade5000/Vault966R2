@@ -4,7 +4,7 @@
   "private": true,
   "devDependencies": {
     "openapi-typescript": "^7.13.0",
-    "prettier": "^3.9.9"
+    "prettier": "^3.9.10"
   },
   "overrides": {
     "js-yaml": "^4.3.2",
