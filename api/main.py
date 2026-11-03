@@ -327,6 +327,7 @@ class AuthRequiredMiddleware(BaseHTTPMiddleware):
         "/login",
         "/logout",
         "/setup",
+        "/setup/claim",
         "/health",
         "/livez",
         "/readyz",
@@ -378,17 +379,24 @@ class AuthRequiredMiddleware(BaseHTTPMiddleware):
             )
         return candidate == token
 
-    def _set_session_role(self, request: Request) -> None:
+    def _set_session_role(self, request: Request, expected_revision: int = 0) -> bool:
         profile_id = getattr(request.state, "session_profile_id", None)
         if not isinstance(profile_id, int) or profile_id <= 0:
-            return
+            return False
 
         db_override = request.app.dependency_overrides.get(get_db)
         db_generator = db_override() if db_override else None
         db = next(db_generator) if db_generator else SessionLocal()
         try:
             profile = db.get(Profile, profile_id)
-            request.state.session_profile_role = getattr(profile, "role", None) or ROLE_REVIEWER
+            if (
+                profile is None
+                or profile.archived_at is not None
+                or profile.session_revision != expected_revision
+            ):
+                return False
+            request.state.session_profile_role = profile.role or ROLE_REVIEWER
+            return True
         finally:
             if db_generator:
                 try:
@@ -434,8 +442,9 @@ class AuthRequiredMiddleware(BaseHTTPMiddleware):
             session = parse_session_token(token, secret=secret)
             if session:
                 request.state.session_profile_id = session.profile_id
-                self._set_session_role(request)
-                return await call_next(request)
+                if self._set_session_role(request, session.revision):
+                    return await call_next(request)
+                request.state.session_profile_id = None
             if self._assistant_token_valid(request):
                 return await call_next(request)
             if not settings.assistant_access_token:
@@ -460,7 +469,9 @@ class AuthRequiredMiddleware(BaseHTTPMiddleware):
             return self._reject(request, message="Login required.")
 
         request.state.session_profile_id = session.profile_id
-        self._set_session_role(request)
+        if not self._set_session_role(request, session.revision):
+            request.state.session_profile_id = None
+            return self._reject(request, message="Login required.")
         return await call_next(request)
 
     def _reject(self, request: Request, *, message: str, setup_required: bool = False):

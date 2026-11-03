@@ -11,17 +11,20 @@
     <header class="match-heading">
       <div>
         <p class="match-kicker">Movie Night Picker</p>
-        <h1>Set the tone. Skip the scroll.</h1>
+        <h1>{{ "Your picks for tonight" if result.complete else "Set the tone. Skip the scroll." }}</h1>
+        {% if not result.complete %}
         <p class="match-heading__intro">Choose the preferences that matter tonight and skip the rest. The Vault will return three to five strong options with a reason for each.</p>
         <p class="match-pool-readout" aria-live="polite" data-match-count>
           {{ result.trusted_pool_count }} trusted titles
           {% if result.answers %}&rarr; {{ result.candidate_count }} left{% endif %}
         </p>
+        {% endif %}
       </div>
       <a class="button-ghost match-reset-link" href="/ui/match" data-match-reset>Start over</a>
     </header>
 
     <section class="match-flow" aria-label="Movie Night Picker">
+      {% if not result.complete %}
       <ol class="match-progress" aria-label="Picker progress">
         {% for question in questions %}
         {% set step_done = loop.index <= result.answers|length %}
@@ -32,8 +35,10 @@
         ><span class="sr-only">Step {{ loop.index }} of {{ questions|length }}: {{ question.id | title }}{% if step_done %}, complete{% elif step_current %}, current{% endif %}</span></li>
         {% endfor %}
       </ol>
+      {% endif %}
 
       <div class="match-console{% if result.complete %} is-complete{% endif %}">
+        {% if not result.complete %}
         <aside class="match-trail" aria-label="Selected preferences">
           <p class="match-kicker">Your night</p>
           {% if result.step_states %}
@@ -55,6 +60,7 @@
           <p>No preferences selected yet.</p>
           {% endif %}
         </aside>
+        {% endif %}
 
       {% if result.current_question %}
       <div class="match-question" data-match-question>
@@ -117,31 +123,16 @@
             {% if result.fallback_notice %}
             <p class="match-notice">{{ result.fallback_notice }}</p>
             {% endif %}
-            <div class="match-reasons" aria-label="Why this matched">
-              {% for reason in result.lead.reasons %}<span>{{ reason }}</span>{% endfor %}
-            </div>
-            <p class="match-why"><strong>Why it fits:</strong> {{ result.lead.why_it_fits }}</p>
-            <div class="match-lead__actions" aria-label="Actions for {{ result.lead.movie.title | display_title }}">
-              <a class="button-primary" href="/ui/movies/{{ result.lead.movie.id }}?return_to={{ match_return_to | urlencode }}" data-movie-detail-link data-event-context="match_open">Open</a>
-              {% if result.library_filter_query %}
-              <a class="button-secondary" href="/ui/movies?{{ result.library_filter_query }}">View these filters in Library</a>
+            <div class="match-lead__actions" aria-label="Choose {{ result.lead.movie.title | display_title }}">
+              <a class="button-primary" href="/ui/movies/{{ result.lead.movie.id }}?return_to={{ match_return_to | urlencode }}" data-movie-detail-link data-event-context="match_open" data-match-primary>View movie <span aria-hidden="true">→</span></a>
+              {% if result.reroll_pool_size > 1 %}
+              <a class="button-ghost" href="/ui/match?answers={{ answers_query | urlencode }}&amp;reroll={{ next_reroll }}" data-match-reroll>Try another</a>
               {% endif %}
+            </div>
+            <div class="match-lead__preferences" aria-label="Preferences for {{ result.lead.movie.title | display_title }}">
               <button
                 type="button"
-                class="discover-action{% if result.lead.movie.watchlist %} is-active{% endif %}"
-                data-preference-button
-                data-preference-type="watchlist"
-                data-movie-id="{{ result.lead.movie.id }}"
-                data-movie-title="{{ result.lead.movie.title | display_title }}"
-                aria-label="{{ 'Remove' if result.lead.movie.watchlist else 'Add' }} {{ result.lead.movie.title | display_title }} {{ 'from' if result.lead.movie.watchlist else 'to' }} watchlist"
-                aria-pressed="{{ 'true' if result.lead.movie.watchlist else 'false' }}"
-              >
-                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1z"></path></svg>
-                <span>Watchlist</span>
-              </button>
-              <button
-                type="button"
-                class="discover-action{% if result.lead.movie.liked %} is-active{% endif %}"
+                class="preference-icon{% if result.lead.movie.liked %} is-active{% endif %}"
                 data-preference-button
                 data-preference-type="like"
                 data-movie-id="{{ result.lead.movie.id }}"
@@ -152,17 +143,45 @@
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8l1.1 1.1L12 21.2l7.8-7.7 1.1-1.1a5.5 5.5 0 0 0-.1-7.8z"></path></svg>
                 <span>Like</span>
               </button>
+              <button
+                type="button"
+                class="preference-icon{% if result.lead.movie.watchlist %} is-active{% endif %}"
+                data-preference-button
+                data-preference-type="watchlist"
+                data-movie-id="{{ result.lead.movie.id }}"
+                data-movie-title="{{ result.lead.movie.title | display_title }}"
+                aria-label="{{ 'Remove' if result.lead.movie.watchlist else 'Add' }} {{ result.lead.movie.title | display_title }} {{ 'from' if result.lead.movie.watchlist else 'to' }} watchlist"
+                aria-pressed="{{ 'true' if result.lead.movie.watchlist else 'false' }}"
+              >
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1z"></path></svg>
+                <span>Watchlist</span>
+              </button>
             </div>
-            <div class="match-result-actions">
-              {% if result.reroll_pool_size > 1 %}
-              <a class="button-secondary" href="/ui/match?answers={{ answers_query | urlencode }}&amp;reroll={{ next_reroll }}" data-match-reroll>Try another</a>
-              {% else %}
-              <p class="match-notice" role="status">There isn't another eligible pick in this pool. Edit a preference to find more options.</p>
-              {% endif %}
-              <a class="button-ghost" href="/ui/match">Start over</a>
-            </div>
+            <details class="match-fit-details">
+              <summary>Why this pick</summary>
+              <p class="match-why"><strong>Why it fits:</strong> {{ result.lead.why_it_fits }}</p>
+            </details>
+            {% if result.reroll_pool_size <= 1 %}
+            <p class="match-notice" role="status">There isn't another eligible pick in this pool. Edit a preference to find more options.</p>
+            {% endif %}
           </div>
         </article>
+
+        <details class="match-preferences" aria-label="Selected preferences">
+          <summary>Edit your preferences</summary>
+          <div class="match-preferences__body">
+            <p class="match-kicker">Your night</p>
+            <ol>
+              {% for step in result.step_states %}
+              <li><a href="/ui/match?answers={{ answers_query | urlencode }}&amp;edit={{ loop.index0 }}" data-match-edit aria-label="Edit {{ step.label }}">{{ step.label }}</a></li>
+              {% endfor %}
+            </ol>
+            <p class="match-pool-readout" data-match-count>{{ result.trusted_pool_count }} trusted titles &rarr; {{ result.candidate_count }} left</p>
+            {% if result.library_filter_query %}
+            <a class="match-library-link" href="/ui/movies?{{ result.library_filter_query }}">View these filters in Library</a>
+            {% endif %}
+          </div>
+        </details>
 
         {% if result.supporting %}
         <section class="match-shortlist" aria-labelledby="match-shortlist-title">

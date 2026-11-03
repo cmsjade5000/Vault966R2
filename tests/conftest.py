@@ -29,6 +29,9 @@ from api.models.person import Role  # noqa: F401 - ensure mapper registration
 @pytest.fixture(autouse=True)
 def _reset_provider_work_budgets():
     clear_provider_work_budgets_for_tests()
+    from api.routers.ui.setup import claim_attempt_limiter
+
+    claim_attempt_limiter.clear("127.0.0.1")
     yield
     clear_provider_work_budgets_for_tests()
 
@@ -160,6 +163,7 @@ def login_profile(client: TestClient, monkeypatch):
 
         unlock = client.post(
             "/login",
+            headers={"Origin": "http://testserver"},
             data={"access_key": "vault", "passcode": "966"},
             follow_redirects=False,
         )
@@ -168,6 +172,7 @@ def login_profile(client: TestClient, monkeypatch):
 
         response = client.post(
             "/login",
+            headers={"Origin": "http://testserver"},
             data={"profile_id": str(profile_id)},
             follow_redirects=False,
         )

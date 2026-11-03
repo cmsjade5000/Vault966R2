@@ -1,4 +1,14 @@
 (() => {
+  const isStandalone = () =>
+    window.navigator?.standalone === true ||
+    Boolean(window.matchMedia?.("(display-mode: standalone)")?.matches);
+
+  const releaseSuspendedInput = () => {
+    if (!isStandalone()) return;
+    const input = document.activeElement;
+    if (input?.matches?.(".login-form input")) input.blur();
+  };
+
   const applyUnlockVisuals = () => {
     document.body.classList.add("auth-page--unlocked");
     const shell = document.querySelector(".login-shell");
@@ -25,6 +35,13 @@
     }
 
     const form = document.querySelector(".login-form");
+    form?.querySelectorAll?.(".login-field input").forEach((input) => {
+      input.addEventListener("click", () => {
+        // Request focus synchronously inside the tap, preserving native editing.
+        // Keep the request in the user gesture instead of scheduling autofocus.
+        if (isStandalone() && !input.disabled && !input.readOnly) input.focus();
+      });
+    });
     const errorEl = document.querySelector(".login-card__error");
     const showProfileBusy = (message = "Unlocking the Vault…") => {
       if (typeof window.setVaultBusy === "function") {
@@ -51,6 +68,8 @@
       if (!errorEl) return;
       errorEl.textContent = message;
       errorEl.hidden = false;
+      errorEl.setAttribute?.("tabindex", "-1");
+      errorEl.focus?.();
     };
 
     form?.addEventListener("submit", async (event) => {
@@ -59,6 +78,8 @@
       if (form.dataset.submitting === "true") return;
       clearError();
       form.dataset.submitting = "true";
+      const submitButton = form.querySelector('button[type="submit"]');
+      if (submitButton) submitButton.disabled = true;
       try {
         const response = await fetch(form.action || "/login", {
           method: "POST",
@@ -66,6 +87,15 @@
           headers: { Accept: "application/json" },
         });
         const payload = await response.json().catch(() => ({}));
+        if (
+          response.ok &&
+          payload.ok &&
+          payload.redirect_url === "/ui/movies"
+        ) {
+          form.reset();
+          window.location.assign(payload.redirect_url);
+          return;
+        }
         if (!response.ok || !payload.unlocked) {
           showError(payload.error || "Unable to unlock the vault.");
           return;
@@ -76,6 +106,7 @@
         showError("Unable to unlock the vault.");
       } finally {
         form.dataset.submitting = "false";
+        if (submitButton) submitButton.disabled = false;
       }
     });
 
@@ -108,6 +139,22 @@
       });
     });
   };
+
+  window.addEventListener("pageshow", (event) => {
+    if (!event.persisted) return;
+    releaseSuspendedInput();
+    const form = document.querySelector(".login-form");
+    form?.reset();
+    if (form) form.dataset.submitting = "false";
+    const button = form?.querySelector('button[type="submit"]');
+    if (button) button.disabled = false;
+  });
+
+  // Release editing focus on suspension so a returning tap starts fresh.
+  window.addEventListener("pagehide", releaseSuspendedInput);
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) releaseSuspendedInput();
+  });
 
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", initLogin, { once: true });

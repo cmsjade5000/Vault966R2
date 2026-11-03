@@ -129,18 +129,35 @@
                 >Vault Health</a
               >
               {% endif %}
-              {% if request.state.session_profile_id %}
-              <form
-                class="nav-logout"
-                method="post"
-                action="/logout"
-                data-vault-busy-message="Locking the Vault…"
-              >
-                <button class="nav-link nav-link--logout" type="submit">Log out</button>
-              </form>
-              {% endif %}
             </div>
           </nav>
+          {% if request.state.session_profile_id %}
+          <details class="profile-menu" data-profile-menu>
+            <summary
+              class="profile-menu__trigger"
+              data-profile-menu-trigger
+              aria-label="Profile menu"
+              aria-controls="profile-menu-panel"
+              title="Your profile"
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <circle cx="12" cy="8" r="3.5"></circle>
+                <path d="M5 21v-2a7 7 0 0 1 14 0v2"></path>
+              </svg>
+            </summary>
+            <div class="profile-menu__panel" id="profile-menu-panel" data-profile-menu-panel>
+              <p class="profile-menu__heading">Your profile</p>
+              <a class="profile-menu__item" href="/ui/switch-person">Switch person</a>
+              {% if request.state.session_profile_role == 'admin' %}
+              <a class="profile-menu__item" href="/ui/profiles/new">Add a person</a>
+              {% endif %}
+              <div class="profile-menu__divider" aria-hidden="true"></div>
+              <form method="post" action="/logout" data-vault-busy-message="Locking the Vault…">
+                <button class="profile-menu__item" type="submit">Log out</button>
+              </form>
+            </div>
+          </details>
+          {% endif %}
         </div>
       </header>
       {% if current_path != '/login' %}
@@ -322,6 +339,7 @@
     <script src="{{ static_asset('js/dialog.js') }}" defer></script>
     <script src="{{ static_asset('js/poster_fallback.js') }}" defer></script>
     {% if request.state.session_profile_id %}
+    <script src="{{ static_asset('js/profile_menu.js') }}" defer></script>
     <script src="{{ static_asset('js/auto_lock.js') }}" defer></script>
     {% endif %}
     <script src="{{ static_asset('js/back_link.js') }}" defer></script>

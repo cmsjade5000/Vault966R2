@@ -67,3 +67,14 @@ def credential_matches(
         access_key_hash,
         credential.access_key_hash,
     ) and hmac.compare_digest(passcode_hash, credential.passcode_hash)
+
+
+def access_key_matches(credential: ProfileCredential, *, access_key: str) -> bool:
+    if credential.kdf_name != KDF_NAME:
+        return False
+    return hmac.compare_digest(
+        _hash_secret(
+            access_key, salt_hex=credential.access_key_salt, iterations=credential.kdf_iterations
+        ),
+        credential.access_key_hash,
+    )

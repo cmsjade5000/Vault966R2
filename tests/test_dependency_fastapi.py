@@ -66,19 +66,28 @@ def test_actual_app_lifespan_auth_and_telemetry(tmp_path, invalid_telemetry):
                 blocked = client.get("/ui/movies")
                 assert blocked.status_code == 302
                 assert blocked.headers["location"] == "/login"
+                credentials = {
+                    "access_key": env["LOGIN_ACCESS_KEY"],
+                    "passcode": env["LOGIN_PASSCODE"],
+                }
+                for headers in ({}, {"Origin": "http://synthetic-foreign.example"}):
+                    rejected = client.post("/login", data=credentials, headers=headers)
+                    assert rejected.status_code == 403
+                    assert client.get("/ui/movies").status_code == 302
+                same_origin = {
+                    "Accept": "application/json",
+                    "Origin": f"http://127.0.0.1:{port}",
+                }
                 unlocked = client.post(
                     "/login",
-                    data={
-                        "access_key": env["LOGIN_ACCESS_KEY"],
-                        "passcode": env["LOGIN_PASSCODE"],
-                    },
-                    headers={"Accept": "application/json"},
+                    data=credentials,
+                    headers=same_origin,
                 )
                 assert unlocked.status_code == 200
                 selected = client.post(
                     "/login",
                     data={"profile_id": "1"},
-                    headers={"Accept": "application/json"},
+                    headers=same_origin,
                 )
                 assert selected.status_code == 200
                 assert client.get("/ui/movies").status_code == 200

@@ -53,11 +53,11 @@ const loadSetup = () => {
   return { confirm, errorEl, form, passcode };
 };
 
-test("setup form blocks mismatched passcodes before submit", () => {
+test("setup form blocks mismatched passwords before submit", () => {
   const { confirm, errorEl, form, passcode } = loadSetup();
   let prevented = 0;
-  passcode.value = "9660";
-  confirm.value = "wrong";
+  passcode.value = "dummy-password-one";
+  confirm.value = "dummy-password-two";
 
   form.listeners.get("submit")({
     preventDefault() {
@@ -66,17 +66,17 @@ test("setup form blocks mismatched passcodes before submit", () => {
   });
 
   assert.equal(prevented, 1);
-  assert.equal(confirm.validityMessage, "Passcodes do not match.");
+  assert.equal(confirm.validityMessage, "Passwords do not match.");
   assert.equal(confirm.focusCount, 1);
   assert.equal(errorEl.hidden, false);
-  assert.equal(errorEl.textContent, "Passcodes do not match.");
+  assert.equal(errorEl.textContent, "Passwords do not match.");
 });
 
-test("setup form allows matching passcodes", () => {
+test("setup form allows matching passwords", () => {
   const { confirm, form, passcode } = loadSetup();
   let prevented = 0;
-  passcode.value = "9660";
-  confirm.value = "9660";
+  passcode.value = "dummy-password-one";
+  confirm.value = "dummy-password-one";
 
   form.listeners.get("submit")({
     preventDefault() {
@@ -86,4 +86,43 @@ test("setup form allows matching passcodes", () => {
 
   assert.equal(prevented, 0);
   assert.equal(confirm.validityMessage, "");
+});
+
+test("editing a rejected password clears the error and custom validity", () => {
+  const { confirm, errorEl, form, passcode } = loadSetup();
+  passcode.value = "dummy-password-one";
+  confirm.value = "dummy-password-two";
+  form.listeners.get("submit")({ preventDefault() {} });
+  assert.equal(errorEl.hidden, false);
+  assert.equal(confirm.validityMessage, "Passwords do not match.");
+
+  confirm.value = passcode.value;
+  form.listeners.get("input")({});
+
+  assert.equal(errorEl.hidden, true);
+  assert.equal(errorEl.textContent, "");
+  assert.equal(confirm.validityMessage, "");
+  let prevented = 0;
+  form.listeners.get("submit")({
+    preventDefault() {
+      prevented += 1;
+    },
+  });
+  assert.equal(prevented, 0);
+});
+
+test("password matching preserves whitespace rather than normalizing credentials", () => {
+  const { confirm, form, passcode } = loadSetup();
+  passcode.value = "dummy-password-one ";
+  confirm.value = "dummy-password-one";
+  let prevented = 0;
+
+  form.listeners.get("submit")({
+    preventDefault() {
+      prevented += 1;
+    },
+  });
+
+  assert.equal(prevented, 1);
+  assert.equal(confirm.validityMessage, "Passwords do not match.");
 });

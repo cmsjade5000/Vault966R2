@@ -15,13 +15,13 @@ def test_login_page_only_shows_unlock_action(client: TestClient):
     response = client.get("/login")
 
     assert response.status_code == 200
-    assert 'aria-label="Unlock Vault 966"' in response.text
+    assert 'aria-label="Sign in to Vault 966"' in response.text
     assert "data-vault-auto-lock" not in response.text
     assert "js/auto_lock.js" not in response.text
-    assert "Access key" in response.text
-    assert "Passcode" in response.text
+    assert "Username" in response.text
+    assert "Password" in response.text
     assert "Your private film archive is standing by." not in response.text
-    assert "Unlock the vault" in response.text
+    assert "Sign in" in response.text
     assert "User A" in response.text
     assert "User B" in response.text
     assert 'class="login-form"' in response.text
@@ -61,8 +61,8 @@ def test_public_login_uses_static_archive_art(
 
     assert response.status_code == 200
     assert private_poster_url not in response.text
-    assert 'src="http://testserver/static/img/app-icon.png"' in response.text
-    assert '"http://testserver/static/img/app-icon.png"' in response.text
+    assert 'src="http://testserver/static/img/login-posters/poster-' in response.text
+    assert '"http://testserver/static/img/login-posters/poster-01.jpg?v=' in response.text
     assert "collection.example" not in response.text
 
 
@@ -93,7 +93,7 @@ def test_unlock_reveals_profile_picker_without_session(client: TestClient, monke
     response = client.post(
         "/login",
         data={"access_key": "vault", "passcode": "966"},
-        headers={"Accept": "application/json"},
+        headers={"Origin": "http://testserver", "Accept": "application/json"},
     )
 
     assert response.status_code == 200
@@ -114,14 +114,14 @@ def test_profile_tap_creates_selected_profile_session(client: TestClient, monkey
     unlock = client.post(
         "/login",
         data={"access_key": "vault", "passcode": "966"},
-        headers={"Accept": "application/json"},
+        headers={"Origin": "http://testserver", "Accept": "application/json"},
     )
     assert unlock.status_code == 200
 
     response = client.post(
         "/login",
         data={"profile_id": "2"},
-        headers={"Accept": "application/json"},
+        headers={"Origin": "http://testserver", "Accept": "application/json"},
     )
 
     assert response.status_code == 200
@@ -147,6 +147,7 @@ def test_profile_form_redirects_without_javascript(client: TestClient, monkeypat
 
     response = client.post(
         "/login",
+        headers={"Origin": "http://testserver"},
         data={"access_key": "vault", "passcode": "966"},
         follow_redirects=False,
     )
@@ -157,6 +158,7 @@ def test_profile_form_redirects_without_javascript(client: TestClient, monkeypat
 
     response = client.post(
         "/login",
+        headers={"Origin": "http://testserver"},
         data={"profile_id": "1"},
         follow_redirects=False,
     )
@@ -175,7 +177,7 @@ def test_login_rejects_invalid_credentials(client: TestClient, monkeypatch):
     response = client.post(
         "/login",
         data={"profile_id": "1", "access_key": "vault", "passcode": "wrong"},
-        headers={"Accept": "application/json"},
+        headers={"Origin": "http://testserver", "Accept": "application/json"},
     )
 
     assert response.status_code == 401
@@ -194,14 +196,14 @@ def test_login_throttles_repeated_invalid_credentials(client: TestClient, monkey
         response = client.post(
             "/login",
             data={"access_key": "vault", "passcode": "wrong"},
-            headers={"Accept": "application/json"},
+            headers={"Origin": "http://testserver", "Accept": "application/json"},
         )
         assert response.status_code == 401
 
     blocked = client.post(
         "/login",
         data={"access_key": "vault", "passcode": "966"},
-        headers={"Accept": "application/json"},
+        headers={"Origin": "http://testserver", "Accept": "application/json"},
     )
     assert blocked.status_code == 429
     assert blocked.json() == {"error": "Too many login attempts. Please try again later."}
@@ -219,7 +221,7 @@ def test_valid_login_clears_its_failed_attempts(client: TestClient, monkeypatch)
             client.post(
                 "/login",
                 data={"access_key": "vault", "passcode": "wrong"},
-                headers={"Accept": "application/json"},
+                headers={"Origin": "http://testserver", "Accept": "application/json"},
             ).status_code
             == 401
         )
@@ -228,7 +230,7 @@ def test_valid_login_clears_its_failed_attempts(client: TestClient, monkeypatch)
         client.post(
             "/login",
             data={"access_key": "vault", "passcode": "966"},
-            headers={"Accept": "application/json"},
+            headers={"Origin": "http://testserver", "Accept": "application/json"},
         ).status_code
         == 200
     )
@@ -239,7 +241,7 @@ def test_valid_login_clears_its_failed_attempts(client: TestClient, monkeypatch)
             client.post(
                 "/login",
                 data={"access_key": "vault", "passcode": "wrong"},
-                headers={"Accept": "application/json"},
+                headers={"Origin": "http://testserver", "Accept": "application/json"},
             ).status_code
             == 401
         )
@@ -255,7 +257,7 @@ def test_signed_unlock_token_bypasses_login_attempt_limit(client: TestClient, mo
     unlock = client.post(
         "/login",
         data={"access_key": "vault", "passcode": "966"},
-        headers={"Accept": "application/json"},
+        headers={"Origin": "http://testserver", "Accept": "application/json"},
     )
     assert unlock.status_code == 200
 
@@ -266,7 +268,7 @@ def test_signed_unlock_token_bypasses_login_attempt_limit(client: TestClient, mo
     response = client.post(
         "/login",
         data={"profile_id": "1"},
-        headers={"Accept": "application/json"},
+        headers={"Origin": "http://testserver", "Accept": "application/json"},
     )
     assert response.status_code == 200
 
@@ -287,6 +289,7 @@ def test_login_error_uses_static_archive_art(
 
     response = client.post(
         "/login",
+        headers={"Origin": "http://testserver"},
         data={"profile_id": "1", "access_key": "vault", "passcode": "wrong"},
     )
 
@@ -295,7 +298,7 @@ def test_login_error_uses_static_archive_art(
     assert "Maintainer action required" not in response.text
     assert 'class="login-form"' in response.text
     assert private_poster_url not in response.text
-    assert 'src="http://testserver/static/img/app-icon.png"' in response.text
+    assert 'src="http://testserver/static/img/login-posters/poster-' in response.text
     assert "collection.example" not in response.text
 
 
@@ -312,7 +315,7 @@ def test_login_fails_closed_when_credentials_missing(client: TestClient, monkeyp
     response = client.post(
         "/login",
         data={"profile_id": "1"},
-        headers={"Accept": "application/json"},
+        headers={"Origin": "http://testserver", "Accept": "application/json"},
     )
 
     assert response.status_code == 503
@@ -362,3 +365,44 @@ def test_logout_clears_saved_library_search(client: TestClient) -> None:
     set_cookie = response.headers["set-cookie"]
     assert f'{FILTER_COOKIE_NAME}=""' in set_cookie
     assert f"Path={FILTER_COOKIE_PATH}" in set_cookie
+
+
+def test_public_login_posters_are_fixed_metadata_free_images(client, monkeypatch):
+    from pathlib import Path
+    from PIL import Image
+    from api.services.login_posters import login_posters
+
+    monkeypatch.setattr(settings, "disable_auth", False)
+    monkeypatch.setattr(settings, "login_access_key", "synthetic-key")
+    monkeypatch.setattr(settings, "login_passcode", "synthetic-passcode")
+    assert len(login_posters()) == 36
+    for poster in login_posters():
+        path = poster["path"]
+        response = client.get(f"/static/{path}")
+        assert response.status_code == 200
+        assert response.headers["content-type"] == "image/jpeg"
+        with Image.open(Path(__file__).resolve().parents[1] / "static" / path) as image:
+            assert image.width >= 250
+            assert image.height > image.width
+            assert not image.getexif()
+            assert "icc_profile" not in image.info
+            assert "comment" not in image.info
+
+    for path in ["/ui/movies", "/ui/posters/1/w342"]:
+        response = client.get(path, follow_redirects=False)
+        assert response.status_code == 302
+        assert response.headers["location"] == "/login"
+    assert client.get("/movies").status_code == 401
+
+
+def test_unavailable_login_artwork_never_blocks_sign_in_page(client, monkeypatch):
+    from api.routers.ui import login
+
+    def unavailable():
+        raise ValueError("Synthetic invalid artwork")
+
+    monkeypatch.setattr(login, "login_posters", unavailable)
+    response = client.get("/login")
+    assert response.status_code == 200
+    assert "Sign in" in response.text
+    assert '"posters": []' in response.text
