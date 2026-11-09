@@ -137,3 +137,66 @@ def test_postgres_vault_relationships_enum_and_schema_roundtrip():
                 conn.dialect.default_schema_name = default_schema
     finally:
         engine.dispose()
+
+
+@pytest.mark.integration
+def test_pgvector_movie_embedding_roundtrip_and_l2_ordering():
+    """Exercise Vault's vector type and distance operator on disposable PostgreSQL."""
+    from sqlalchemy import Column, Integer, MetaData, Table, select
+    from sqlalchemy.exc import StatementError
+
+    from api.models.semantic_search import MovieDocument
+
+    url = os.getenv("DEPENDENCY_TEST_DATABASE_URL")
+    if not url:
+        if os.getenv("REQUIRE_DEPENDENCY_POSTGRES") == "1":
+            pytest.fail("DEPENDENCY_TEST_DATABASE_URL is required for this job")
+        pytest.skip("Disposable dependency PostgreSQL database not configured")
+    assert url.startswith("postgresql+psycopg://")
+    embedding_type = MovieDocument.__table__.c.embedding.type
+    dimension = embedding_type.dim
+    query = [0.0] * dimension
+    near = [1.0] + [0.0] * (dimension - 1)
+    far = [3.0, 4.0] + [0.0] * (dimension - 2)
+    probe = Table(
+        "dependency_vector_probe",
+        MetaData(),
+        Column("id", Integer, primary_key=True),
+        Column("embedding", embedding_type),
+        prefixes=["TEMPORARY"],
+    )
+    engine = create_engine(url)
+    try:
+        with engine.connect() as conn:
+            transaction = conn.begin()
+            try:
+                conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
+                probe.create(conn)
+                conn.execute(
+                    probe.insert(),
+                    [
+                        {"id": 1, "embedding": near},
+                        {"id": 2, "embedding": far},
+                        {"id": 3, "embedding": None},
+                    ],
+                )
+                actual = conn.execute(select(probe.c.embedding).where(probe.c.id == 1)).scalar_one()
+                assert list(actual) == pytest.approx(near)
+                assert (
+                    conn.execute(select(probe.c.embedding).where(probe.c.id == 3)).scalar_one()
+                    is None
+                )
+                distance = probe.c.embedding.l2_distance(query)
+                rows = conn.execute(
+                    select(probe.c.id, distance.label("distance"))
+                    .where(probe.c.embedding.is_not(None))
+                    .order_by(distance)
+                ).all()
+                assert [row.id for row in rows] == [1, 2]
+                assert [row.distance for row in rows] == pytest.approx([1.0, 5.0])
+                with pytest.raises(StatementError, match="dimensions"):
+                    conn.execute(probe.insert(), {"id": 4, "embedding": [1.0]})
+            finally:
+                transaction.rollback()
+    finally:
+        engine.dispose()
