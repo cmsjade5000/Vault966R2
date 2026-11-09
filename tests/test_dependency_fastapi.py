@@ -12,8 +12,34 @@ import httpx
 import pytest
 
 
-@pytest.mark.parametrize("invalid_telemetry", [False, True])
-def test_actual_app_lifespan_auth_and_telemetry(tmp_path, invalid_telemetry):
+@pytest.mark.parametrize(
+    ("telemetry_env", "expect_telemetry_warning"),
+    [
+        pytest.param({}, False, id="default"),
+        pytest.param(
+            {"OTEL_EXPORTER_OTLP_ENDPOINT": "invalid-synthetic-endpoint"},
+            False,
+            id="otel-endpoint-does-not-opt-in",
+        ),
+        pytest.param(
+            {
+                "OTEL_EXPORTER_OTLP_ENDPOINT": "invalid-synthetic-endpoint",
+                "FASTAPI_OTEL_AUTO_CONFIGURE": "true",
+            },
+            True,
+            id="explicit-opt-in-fails-safely",
+        ),
+        pytest.param(
+            {
+                "OTEL_EXPORTER_OTLP_ENDPOINT": "invalid-synthetic-endpoint",
+                "FASTAPI_OTEL_AUTO_CONFIGURE": "false",
+            },
+            False,
+            id="explicit-opt-out",
+        ),
+    ],
+)
+def test_actual_app_lifespan_auth_and_telemetry(tmp_path, telemetry_env, expect_telemetry_warning):
     root = Path(__file__).resolve().parents[1]
     with socket.socket() as listener:
         listener.bind(("127.0.0.1", 0))
@@ -27,8 +53,8 @@ def test_actual_app_lifespan_auth_and_telemetry(tmp_path, invalid_telemetry):
         "LOGIN_PASSCODE": "synthetic-passcode",
         "LOGIN_SESSION_SECRET": "synthetic-session-secret-for-dependency-test",
     }
-    if invalid_telemetry:
-        env["OTEL_EXPORTER_OTLP_ENDPOINT"] = "invalid-synthetic-endpoint"
+    # Keep the subprocess environment isolated from any host telemetry settings.
+    env.update(telemetry_env)
     with (tmp_path / "server.log").open("w+") as log:
         process = subprocess.Popen(
             [
@@ -96,5 +122,5 @@ def test_actual_app_lifespan_auth_and_telemetry(tmp_path, invalid_telemetry):
         output = log.read()
         assert "Application startup complete" in output
         assert "Application shutdown complete" in output
-        if invalid_telemetry:
-            assert "automatic telemetry configuration failed" in output
+        # FastAPI 0.143 requires explicit opt-in before configuring an exporter.
+        assert ("automatic telemetry configuration failed" in output) is expect_telemetry_warning
