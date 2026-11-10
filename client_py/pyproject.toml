@@ -13,6 +13,8 @@ include = ["vault966r2_client/py.typed"]
 python = "^3.11"
 httpx = ">=0.23.1,<0.29.0"
 attrs = ">=22.2.0"
+# GHSA-6q48-6c7w-9gw2; 2026.10.19 retains unaffected emSign roots.
+certifi = ">=2026.10.19"
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
