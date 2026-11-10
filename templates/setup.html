@@ -1,77 +1,69 @@
 {% extends "base.html" %}
-{% block title %}Vault 966 · Setup{% endblock %}
+{% block title %}Vault 966 · {{ "Add a person" if enrollment else "Setup" }}{% endblock %}
 {% block head %}
 <link rel="stylesheet" href="{{ static_asset('css/login.css') }}" />
 <script src="{{ static_asset('js/setup.js') }}" defer></script>
+<script src="{{ static_asset('js/login_archive.js') }}" defer></script>
 {% endblock %}
 {% block body_class %}auth-page setup-page{% endblock %}
 {% block content %}
-  <section class="setup-shell" aria-label="Vault 966 first setup">
+  <div class="login-archive" aria-hidden="true">
+    {% for poster in archive_tiles %}
+    <span class="login-archive__poster">
+      {% if poster %}
+      <img src="{{ poster.url }}" width="{{ poster.width }}" height="{{ poster.height }}"
+        alt="" loading="lazy" decoding="async" fetchpriority="low" draggable="false" data-archive-img />
+      {% endif %}
+    </span>
+    {% endfor %}
+  </div>
+  <section class="setup-shell" aria-label="{{ 'Add a person' if enrollment else 'Vault 966 first setup' }}">
     <div class="login-card setup-card">
       <header class="login-card__header">
-        <span class="login-card__label">First Run</span>
-        <h1>Start Vault 966</h1>
+        <span class="login-card__label">{{ "Household" if enrollment else "Fresh start" }}</span>
+        <h1>{{ "Add a person" if enrollment else "Start Vault 966" }}</h1>
       </header>
       <p class="setup-card__intro">
-        Create the owner profile and the first access key before adding the collection.
+        {{ "Create a separate reviewer account. Their username and password will open their own Watchlist." if enrollment else "Create your owner account. Your name and password will take you straight into Vault 966." }}
       </p>
-      <p class="login-card__error" role="alert" {% if not error %}hidden{% endif %}>{{ error or "" }}</p>
-      <form class="login-form setup-form" method="post" action="/setup" data-setup-form data-vault-busy-message="Creating your Vault…">
+      <p class="login-card__error" role="alert" tabindex="-1" {% if not error %}hidden{% endif %}>{{ error or "" }}</p>
+      {% if created %}<p role="status">Person added. They can sign in with their own name and password.</p>{% endif %}
+      <form class="login-form setup-form" method="post" action="{{ form_action }}"
+        data-setup-form data-vault-busy-message="Creating your Vault…">
         <div class="login-fields">
           <label class="login-field">
-            <span>Profile name</span>
-            <input
-              type="text"
-              name="profile_name"
-              autocomplete="name"
-              maxlength="80"
-              value="{{ profile_name }}"
-              required
-            />
+            <span>Name (used to sign in)</span>
+            <input type="text" name="profile_name" autocomplete="username" autocapitalize="none"
+              spellcheck="false" enterkeyhint="next" maxlength="80" value="{{ profile_name }}" required />
           </label>
           <label class="login-field">
-            <span>Access key</span>
-            <input
-              type="text"
-              name="access_key"
-              autocomplete="username"
-              maxlength="128"
-              required
-            />
+            <span>Password</span>
+            <input type="password" name="passcode" autocomplete="new-password" enterkeyhint="next"
+              minlength="4" maxlength="128" required />
           </label>
           <label class="login-field">
-            <span>Passcode</span>
-            <input
-              type="password"
-              name="passcode"
-              autocomplete="new-password"
-              minlength="4"
-              maxlength="128"
-              required
-            />
-          </label>
-          <label class="login-field">
-            <span>Confirm passcode</span>
-            <input
-              type="password"
-              name="passcode_confirm"
-              autocomplete="new-password"
-              minlength="4"
-              maxlength="128"
-              required
-            />
+            <span>Confirm password</span>
+            <input type="password" name="passcode_confirm" autocomplete="new-password" enterkeyhint="go"
+              minlength="4" maxlength="128" required />
           </label>
         </div>
-        <div class="setup-card__note">
-          The access key and passcode are stored as salted hashes. Keep the originals somewhere safe.
-        </div>
+        <div class="setup-card__note">Use a password you can remember or save in your password manager.</div>
         <div class="login-card__actions">
           <button class="login-button" type="submit">
-            <span class="login-button__value">Create profile</span>
+            <span class="login-button__value">{{ "Add person" if enrollment else "Create account and sign in" }}</span>
             <span class="login-button__arrow" aria-hidden="true">→</span>
           </button>
         </div>
       </form>
+      {% if enrollment %}
+      <a class="nav-link" href="/ui/movies">Cancel and go back</a>
+      {% else %}
+      <p class="setup-card__note">After signing in, use Add a person to set up the second account. No old Watchlists will be copied into these new accounts.</p>
+      {% endif %}
     </div>
   </section>
+{% endblock %}
+{% block scripts %}
+  {{ super() }}
+  <script type="application/json" id="login-archive-data">{{ {'posters': archive_poster_urls} | tojson }}</script>
 {% endblock %}

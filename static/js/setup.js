@@ -27,8 +27,8 @@
       if (!passcode || !confirm) return;
       if (passcode.value !== confirm.value) {
         event.preventDefault();
-        confirm.setCustomValidity("Passcodes do not match.");
-        showError("Passcodes do not match.");
+        confirm.setCustomValidity("Passwords do not match.");
+        showError("Passwords do not match.");
         confirm.focus();
         return;
       }

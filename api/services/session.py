@@ -19,6 +19,7 @@ class SessionData:
     profile_id: int
     issued_at: int
     expires_at: int
+    revision: int = 0
 
 
 def get_session_secret(configured_secret: Optional[str]) -> str:
@@ -39,11 +40,14 @@ def _sign(payload: str, secret: str) -> str:
     return hmac.new(secret.encode("utf-8"), payload.encode("utf-8"), hashlib.sha256).hexdigest()
 
 
-def create_session_token(profile_id: int, *, secret: str, ttl_seconds: int) -> str:
+def create_session_token(
+    profile_id: int, *, secret: str, ttl_seconds: int, revision: int = 0
+) -> str:
     now = int(time.time())
     payload = {
         "v": SESSION_VERSION,
         "profile_id": profile_id,
+        "revision": revision,
         "iat": now,
         "exp": now + ttl_seconds,
     }
@@ -72,10 +76,13 @@ def parse_session_token(token: str, *, secret: str) -> Optional[SessionData]:
         profile_id = int(payload.get("profile_id", 0))
         issued_at = int(payload.get("iat", 0))
         expires_at = int(payload.get("exp", 0))
+        revision = int(payload.get("revision", 0))
     except (TypeError, ValueError):
         return None
-    if profile_id <= 0:
+    if profile_id <= 0 or revision < 0:
         return None
     if expires_at <= int(time.time()):
         return None
-    return SessionData(profile_id=profile_id, issued_at=issued_at, expires_at=expires_at)
+    return SessionData(
+        profile_id=profile_id, issued_at=issued_at, expires_at=expires_at, revision=revision
+    )

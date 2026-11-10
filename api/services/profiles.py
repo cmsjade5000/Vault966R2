@@ -20,7 +20,12 @@ DEFAULT_PROFILES = (
 
 
 def _ensure_default_profiles(db: Session) -> List[Profile]:
-    profiles = db.query(Profile).order_by(Profile.id.asc()).all()
+    profiles = (
+        db.query(Profile).filter(Profile.archived_at.is_(None)).order_by(Profile.id.asc()).all()
+    )
+    setup = db.get(AppSetup, 1)
+    if setup is not None and setup.personal_sign_in_only:
+        return profiles
     if profiles:
         updated = False
         setup_completed = bool(

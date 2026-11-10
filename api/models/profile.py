@@ -23,6 +23,13 @@ class AppSetup(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     completed: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("false"))
+    personal_sign_in_only: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, server_default=text("false")
+    )
+    local_setup_only: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, server_default=text("false")
+    )
+    unlock_revision: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("0"))
     completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     owner_profile_id: Mapped[int | None] = mapped_column(
         ForeignKey("profiles.id", ondelete="SET NULL"), nullable=True
@@ -44,6 +51,11 @@ class Profile(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )
+
+    archived_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    archived_name: Mapped[str | None] = mapped_column(String(80), nullable=True)
+    archived_batch_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
+    session_revision: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("0"))
 
     preferences = relationship(
         "MoviePreference",
@@ -115,3 +127,35 @@ class MoviePreference(Base):
     )
 
     profile = relationship("Profile", back_populates="preferences")
+
+
+class ProfileArchiveBatch(Base):
+    __tablename__ = "profile_archive_batches"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    previous_setup_completed: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    previous_completed_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    previous_owner_profile_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    previous_personal_sign_in_only: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    previous_local_setup_only: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    restored_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class SetupGrant(Base):
+    """Short-lived local setup authorization; never stores a plaintext code/cookie."""
+
+    __tablename__ = "setup_grants"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    generation: Mapped[str] = mapped_column(String(36), nullable=False)
+    owner_name: Mapped[str] = mapped_column(String(80), nullable=False)
+    code_salt: Mapped[str] = mapped_column(String(64), nullable=False)
+    code_hash: Mapped[str] = mapped_column(String(128), nullable=False)
+    issued_at: Mapped[int] = mapped_column(Integer, nullable=False)
+    expires_at: Mapped[int] = mapped_column(Integer, nullable=False)
+    browser_hash: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    bound_at: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    consumed_at: Mapped[int | None] = mapped_column(Integer, nullable=True)

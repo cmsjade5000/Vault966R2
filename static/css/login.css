@@ -8,7 +8,8 @@
   --vault-muted: #9cabc0;
 }
 
-.auth-page .site-nav {
+.auth-page .site-nav,
+.auth-page .bottom-nav {
   display: none;
 }
 
@@ -145,7 +146,7 @@
   display: block;
   width: 100%;
   height: 100%;
-  opacity: 0;
+  opacity: 1;
   object-fit: cover;
   filter: saturate(1.08) contrast(1.05) brightness(1.02);
   transform: scale(1.035);
@@ -162,6 +163,7 @@
   transform: scale(1);
 }
 
+.login-archive__poster img.is-pending,
 .login-archive__poster img.is-leaving,
 .login-archive__poster img.is-unavailable,
 .login-archive__poster img.login-archive__poster-next {
@@ -386,6 +388,7 @@
   width: 76%;
   height: 1px;
   content: "";
+  pointer-events: none;
   background: linear-gradient(
     90deg,
     transparent,
@@ -432,8 +435,7 @@
   margin: 0;
   color: var(--vault-white);
   font-family:
-    "Avenir Next Condensed", "Arial Narrow", "Helvetica Neue", Arial,
-    sans-serif;
+    "Avenir Next Condensed", "Arial Narrow", "Helvetica Neue", Arial, sans-serif;
   font-size: clamp(3rem, 9vw, 5.15rem);
   font-stretch: condensed;
   font-weight: 750;
@@ -453,8 +455,7 @@
   border: 1px solid rgba(111, 211, 255, 0.2);
   border-radius: 999px;
   background:
-    linear-gradient(90deg, rgba(4, 12, 25, 0.96), rgba(8, 22, 39, 0.8)),
-    #050d19;
+    linear-gradient(90deg, rgba(4, 12, 25, 0.96), rgba(8, 22, 39, 0.8)), #050d19;
   box-shadow:
     inset 0 0 0 1px rgba(255, 255, 255, 0.025),
     inset 0 0 22px rgba(111, 211, 255, 0.06),
@@ -629,6 +630,36 @@
   outline-offset: 2px;
 }
 
+/* Keep standalone credential entry in normal, scrollable document flow. */
+.auth-page.is-standalone .app-main {
+  overflow: visible;
+}
+
+.auth-page.is-standalone .login-shell {
+  overflow: visible;
+}
+
+.auth-page.is-standalone .login-ambient {
+  inset: 0;
+  overflow: hidden;
+}
+
+.auth-page.is-standalone .login-card {
+  height: auto;
+  overflow: visible;
+  transform: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.auth-page.is-standalone .login-field input {
+  min-height: 44px;
+  font-size: 16px;
+  cursor: text;
+  -webkit-user-select: text;
+  user-select: text;
+}
+
 .login-profiles {
   display: none;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -732,7 +763,11 @@
   border-radius: 50%;
   color: var(--vault-blue-bright);
   background:
-    radial-gradient(circle at 50% 32%, rgba(111, 211, 255, 0.3), transparent 62%),
+    radial-gradient(
+      circle at 50% 32%,
+      rgba(111, 211, 255, 0.3),
+      transparent 62%
+    ),
     rgba(3, 12, 27, 0.48);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.13),
