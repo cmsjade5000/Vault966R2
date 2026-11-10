@@ -11,6 +11,7 @@ import tempfile
 ROOT_DIR = pathlib.Path(__file__).resolve().parents[1]
 OPENAPI_PATH = ROOT_DIR / "openapi" / "openapi.json"
 PY_CONFIG = ROOT_DIR / "openapi-client-config.yml"
+PY_TEMPLATES = ROOT_DIR / "openapi" / "client-templates"
 
 
 def run(cmd):
@@ -36,6 +37,8 @@ def generate_python_client(output_dir: pathlib.Path) -> None:
             str(OPENAPI_PATH),
             "--config",
             str(PY_CONFIG),
+            "--custom-template-path",
+            str(PY_TEMPLATES),
             "--output-path",
             str(output_dir),
             "--overwrite",
