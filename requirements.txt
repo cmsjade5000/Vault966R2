@@ -7,7 +7,7 @@ alembic==1.20.0
 python-dotenv==1.2.4
 httpx==0.28.1  # nice to have for future tests
 certifi==2026.10.19  # GHSA-6q48-6c7w-9gw2; retain unaffected emSign roots
-Pillow==12.3.0
+Pillow==13.0.0
 psycopg[binary]>=3.3.6
 pgvector==0.5.1
 Jinja2==3.1.6
