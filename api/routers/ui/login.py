@@ -245,6 +245,7 @@ def _login_template_context(
     request: Request,
     profiles,
     *,
+    db: Optional[Session] = None,
     active_profile_id: int | None = None,
     default_profile_id: int | None = None,
     error: str | None = None,
@@ -252,6 +253,13 @@ def _login_template_context(
     credentials_unavailable: bool = False,
     switching: bool = False,
 ) -> dict:
+    # Every render, including failed submissions, must honor personal sign-in.
+    # Keep the legacy picker data out of the template, not merely hidden by CSS.
+    if db is None or personal_sign_in_only(db) or switching:
+        profiles = []
+        active_profile_id = None
+        default_profile_id = None
+        unlocked = False
     archive_posters = _public_archive_posters(request)
     random.SystemRandom().shuffle(archive_posters)
     return {
@@ -273,6 +281,7 @@ def _render_login_error(
     request: Request,
     profiles,
     *,
+    db: Session,
     message: str,
     status_code: int,
     credentials_unavailable: bool = False,
@@ -283,6 +292,7 @@ def _render_login_error(
         _login_template_context(
             request,
             profiles,
+            db=db,
             error=message,
             credentials_unavailable=credentials_unavailable,
             switching=request.url.path == "/ui/switch-person",
@@ -316,6 +326,7 @@ def login(
         return _render_login_error(
             request,
             profiles,
+            db=db,
             message="Login credentials are not configured.",
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             credentials_unavailable=True,
@@ -333,13 +344,14 @@ def login(
         "login.html",
         _login_template_context(
             request,
-            [] if personal_sign_in_only(db) else profiles,
+            profiles,
+            db=db,
             active_profile_id=active_profile_id,
             default_profile_id=default_profile_id,
             unlocked=unlocked_state,
         ),
     )
-    if active_profile_id is not None:
+    if active_profile_id is not None and not personal_sign_in_only(db):
         ensure_profile_cookie(request, response, db)
     return response
 
@@ -370,6 +382,7 @@ def login_submit(
         return _render_login_error(
             request,
             profiles,
+            db=db,
             message=message,
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             credentials_unavailable=True,
@@ -399,6 +412,7 @@ def login_submit(
                 return _render_login_error(
                     request,
                     profiles,
+                    db=db,
                     message=message,
                     status_code=status.HTTP_429_TOO_MANY_REQUESTS,
                 )
@@ -425,6 +439,7 @@ def login_submit(
         return _render_login_error(
             request,
             profiles,
+            db=db,
             message=message,
             status_code=status.HTTP_401_UNAUTHORIZED,
         )
@@ -443,6 +458,7 @@ def login_submit(
             else _render_login_error(
                 request,
                 profiles,
+                db=db,
                 message="Use personal credentials to switch person.",
                 status_code=403,
             )
@@ -480,6 +496,7 @@ def login_submit(
             _login_template_context(
                 request,
                 profiles,
+                db=db,
                 error="Unknown profile.",
                 unlocked=True,
             ),
@@ -496,6 +513,7 @@ def login_submit(
         return _render_login_error(
             request,
             profiles,
+            db=db,
             message=message,
             status_code=status.HTTP_403_FORBIDDEN,
         )
@@ -547,7 +565,7 @@ def logout(request: Request):
 @router.get("/ui/switch-person", response_class=HTMLResponse)
 def switch_person_ui(request: Request, db: Session = Depends(get_db)):
     return TEMPLATES.TemplateResponse(
-        request, "login.html", _login_template_context(request, [], switching=True)
+        request, "login.html", _login_template_context(request, [], db=db, switching=True)
     )
 
 
