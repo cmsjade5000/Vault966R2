@@ -1,0 +1,89 @@
+name: Validate public Python security controls
+on:
+  push:
+    branches: ["validation/vault-public-python-audit-20261117"]
+permissions:
+  contents: read
+jobs:
+  reports:
+    runs-on: macos-15
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: 5d6928fbeb769c2ec57290210035bb07e24ed144
+          persist-credentials: false
+          fetch-depth: 1
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0
+        with:
+          python-version: "3.12"
+      - name: Verify revision and install audit tools
+        run: |
+          test "$(git rev-parse HEAD)" = "5d6928fbeb769c2ec57290210035bb07e24ed144"
+          test "$(uname -m)" = arm64
+          python -m venv "$RUNNER_TEMP/audit-tools"
+          "$RUNNER_TEMP/audit-tools/bin/python" -m pip install --disable-pip-version-check --only-binary=:all: bandit==1.9.4 pip-audit==2.10.1 > "$RUNNER_TEMP/tool-install.log" 2>&1
+          echo "$RUNNER_TEMP/audit-tools/bin" >> "$GITHUB_PATH"
+          "$RUNNER_TEMP/audit-tools/bin/python" --version
+          "$RUNNER_TEMP/audit-tools/bin/bandit" --version
+          "$RUNNER_TEMP/audit-tools/bin/pip-audit" --version
+      - name: Check production Python lock
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          import re
+          import subprocess
+
+          output = Path(os.environ["RUNNER_TEMP"]) / "dependencies.json"
+          result = subprocess.run(
+              ["pip-audit", "--no-deps", "--disable-pip", "--strict", "-r",
+               "requirements.lock", "-f", "json", "-o", str(output)],
+              stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+          )
+          if not output.is_file():
+              raise SystemExit("Dependency audit produced no report")
+          dependencies = json.loads(output.read_text())["dependencies"]
+          def canonical(name):
+              return re.sub(r"[-_.]+", "-", name).lower()
+          pins = {
+              (canonical(name), version)
+              for name, version in re.findall(
+                  r"^([A-Za-z0-9_.-]+)(?:\[[^\]]+\])?==([^\s;]+)",
+                  Path("requirements.lock").read_text(), re.MULTILINE,
+              )
+          }
+          scanned = {(canonical(item["name"]), item.get("version")) for item in dependencies if "skip_reason" not in item}
+          skipped = sum("skip_reason" in item for item in dependencies)
+          findings = sum(len(item.get("vulns", [])) for item in dependencies)
+          print(f"Dependency audit: locked={len(pins)} scanned={len(scanned)} skipped={skipped} package-advisory matches={findings}")
+          if not pins or pins != scanned or skipped or result.returncode or findings:
+              raise SystemExit("Dependency audit requires review")
+          PY
+      - name: Check tracked Python sources
+        if: always()
+        run: |
+          python - <<'PY'
+          from collections import Counter
+          import json
+          import os
+          from pathlib import Path
+          import subprocess
+
+          output = Path(os.environ["RUNNER_TEMP"]) / "static.json"
+          files = subprocess.check_output(["git", "ls-files", "-z", "--", "*.py"]).decode().split("\0")[:-1]
+          result = subprocess.run(
+              ["bandit", "--ignore-nosec", "-f", "json", "-o", str(output), *files],
+              stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+          )
+          if not output.is_file():
+              raise SystemExit("Static check produced no report")
+          report = json.loads(output.read_text())
+          counts = Counter(item["issue_severity"] for item in report["results"])
+          errors = len(report["errors"])
+          scanned = len(report["metrics"]) - 1
+          print(f"Bandit: tracked={len(files)} scanned={scanned} parse_errors={errors} low={counts['LOW']} medium={counts['MEDIUM']} high={counts['HIGH']}")
+          if not files or scanned != len(files) or errors or result.returncode or report["results"]:
+              raise SystemExit("Static check requires review")
+          PY
