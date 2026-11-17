@@ -1,0 +1,69 @@
+name: Verify XLSX parser policy and locks
+on:
+  push:
+    branches: ["validation/vault-xlsx-parser-20261117"]
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: macos-15
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: 55752e37c8ecff1c172ce1bd6f36ba943af071c8
+          persist-credentials: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0
+        with:
+          python-version: "3.12"
+      - name: Compile exact macOS release locks
+        run: |
+          test "$(git rev-parse HEAD)" = "55752e37c8ecff1c172ce1bd6f36ba943af071c8"
+          test "$(uname -m)" = arm64
+          python -m venv "$RUNNER_TEMP/tools"
+          "$RUNNER_TEMP/tools/bin/python" -m pip install --only-binary=:all: uv==0.12.23 bandit==1.9.4 pip-audit==2.10.1 > /dev/null
+          export PATH="$RUNNER_TEMP/tools/bin:$PATH"
+          echo "$RUNNER_TEMP/tools/bin" >> "$GITHUB_PATH"
+          uv pip compile requirements.txt --python-version 3.12 --python-platform aarch64-apple-darwin --generate-hashes -o requirements.lock > /dev/null
+          uv pip compile requirements-dev.txt --python-version 3.12 --python-platform aarch64-apple-darwin --constraint requirements.lock --generate-hashes -o requirements-dev.lock > /dev/null
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          import subprocess
+
+          for name in ("requirements.lock", "requirements-dev.lock"):
+              existing = subprocess.check_output(["git", "show", "HEAD:" + name], text=True)
+              generated = Path(name).read_text()
+              match = re.search(r"^defusedxml==0\.7\.1 [^\n]*\n(?:    [^\n]*\n)+", generated, re.M)
+              assert match and generated[:match.start()] + generated[match.end():] == existing
+              print(name, subprocess.check_output(["git", "hash-object", name], text=True).strip())
+              print(match[0])
+          PY
+      - name: Install hashed dependencies and test normal and rejected input
+        env:
+          DATABASE_URL: sqlite://
+        run: |
+          uv venv --python 3.12 "$RUNNER_TEMP/release"
+          uv pip sync --python "$RUNNER_TEMP/release/bin/python" --require-hashes requirements-dev.lock
+          "$RUNNER_TEMP/release/bin/python" -m black --check api/services/source_sync_parsing.py tests/test_source_sync.py
+          "$RUNNER_TEMP/release/bin/python" -m ruff check api/services/source_sync_parsing.py tests/test_source_sync.py
+          "$RUNNER_TEMP/release/bin/python" -m pytest -q tests/test_source_sync.py tests/test_source_sync_architecture.py tests/test_first_import.py tests/test_vault_release.py
+      - name: Verify parser rule and production lock audit
+        run: |
+          python - <<'PY'
+          import json, os, subprocess
+          from pathlib import Path
+
+          output = Path(os.environ["RUNNER_TEMP"]) / "bandit.json"
+          result = subprocess.run(["bandit", "-t", "B314", "--ignore-nosec", "-f", "json", "-o", str(output), "api/services/source_sync_parsing.py"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+          static = json.loads(output.read_text())
+          print("B314 findings =", len(static["results"]), "errors =", len(static["errors"]))
+          assert not result.returncode and not static["errors"] and not static["results"]
+          output = Path(os.environ["RUNNER_TEMP"]) / "audit.json"
+          result = subprocess.run(["pip-audit", "--no-deps", "--disable-pip", "--strict", "-r", "requirements.lock", "-f", "json", "-o", str(output)], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+          rows = json.loads(output.read_text())["dependencies"]
+          skipped = sum("skip_reason" in d for d in rows)
+          matches = sum(len(d.get("vulns", [])) for d in rows)
+          print("Production pins =", len(rows), "skipped =", skipped, "advisory matches =", matches)
+          assert not result.returncode and len(rows) == 35 and not skipped and not matches
+          PY
