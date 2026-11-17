@@ -1,69 +1,151 @@
-name: Verify XLSX parser policy and locks
+name: Verify candidate with project CI
 on:
   push:
     branches: ["validation/vault-xlsx-parser-20261117"]
 permissions:
   contents: read
+
 jobs:
-  verify:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: b75331af3fe6ada5d9ac36e7f202203b8f4ea341
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0
+        with:
+          python-version: "3.12"
+          cache: "pip"
+          cache-dependency-path: |
+            requirements.txt
+            requirements-dev.txt
+            pyproject.toml
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements-dev.txt
+          python -m pip check
+          python -m black --version
+          python -m ruff --version
+
+      - name: Set up Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: package-lock.json
+
+      - name: Install Node dependencies
+        if: hashFiles('package-lock.json') != ''
+        run: npm ci
+
+      - name: Lint (Python)
+        run: |
+          black --check .
+          ruff check .
+
+      - name: Lint (Prettier)
+        if: hashFiles('package-lock.json') != ''
+        run: npm run lint
+
+      - name: Tests (JavaScript)
+        if: hashFiles('package-lock.json') != ''
+        run: npm run test:js
+
+      - name: Check OpenAPI/client drift
+        run: make openapi.check
+
+      - name: Tests (Python)
+        env:
+          PYTHONWARNINGS: ignore
+        run: pytest
+
+      - name: Build Docker image (optional)
+        if: hashFiles('Dockerfile') != ''
+        run: |
+          docker build -t vault966-ci .
+
+  macos-release:
     runs-on: macos-15
     timeout-minutes: 20
+    env:
+      DATABASE_URL: sqlite://
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
-          ref: 55752e37c8ecff1c172ce1bd6f36ba943af071c8
+          ref: b75331af3fe6ada5d9ac36e7f202203b8f4ea341
           persist-credentials: false
       - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0
         with:
           python-version: "3.12"
-      - name: Compile exact macOS release locks
+          cache: "pip"
+          cache-dependency-path: requirements-dev.lock
+      - name: Install exact tested Python dependencies
+        run: python -m pip install --require-hashes -r requirements-dev.lock
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: package-lock.json
+      - name: Install locked JavaScript dependencies
+        run: npm ci --ignore-scripts
+      - name: Check reconciled app and release safeguards
         run: |
-          test "$(git rev-parse HEAD)" = "55752e37c8ecff1c172ce1bd6f36ba943af071c8"
-          test "$(uname -m)" = arm64
-          python -m venv "$RUNNER_TEMP/tools"
-          "$RUNNER_TEMP/tools/bin/python" -m pip install --only-binary=:all: uv==0.12.23 bandit==1.9.4 pip-audit==2.10.1 > /dev/null
-          export PATH="$RUNNER_TEMP/tools/bin:$PATH"
-          echo "$RUNNER_TEMP/tools/bin" >> "$GITHUB_PATH"
-          uv pip compile requirements.txt --python-version 3.12 --python-platform aarch64-apple-darwin --generate-hashes -o requirements.lock > /dev/null
-          uv pip compile requirements-dev.txt --python-version 3.12 --python-platform aarch64-apple-darwin --constraint requirements.lock --generate-hashes -o requirements-dev.lock > /dev/null
-          python - <<'PY'
-          from pathlib import Path
-          import re
-          import subprocess
+          scripts/codex_check.sh full -q --tb=short -m 'not integration'
+          make openapi.check
+      - name: Build and verify the main app artifact
+        run: |
+          python scripts/vault_release.py build --output "$RUNNER_TEMP/vault966.tar.gz"
+          python scripts/vault_release.py verify --artifact "$RUNNER_TEMP/vault966.tar.gz"
 
-          for name in ("requirements.lock", "requirements-dev.lock"):
-              existing = subprocess.check_output(["git", "show", "HEAD:" + name], text=True)
-              generated = Path(name).read_text()
-              match = re.search(r"^defusedxml==0\.7\.1 [^\n]*\n(?:    [^\n]*\n)+", generated, re.M)
-              assert match and generated[:match.start()] + generated[match.end():] == existing
-              print(name, subprocess.check_output(["git", "hash-object", name], text=True).strip())
-              print(match[0])
-          PY
-      - name: Install hashed dependencies and test normal and rejected input
+  compatibility:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
         env:
-          DATABASE_URL: sqlite://
+          POSTGRES_USER: dependency_test
+          POSTGRES_PASSWORD: dependency_test
+          POSTGRES_DB: dependency_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U dependency_test -d dependency_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: b75331af3fe6ada5d9ac36e7f202203b8f4ea341
+          persist-credentials: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0
+        with:
+          python-version: "3.12"
+      - name: Install current requirements
         run: |
-          uv venv --python 3.12 "$RUNNER_TEMP/release"
-          uv pip sync --python "$RUNNER_TEMP/release/bin/python" --require-hashes requirements-dev.lock
-          "$RUNNER_TEMP/release/bin/python" -m black --check api/services/source_sync_parsing.py tests/test_source_sync.py
-          "$RUNNER_TEMP/release/bin/python" -m ruff check api/services/source_sync_parsing.py tests/test_source_sync.py
-          "$RUNNER_TEMP/release/bin/python" -m pytest -q tests/test_source_sync.py tests/test_source_sync_architecture.py tests/test_first_import.py tests/test_vault_release.py
-      - name: Verify parser rule and production lock audit
+          python -m pip install -r requirements-dev.txt
+          python -m pip check
+          python -m pip freeze
+          python -c 'import psycopg; print("libpq:", psycopg.pq.version())'
+      - name: Test SQLite application and real HTTP transport
+        run: python -m pytest -ra -W default --ignore=tests/test_dependency_postgres.py
+      - name: Test PostgreSQL driver contracts
+        env:
+          DEPENDENCY_TEST_DATABASE_URL: postgresql+psycopg://dependency_test:dependency_test@127.0.0.1:5432/dependency_test
+          REQUIRE_DEPENDENCY_POSTGRES: "1"
+        run: python -m pytest tests/test_dependency_postgres.py -ra -W default
+      - name: Replay PostgreSQL migrations on disposable service
+        env:
+          DATABASE_URL: postgresql+psycopg://dependency_test:dependency_test@127.0.0.1:5432/dependency_test
         run: |
-          python - <<'PY'
-          import json, os, subprocess
-          from pathlib import Path
-
-          output = Path(os.environ["RUNNER_TEMP"]) / "bandit.json"
-          result = subprocess.run(["bandit", "-t", "B314", "--ignore-nosec", "-f", "json", "-o", str(output), "api/services/source_sync_parsing.py"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-          static = json.loads(output.read_text())
-          print("B314 findings =", len(static["results"]), "errors =", len(static["errors"]))
-          assert not result.returncode and not static["errors"] and not static["results"]
-          output = Path(os.environ["RUNNER_TEMP"]) / "audit.json"
-          result = subprocess.run(["pip-audit", "--no-deps", "--disable-pip", "--strict", "-r", "requirements.lock", "-f", "json", "-o", str(output)], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-          rows = json.loads(output.read_text())["dependencies"]
-          skipped = sum("skip_reason" in d for d in rows)
-          matches = sum(len(d.get("vulns", [])) for d in rows)
-          print("Production pins =", len(rows), "skipped =", skipped, "advisory matches =", matches)
-          assert not result.returncode and len(rows) == 35 and not skipped and not matches
-          PY
+          python -m alembic upgrade head
+          python -m alembic downgrade 202607020001
+          python -m alembic upgrade head
