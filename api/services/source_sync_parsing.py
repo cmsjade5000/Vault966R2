@@ -12,6 +12,9 @@ from dataclasses import dataclass
 from urllib.parse import unquote, urlsplit
 from xml.etree import ElementTree
 
+from defusedxml import ElementTree as SafeElementTree
+from defusedxml.common import DefusedXmlException
+
 from api.services.source_sync_contracts import ParsedSourceRow, SourceSyncError
 from api.services.source_sync_identity import (
     clean_text,
@@ -431,8 +434,8 @@ def _xlsx_read_xml(
     info = _xlsx_member_info(workbook, name)
     _validate_xlsx_member(info, limits=limits)
     try:
-        return ElementTree.fromstring(workbook.read(info))
-    except ElementTree.ParseError as exc:
+        return SafeElementTree.fromstring(workbook.read(info), forbid_dtd=True)
+    except (ElementTree.ParseError, DefusedXmlException) as exc:
         raise SourceSyncError(error_message) from exc
 
 
@@ -451,7 +454,9 @@ def _xlsx_shared_strings(
     total_text_bytes = 0
     try:
         with workbook.open(info) as member:
-            for _event, element in ElementTree.iterparse(member, events=("end",)):
+            for _event, element in SafeElementTree.iterparse(
+                member, events=("end",), forbid_dtd=True
+            ):
                 if element.tag.rsplit("}", 1)[-1] != "si":
                     continue
                 if len(shared_strings) >= limits.max_xlsx_shared_strings:
@@ -464,7 +469,7 @@ def _xlsx_shared_strings(
                     raise SourceSyncError("The XLSX file contains a cell that is too large")
                 shared_strings.append(text)
                 element.clear()
-    except ElementTree.ParseError as exc:
+    except (ElementTree.ParseError, DefusedXmlException) as exc:
         raise SourceSyncError("XLSX shared strings could not be read") from exc
     return shared_strings
 
@@ -601,7 +606,7 @@ def _read_xlsx_sheet_rows(
 ) -> list[list[str]]:
     rows: list[list[str]] = []
     cell_count = 0
-    for _event, row in ElementTree.iterparse(sheet, events=("end",)):
+    for _event, row in SafeElementTree.iterparse(sheet, events=("end",), forbid_dtd=True):
         if row.tag.rsplit("}", 1)[-1] != "row":
             continue
         if len(rows) >= limits.max_xlsx_rows:
@@ -631,7 +636,7 @@ def _xlsx_rows(content: bytes, *, limits: ParseLimits) -> list[list[str]]:
         raise SourceSyncError("The XLSX file could not be opened") from exc
     except KeyError as exc:
         raise SourceSyncError("The XLSX first worksheet could not be read") from exc
-    except ElementTree.ParseError as exc:
+    except (ElementTree.ParseError, DefusedXmlException) as exc:
         raise SourceSyncError("The XLSX first worksheet is malformed") from exc
 
 

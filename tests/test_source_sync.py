@@ -20,7 +20,7 @@ from api.models.source_sync import (
     SourceReconciliationMatch,
     SourceSnapshot,
 )
-from api.services import source_sync
+from api.services import source_sync, source_sync_parsing
 from api.services.source_sync import (
     SourceSyncError,
     build_research_links,
@@ -291,6 +291,31 @@ def test_source_sync_accepts_xlsx_upload(client: TestClient, db_session) -> None
     assert row.content_rating == "PG-13"
 
 
+@pytest.mark.parametrize(
+    ("member", "root", "message"),
+    [
+        ("xl/workbook.xml", "workbook", "XLSX workbook metadata could not be read"),
+        ("xl/_rels/workbook.xml.rels", "Relationships", "XLSX workbook metadata could not be read"),
+        ("xl/sharedStrings.xml", "sst", "XLSX shared strings could not be read"),
+        ("xl/worksheets/sheet1.xml", "worksheet", "The XLSX first worksheet is malformed"),
+    ],
+)
+def test_source_sync_rejects_dtd_in_xlsx_parts(member: str, root: str, message: str) -> None:
+    content = _xlsx([["Title", "Time", "Director", "Year"], ["Sample", "90", "Director", "2020"]])
+    with zipfile.ZipFile(io.BytesIO(content)) as source:
+        parts = {name: source.read(name) for name in source.namelist()}
+    parts["xl/sharedStrings.xml"] = b'<?xml version="1.0"?><sst/>'
+    declaration, document = parts[member].split(b"?>", 1)
+    parts[member] = declaration + b"?>" + f"<!DOCTYPE {root}>".encode() + document
+    buffer = io.BytesIO()
+    with zipfile.ZipFile(buffer, "w") as archive:
+        for name, data in parts.items():
+            archive.writestr(name, data)
+
+    with pytest.raises(SourceSyncError, match=message):
+        source_sync.parse_source_xlsx(buffer.getvalue())
+
+
 def test_source_sync_rejects_xlsx_expansion_before_xml_parse(monkeypatch) -> None:
     sheet_xml = (
         '<?xml version="1.0" encoding="UTF-8"?>'
@@ -304,7 +329,7 @@ def test_source_sync_rejects_xlsx_expansion_before_xml_parse(monkeypatch) -> Non
     def fail_fromstring(_content):
         raise AssertionError("XML should not be materialized for oversized XLSX archives")
 
-    monkeypatch.setattr(source_sync.ElementTree, "fromstring", fail_fromstring)
+    monkeypatch.setattr(source_sync_parsing.SafeElementTree, "fromstring", fail_fromstring)
 
     with pytest.raises(SourceSyncError, match="expands beyond"):
         source_sync.parse_source_xlsx(content)
@@ -323,7 +348,7 @@ def test_source_sync_rejects_xlsx_member_count_before_xml_parse(monkeypatch) -> 
     def fail_fromstring(_content):
         raise AssertionError("XML should not be materialized for too many XLSX parts")
 
-    monkeypatch.setattr(source_sync.ElementTree, "fromstring", fail_fromstring)
+    monkeypatch.setattr(source_sync_parsing.SafeElementTree, "fromstring", fail_fromstring)
 
     with pytest.raises(SourceSyncError, match="too many parts"):
         source_sync.parse_source_xlsx(content)
@@ -342,7 +367,7 @@ def test_source_sync_rejects_high_compression_xlsx_before_xml_parse(monkeypatch)
     def fail_fromstring(_content):
         raise AssertionError("XML should not be materialized for high-compression XLSX")
 
-    monkeypatch.setattr(source_sync.ElementTree, "fromstring", fail_fromstring)
+    monkeypatch.setattr(source_sync_parsing.SafeElementTree, "fromstring", fail_fromstring)
 
     with pytest.raises(SourceSyncError, match="compression ratio"):
         source_sync.parse_source_xlsx(content)
