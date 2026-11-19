@@ -44,7 +44,7 @@ jobs:
 
       - name: Install Node dependencies
         if: hashFiles('package-lock.json') != ''
-        run: npm ci
+        run: npm ci --ignore-scripts
 
       - name: Lint (Python)
         run: |
