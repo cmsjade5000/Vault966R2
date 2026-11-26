@@ -11,5 +11,5 @@ Pillow==13.0.0
 psycopg[binary]==3.3.9
 pgvector==0.5.1
 Jinja2==3.1.6
-python-multipart==0.0.32
+python-multipart==0.0.34
 defusedxml==0.7.1
